@@ -23,15 +23,15 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 
 ## Funzionalità (v1.0)
 
-- 📊 **Dashboard "Oggi"** — saldo totale, spese del giorno e del mese, ultimi movimenti: tutto in 5 secondi
-- 💸 **Movimenti** — spese, entrate e trasferimenti tra account, registrabili in 2–3 tap
-- 🏦 **Account multipli** — con saldo iniziale, rettifica saldo e archiviazione
-- 🔁 **Ricorrenze e abbonamenti** — registrazione automatica o con conferma, vista dedicata con totale mensile
+- 📊 **Dashboard "Oggi"** - saldo totale, spese del giorno e del mese, ultimi movimenti: tutto in 5 secondi
+- 💸 **Movimenti** - spese, entrate e trasferimenti tra account, registrabili in 2–3 tap
+- 🏦 **Account multipli** - con saldo iniziale, rettifica saldo e archiviazione
+- 🔁 **Ricorrenze e abbonamenti** - registrazione automatica o con conferma, vista dedicata con totale mensile
 - 🏷️ **Categorie e tag personalizzabili**
 - 🔍 **Ricerca e filtri combinabili** con totale della vista filtrata
-- 📈 **Statistiche** — spese per categoria, trend mensile, entrate vs uscite, andamento saldo
-- 🌍 **Multi-valuta** — ogni movimento conserva importo e valuta originali
-- ☁️ **Backup opzionale** — automatico su Google Drive (App Data Folder, privato) oppure manuale su file, portabile ovunque — più **export CSV**
+- 📈 **Statistiche** - spese per categoria, trend mensile, entrate vs uscite, andamento saldo
+- 🌍 **Multi-valuta** - ogni movimento conserva importo e valuta originali
+- ☁️ **Backup opzionale** - automatico su Google Drive (App Data Folder, privato) oppure manuale su file, portabile ovunque - più **export CSV**
 - 🇮🇹 🇬🇧 Italiano e inglese
 
 In arrivo (v1.5 / v2.0): budget, PIN e biometria, widget, import CSV, export Google Sheets/Excel/PDF, obiettivi di risparmio, conversione valuta, cifratura backup. Roadmap completa in [PLANNING.md](./PLANNING.md).
@@ -86,4 +86,4 @@ Per eseguire i test:
 
 ## Licenza
 
-Distribuito sotto licenza **GNU General Public License v3.0** — vedi il file [LICENSE](./LICENSE) per i dettagli.
+Distribuito sotto licenza **GNU General Public License v3.0** - vedi il file [LICENSE](./LICENSE) per i dettagli.

@@ -1,4 +1,4 @@
-# PLANNING — Saldo
+# PLANNING - Saldo
 
 > Piano di implementazione operativo. La visione di prodotto è in [VISION.md](./VISION.md).
 > Le checkbox tracciano lo stato di avanzamento. Questo file va tenuto aggiornato durante lo sviluppo.
@@ -36,7 +36,7 @@
 
 # Roadmap v1.0 (MVP)
 
-## Fase 0 — Setup progetto
+## Fase 0 - Setup progetto
 
 - [ ] Creazione progetto Android Studio (Kotlin, Compose, min SDK 33, target ultimo stabile, applicationId `com.callbackdev.saldo`)
 - [ ] Version Catalog (`libs.versions.toml`) con tutte le dipendenze
@@ -49,7 +49,7 @@
 - [ ] `.editorconfig`, ktlint o detekt
 - [ ] README con istruzioni di build
 
-## Fase 1 — Data layer (fondamenta)
+## Fase 1 - Data layer (fondamenta)
 
 - [ ] Entity Room: `AccountEntity`, `CategoryEntity`, `TransactionEntity`, `TagEntity` + cross-ref, `RecurringRuleEntity`
 - [ ] Enum `TransactionType` (EXPENSE, INCOME, TRANSFER, ADJUSTMENT)
@@ -64,7 +64,7 @@
 - [ ] Seed categorie predefinite alla prima apertura (IT/EN in base alla locale)
 - [ ] Unit test: mapper, calcolo saldi, query aggregate (Room in-memory)
 
-## Fase 2 — Account
+## Fase 2 - Account
 
 - [ ] Lista account con saldo corrente
 - [ ] Creazione/modifica account (nome, tipo, valuta, saldo iniziale, colore, icona, incluso nel totale)
@@ -73,7 +73,7 @@
 - [ ] Eliminazione account: consentita solo se senza movimenti, altrimenti proporre archiviazione
 - [ ] Test: rettifica saldo, esclusione archiviati dal totale
 
-## Fase 3 — Movimenti (CRUD)
+## Fase 3 - Movimenti (CRUD)
 
 - [ ] Schermata inserimento spesa/entrata: tastierino importo subito attivo, categoria a griglia, account di default preselezionato, data = oggi modificabile
 - [ ] Obiettivo UX verificato: spesa tipica in ≤ 3 tap + importo
@@ -85,25 +85,25 @@
 - [ ] Flag "escludi dalle statistiche" e flag "rimborso" (versione semplificata MVP)
 - [ ] Test: ViewModel inserimento, effetti sul saldo per ogni tipo
 
-## Fase 4 — Categorie
+## Fase 4 - Categorie
 
 - [ ] Lista categorie divise spese/entrate
 - [ ] Crea/modifica: nome, colore (palette), icona (set Material Symbols), tipo
 - [ ] Eliminazione con riassegnazione movimenti (dialog: scegli categoria di destinazione o "Altro")
 - [ ] Riordino manuale (drag)
 
-## Fase 5 — Dashboard "Oggi"
+## Fase 5 - Dashboard "Oggi"
 
 - [ ] Card saldo totale + dettaglio account espandibile
 - [ ] Card oggi (spese/entrate/netto)
 - [ ] Card mese corrente + confronto con stesso giorno mese precedente
-- [ ] Card abbonamenti del mese (totale + prossimo addebito) — placeholder finché Fase 6 non è pronta
+- [ ] Card abbonamenti del mese (totale + prossimo addebito) - placeholder finché Fase 6 non è pronta
 - [ ] Ultimi 5–7 movimenti con tap → dettaglio
 - [ ] FAB con 3 quick action
 - [ ] Empty state prima apertura (CTA: crea il primo account)
 - [ ] Performance: dashboard reattiva via Flow combinati, nessun ricalcolo manuale
 
-## Fase 6 — Ricorrenze
+## Fase 6 - Ricorrenze
 
 - [ ] `RecurringRuleEntity`: frequenza, giorno, inizio/fine, importo fisso o variabile, modalità (auto/conferma), lastGeneratedDate
 - [ ] Motore di generazione idempotente (rieseguibile senza duplicati) + gestione mesi corti (31 → ultimo giorno)
@@ -115,7 +115,7 @@
 - [ ] Collegamento card dashboard
 - [ ] Test approfonditi del motore: mesi corti, anni bisestili, catch-up dopo N giorni, idempotenza, DST
 
-## Fase 7 — Ricerca, filtri e statistiche
+## Fase 7 - Ricerca, filtri e statistiche
 
 - [ ] Filtri combinabili (data con preset, categorie, account, tipo, importo, tag) come chip
 - [ ] Ricerca full-text su descrizione
@@ -129,7 +129,7 @@
 - [ ] Drill-down: tap su grafico → lista filtrata
 - [ ] Verifica esclusione TRANSFER/ADJUSTMENT e trattamento rimborsi
 
-## Fase 8 — Backup, export, import
+## Fase 8 - Backup, export, import
 
 - [ ] Formato export JSON versionato (schema `version: 1`) di tutti i dati
 - [ ] Google Sign-In via Credential Manager, scope `drive.appdata`
@@ -141,7 +141,7 @@
 - [ ] Restore da file di backup manuale (JSON, via SAF `ACTION_OPEN_DOCUMENT`)
 - [ ] Test: round-trip export→import senza perdita dati
 
-## Fase 9 — Impostazioni, i18n, rifinitura
+## Fase 9 - Impostazioni, i18n, rifinitura
 
 - [ ] Impostazioni: valuta principale, account di default, tema, primo giorno settimana, backup
 - [ ] Onboarding minimale (valuta, primo account, saldo iniziale)
@@ -150,7 +150,7 @@
 - [ ] Empty state e stati di errore su tutte le schermate
 - [ ] Performance: baseline profile, lista movimenti fluida con migliaia di record (paging se necessario)
 
-## Fase 10 — Release v1.0
+## Fase 10 - Release v1.0
 
 - [ ] QA manuale end-to-end (checklist dei flussi principali)
 - [ ] Test su device reali: API 33 e ultimo Android stabile, tablet/schermi grandi (almeno layout non rotto)
@@ -168,7 +168,7 @@
 - [ ] Widget: saldo totale, spese oggi, aggiunta rapida (Glance)
 - [ ] Import CSV con wizard di mappatura colonne
 - [ ] Export Excel (.xlsx)
-- [ ] Export Google Sheets (nuovo foglio o aggiornamento foglio esistente; richiede verifica OAuth Google per lo scope "sensitive" `spreadsheets` — avviare la review per tempo)
+- [ ] Export Google Sheets (nuovo foglio o aggiornamento foglio esistente; richiede verifica OAuth Google per lo scope "sensitive" `spreadsheets` - avviare la review per tempo)
 - [ ] Miglioramenti UX dal feedback della v1.0
 
 # Roadmap v2.0

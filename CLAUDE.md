@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-**Saldo** — app Android (Kotlin + Compose) di gestione spese personali, offline-first e privacy-first.
+**Saldo** - app Android (Kotlin + Compose) di gestione spese personali, offline-first e privacy-first.
 
 ## Documenti di riferimento
 
@@ -12,6 +12,24 @@
 - Rispetta gli ADR in PLANNING.md. Se un ADR va cambiato, proponilo e motivalo prima, non aggirarlo.
 - **`devlog/`**: registro storico di *cosa è successo* (lavoro completato e decisioni prese). File attivo `devlog/devlog.md`, voce più recente in alto; regole e template in `devlog/README.md` (non modificare quel file). Aggiungi una voce datata al completamento di uno step o di una fase: cosa è stato implementato, come è stato verificato (test eseguiti, device usato), decisioni rilevanti o problemi incontrati.
 - **`README.md` sempre aggiornato**: alla fine di ogni implementazione rileggi `README.md` e aggiornalo se la modifica tocca qualcosa di visibile all'utente o qualcosa che vi è descritto. Se non serve alcun aggiornamento, nessuna azione.
+
+## Stile di Scrittura e Documentazione (valido SOLO per i file di prosa)
+
+Quando scrivi, modifichi o generi testo per i file di documentazione del repository (come `CLAUDE.md`, `README.md`, file all'interno di `docs/` o `devlog/`, `PLANNING.md`, ecc.), applica rigorosamente queste regole:
+
+### 1. Regole Tipografiche
+
+- Non usare MAI l'em-dash (`—`) o l'en-dash (`–`). Utilizza un trattino standard (`-`), i due punti (`:`), la virgola o le parentesi tonde, a seconda del contesto.
+- Non usare MAI il punto mediano (`·`). Sostituiscilo con un trattino standard (`-`) o una virgola.
+
+### 2. Tono e Stile
+
+- Stile ingegneristico: Mantieni un tono oggettivo e diretto. Elimina qualsiasi forma di entusiasmo artificiale, linguaggio di marketing o aggettivi superflui (es. "fantastico", "potente", "robusto").
+- Nessuna conclusione: Non inserire paragrafi conclusivi o riassunti finali; termina la frase non appena l'informazione tecnica è stata esposta.
+
+### 3. Eccezioni per il Codice (ATTENZIONE)
+
+- Le regole sopra elencate (in particolare quelle tipografiche) **NON si applicano** al codice sorgente o alle risorse di stringa. All'interno di file di codice (es. `.js`, `.py`, `.java`, `.cpp`, file XML, JSON di traduzione, ecc.), l'uso di em-dash, en-dash o punto mediano è assolutamente consentito ovunque il design della UI, le stringhe di testo o la sintassi lo richiedano.
 
 ## Regole di dominio (non negoziabili)
 
@@ -26,7 +44,7 @@
 
 - **applicationId: `com.callbackdev.saldo`** (brand: Callback Dev). Tutti i package del codice vivono sotto `com.callbackdev.saldo.*`. Non cambiarlo mai: è immutabile dopo la pubblicazione su Play Store.
 - Kotlin 100%, Jetpack Compose + Material 3 (dynamic color, sempre disponibile), minSDK 33, target ultimo stabile.
-- Room + KSP (mai KAPT), Hilt, Coroutines/Flow, DataStore Preferences, **Navigation 3** (`androidx.navigation3`, stabile da novembre 2025) — non Navigation Compose/Nav2, WorkManager, Vico per i grafici.
+- Room + KSP (mai KAPT), Hilt, Coroutines/Flow, DataStore Preferences, **Navigation 3** (`androidx.navigation3`, stabile da novembre 2025) - non Navigation Compose/Nav2, WorkManager, Vico per i grafici.
 - Navigation 3 è recente: **non andare a memoria sulle API** (le alpha differiscono dalla stabile). In caso di dubbi consulta la documentazione ufficiale (https://developer.android.com/guide/navigation/navigation-3) e il repo delle recipes ufficiali. Pattern base: route come `NavKey`, back stack con `rememberNavBackStack`, destinazioni in `entryProvider`, rendering con `NavDisplay`.
 - Dipendenze solo via Version Catalog (`libs.versions.toml`). **Non aggiungere nuove librerie senza chiedere.**
 - Package-by-feature nel modulo `:app`: `core/{database,designsystem,common,domain}` + `feature/*`.

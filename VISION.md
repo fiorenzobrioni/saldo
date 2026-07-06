@@ -7,7 +7,7 @@
 
 ## Identità del progetto
 
-> **Un'app Android moderna, offline-first e privacy-first che aiuta l'utente a monitorare le proprie spese, mantenere sotto controllo il saldo dei propri account e comprendere come vengono utilizzati i propri soldi — senza trasformarsi in un'app di home banking o di gestione patrimoniale.**
+> **Un'app Android moderna, offline-first e privacy-first che aiuta l'utente a monitorare le proprie spese, mantenere sotto controllo il saldo dei propri account e comprendere come vengono utilizzati i propri soldi - senza trasformarsi in un'app di home banking o di gestione patrimoniale.**
 
 L'obiettivo non è sostituire la banca, ma offrire **consapevolezza finanziaria quotidiana**.
 
@@ -65,7 +65,7 @@ L'app è un **Expense Tracker evoluto**, non un sistema bancario.
 
 # Piattaforma e stack tecnico
 
-- **Android only** (inizialmente) — min SDK 33 (Android 13), target SDK sempre l'ultimo stabile. Scelta deliberata: niente supporto a device legacy, niente code path duplicati (dynamic color e `POST_NOTIFICATIONS` sempre disponibili)
+- **Android only** (inizialmente) - min SDK 33 (Android 13), target SDK sempre l'ultimo stabile. Scelta deliberata: niente supporto a device legacy, niente code path duplicati (dynamic color e `POST_NOTIFICATIONS` sempre disponibili)
 - **Kotlin** (100%, no Java)
 - **Jetpack Compose** con **Material 3 / Material You** (dynamic color sempre disponibile grazie a min SDK 33, nessuna palette di fallback necessaria)
 - **Room** per la persistenza
@@ -129,11 +129,11 @@ Esempi: Conto Corrente Intesa, Conto Fineco, Carta Visa, Carta Mastercard, PayPa
 Campi:
 
 - nome
-- tipo (conto corrente, carta, contanti, wallet digitale, altro) — solo a fini di icona/raggruppamento
+- tipo (conto corrente, carta, contanti, wallet digitale, altro) - solo a fini di icona/raggruppamento
 - valuta principale dell'account
 - **saldo iniziale** (impostato alla creazione: il saldo corrente è sempre `saldo iniziale + Σ movimenti`)
 - colore e icona
-- **incluso nel saldo totale** (sì/no — es. un conto cointestato che si vuole tracciare ma non sommare)
+- **incluso nel saldo totale** (sì/no - es. un conto cointestato che si vuole tracciare ma non sommare)
 - **archiviato** (sì/no)
 
 ### Saldo iniziale e rettifica saldo (fondamentale)
@@ -237,7 +237,7 @@ Abbonamenti attivi questo mese: 47,97 €
 Prossimo: Netflix -12,99 € il 07/07
 ```
 
-### 5. Budget (se attivo — v1.5)
+### 5. Budget (se attivo - v1.5)
 
 ```text
 Budget mese: 320,00 € rimanenti su 1.500,00 €
@@ -418,7 +418,7 @@ Note tecniche importanti:
 
 - la vecchia Drive Android API è deprecata: si usa la **Google Drive REST API** con **Credential Manager / Google Sign-In** e scope `drive.appdata`
 - richiede un account Google, **ma resta 100% opzionale**: l'app è pienamente funzionante senza (coerente con "nessun account obbligatorio")
-- formato: **export JSON versionato** (decisione già presa, ADR 5 in PLANNING.md) — più robusto di uno snapshot del file `.db` tra versioni diverse dello schema Room; il restore è un import
+- formato: **export JSON versionato** (decisione già presa, ADR 5 in PLANNING.md) - più robusto di uno snapshot del file `.db` tra versioni diverse dello schema Room; il restore è un import
 - modello **single-device con restore**, non sync multi-device in tempo reale (fuori scope: eviterebbe di dover risolvere conflitti)
 - **cifratura del backup** con passphrase utente: v2.0
 
@@ -431,7 +431,7 @@ In parallelo al backup automatico su Drive, l'utente può esportare in qualsiasi
 - nome file con data: `saldo-backup-2026-07-05.json`
 - avvertenza in UI: il file non è cifrato fino alla v2.0 (cifratura backup), quindi va custodito con attenzione
 
-Questa opzione rafforza i principi del progetto: backup completo possibile **senza account Google** e piena portabilità dei dati — il file può essere copiato a mano su Google Drive, NAS, Syncthing o qualsiasi altro servizio.
+Questa opzione rafforza i principi del progetto: backup completo possibile **senza account Google** e piena portabilità dei dati - il file può essere copiato a mano su Google Drive, NAS, Syncthing o qualsiasi altro servizio.
 
 ---
 
@@ -439,10 +439,10 @@ Questa opzione rafforza i principi del progetto: backup completo possibile **sen
 
 Formati supportati (v1.0: CSV; Google Sheets ed Excel: v1.5; PDF: v2.0):
 
-- **CSV** (separatore configurabile `,`/`;` — in Italia Excel si aspetta `;`), con export completo o filtrato
-- **Excel (.xlsx)** — v1.5
-- **PDF report** mensile/annuale con grafici — v2.0
-- **Google Sheets** — v1.5: lo scope OAuth `spreadsheets` è classificato "sensitive" da Google e richiede la verifica dell'app; rinviarlo toglie questa frizione dal percorso di release del MVP (il CSV si apre comunque in Sheets). Crea un nuovo foglio o aggiorna lo stesso (es. un foglio "Spese 2026" con un tab per mese):
+- **CSV** (separatore configurabile `,`/`;` - in Italia Excel si aspetta `;`), con export completo o filtrato
+- **Excel (.xlsx)** - v1.5
+- **PDF report** mensile/annuale con grafici - v2.0
+- **Google Sheets** - v1.5: lo scope OAuth `spreadsheets` è classificato "sensitive" da Google e richiede la verifica dell'app; rinviarlo toglie questa frizione dal percorso di release del MVP (il CSV si apre comunque in Sheets). Crea un nuovo foglio o aggiorna lo stesso (es. un foglio "Spese 2026" con un tab per mese):
 
 | Data | Tipo | Categoria | Account | Descrizione | Importo | Valuta | Tag |
 |------|------|-----------|---------|-------------|---------|--------|-----|
@@ -454,7 +454,7 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 
 - restore da backup Google Drive
 - restore da file di backup manuale (`.json`, stesso formato del backup Drive)
-- **import CSV** con wizard di mappatura colonne (fondamentale per chi migra da altre app: Money Manager, Wallet, fogli Excel personali) — v1.5
+- **import CSV** con wizard di mappatura colonne (fondamentale per chi migra da altre app: Money Manager, Wallet, fogli Excel personali) - v1.5
 
 ---
 
@@ -463,7 +463,7 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 - dati solo in locale; nessuna telemetria di terze parti nel MVP (eventuali crash report solo opt-in)
 - **PIN lock** (v1.5)
 - **sblocco biometrico** via `BiometricPrompt` (v1.5)
-- oscuramento del contenuto nelle app recenti (`FLAG_SECURE`, opzionale) — v1.5
+- oscuramento del contenuto nelle app recenti (`FLAG_SECURE`, opzionale) - v1.5
 - **cifratura backup** (v2.0)
 - permessi Android richiesti: praticamente nessuno (niente contatti, niente posizione, niente SMS)
 
@@ -475,12 +475,12 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 - font scaling rispettato (layout testati fino a 200%)
 - TalkBack: contentDescription su ogni elemento interattivo, semantica Compose curata
 - riduzione animazioni se impostata a sistema
-- alto contrasto e non affidarsi solo al colore (es. spese/entrate distinte anche da segno e icona, non solo rosso/verde — importante per daltonici)
+- alto contrasto e non affidarsi solo al colore (es. spese/entrate distinte anche da segno e icona, non solo rosso/verde - importante per daltonici)
 - touch target ≥ 48dp
 
 ---
 
-# UI / UX — Principi
+# UI / UX - Principi
 
 - **zero frizione**: inserire una spesa è l'azione più frequente, va ottimizzata sopra ogni cosa
 - massimo 2–3 tap per registrare un movimento
@@ -522,7 +522,7 @@ Linee guida:
 # Librerie
 
 - Jetpack Compose (BOM) + Material 3
-- Navigation 3 (`androidx.navigation3` — runtime + ui)
+- Navigation 3 (`androidx.navigation3` - runtime + ui)
 - Room (+ KSP)
 - DataStore Preferences
 - Hilt
@@ -533,11 +533,11 @@ Linee guida:
 - Google Drive REST API + Credential Manager (solo feature backup)
 - Test: JUnit5 per gli unit test JVM, JUnit4 per test strumentati e Compose UI Test (requisito delle rule Compose), Turbine (Flow), MockK, Room in-memory
 
-Nota: nessuna libreria di image loading, in nessuna versione — scelta deliberata: l'app non gestisce immagini vere, le icone sono risorse vettoriali locali renderizzate nativamente da Compose. Da rivalutare solo se una feature futura introducesse immagini reali (es. allegati fotografici alle spese, come la foto dello scontrino).
+Nota: nessuna libreria di image loading, in nessuna versione - scelta deliberata: l'app non gestisce immagini vere, le icone sono risorse vettoriali locali renderizzate nativamente da Compose. Da rivalutare solo se una feature futura introducesse immagini reali (es. allegati fotografici alle spese, come la foto dello scontrino).
 
 ---
 
-# Roadmap (sintesi — dettaglio in PLANNING.md)
+# Roadmap (sintesi - dettaglio in PLANNING.md)
 
 ## v1.0 (MVP)
 
