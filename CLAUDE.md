@@ -1,0 +1,51 @@
+# CLAUDE.md
+
+**Saldo** — app Android (Kotlin + Compose) di gestione spese personali, offline-first e privacy-first.
+
+## Documenti di riferimento
+
+- **VISION.md** (root): cosa è il prodotto e perché. Consultala prima di prendere decisioni di prodotto/UX.
+- **PLANNING.md** (root): roadmap a fasi con checkbox e ADR (decisioni architetturali). È la fonte di verità sullo stato di avanzamento.
+  - Quando completi un task, **spunta la checkbox** corrispondente.
+  - Bug trovati → aggiungili in "Bug conosciuti" (spunta al fix, con riferimento al commit).
+  - Idee/spunti emersi → "Note e appunti". Non implementarli senza chiedere.
+- Rispetta gli ADR in PLANNING.md. Se un ADR va cambiato, proponilo e motivalo prima, non aggirarlo.
+- **`devlog/`**: registro storico di *cosa è successo* (lavoro completato e decisioni prese). File attivo `devlog/devlog.md`, voce più recente in alto; regole e template in `devlog/README.md` (non modificare quel file). Aggiungi una voce datata al completamento di uno step o di una fase: cosa è stato implementato, come è stato verificato (test eseguiti, device usato), decisioni rilevanti o problemi incontrati.
+- **`README.md` sempre aggiornato**: alla fine di ogni implementazione rileggi `README.md` e aggiornalo se la modifica tocca qualcosa di visibile all'utente o qualcosa che vi è descritto. Se non serve alcun aggiornamento, nessuna azione.
+
+## Regole di dominio (non negoziabili)
+
+- **Importi**: `Long` in unità minori (centesimi) nel DB → `BigDecimal` nel dominio → `String` localizzata solo nella UI. **Mai Float/Double per denaro**, mai aritmetica monetaria nella UI. La scale dipende dalla valuta (`Currency.getDefaultFractionDigits()`).
+- Tipi movimento: `EXPENSE`, `INCOME`, `TRANSFER`, `ADJUSTMENT`.
+- `TRANSFER` e `ADJUSTMENT` sono **sempre esclusi** dalle statistiche, a livello di query.
+- Un trasferimento è **un singolo record** con `fromAccountId`/`toAccountId`, mai due movimenti.
+- Il saldo di un account è **calcolato** (`initialBalance + Σ movimenti`), mai denormalizzato/salvato.
+- Offline-first: nessuna funzione core deve richiedere rete o account. Rete solo per backup/export opzionali.
+
+## Stack e vincoli tecnici
+
+- **applicationId: `com.callbackdev.saldo`** (brand: Callback Dev). Tutti i package del codice vivono sotto `com.callbackdev.saldo.*`. Non cambiarlo mai: è immutabile dopo la pubblicazione su Play Store.
+- Kotlin 100%, Jetpack Compose + Material 3 (dynamic color, sempre disponibile), minSDK 33, target ultimo stabile.
+- Room + KSP (mai KAPT), Hilt, Coroutines/Flow, DataStore Preferences, **Navigation 3** (`androidx.navigation3`, stabile da novembre 2025) — non Navigation Compose/Nav2, WorkManager, Vico per i grafici.
+- Navigation 3 è recente: **non andare a memoria sulle API** (le alpha differiscono dalla stabile). In caso di dubbi consulta la documentazione ufficiale (https://developer.android.com/guide/navigation/navigation-3) e il repo delle recipes ufficiali. Pattern base: route come `NavKey`, back stack con `rememberNavBackStack`, destinazioni in `entryProvider`, rendering con `NavDisplay`.
+- Dipendenze solo via Version Catalog (`libs.versions.toml`). **Non aggiungere nuove librerie senza chiedere.**
+- Package-by-feature nel modulo `:app`: `core/{database,designsystem,common,domain}` + `feature/*`.
+- La UI osserva Flow dal database (single source of truth); UI state immutabile nei ViewModel.
+- Use Case **solo dove c'è logica di dominio reale** (ricorrenze, rettifiche saldo, statistiche, rimborsi, backup); per il CRUD banale il ViewModel usa direttamente il Repository. Non creare use case passacarte.
+- Test: JUnit5 per unit test JVM; JUnit4 per test strumentati e Compose UI Test (le rule Compose lo richiedono).
+- Date: `Instant` UTC + offset salvato.
+- Migration Room sempre esplicite e testate; **mai** `fallbackToDestructiveMigration`.
+
+## Convenzioni
+
+- Codice, identificatori e commit in **inglese**; documentazione e stringhe utente in **italiano + inglese**.
+- Nessuna stringa hardcoded: tutto in `strings.xml` (values + values-it) fin da subito.
+- Commit: Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`).
+- Accessibilità: contentDescription sugli elementi interattivi; spese/entrate distinte anche da segno/icona, non solo dal colore.
+- Se esistono mockup in `docs/design/`, usali come **riferimento di layout e gerarchia** per le schermate corrispondenti — non come spec al pixel. Implementa sempre con componenti Material 3; non tradurre né importare mai HTML/CSS/JS provenienti dai mockup.
+
+## Qualità e verifica
+
+- Prima di considerare concluso un task: `./gradlew assembleDebug testDebugUnitTest lint` deve passare.
+- Unit test obbligatori per: mapper importi, motore ricorrenze (mesi corti, idempotenza, catch-up), calcolo saldi, round-trip backup export→import.
+- Non introdurre regressioni sui saldi: se tocchi query o mapper, riesegui i test relativi.

@@ -1,0 +1,590 @@
+# Saldo
+
+> Documento di visione del prodotto. Descrive **cosa** è l'app, **per chi** e **perché**.
+> Il piano di implementazione dettagliato è in [PLANNING.md](./PLANNING.md).
+
+---
+
+## Identità del progetto
+
+> **Un'app Android moderna, offline-first e privacy-first che aiuta l'utente a monitorare le proprie spese, mantenere sotto controllo il saldo dei propri account e comprendere come vengono utilizzati i propri soldi — senza trasformarsi in un'app di home banking o di gestione patrimoniale.**
+
+L'obiettivo non è sostituire la banca, ma offrire **consapevolezza finanziaria quotidiana**.
+
+### Filosofia
+
+L'utente deve capire subito:
+
+> "Questa app mi aiuta a controllare dove finiscono i miei soldi."
+
+Non:
+
+> "Questa app sostituisce la banca."
+
+### Il target
+
+L'utente tipo è una persona che:
+
+- vuole sapere quanto spende e in cosa, senza fatica
+- ha più "contenitori" di denaro (conto, carta, contanti, PayPal, Revolut)
+- non si fida di dare le credenziali bancarie ad app di terze parti (niente open banking / aggregazione conti)
+- vuole inserire una spesa in meno di 5 secondi
+- vuole che i dati restino suoi, sul suo telefono
+
+---
+
+# Vision del prodotto
+
+L'app è un **Expense Tracker evoluto**, non un sistema bancario.
+
+**Si concentra su:**
+
+- tracciamento spese e entrate (inserimento manuale, velocissimo)
+- saldo aggiornato per ogni account e saldo totale
+- trasferimenti tra account
+- ricorrenze e abbonamenti
+- analisi semplice e immediata delle abitudini di spesa
+
+**Non include (per scelta, non per limite):**
+
+- collegamento automatico ai conti bancari (open banking)
+- investimenti, trading, crypto
+- gestione patrimoniale complessa (net worth, asset, immobili)
+- prestiti e ammortamenti
+- funzioni social o condivisione multi-utente (valutabile molto in là)
+
+**Principi non negoziabili:**
+
+- **Offline-first**: ogni funzione core funziona senza rete
+- **Privacy-first**: nessun dato lascia il dispositivo senza azione esplicita dell'utente
+- **Zero backend obbligatorio**: nessun server proprietario
+- **Nessun account obbligatorio**: l'account Google serve solo per backup/export opzionali
+- **Zero frizione**: registrare una spesa deve richiedere 2–3 tap
+
+---
+
+# Piattaforma e stack tecnico
+
+- **Android only** (inizialmente) — min SDK 33 (Android 13), target SDK sempre l'ultimo stabile. Scelta deliberata: niente supporto a device legacy, niente code path duplicati (dynamic color e `POST_NOTIFICATIONS` sempre disponibili)
+- **Kotlin** (100%, no Java)
+- **Jetpack Compose** con **Material 3 / Material You** (dynamic color sempre disponibile grazie a min SDK 33, nessuna palette di fallback necessaria)
+- **Room** per la persistenza
+- **DataStore (Preferences)** per le impostazioni
+- **Kotlin Coroutines + Flow** per reattività
+- **Architettura MVVM + Use Cases + Repository** (vedi sezione Architettura)
+- **Hilt** per dependency injection
+- **KSP** (non KAPT) per Room e Hilt
+- **Version Catalog** (`libs.versions.toml`) per la gestione delle dipendenze
+
+---
+
+# Modello dati concettuale
+
+## Transaction (Movimento)
+
+Ogni movimento è di uno di questi tipi:
+
+| Tipo | Effetto sul saldo | Ha categoria | Compare nelle statistiche |
+|------|------------------|--------------|---------------------------|
+| **Spesa** (EXPENSE) | riduce un account | sì | sì |
+| **Entrata** (INCOME) | aumenta un account | sì | sì |
+| **Trasferimento** (TRANSFER) | sposta fondi tra due account | no | no (mai) |
+| **Rettifica saldo** (ADJUSTMENT) | allinea il saldo al valore reale | no | no (di default) |
+
+Campi:
+
+- **importo**: `BigDecimal` nel dominio; **persistito come `Long` in unità minori (centesimi)** nel database, poiché Room non supporta `BigDecimal` nativamente. Questo garantisce precisione assoluta ed evita gli errori tipici di float/double.
+- **valuta**: codice ISO 4217 (`EUR`, `USD`, …), salvata per ogni movimento
+- **data/ora**: `Instant` UTC + timezone del dispositivo al momento dell'inserimento (per raggruppamenti giornalieri corretti anche in viaggio)
+- **categoria**: solo per spese/entrate
+- **account**: obbligatorio (per i trasferimenti: account di origine + destinazione)
+- **descrizione**: testo libero, opzionale
+- **tag**: zero o più, opzionali
+- **flag "escludi dalle statistiche"**: per casi particolari (es. anticipo per amici che verrà rimborsato)
+- **riferimento alla ricorrenza**: se il movimento è stato generato da una regola ricorrente
+- **note**: campo lungo opzionale
+
+### Rimborsi
+
+Un rimborso (es. un reso Amazon, un amico che restituisce la cena) **non è un'entrata "vera"**: gonfierebbe le statistiche di income. Modellazione:
+
+- il rimborso è un movimento di tipo entrata **collegato opzionalmente alla spesa originale**
+- nelle statistiche, il rimborso riduce la spesa della categoria di origine invece di comparire come entrata
+
+```text
+15/03  Ristorante        -60,00 €   (categoria: Ristorante)
+16/03  Rimborso amici    +40,00 €   (collegato → riduce Ristorante a -20,00 €)
+```
+
+Per il MVP è accettabile una versione semplificata (entrata con flag "rimborso" e stessa categoria della spesa); il collegamento esplicito può arrivare dopo.
+
+---
+
+## Account
+
+Un **Account** rappresenta il luogo dove si trovano i soldi.
+
+Esempi: Conto Corrente Intesa, Conto Fineco, Carta Visa, Carta Mastercard, PayPal, Revolut, Contanti, Buoni pasto.
+
+Campi:
+
+- nome
+- tipo (conto corrente, carta, contanti, wallet digitale, altro) — solo a fini di icona/raggruppamento
+- valuta principale dell'account
+- **saldo iniziale** (impostato alla creazione: il saldo corrente è sempre `saldo iniziale + Σ movimenti`)
+- colore e icona
+- **incluso nel saldo totale** (sì/no — es. un conto cointestato che si vuole tracciare ma non sommare)
+- **archiviato** (sì/no)
+
+### Saldo iniziale e rettifica saldo (fondamentale)
+
+È la funzione che tiene in vita un expense tracker nel tempo. La realtà è che l'utente dimenticherà dei movimenti e il saldo dell'app divergerà da quello reale. Deve poter dire:
+
+> "Il saldo reale di questo account oggi è 1.312,45 €"
+
+e l'app crea automaticamente un movimento di tipo **Rettifica** con la differenza, senza inquinare le statistiche di spesa. Senza questa funzione, dopo 2 mesi l'app diventa inaffidabile e viene abbandonata.
+
+### Account archiviati
+
+Un account chiuso (es. vecchia carta prepagata) non si elimina: si **archivia**. I movimenti storici restano visibili nelle statistiche, ma l'account sparisce dai selettori e dal saldo totale.
+
+### Trasferimenti tra Account
+
+Un trasferimento **non è** una spesa né un'entrata. Serve solo a spostare fondi:
+
+```text
+Conto Corrente → Carta Visa     200,00 €
+Contanti → Conto Corrente        50,00 €
+```
+
+Regole:
+
+- non ha categoria
+- non compare **mai** nelle statistiche di spesa/entrata
+- è un singolo record con `fromAccountId` e `toAccountId` (non due movimenti separati: evita disallineamenti)
+- eventuale **commissione di trasferimento** (es. prelievo ATM con fee): modellabile come spesa separata collegata (post-MVP), per ora l'utente registra la fee a mano
+- trasferimenti tra account in valute diverse: nel MVP l'utente inserisce entrambi gli importi (quanto esce e quanto entra); la conversione automatica è una feature futura
+
+Questo richiede supporto architetturale già in fase iniziale (è nel data model dal giorno 1).
+
+---
+
+## Categorie
+
+Set predefinito alla prima apertura (personalizzabile e cancellabile):
+
+**Spese:** Casa, Affitto/Mutuo, Spesa alimentare, Ristoranti & Bar, Trasporti, Auto & Carburante, Salute, Shopping, Viaggi, Intrattenimento, Abbonamenti, Bollette & Utenze, Istruzione, Regali fatti, Tasse, Altro
+
+**Entrate:** Stipendio, Freelance, Regali ricevuti, Rimborsi, Altro
+
+Ogni categoria ha:
+
+- nome
+- colore (da palette predefinita, per coerenza visiva nei grafici)
+- icona (da set Material Symbols)
+- tipo (spesa / entrata / entrambi)
+
+Note di design:
+
+- **niente sottocategorie nel MVP**: i tag coprono il 90% del bisogno con molta meno complessità UI. Rivalutare in v2.0 se emergono richieste reali.
+- una categoria eliminata non elimina i movimenti: chiede a quale categoria riassegnarli (o "Altro")
+
+---
+
+# Dashboard "Oggi" (CORE FEATURE)
+
+## Obiettivo
+
+Fornire in **5 secondi** una visione completa della situazione finanziaria, senza tap.
+
+Gerarchia visiva (dall'alto):
+
+### 1. Saldo totale
+
+Somma di tutti gli account inclusi nel totale, nella valuta principale:
+
+```text
+Saldo totale: 2.450,00 €
+▸ Conto Intesa   1.800,00 €
+▸ Carta Visa       420,00 €
+▸ Contanti         230,00 €
+```
+
+(dettaglio account espandibile con un tap)
+
+### 2. Oggi
+
+```text
+Spese oggi:    -18,90 €
+Entrate oggi:   +0,00 €
+Netto oggi:    -18,90 €
+```
+
+### 3. Mese corrente
+
+```text
+Spese mese:    -1.230,00 €
+Entrate mese:  +2.000,00 €
+Saldo mese:      +770,00 €
+```
+
+Con mini-indicatore di confronto rispetto allo stesso giorno del mese precedente ("a questo punto del mese scorso avevi speso 1.410 €").
+
+### 4. Abbonamenti / ricorrenze del mese
+
+```text
+Abbonamenti attivi questo mese: 47,97 €
+Prossimo: Netflix -12,99 € il 07/07
+```
+
+### 5. Budget (se attivo — v1.5)
+
+```text
+Budget mese: 320,00 € rimanenti su 1.500,00 €
+█████████░░░░  79%
+```
+
+### 6. Ultimi movimenti (5–7)
+
+```text
+Supermercato Esselunga   -45,00 €   Spesa · Carta Visa
+Stipendio             +2.000,00 €   Stipendio · Conto Intesa
+Netflix                  -12,99 €   Abbonamenti · Carta Visa  ↻
+Benzina                  -30,00 €   Auto · Contanti
+```
+
+Il simbolo ↻ indica un movimento generato da una ricorrenza.
+
+### FAB / Quick Actions
+
+Floating Action Button sempre visibile con tre azioni:
+
+- ➕ Aggiungi spesa (azione primaria, un tap)
+- ➕ Aggiungi entrata
+- ⇄ Aggiungi trasferimento
+
+**Requisito UX:** registrare una spesa "tipica" (importo + categoria, account di default) deve richiedere **massimo 2–3 tap più la digitazione dell'importo**. La schermata di inserimento apre direttamente il tastierino numerico.
+
+---
+
+# Ricorrenze (v1.0)
+
+Le spese e le entrate possono essere ricorrenti. È la killer feature per gli abbonamenti.
+
+### Esempi
+
+```text
+Netflix     -12,99 € / mese, il giorno 7
+Spotify      -9,99 € / mese, il giorno 15
+Affitto    -750,00 € / mese, il giorno 1
+Stipendio +2.000,00 € / mese, il giorno 27
+Assicurazione auto  -320,00 € / 6 mesi
+```
+
+### Regola di ricorrenza
+
+- frequenza: giornaliera, settimanale, mensile, bimestrale, trimestrale, semestrale, annuale
+- giorno di riferimento (con gestione dei mesi corti: "il 31" → ultimo giorno del mese)
+- data di inizio e data di fine opzionale (o numero di ripetizioni)
+- importo **fisso** oppure **variabile** (es. bolletta luce: l'app crea il movimento in stato "da confermare" e chiede l'importo)
+- modalità di registrazione, configurabile per regola:
+  - **automatica** (default): il movimento viene creato alla data prevista, con notifica informativa
+  - **con conferma**: notifica "È arrivato l'addebito Netflix?" → conferma/modifica/salta
+
+### Comportamento tecnico
+
+- generazione affidata a **WorkManager** (job periodico + catch-up all'apertura dell'app, per coprire i casi in cui il device era spento)
+- modificare una regola non altera i movimenti già generati
+- eliminare una regola chiede: "eliminare anche i movimenti futuri già generati?"
+
+### Vista abbonamenti
+
+Schermata dedicata che risponde a:
+
+> "Questo mese hai 47,97 € di abbonamenti attivi"
+
+con lista, costo mensile equivalente (un abbonamento annuale da 120 € è mostrato anche come "10 €/mese"), e totale annuo proiettato. È il tipo di insight che fa dire "non sapevo di spendere così tanto".
+
+---
+
+# Ricerca e filtri
+
+Ricerca full-text sulla descrizione + filtri combinabili:
+
+- intervallo di date (con preset: oggi, settimana, mese, anno, personalizzato)
+- categoria (multipla)
+- account (multiplo)
+- tipo (spesa / entrata / trasferimento)
+- intervallo di importo
+- tag
+- solo ricorrenti / solo manuali
+
+I filtri attivi sono visibili come chip rimovibili. Il risultato mostra sempre il **totale filtrato** ("47 movimenti, -1.238,50 €").
+
+---
+
+# Statistiche
+
+Grafici realizzati con **Vico** (Compose-native):
+
+- **spese per categoria**: grafico a torta/anello + lista ordinata con percentuali, per mese/anno/periodo custom
+- **trend mensile**: barre delle spese degli ultimi 12 mesi
+- **entrate vs uscite**: barre affiancate o cascata mensile
+- **andamento saldo**: linea del saldo totale nel tempo (ricostruito dai movimenti)
+- **spese per account**
+- tap su una fetta/barra → drill-down alla lista dei movimenti corrispondenti (riusa il sistema di filtri)
+
+Le statistiche **escludono sempre** trasferimenti e rettifiche, e trattano i rimborsi come riduzione di spesa (vedi sezione Rimborsi).
+
+---
+
+# Budget (v1.5)
+
+Limiti di spesa mensili, globali o per categoria:
+
+```text
+Categoria: Ristoranti    Budget: 200 €   Speso: 180 €   ████████░░ 90%  🟡
+Categoria: Spesa         Budget: 400 €   Speso: 420 €   ██████████ 105% 🔴
+```
+
+Indicatori: 🟢 sotto budget (< 80%) · 🟡 vicino al limite (80–100%) · 🔴 superato.
+
+Comportamento:
+
+- il periodo di budget è il mese di calendario (configurabile in futuro: es. "dal 27 al 27" per chi ragiona per stipendio)
+- notifica opzionale all'80% e al superamento
+- card riassuntiva in dashboard
+
+---
+
+# Obiettivi di risparmio (v2.0)
+
+L'utente crea obiettivi finanziari alimentati manualmente o collegati a un account dedicato:
+
+```text
+🏖 Vacanze     Target: 2.000 €   Risparmiato: 1.450 €   ███████░░░ 72%
+💻 Nuovo PC    Target: 1.200 €   Risparmiato:   300 €   ██░░░░░░░░ 25%
+```
+
+Con data obiettivo opzionale e suggerimento del risparmio mensile necessario ("ti servono 110 €/mese per arrivare a giugno").
+
+---
+
+# Multi-valuta
+
+Supporto completo dal MVP a livello di **dato**: ogni movimento conserva importo e valuta originali, ogni account ha la sua valuta.
+
+- valuta principale dell'app scelta nell'onboarding (default dalla locale)
+- nel MVP: gli account in valuta diversa mostrano il saldo nella loro valuta; il saldo totale somma solo gli account nella valuta principale (gli altri sono elencati a parte)
+- **Conversione automatica (FUTURE, v2.0)**: tassi di cambio aggiornati (con cache offline e indicazione "stimato"), controvalore nella valuta principale ovunque:
+
+```text
+125,00 USD ≈ 115,30 € (tasso del 02/07, stimato)
+```
+
+---
+
+# Internazionalizzazione
+
+- Italiano + Inglese dal v1.0
+- tutte le stringhe in `strings.xml` dal primo giorno (nessuna stringa hardcoded)
+- formattazione di numeri, valute e date tramite le API di localizzazione (`NumberFormat`, `java.time`), mai formattazione manuale
+- struttura pronta per nuove lingue
+
+---
+
+# Backup e sincronizzazione
+
+## Strategia principale: Google Drive (App Data Folder)
+
+Backup automatico su **Google Drive → App Data Folder** (spazio nascosto e privato dell'app):
+
+```text
+Drive
+└── App Data
+    ├── saldo-backup-2026-07-03.json   (ultimo)
+    └── saldo-backup-2026-06-26.json   (precedente, rotazione)
+```
+
+Caratteristiche:
+
+- invisibile all'utente nel suo Drive, privato dell'app
+- backup automatico periodico via WorkManager (solo Wi-Fi, configurabile)
+- restore guidato al primo avvio su nuovo device
+- rotazione: mantieni gli ultimi N backup (default 5)
+- nessun backend proprietario
+
+Note tecniche importanti:
+
+- la vecchia Drive Android API è deprecata: si usa la **Google Drive REST API** con **Credential Manager / Google Sign-In** e scope `drive.appdata`
+- richiede un account Google, **ma resta 100% opzionale**: l'app è pienamente funzionante senza (coerente con "nessun account obbligatorio")
+- formato: **export JSON versionato** (decisione già presa, ADR 5 in PLANNING.md) — più robusto di uno snapshot del file `.db` tra versioni diverse dello schema Room; il restore è un import
+- modello **single-device con restore**, non sync multi-device in tempo reale (fuori scope: eviterebbe di dover risolvere conflitti)
+- **cifratura del backup** con passphrase utente: v2.0
+
+## Backup manuale su file (v1.0)
+
+In parallelo al backup automatico su Drive, l'utente può esportare in qualsiasi momento un **backup completo su file**, senza alcun account:
+
+- **stesso formato JSON versionato** del backup Drive: un solo code path, e il restore funziona indistintamente da entrambe le fonti
+- salvataggio tramite **Storage Access Framework** (`ACTION_CREATE_DOCUMENT`): l'utente sceglie la destinazione dal picker di sistema (memoria locale, Drive, qualunque provider di documenti) e l'app **non richiede permessi di storage**
+- nome file con data: `saldo-backup-2026-07-05.json`
+- avvertenza in UI: il file non è cifrato fino alla v2.0 (cifratura backup), quindi va custodito con attenzione
+
+Questa opzione rafforza i principi del progetto: backup completo possibile **senza account Google** e piena portabilità dei dati — il file può essere copiato a mano su Google Drive, NAS, Syncthing o qualsiasi altro servizio.
+
+---
+
+# Export
+
+Formati supportati (v1.0: CSV; Google Sheets ed Excel: v1.5; PDF: v2.0):
+
+- **CSV** (separatore configurabile `,`/`;` — in Italia Excel si aspetta `;`), con export completo o filtrato
+- **Excel (.xlsx)** — v1.5
+- **PDF report** mensile/annuale con grafici — v2.0
+- **Google Sheets** — v1.5: lo scope OAuth `spreadsheets` è classificato "sensitive" da Google e richiede la verifica dell'app; rinviarlo toglie questa frizione dal percorso di release del MVP (il CSV si apre comunque in Sheets). Crea un nuovo foglio o aggiorna lo stesso (es. un foglio "Spese 2026" con un tab per mese):
+
+| Data | Tipo | Categoria | Account | Descrizione | Importo | Valuta | Tag |
+|------|------|-----------|---------|-------------|---------|--------|-----|
+| 05/01/2026 | Spesa | Spesa alimentare | Carta Visa | Supermercato | -45,00 | EUR | |
+
+L'export rispetta i filtri attivi ("esporta questa vista").
+
+# Import
+
+- restore da backup Google Drive
+- restore da file di backup manuale (`.json`, stesso formato del backup Drive)
+- **import CSV** con wizard di mappatura colonne (fondamentale per chi migra da altre app: Money Manager, Wallet, fogli Excel personali) — v1.5
+
+---
+
+# Sicurezza e privacy
+
+- dati solo in locale; nessuna telemetria di terze parti nel MVP (eventuali crash report solo opt-in)
+- **PIN lock** (v1.5)
+- **sblocco biometrico** via `BiometricPrompt` (v1.5)
+- oscuramento del contenuto nelle app recenti (`FLAG_SECURE`, opzionale) — v1.5
+- **cifratura backup** (v2.0)
+- permessi Android richiesti: praticamente nessuno (niente contatti, niente posizione, niente SMS)
+
+---
+
+# Accessibilità
+
+- Material You / dynamic color con tema chiaro/scuro/sistema
+- font scaling rispettato (layout testati fino a 200%)
+- TalkBack: contentDescription su ogni elemento interattivo, semantica Compose curata
+- riduzione animazioni se impostata a sistema
+- alto contrasto e non affidarsi solo al colore (es. spese/entrate distinte anche da segno e icona, non solo rosso/verde — importante per daltonici)
+- touch target ≥ 48dp
+
+---
+
+# UI / UX — Principi
+
+- **zero frizione**: inserire una spesa è l'azione più frequente, va ottimizzata sopra ogni cosa
+- massimo 2–3 tap per registrare un movimento
+- dashboard immediata, leggibile in 5 secondi
+- valori monetari sempre formattati secondo locale, sempre con segno esplicito
+- gesti rapidi sulla lista movimenti: swipe per eliminare (con undo via Snackbar), tap per modificare
+- undo ovunque sia possibile invece di dialog di conferma
+- empty state curati (prima apertura, nessun movimento, ecc.) con call-to-action
+
+# Widget (v1.5)
+
+- widget saldo totale
+- widget spese del giorno
+- widget "aggiunta rapida" (apre direttamente l'inserimento spesa)
+
+---
+
+# Architettura
+
+```text
+UI (Compose + Navigation 3)
+        ↓
+   ViewModel (StateFlow → UI State immutabile)
+        ↓
+   Use Cases (logica di dominio pura, testabile)
+        ↓
+   Repository (interfacce nel dominio, implementazioni nel data layer)
+        ↓
+ Room DB  ·  DataStore  ·  Backup/Export layer (Drive, CSV, Sheets)
+```
+
+Linee guida:
+
+- moduli o package-by-feature: `core/` (database, design system, common) + `feature/` (dashboard, transactions, accounts, categories, recurring, stats, settings, backup)
+- il dominio non dipende da Android (Use Cases testabili con unit test puri)
+- single source of truth: la UI osserva solo Flow dal database
+- gli importi viaggiano come `BigDecimal` nel dominio, `Long` (centesimi) nel DB, `String` formattata solo nella UI
+
+# Librerie
+
+- Jetpack Compose (BOM) + Material 3
+- Navigation 3 (`androidx.navigation3` — runtime + ui)
+- Room (+ KSP)
+- DataStore Preferences
+- Hilt
+- Kotlin Coroutines / Flow
+- WorkManager
+- **Vico** (grafici Compose-native)
+- kotlinx-serialization (export/backup JSON)
+- Google Drive REST API + Credential Manager (solo feature backup)
+- Test: JUnit5 per gli unit test JVM, JUnit4 per test strumentati e Compose UI Test (requisito delle rule Compose), Turbine (Flow), MockK, Room in-memory
+
+Nota: nessuna libreria di image loading, in nessuna versione — scelta deliberata: l'app non gestisce immagini vere, le icone sono risorse vettoriali locali renderizzate nativamente da Compose. Da rivalutare solo se una feature futura introducesse immagini reali (es. allegati fotografici alle spese, come la foto dello scontrino).
+
+---
+
+# Roadmap (sintesi — dettaglio in PLANNING.md)
+
+## v1.0 (MVP)
+
+- Movimenti: spese, entrate, trasferimenti, rettifiche saldo
+- Account (con saldo iniziale, archiviazione)
+- Dashboard "Oggi"
+- Categorie personalizzabili
+- **Ricorrenze e abbonamenti** (inclusa vista abbonamenti)
+- Ricerca e filtri
+- Statistiche base (categoria, trend mensile, entrate vs uscite)
+- Multi-valuta a livello dato
+- Backup Google Drive (App Data Folder) + backup manuale su file
+- Export CSV
+- IT + EN
+
+## v1.5
+
+- Budget per categoria e globale
+- PIN + biometria + FLAG_SECURE
+- Widget home screen
+- Import CSV con mappatura colonne
+- Export Google Sheets + Excel (.xlsx)
+- Miglioramenti UX dal feedback
+
+## v2.0
+
+- Obiettivi di risparmio
+- Conversione valuta automatica
+- Export PDF avanzato con grafici
+- Cifratura backup
+- Analisi avanzate (pattern di spesa, confronti anno su anno)
+- Rimborsi collegati alla spesa originale
+- Commissioni sui trasferimenti
+
+---
+
+# Note finali
+
+Questa app è progettata per essere:
+
+- semplice ma potente
+- focalizzata sulla spesa, non sulla finanza complessa
+- immediata nell'uso quotidiano
+- affidabile nel tempo (rettifica saldo, ricorrenze robuste)
+- estendibile senza rifattorizzazioni radicali
+- completamente offline-first con sync opzionale
+
+Il focus rimane sempre:
+
+> **capire dove vanno i soldi, in modo chiaro e immediato.**
