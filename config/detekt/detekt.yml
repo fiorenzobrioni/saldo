@@ -22,3 +22,6 @@ complexity:
     ignoreAnnotated: ['Composable']
   LongParameterList:
     ignoreAnnotated: ['Composable']
+    # Room entities and their domain mirrors carry many columns; optional columns
+    # are expressed as parameters with default values, which we do not count.
+    ignoreDefaultParameters: true

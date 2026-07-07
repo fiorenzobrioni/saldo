@@ -52,18 +52,18 @@
 
 ## Fase 1 - Data layer (fondamenta)
 
-- [ ] Entity Room: `AccountEntity`, `CategoryEntity`, `TransactionEntity`, `TagEntity` + cross-ref, `RecurringRuleEntity`
-- [ ] Enum `TransactionType` (EXPENSE, INCOME, TRANSFER, ADJUSTMENT)
-- [ ] TypeConverter: Instant, enum
-- [ ] DAO con query fondamentali:
-  - [ ] saldo per account (`initialBalance + Σ`) come Flow
-  - [ ] saldo totale (solo account inclusi e non archiviati)
-  - [ ] movimenti per giorno/mese/intervallo
-  - [ ] aggregati per categoria (esclusi TRANSFER/ADJUSTMENT)
-- [ ] Modelli di dominio + mapper (centesimi ↔ BigDecimal)
-- [ ] Repository (interfacce dominio + implementazioni Room)
-- [ ] Seed categorie predefinite alla prima apertura (IT/EN in base alla locale)
-- [ ] Unit test: mapper, calcolo saldi, query aggregate (Room in-memory)
+- [x] Entity Room: `AccountEntity`, `CategoryEntity`, `TransactionEntity`, `TagEntity` + cross-ref, `RecurringRuleEntity`
+- [x] Enum `TransactionType` (EXPENSE, INCOME, TRANSFER, ADJUSTMENT)
+- [x] TypeConverter: enum (Instant e LocalDate salvati come `Long` epoch direttamente sulle entity)
+- [x] DAO con query fondamentali:
+  - [x] saldo per account (`initialBalance + Σ`) come Flow
+  - [x] saldo totale (solo account inclusi e non archiviati)
+  - [x] movimenti per giorno/mese/intervallo (query per intervallo `[start, end)`; giorno e mese sono intervalli calcolati dal chiamante)
+  - [x] aggregati per categoria (esclusi TRANSFER/ADJUSTMENT)
+- [x] Modelli di dominio + mapper (centesimi ↔ BigDecimal)
+- [x] Repository (interfacce dominio + implementazioni Room)
+- [x] Seed categorie predefinite alla prima apertura (IT/EN in base alla locale)
+- [x] Unit test: mapper, calcolo saldi, query aggregate (Room in-memory)
 
 ## Fase 2 - Account
 
