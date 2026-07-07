@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Flat wallet glyph: two cards peeking out from behind a bifold wallet body.
-    Multi-color by design (gold + coral cards, cream body) for a premium,
-    non-generic launcher icon; placeholder until final branding.
+    Themed/monochrome variant (Android 13+ "themed icons"): same silhouette as
+    ic_launcher_foreground, single white fill with alpha for layering since
+    the system applies its own tint at runtime.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -17,7 +17,8 @@
         android:translateX="28"
         android:translateY="23.5">
         <path
-            android:fillColor="#F5A623"
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.55"
             android:pathData="M4,0 H26 a4,4 0 0 1 4,4 V15 a4,4 0 0 1 -4,4 H4 a4,4 0 0 1 -4,-4 V4 a4,4 0 0 1 4,-4 Z" />
     </group>
 
@@ -28,15 +29,17 @@
         android:translateX="50"
         android:translateY="23.5">
         <path
-            android:fillColor="#FF6F61"
+            android:fillColor="#FFFFFF"
+            android:fillAlpha="0.55"
             android:pathData="M4,0 H26 a4,4 0 0 1 4,4 V15 a4,4 0 0 1 -4,4 H4 a4,4 0 0 1 -4,-4 V4 a4,4 0 0 1 4,-4 Z" />
     </group>
 
     <path
-        android:fillColor="#FBF3E7"
+        android:fillColor="#FFFFFF"
         android:pathData="M33,35 H75 a8,8 0 0 1 8,8 V67 a8,8 0 0 1 -8,8 H33 a8,8 0 0 1 -8,-8 V43 a8,8 0 0 1 8,-8 Z" />
 
     <path
-        android:fillColor="#DCC7A3"
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.35"
         android:pathData="M33.5,48 H74.5 a1.5,1.5 0 0 1 1.5,1.5 V49.5 a1.5,1.5 0 0 1 -1.5,1.5 H33.5 a1.5,1.5 0 0 1 -1.5,-1.5 V49.5 a1.5,1.5 0 0 1 1.5,-1.5 Z" />
 </vector>
