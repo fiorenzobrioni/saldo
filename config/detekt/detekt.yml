@@ -1,0 +1,24 @@
+# Detekt configuration for Saldo.
+# Applied on top of the default config (buildUponDefaultConfig = true):
+# only deviations from the defaults are listed here.
+
+naming:
+  FunctionNaming:
+    # Composable functions use PascalCase by convention.
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    # Compose design tokens (e.g. SaldoTypography) use PascalCase.
+    constantPattern: '[A-Z][A-Za-z0-9]*|[A-Z][_A-Z0-9]*'
+
+style:
+  MagicNumber:
+    # Dp/sp literals inside composables are idiomatic.
+    ignoreAnnotated: ['Composable']
+  UnusedPrivateMember:
+    ignoreAnnotated: ['Preview']
+
+complexity:
+  LongMethod:
+    ignoreAnnotated: ['Composable']
+  LongParameterList:
+    ignoreAnnotated: ['Composable']
