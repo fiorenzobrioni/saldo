@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Startup theme only: Compose owns the UI once MainActivity sets content. -->
+    <style name="Theme.Saldo" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>

@@ -65,7 +65,7 @@ L'app è un **Expense Tracker evoluto**, non un sistema bancario.
 
 # Piattaforma e stack tecnico
 
-- **Android only** (inizialmente) - min SDK 33 (Android 13), target SDK sempre l'ultimo stabile. Scelta deliberata: niente supporto a device legacy, niente code path duplicati (dynamic color e `POST_NOTIFICATIONS` sempre disponibili)
+- **Android only** (inizialmente) - min SDK 33 (Android 13), target SDK fissato esplicitamente (attualmente 36) e aggiornato con chore dedicata (ADR 14 in PLANNING.md). Scelta deliberata: niente supporto a device legacy, niente code path duplicati (dynamic color e `POST_NOTIFICATIONS` sempre disponibili)
 - **Kotlin** (100%, no Java)
 - **Jetpack Compose** con **Material 3 / Material You** (dynamic color sempre disponibile grazie a min SDK 33, nessuna palette di fallback necessaria)
 - **Room** per la persistenza

@@ -43,7 +43,7 @@ Quando scrivi, modifichi o generi testo per i file di documentazione del reposit
 ## Stack e vincoli tecnici
 
 - **applicationId: `com.callbackdev.saldo`** (brand: Callback Dev). Tutti i package del codice vivono sotto `com.callbackdev.saldo.*`. Non cambiarlo mai: è immutabile dopo la pubblicazione su Play Store.
-- Kotlin 100%, Jetpack Compose + Material 3 (dynamic color, sempre disponibile), minSDK 33, target ultimo stabile.
+- Kotlin 100%, Jetpack Compose + Material 3 (dynamic color, sempre disponibile), minSDK 33, targetSdk/compileSdk fissati esplicitamente (attualmente 36). Non inseguire l'ultima versione: l'aggiornamento del targetSdk è una chore dedicata e testata (ADR 14 in PLANNING.md).
 - Room + KSP (mai KAPT), Hilt, Coroutines/Flow, DataStore Preferences, **Navigation 3** (`androidx.navigation3`, stabile da novembre 2025) - non Navigation Compose/Nav2, WorkManager, Vico per i grafici.
 - Navigation 3 è recente: **non andare a memoria sulle API** (le alpha differiscono dalla stabile). In caso di dubbi consulta la documentazione ufficiale (https://developer.android.com/guide/navigation/navigation-3) e il repo delle recipes ufficiali. Pattern base: route come `NavKey`, back stack con `rememberNavBackStack`, destinazioni in `entryProvider`, rendering con `NavDisplay`.
 - Dipendenze solo via Version Catalog (`libs.versions.toml`). **Non aggiungere nuove librerie senza chiedere.**
