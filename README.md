@@ -24,7 +24,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 ## Funzionalità (v1.0)
 
 - 📊 **Dashboard "Oggi"** - saldo totale, spese del giorno e del mese, ultimi movimenti: tutto in 5 secondi
-- 💸 **Movimenti** - spese, entrate e trasferimenti tra account, registrabili in 2–3 tap
+- 💸 **Movimenti** - spese, entrate e trasferimenti tra account, registrabili in 2-3 tap
 - 🏦 **Account multipli** - con saldo iniziale, rettifica saldo e archiviazione
 - 🔁 **Ricorrenze e abbonamenti** - registrazione automatica o con conferma, vista dedicata con totale mensile
 - 🏷️ **Categorie e tag personalizzabili**
@@ -43,18 +43,20 @@ In arrivo (v1.5 / v2.0): budget, PIN e biometria, widget, import CSV, export Goo
 | 🔌 **Offline-first** | ogni funzione core funziona senza rete |
 | 🔒 **Privacy-first** | nessun dato lascia il dispositivo senza azione esplicita; nessuna telemetria di terze parti |
 | 🚫 **Zero backend** | nessun server proprietario, nessun account obbligatorio |
-| ⚡ **Zero frizione** | registrare una spesa richiede al massimo 2–3 tap |
+| ⚡ **Zero frizione** | registrare una spesa richiede al massimo 2-3 tap |
 
 ## Stack tecnico
 
-- **Kotlin** 100% · **Jetpack Compose** + Material 3 (Material You, dynamic color)
-- **Room** (persistenza) · **DataStore** (impostazioni) · **Coroutines + Flow**
-- **MVVM + Use Cases + Repository** · **Hilt** (DI) · **KSP**
-- **WorkManager** (ricorrenze, backup) · **Vico** (grafici)
-- minSdk **33** (Android 13) · target SDK ultimo stabile
+- **Kotlin** 100%, **Jetpack Compose** + Material 3 (Material You, dynamic color)
+- **Navigation 3** (`androidx.navigation3`)
+- **Room** (persistenza), **DataStore** (impostazioni), **Coroutines + Flow**
+- **MVVM + Use Cases + Repository**, **Hilt** (DI), **KSP**
+- **WorkManager** (ricorrenze, backup), **Vico** (grafici)
+- minSdk **33** (Android 13), target SDK 36
+- Test: JUnit 5 (unit test JVM), JUnit 4 + Compose UI Test (strumentati), MockK, Turbine
 
 ```text
-UI (Compose) → ViewModel → Use Cases → Repository → Room DB · DataStore · Backup/Export
+UI (Compose) → ViewModel → Use Cases → Repository → Room DB - DataStore - Backup/Export
 ```
 
 Gli importi monetari sono gestiti come `Long` in centesimi nel database e `BigDecimal` nel dominio: nessun errore di arrotondamento, mai.
@@ -69,10 +71,29 @@ cd saldo
 ./gradlew assembleDebug
 ```
 
-Per eseguire i test:
+Verifica completa (build, unit test, lint, analisi statica):
 
 ```bash
-./gradlew testDebugUnitTest
+./gradlew assembleDebug testDebugUnitTest lint detekt
+```
+
+La CI (GitHub Actions) esegue gli stessi task su ogni push.
+
+## Struttura del progetto
+
+```text
+app/src/main/kotlin/com/callbackdev/saldo/
+├── core/
+│   ├── common/          # utility condivise
+│   ├── database/        # Room (da Fase 1)
+│   ├── designsystem/    # tema Material 3, componenti UI condivisi
+│   └── domain/          # modelli e logica di dominio (da Fase 1)
+├── feature/
+│   ├── dashboard/       # schermata "Oggi"
+│   ├── transactions/    # movimenti
+│   ├── stats/           # statistiche
+│   └── settings/        # impostazioni
+└── navigation/          # route NavKey, scaffold, bottom bar
 ```
 
 ## Documentazione di progetto

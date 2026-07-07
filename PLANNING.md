@@ -38,16 +38,16 @@
 
 ## Fase 0 - Setup progetto
 
-- [ ] Creazione progetto Android Studio (Kotlin, Compose, min SDK 33, target ultimo stabile, applicationId `com.callbackdev.saldo`)
-- [ ] Version Catalog (`libs.versions.toml`) con tutte le dipendenze
-- [ ] Setup Hilt + KSP
-- [ ] Struttura package-by-feature: `core/{database,designsystem,common,domain}` + `feature/*`
-- [ ] Tema Material 3: dynamic color, light/dark (min SDK 33: nessun fallback necessario)
-- [ ] Navigation 3: route come `NavKey`, back stack con `rememberNavBackStack`, `entryProvider` + `NavDisplay`; scaffold base (bottom bar: Dashboard, Movimenti, Statistiche, Impostazioni)
-- [ ] Setup test: JUnit5 per unit test JVM (plugin android-junit5), JUnit4 per strumentati e Compose UI Test, MockK, Turbine, Room in-memory
-- [ ] CI GitHub Actions: build + lint + unit test su ogni push
-- [ ] `.editorconfig`, ktlint o detekt
-- [ ] README con istruzioni di build
+- [x] Creazione progetto Android Studio (Kotlin, Compose, min SDK 33, target ultimo stabile, applicationId `com.callbackdev.saldo`)
+- [x] Version Catalog (`libs.versions.toml`) con tutte le dipendenze
+- [x] Setup Hilt + KSP
+- [x] Struttura package-by-feature: `core/{database,designsystem,common,domain}` + `feature/*`
+- [x] Tema Material 3: dynamic color, light/dark (min SDK 33: nessun fallback necessario)
+- [x] Navigation 3: route come `NavKey`, back stack con `rememberNavBackStack`, `entryProvider` + `NavDisplay`; scaffold base (bottom bar: Dashboard, Movimenti, Statistiche, Impostazioni)
+- [x] Setup test: JUnit5 per unit test JVM (plugin android-junit5), JUnit4 per strumentati e Compose UI Test, MockK, Turbine, Room in-memory (dipendenza `room-testing` nel catalog, si collega in Fase 1 insieme a Room)
+- [x] CI GitHub Actions: build + lint + unit test su ogni push
+- [x] `.editorconfig`, ktlint o detekt (scelto detekt)
+- [x] README con istruzioni di build
 
 ## Fase 1 - Data layer (fondamenta)
 
@@ -206,7 +206,7 @@
 
 > Idee, spunti e appunti raccolti durante lo sviluppo. Da smistare periodicamente nella roadmap.
 
-- 
+- Chore da pianificare: migrazione ad AGP 9.x + Gradle 9.1+ e compileSdk/targetSdk 37. Vincoli attuali (luglio 2026): Hilt 2.59+ richiede AGP 9; androidx core 1.19, lifecycle 2.11 e Compose BOM 2026.06 richiedono compileSdk 37 (AGP 9.1+). Fino ad allora restano fissati: AGP 8.13.2, Hilt 2.58, compileSdk/targetSdk 36, core-ktx 1.18.0, lifecycle 2.10.0, BOM 2026.02.01, activity-compose 1.12.4.
 
 # Bug conosciuti
 
