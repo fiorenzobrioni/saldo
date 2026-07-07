@@ -1,0 +1,163 @@
+package com.callbackdev.saldo.core.database
+
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.callbackdev.saldo.core.database.dao.AccountDao
+import com.callbackdev.saldo.core.database.dao.CategoryDao
+import com.callbackdev.saldo.core.database.dao.TransactionDao
+import com.callbackdev.saldo.core.database.entity.AccountEntity
+import com.callbackdev.saldo.core.database.entity.CategoryEntity
+import com.callbackdev.saldo.core.database.entity.TransactionEntity
+import com.callbackdev.saldo.core.domain.model.AccountType
+import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.domain.model.TransactionType
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/**
+ * Instrumented tests for the balance and aggregate SQL. They run on a device or
+ * emulator (Room needs SQLite); the money mapping is covered by JVM unit tests.
+ */
+@RunWith(AndroidJUnit4::class)
+class SaldoDatabaseTest {
+
+    private lateinit var database: SaldoDatabase
+    private lateinit var accountDao: AccountDao
+    private lateinit var categoryDao: CategoryDao
+    private lateinit var transactionDao: TransactionDao
+
+    @Before
+    fun setUp() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        database = Room.inMemoryDatabaseBuilder(context, SaldoDatabase::class.java)
+            .allowMainThreadQueries()
+            .build()
+        accountDao = database.accountDao()
+        categoryDao = database.categoryDao()
+        transactionDao = database.transactionDao()
+    }
+
+    @After
+    fun tearDown() {
+        database.close()
+    }
+
+    private fun account(
+        initialMinor: Long,
+        included: Boolean = true,
+        archived: Boolean = false,
+        currency: String = "EUR",
+    ) = AccountEntity(
+        name = "acc",
+        type = AccountType.CHECKING,
+        currency = currency,
+        initialBalanceMinor = initialMinor,
+        isIncludedInTotal = included,
+        isArchived = archived,
+    )
+
+    private fun movement(
+        type: TransactionType,
+        amountMinor: Long,
+        accountId: Long,
+        categoryId: Long? = null,
+        transferAccountId: Long? = null,
+        transferAmountMinor: Long? = null,
+        excluded: Boolean = false,
+        refund: Boolean = false,
+    ) = TransactionEntity(
+        type = type,
+        amountMinor = amountMinor,
+        currency = "EUR",
+        accountId = accountId,
+        timestampEpochMilli = 1_700_000_000_000L,
+        zoneOffsetSeconds = 0,
+        categoryId = categoryId,
+        transferAccountId = transferAccountId,
+        transferAmountMinor = transferAmountMinor,
+        transferCurrency = transferAccountId?.let { "EUR" },
+        isExcludedFromStats = excluded,
+        isRefund = refund,
+    )
+
+    @Test
+    fun accountBalanceSumsAllMovementTypes() = runBlocking {
+        val a = accountDao.insert(account(initialMinor = 10_000L))
+        val b = accountDao.insert(account(initialMinor = 0L))
+
+        transactionDao.insert(movement(TransactionType.EXPENSE, -4_500L, a))
+        transactionDao.insert(movement(TransactionType.INCOME, 2_000L, a))
+        transactionDao.insert(movement(TransactionType.ADJUSTMENT, 500L, a))
+        transactionDao.insert(
+            movement(TransactionType.TRANSFER, -3_000L, a, transferAccountId = b, transferAmountMinor = 3_000L),
+        )
+
+        assertEquals(5_000L, accountDao.observeBalance(a).first())
+        assertEquals(3_000L, accountDao.observeBalance(b).first())
+    }
+
+    @Test
+    fun totalBalanceExcludesArchivedAndNotIncludedAccounts() = runBlocking {
+        val a = accountDao.insert(account(initialMinor = 10_000L))
+        val b = accountDao.insert(account(initialMinor = 0L))
+        accountDao.insert(account(initialMinor = 100_000L, archived = true))
+        accountDao.insert(account(initialMinor = 50_000L, included = false))
+
+        transactionDao.insert(movement(TransactionType.EXPENSE, -4_500L, a))
+        transactionDao.insert(movement(TransactionType.INCOME, 2_000L, a))
+        transactionDao.insert(movement(TransactionType.ADJUSTMENT, 500L, a))
+        transactionDao.insert(
+            movement(TransactionType.TRANSFER, -3_000L, a, transferAccountId = b, transferAmountMinor = 3_000L),
+        )
+
+        assertEquals(8_000L, accountDao.observeTotalBalance("EUR").first())
+    }
+
+    @Test
+    fun categoryTotalsNetRefundsAndExcludeTransfersAdjustments() = runBlocking {
+        val a = accountDao.insert(account(initialMinor = 100_000L))
+        val b = accountDao.insert(account(initialMinor = 0L))
+        val category = categoryDao.insert(
+            CategoryEntity(name = "Dining", type = CategoryType.EXPENSE, color = 0xEF5350, icon = "restaurant"),
+        )
+
+        transactionDao.insert(movement(TransactionType.EXPENSE, -6_000L, a, categoryId = category))
+        transactionDao.insert(movement(TransactionType.INCOME, 4_000L, a, categoryId = category, refund = true))
+        transactionDao.insert(movement(TransactionType.EXPENSE, -1_000L, a, categoryId = category, excluded = true))
+        transactionDao.insert(movement(TransactionType.ADJUSTMENT, 999L, a))
+        transactionDao.insert(
+            movement(TransactionType.TRANSFER, -2_000L, a, transferAccountId = b, transferAmountMinor = 2_000L),
+        )
+
+        val totals = transactionDao.observeCategoryTotals(
+            startMillis = 0L,
+            endMillis = Long.MAX_VALUE,
+            currency = "EUR",
+        ).first()
+
+        assertEquals(1, totals.size)
+        val row = totals.single()
+        assertEquals(category, row.categoryId)
+        assertEquals(-2_000L, row.totalMinor)
+        assertEquals(2, row.count)
+    }
+
+    @Test
+    fun betweenFiltersByInstantRange() = runBlocking {
+        val a = accountDao.insert(account(initialMinor = 0L))
+        transactionDao.insert(movement(TransactionType.EXPENSE, -100L, a).copy(timestampEpochMilli = 1_000L))
+        transactionDao.insert(movement(TransactionType.EXPENSE, -200L, a).copy(timestampEpochMilli = 2_000L))
+        transactionDao.insert(movement(TransactionType.EXPENSE, -300L, a).copy(timestampEpochMilli = 3_000L))
+
+        val inRange = transactionDao.observeBetween(startMillis = 2_000L, endMillis = 3_000L).first()
+
+        assertEquals(1, inRange.size)
+        assertEquals(-200L, inRange.single().amountMinor)
+    }
+}

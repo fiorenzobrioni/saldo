@@ -10,4 +10,27 @@
 
     <!-- Placeholder screens (Phase 0) -->
     <string name="placeholder_screen_body">This section will be available soon.</string>
+
+    <!-- Default categories seeded on first launch (Phase 1). Editable by the user afterwards. -->
+    <string name="seed_category_home">Home</string>
+    <string name="seed_category_rent_mortgage">Rent &amp; mortgage</string>
+    <string name="seed_category_groceries">Groceries</string>
+    <string name="seed_category_dining">Restaurants &amp; bars</string>
+    <string name="seed_category_transport">Transport</string>
+    <string name="seed_category_car_fuel">Car &amp; fuel</string>
+    <string name="seed_category_health">Health</string>
+    <string name="seed_category_shopping">Shopping</string>
+    <string name="seed_category_travel">Travel</string>
+    <string name="seed_category_entertainment">Entertainment</string>
+    <string name="seed_category_subscriptions">Subscriptions</string>
+    <string name="seed_category_bills_utilities">Bills &amp; utilities</string>
+    <string name="seed_category_education">Education</string>
+    <string name="seed_category_gifts_given">Gifts given</string>
+    <string name="seed_category_taxes">Taxes</string>
+    <string name="seed_category_other_expense">Other</string>
+    <string name="seed_category_salary">Salary</string>
+    <string name="seed_category_freelance">Freelance</string>
+    <string name="seed_category_gifts_received">Gifts received</string>
+    <string name="seed_category_refunds">Refunds</string>
+    <string name="seed_category_other_income">Other</string>
 </resources>

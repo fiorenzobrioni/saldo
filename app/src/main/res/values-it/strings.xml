@@ -8,4 +8,27 @@
 
     <!-- Placeholder screens (Phase 0) -->
     <string name="placeholder_screen_body">Questa sezione sarà disponibile presto.</string>
+
+    <!-- Categorie predefinite create alla prima apertura (Fase 1). Modificabili dall'utente. -->
+    <string name="seed_category_home">Casa</string>
+    <string name="seed_category_rent_mortgage">Affitto/Mutuo</string>
+    <string name="seed_category_groceries">Spesa alimentare</string>
+    <string name="seed_category_dining">Ristoranti &amp; Bar</string>
+    <string name="seed_category_transport">Trasporti</string>
+    <string name="seed_category_car_fuel">Auto &amp; Carburante</string>
+    <string name="seed_category_health">Salute</string>
+    <string name="seed_category_shopping">Shopping</string>
+    <string name="seed_category_travel">Viaggi</string>
+    <string name="seed_category_entertainment">Intrattenimento</string>
+    <string name="seed_category_subscriptions">Abbonamenti</string>
+    <string name="seed_category_bills_utilities">Bollette &amp; Utenze</string>
+    <string name="seed_category_education">Istruzione</string>
+    <string name="seed_category_gifts_given">Regali fatti</string>
+    <string name="seed_category_taxes">Tasse</string>
+    <string name="seed_category_other_expense">Altro</string>
+    <string name="seed_category_salary">Stipendio</string>
+    <string name="seed_category_freelance">Freelance</string>
+    <string name="seed_category_gifts_received">Regali ricevuti</string>
+    <string name="seed_category_refunds">Rimborsi</string>
+    <string name="seed_category_other_income">Altro</string>
 </resources>
