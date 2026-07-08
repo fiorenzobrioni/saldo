@@ -17,9 +17,37 @@
     <string name="action_undo">Annulla</string>
     <string name="action_toggle_sign">Cambia segno</string>
 
-    <!-- Impostazioni (Fase 2) -->
-    <string name="settings_accounts">Account</string>
-    <string name="settings_accounts_hint">Conti, carte e contanti</string>
+    <!-- Dashboard (Fase 5) -->
+    <string name="dashboard_balance_total">Saldo totale</string>
+    <plurals name="dashboard_accounts_count">
+        <item quantity="one">%1$d conto</item>
+        <item quantity="many">%1$d conti</item>
+        <item quantity="other">%1$d conti</item>
+    </plurals>
+    <string name="dashboard_accounts_expand">Mostra i conti</string>
+    <string name="dashboard_accounts_collapse">Nascondi i conti</string>
+    <string name="dashboard_manage_accounts">Gestisci account</string>
+    <string name="dashboard_today">Oggi</string>
+    <string name="dashboard_month">Questo mese</string>
+    <string name="dashboard_stat_expenses">Spese</string>
+    <string name="dashboard_stat_incomes">Entrate</string>
+    <string name="dashboard_stat_net">Netto</string>
+    <string name="dashboard_stat_balance">Saldo</string>
+    <string name="dashboard_month_more">%1$s in più rispetto a questo punto del mese scorso</string>
+    <string name="dashboard_month_less">%1$s in meno rispetto a questo punto del mese scorso</string>
+    <string name="dashboard_month_same">Come a questo punto del mese scorso</string>
+    <string name="dashboard_subscriptions_title">Abbonamenti</string>
+    <string name="dashboard_subscriptions_soon">In arrivo con le ricorrenze</string>
+    <string name="dashboard_recent_title">Ultimi movimenti</string>
+    <string name="dashboard_recent_see_all">Vedi tutti</string>
+    <string name="dashboard_recent_empty">Ancora nessun movimento</string>
+    <string name="dashboard_empty_title">Benvenuto in Saldo</string>
+    <string name="dashboard_empty_body">Crea il primo account per iniziare a tracciare i tuoi soldi.</string>
+    <string name="dashboard_empty_cta">Crea il primo account</string>
+    <string name="dashboard_fab_add">Aggiungi movimento</string>
+    <string name="dashboard_fab_expense">Spesa</string>
+    <string name="dashboard_fab_income">Entrata</string>
+    <string name="dashboard_fab_transfer">Trasferimento</string>
 
     <!-- Account (Fase 2) -->
     <string name="accounts_title">Account</string>

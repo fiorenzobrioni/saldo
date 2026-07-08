@@ -43,6 +43,13 @@ data class CategoryEditorRoute(
     val initialTypeName: String? = null,
 ) : NavKey
 
-/** Transaction editor: create mode when [transactionId] is null, edit mode otherwise. */
+/**
+ * Transaction editor: create mode when [transactionId] is null, edit mode otherwise.
+ * [initialTypeName] preselects the movement type on creation (used by the dashboard
+ * quick actions); it is a [com.callbackdev.saldo.core.domain.model.TransactionType] name.
+ */
 @Serializable
-data class TransactionEditorRoute(val transactionId: Long? = null) : NavKey
+data class TransactionEditorRoute(
+    val transactionId: Long? = null,
+    val initialTypeName: String? = null,
+) : NavKey

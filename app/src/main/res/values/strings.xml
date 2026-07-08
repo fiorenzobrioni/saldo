@@ -19,9 +19,36 @@
     <string name="action_undo">Undo</string>
     <string name="action_toggle_sign">Toggle sign</string>
 
-    <!-- Settings (Phase 2) -->
-    <string name="settings_accounts">Accounts</string>
-    <string name="settings_accounts_hint">Bank accounts, cards and cash</string>
+    <!-- Dashboard (Phase 5) -->
+    <string name="dashboard_balance_total">Total balance</string>
+    <plurals name="dashboard_accounts_count">
+        <item quantity="one">%1$d account</item>
+        <item quantity="other">%1$d accounts</item>
+    </plurals>
+    <string name="dashboard_accounts_expand">Show accounts</string>
+    <string name="dashboard_accounts_collapse">Hide accounts</string>
+    <string name="dashboard_manage_accounts">Manage accounts</string>
+    <string name="dashboard_today">Today</string>
+    <string name="dashboard_month">This month</string>
+    <string name="dashboard_stat_expenses">Expenses</string>
+    <string name="dashboard_stat_incomes">Income</string>
+    <string name="dashboard_stat_net">Net</string>
+    <string name="dashboard_stat_balance">Balance</string>
+    <string name="dashboard_month_more">%1$s more than by this day last month</string>
+    <string name="dashboard_month_less">%1$s less than by this day last month</string>
+    <string name="dashboard_month_same">Same as by this day last month</string>
+    <string name="dashboard_subscriptions_title">Subscriptions</string>
+    <string name="dashboard_subscriptions_soon">Coming with recurring movements</string>
+    <string name="dashboard_recent_title">Recent movements</string>
+    <string name="dashboard_recent_see_all">See all</string>
+    <string name="dashboard_recent_empty">No movements yet</string>
+    <string name="dashboard_empty_title">Welcome to Saldo</string>
+    <string name="dashboard_empty_body">Create your first account to start tracking your money.</string>
+    <string name="dashboard_empty_cta">Create your first account</string>
+    <string name="dashboard_fab_add">Add movement</string>
+    <string name="dashboard_fab_expense">Expense</string>
+    <string name="dashboard_fab_income">Income</string>
+    <string name="dashboard_fab_transfer">Transfer</string>
 
     <!-- Accounts (Phase 2) -->
     <string name="accounts_title">Accounts</string>

@@ -95,14 +95,17 @@
 
 ## Fase 5 - Dashboard "Oggi"
 
-- [ ] Card saldo totale + dettaglio account espandibile
-- [ ] Card oggi (spese/entrate/netto)
-- [ ] Card mese corrente + confronto con stesso giorno mese precedente
-- [ ] Card abbonamenti del mese (totale + prossimo addebito) - placeholder finché Fase 6 non è pronta
-- [ ] Ultimi 5–7 movimenti con tap → dettaglio
-- [ ] FAB con 3 quick action
-- [ ] Empty state prima apertura (CTA: crea il primo account)
-- [ ] Performance: dashboard reattiva via Flow combinati, nessun ricalcolo manuale
+- [x] Card saldo totale + dettaglio account espandibile (con richiamo "Gestisci account")
+- [x] Card oggi (spese/entrate/netto)
+- [x] Card mese corrente + confronto con stesso giorno mese precedente
+- [x] Card abbonamenti del mese (totale + prossimo addebito) - placeholder (teaser) finché Fase 6 non è pronta
+- [x] Ultimi 5–7 movimenti con tap → dettaglio
+- [x] FAB con 3 quick action (speed-dial: spesa/entrata/trasferimento, con tipo preimpostato)
+- [x] Empty state prima apertura (CTA: crea il primo account)
+- [x] Performance: dashboard reattiva via Flow combinati, nessun ricalcolo manuale
+
+> Nota valuta: le card Oggi/Mese e il saldo totale usano la valuta principale (quella condivisa dalla maggioranza degli account nel totale); i movimenti in altre valute sono esclusi dalle somme finché non arriva la conversione (v2.0). I totali Oggi/Mese sono di cassa: includono i movimenti marcati "escludi dalle statistiche" (che restano esclusi solo dalle statistiche di Fase 7).
+> Punti d'accesso: gli account si gestiscono dalla card saldo della Dashboard (non più da Impostazioni); le categorie restano in Impostazioni.
 
 ## Fase 6 - Ricorrenze
 

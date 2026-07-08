@@ -71,7 +71,19 @@ fun SaldoApp() {
                 rememberViewModelStoreNavEntryDecorator(),
             ),
             entryProvider = entryProvider {
-                entry<DashboardRoute> { DashboardScreen() }
+                entry<DashboardRoute> {
+                    DashboardScreen(
+                        onNavigateToAccounts = { backStack.add(AccountsRoute) },
+                        onCreateFirstAccount = { backStack.add(AccountEditorRoute()) },
+                        onNavigateToNewTransaction = { type ->
+                            backStack.add(TransactionEditorRoute(initialTypeName = type.name))
+                        },
+                        onNavigateToEditTransaction = { id ->
+                            backStack.add(TransactionEditorRoute(id))
+                        },
+                        onSeeAllTransactions = { backStack.switchTopLevelTab(TransactionsRoute) },
+                    )
+                }
                 entry<TransactionsRoute> {
                     TransactionsScreen(
                         onNavigateToNewTransaction = { backStack.add(TransactionEditorRoute()) },
@@ -84,7 +96,6 @@ fun SaldoApp() {
                 entry<StatsRoute> { StatsScreen() }
                 entry<SettingsRoute> {
                     SettingsScreen(
-                        onNavigateToAccounts = { backStack.add(AccountsRoute) },
                         onNavigateToCategories = { backStack.add(CategoriesRoute) },
                     )
                 }

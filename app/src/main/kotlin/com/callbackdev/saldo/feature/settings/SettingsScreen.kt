@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -26,7 +25,6 @@ import com.callbackdev.saldo.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateToAccounts: () -> Unit,
     onNavigateToCategories: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -41,12 +39,6 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            SettingsEntry(
-                title = stringResource(R.string.settings_accounts),
-                hint = stringResource(R.string.settings_accounts_hint),
-                icon = Icons.Outlined.AccountBalanceWallet,
-                onClick = onNavigateToAccounts,
-            )
             SettingsEntry(
                 title = stringResource(R.string.settings_categories),
                 hint = stringResource(R.string.settings_categories_hint),

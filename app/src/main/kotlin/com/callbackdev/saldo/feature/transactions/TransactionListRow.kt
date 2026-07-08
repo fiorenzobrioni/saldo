@@ -82,8 +82,9 @@ internal fun SwipeableTransactionRow(
     }
 }
 
+/** A tappable movement row (avatar, title/subtitle, signed amount). Reused by the dashboard. */
 @Composable
-private fun TransactionRow(
+internal fun TransactionRow(
     item: TransactionListItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
