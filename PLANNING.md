@@ -88,10 +88,10 @@
 
 ## Fase 4 - Categorie
 
-- [ ] Lista categorie divise spese/entrate
-- [ ] Crea/modifica: nome, colore (palette), icona (set Material Symbols), tipo
-- [ ] Eliminazione con riassegnazione movimenti (dialog: scegli categoria di destinazione o "Altro")
-- [ ] Riordino manuale (drag)
+- [x] Lista categorie divise spese/entrate (tab Spese/Entrate; le categorie di tipo "entrambi" compaiono in entrambe)
+- [x] Crea/modifica: nome, colore (palette), icona (set Material Symbols), tipo (con anteprima live)
+- [x] Eliminazione con riassegnazione movimenti (dialog: scegli categoria di destinazione; se nessuna categoria compatibile esiste, i movimenti restano senza categoria)
+- [x] Riordino manuale (drag): handle di trascinamento per riga, `sortOrder` globale come unica fonte di verità
 
 ## Fase 5 - Dashboard "Oggi"
 

@@ -22,6 +22,8 @@ class RoomCategoryRepository @Inject constructor(
 
     override suspend fun getCategory(id: Long): Category? = categoryDao.getById(id)?.toDomain()
 
+    override suspend fun nextSortOrder(): Int = categoryDao.maxSortOrder() + 1
+
     override suspend fun upsert(category: Category): Long {
         val entity = category.toEntity()
         return if (entity.id == 0L) {
@@ -32,5 +34,15 @@ class RoomCategoryRepository @Inject constructor(
         }
     }
 
+    override suspend fun reorder(categories: List<Category>) {
+        val reordered = categories.mapIndexed { index, category ->
+            category.toEntity().copy(sortOrder = index)
+        }
+        categoryDao.updateAll(reordered)
+    }
+
     override suspend fun delete(category: Category) = categoryDao.delete(category.toEntity())
+
+    override suspend fun deleteWithReassignment(category: Category, targetCategoryId: Long) =
+        categoryDao.reassignTransactionsAndDelete(category.id, targetCategoryId)
 }

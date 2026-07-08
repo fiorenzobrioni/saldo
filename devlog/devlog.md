@@ -14,6 +14,28 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-08 - Fase 4: gestione categorie
+
+**Fatto:** implementata la Fase 4 (categorie), raggiungibile da Impostazioni → Categorie.
+- **Lista a tab** Spese/Entrate (`PrimaryTabRow`): ogni categoria compare nel tab del suo tipo; le categorie `BOTH` ("entrambi") compaiono in entrambi i tab. Tap sulla riga → editor; FAB → nuova categoria col tipo del tab corrente preimpostato.
+- **Editor** con anteprima live dell'avatar: nome, tipo (Spesa/Entrata/Entrambi), colore da palette condivisa (18 tinte), icona da un set ampliato di Material Symbols (~35 icone). Validazione del nome.
+- **Eliminazione con riassegnazione**: dal pulsante Elimina nell'editor. Se la categoria non etichetta movimenti → conferma semplice. Se ne etichetta ed esistono categorie compatibili → dialog con picker della destinazione (preselezionata la categoria "Altro" predefinita quando presente) che riassegna i movimenti e poi elimina, in un'unica transazione Room. Se non esistono categorie compatibili → conferma che i movimenti resteranno senza categoria (FK `SET_NULL`).
+- **Riordino manuale (drag)**: handle di trascinamento per riga con componente reorderable custom (`core/designsystem/component/ReorderableListState.kt`), auto-scroll ai bordi. Il riordino di un tab riscrive solo gli slot di quel tab nell'ordine globale `sortOrder`, che resta l'unica fonte di verità (usata anche dalla griglia categorie dell'inserimento movimento).
+- Data layer: `CategoryDao` (maxSortOrder, updateAll, reassign+delete atomico), `TransactionDao.countForCategory`, estensioni ai repository. Stringhe IT+EN. Unit test dei due ViewModel (split tab, riordino incluso il caso BOTH, drop stale ignorato, flussi di eliminazione/riassegnazione). `versionCode` 3, `versionName` 0.4.0.
+
+**Decisioni:**
+- **Tab invece di sezioni** per "diviso spese/entrate": più pulito e scalabile; la scelta rende il riordino non ambiguo perché ogni tab è una lista senza header intermedi.
+- **`BOTH` mantenuto** (VISION lo prevede) senza complicare il riordino: il drag opera sull'ordine globale proiettato attraverso il filtro del tab; una categoria `BOTH` spostata in un tab si sposta coerentemente anche nell'altro.
+- **Eliminazione nell'editor** (non nella lista): la riga resta focalizzata su riordino + navigazione, il flusso di riassegnazione vive dove si modifica la categoria (come il delete nell'editor movimento).
+- **Nessuna libreria di reorder aggiunta** (vincolo CLAUDE.md): componente scritto a mano, ~180 righe, testabile a livello di logica nel ViewModel.
+- Allineati 4 colori del seed alla palette dell'editor, così il colore di ogni categoria predefinita risulta selezionato nel picker (il test del seed verifica solo il conteggio).
+
+**Problemi:** nessuno. `assembleDebug`/`testDebugUnitTest`/`lint`/`detekt` verdi. Test UI strumentato del drag rimandato a quando ci sarà un emulatore (coerente con le fasi precedenti); verificata la logica via unit test.
+
+**Prossimo:** Fase 5, dashboard "Oggi".
+
+---
+
 ## 2026-07-08 - Chore: keystore di debug condiviso
 
 **Fatto:** aggiunto `keystore/debug.keystore` (committato, validità 30 anni, alias `androiddebugkey`) e `signingConfigs.debug` in `app/build.gradle.kts` che lo usa esplicitamente. Prima ogni build (locale o CI) firmava con il keystore di debug di default della macchina che compilava: build diverse avevano firme diverse e Android rifiutava l'aggiornamento in-place dell'APK, costringendo l'utente a disinstallare/reinstallare (perdendo i dati di test) a ogni nuova build scaricata dalla CI. Con la firma condivisa, unita al bump di `versionCode` già in atto (regola CLAUDE.md), l'APK si aggiorna in place mantenendo i dati.

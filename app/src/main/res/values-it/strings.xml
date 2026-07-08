@@ -116,6 +116,47 @@
     <string name="transaction_editor_delete">Elimina</string>
     <string name="keypad_backspace">Cancella l\'ultima cifra</string>
 
+    <!-- Categorie (Fase 4) -->
+    <string name="settings_categories">Categorie</string>
+    <string name="settings_categories_hint">Etichette di spese ed entrate</string>
+    <string name="categories_title">Categorie</string>
+    <string name="categories_new">Nuova categoria</string>
+    <string name="categories_tab_expenses">Spese</string>
+    <string name="categories_tab_incomes">Entrate</string>
+    <string name="categories_reorder">Trascina per riordinare</string>
+    <string name="categories_empty_title">Nessuna categoria qui</string>
+    <string name="categories_empty_body">Aggiungine una con il pulsante in basso.</string>
+    <string name="category_type_expense">Spesa</string>
+    <string name="category_type_income">Entrata</string>
+    <string name="category_type_both">Entrambi</string>
+    <string name="category_type_both_hint">Spese ed entrate</string>
+    <string name="category_editor_title_new">Nuova categoria</string>
+    <string name="category_editor_title_edit">Modifica categoria</string>
+    <string name="category_editor_name">Nome</string>
+    <string name="category_editor_name_error">Inserisci un nome</string>
+    <string name="category_editor_section_type">Tipo</string>
+    <string name="category_editor_section_color">Colore</string>
+    <string name="category_editor_section_icon">Icona</string>
+    <string name="category_editor_color_option">Colore %1$d</string>
+    <string name="category_editor_icon_option">Icona %1$d</string>
+    <string name="category_editor_delete">Elimina categoria</string>
+    <string name="category_delete_title">Eliminare la categoria?</string>
+    <string name="category_delete_body">"%1$s" non è usata da alcun movimento e verrà eliminata definitivamente.</string>
+    <string name="category_delete_confirm">Elimina</string>
+    <plurals name="category_delete_uncategorize_body">
+        <item quantity="one">"%1$s" etichetta %2$d movimento. Resterà senza categoria.</item>
+        <item quantity="many">"%1$s" etichetta %2$d movimenti. Resteranno senza categoria.</item>
+        <item quantity="other">"%1$s" etichetta %2$d movimenti. Resteranno senza categoria.</item>
+    </plurals>
+    <string name="category_reassign_title">Riassegna i movimenti</string>
+    <plurals name="category_reassign_body">
+        <item quantity="one">"%1$s" etichetta %2$d movimento. Spostalo in un\'altra categoria prima di eliminare.</item>
+        <item quantity="many">"%1$s" etichetta %2$d movimenti. Spostali in un\'altra categoria prima di eliminare.</item>
+        <item quantity="other">"%1$s" etichetta %2$d movimenti. Spostali in un\'altra categoria prima di eliminare.</item>
+    </plurals>
+    <string name="category_reassign_target">Sposta in</string>
+    <string name="category_reassign_confirm">Riassegna ed elimina</string>
+
     <!-- Categorie predefinite create alla prima apertura (Fase 1). Modificabili dall'utente. -->
     <string name="seed_category_home">Casa</string>
     <string name="seed_category_rent_mortgage">Affitto/Mutuo</string>

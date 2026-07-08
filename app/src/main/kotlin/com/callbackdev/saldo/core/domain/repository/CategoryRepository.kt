@@ -15,8 +15,20 @@ interface CategoryRepository {
 
     suspend fun getCategory(id: Long): Category?
 
+    /** Next free sort position, so a freshly created category appends to the end. */
+    suspend fun nextSortOrder(): Int
+
     /** Inserts a new category (id == 0) or updates an existing one. Returns its id. */
     suspend fun upsert(category: Category): Long
 
+    /** Persists a manual reorder: each category's sort position becomes its index. */
+    suspend fun reorder(categories: List<Category>)
+
     suspend fun delete(category: Category)
+
+    /**
+     * Reassigns every movement of [category] to [targetCategoryId] and then deletes
+     * the category, atomically. Used when a deleted category still labels movements.
+     */
+    suspend fun deleteWithReassignment(category: Category, targetCategoryId: Long)
 }
