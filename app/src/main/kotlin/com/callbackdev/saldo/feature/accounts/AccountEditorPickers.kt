@@ -3,7 +3,6 @@ package com.callbackdev.saldo.feature.accounts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -24,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 
 /** Circular swatch grid for the curated account color palette. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun ColorPicker(
     selected: Int,
@@ -64,7 +62,6 @@ internal fun ColorPicker(
 }
 
 /** Circular grid of the curated account icons; selection uses the account color. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun IconPicker(
     selectedIcon: String,

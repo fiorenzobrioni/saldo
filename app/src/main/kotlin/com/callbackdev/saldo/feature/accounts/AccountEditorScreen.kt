@@ -3,7 +3,6 @@ package com.callbackdev.saldo.feature.accounts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -232,7 +231,6 @@ private fun NameField(
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TypeChips(
     selected: AccountType,
