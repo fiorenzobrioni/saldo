@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.accounts
 
+import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import app.cash.turbine.test
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType

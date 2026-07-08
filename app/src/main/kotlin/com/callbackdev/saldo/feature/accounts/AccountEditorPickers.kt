@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.accounts
 
+import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

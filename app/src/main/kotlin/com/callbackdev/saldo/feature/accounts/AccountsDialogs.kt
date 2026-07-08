@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.accounts
 
+import com.callbackdev.saldo.core.designsystem.visuals.labelRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
