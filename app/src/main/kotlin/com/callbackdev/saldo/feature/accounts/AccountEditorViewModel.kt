@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.accounts
 
+import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.money.MoneyInput

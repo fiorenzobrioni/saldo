@@ -73,6 +73,49 @@
     <string name="account_editor_include_in_total">Includi nel saldo totale</string>
     <string name="account_editor_include_in_total_hint">Se disattivato, l\'account è tracciato ma non conta nel totale</string>
 
+    <!-- Movimenti (Fase 3) -->
+    <string name="transactions_new">Nuovo movimento</string>
+    <string name="transactions_empty_title">Ancora nessun movimento</string>
+    <string name="transactions_empty_body">Registra la tua prima spesa o entrata: bastano tre tocchi.</string>
+    <string name="transactions_empty_no_accounts_body">Per registrare i movimenti serve prima un account.</string>
+    <string name="transactions_add_first">Aggiungi movimento</string>
+    <string name="transactions_create_account">Crea un account</string>
+    <string name="transactions_snackbar_deleted">Movimento eliminato</string>
+    <string name="date_today">Oggi</string>
+    <string name="date_yesterday">Ieri</string>
+    <string name="transaction_type_expense">Spesa</string>
+    <string name="transaction_type_income">Entrata</string>
+    <string name="transaction_type_transfer">Trasferimento</string>
+    <string name="transaction_type_adjustment">Rettifica saldo</string>
+    <string name="transaction_uncategorized">Senza categoria</string>
+    <string name="transaction_refund_label">Rimborso</string>
+    <string name="transaction_delete_title">Eliminare il movimento?</string>
+    <string name="transaction_delete_body">Il movimento verrà eliminato definitivamente.</string>
+
+    <!-- Editor movimento (Fase 3) -->
+    <string name="transaction_editor_title_new">Nuovo movimento</string>
+    <string name="transaction_editor_title_edit">Modifica movimento</string>
+    <string name="transaction_editor_title_edit_transfer">Modifica trasferimento</string>
+    <string name="transaction_editor_title_edit_adjustment">Modifica rettifica</string>
+    <string name="transaction_editor_account">Account</string>
+    <string name="transaction_editor_from_account">Account di partenza</string>
+    <string name="transaction_editor_to_account">Account di arrivo</string>
+    <string name="transaction_editor_sent_amount">In uscita (%1$s)</string>
+    <string name="transaction_editor_received_amount">In entrata (%1$s)</string>
+    <string name="transaction_editor_category">Categoria</string>
+    <string name="transaction_editor_category_error">Scegli una categoria</string>
+    <string name="transaction_editor_description">Descrizione</string>
+    <string name="transaction_editor_tags">Tag</string>
+    <string name="transaction_editor_new_tag">Nuovo tag</string>
+    <string name="transaction_editor_add_tag">Aggiungi tag</string>
+    <string name="transaction_editor_remove_tag">Rimuovi tag</string>
+    <string name="transaction_editor_exclude_stats">Escludi dalle statistiche</string>
+    <string name="transaction_editor_exclude_stats_hint">Non conteggiato nei grafici e nei totali delle statistiche</string>
+    <string name="transaction_editor_refund">Rimborso</string>
+    <string name="transaction_editor_refund_hint">Un\'entrata che compensa una spesa della categoria scelta</string>
+    <string name="transaction_editor_delete">Elimina</string>
+    <string name="keypad_backspace">Cancella l\'ultima cifra</string>
+
     <!-- Categorie predefinite create alla prima apertura (Fase 1). Modificabili dall'utente. -->
     <string name="seed_category_home">Casa</string>
     <string name="seed_category_rent_mortgage">Affitto/Mutuo</string>

@@ -1,4 +1,4 @@
-package com.callbackdev.saldo.feature.accounts
+package com.callbackdev.saldo.core.designsystem.visuals
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons

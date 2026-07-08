@@ -16,6 +16,8 @@ captures/
 # Kotlin
 .kotlin/
 
-# Signing
+# Signing (release keys only: the shared debug keystore in keystore/ is
+# intentionally committed, see CLAUDE.md)
 *.jks
 *.keystore
+!keystore/debug.keystore

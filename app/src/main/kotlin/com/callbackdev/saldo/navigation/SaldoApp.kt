@@ -24,6 +24,7 @@ import com.callbackdev.saldo.feature.accounts.AccountsScreen
 import com.callbackdev.saldo.feature.dashboard.DashboardScreen
 import com.callbackdev.saldo.feature.settings.SettingsScreen
 import com.callbackdev.saldo.feature.stats.StatsScreen
+import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
 
 /** Root composable: scaffold with bottom navigation and Navigation 3 display. */
@@ -69,7 +70,15 @@ fun SaldoApp() {
             ),
             entryProvider = entryProvider {
                 entry<DashboardRoute> { DashboardScreen() }
-                entry<TransactionsRoute> { TransactionsScreen() }
+                entry<TransactionsRoute> {
+                    TransactionsScreen(
+                        onNavigateToNewTransaction = { backStack.add(TransactionEditorRoute()) },
+                        onNavigateToEditTransaction = { id ->
+                            backStack.add(TransactionEditorRoute(id))
+                        },
+                        onNavigateToAccounts = { backStack.add(AccountsRoute) },
+                    )
+                }
                 entry<StatsRoute> { StatsScreen() }
                 entry<SettingsRoute> {
                     SettingsScreen(
@@ -85,6 +94,12 @@ fun SaldoApp() {
                 }
                 entry<AccountEditorRoute> { route ->
                     AccountEditorScreen(
+                        route = route,
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                    )
+                }
+                entry<TransactionEditorRoute> { route ->
+                    TransactionEditorScreen(
                         route = route,
                         onNavigateBack = { backStack.removeLastOrNull() },
                     )
