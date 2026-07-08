@@ -1,22 +1,21 @@
 package com.callbackdev.saldo.feature.dashboard
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
-import androidx.compose.material.icons.outlined.ExpandLess
-import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -26,47 +25,54 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.feature.transactions.TransactionListItem
+import com.callbackdev.saldo.feature.transactions.TransactionRowContent
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Currency
 
-/** Capitalized localized date, e.g. "Martedì 8 luglio". */
+/** Screen title with a compact localized date, e.g. "Saldo" / "mar 8 lug". */
 @Composable
-internal fun DashboardDate(date: LocalDate, modifier: Modifier = Modifier) {
+internal fun DashboardHeader(date: LocalDate, modifier: Modifier = Modifier) {
     val locale = LocalConfiguration.current.locales[0]
-    val text = remember(date, locale) {
-        date.format(DateTimeFormatter.ofPattern("EEEE d MMMM", locale))
-            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+    val shortDate = remember(date, locale) {
+        date.format(DateTimeFormatter.ofPattern("EEE d MMM", locale))
     }
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = modifier,
-    )
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = shortDate,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
 }
 
-/** Hero card: the total balance with an expandable per-account breakdown. */
+/** Hero card: the total balance with the per-account breakdown always in view. */
 @Composable
 internal fun BalanceCard(
     totalBalance: BigDecimal,
@@ -75,7 +81,6 @@ internal fun BalanceCard(
     onManageAccounts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
@@ -101,67 +106,35 @@ internal fun BalanceCard(
                 },
             )
             if (accounts.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
+                accounts.forEach { item -> AccountBreakdownRow(item = item) }
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Surface(
-                    onClick = { expanded = !expanded },
+                    onClick = onManageAccounts,
                     color = Color.Transparent,
                     shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 6.dp),
+                            .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = pluralStringResource(
-                                R.plurals.dashboard_accounts_count,
-                                accounts.size,
-                                accounts.size,
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = stringResource(R.string.dashboard_manage_accounts),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f),
                         )
                         Icon(
-                            imageVector = if (expanded) {
-                                Icons.Outlined.ExpandLess
-                            } else {
-                                Icons.Outlined.ExpandMore
-                            },
-                            contentDescription = stringResource(
-                                if (expanded) {
-                                    R.string.dashboard_accounts_collapse
-                                } else {
-                                    R.string.dashboard_accounts_expand
-                                },
-                            ),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
-                AnimatedVisibility(visible = expanded) {
-                    Column {
-                        accounts.forEach { item ->
-                            AccountBreakdownRow(item = item)
-                        }
-                    }
-                }
-            }
-            Spacer(Modifier.height(4.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Surface(
-                onClick = onManageAccounts,
-                color = Color.Transparent,
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = stringResource(R.string.dashboard_manage_accounts),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(vertical = 12.dp),
-                )
             }
         }
     }
@@ -170,6 +143,7 @@ internal fun BalanceCard(
 @Composable
 private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = Modifier) {
     val account = item.account
+    val color = AccountVisuals.color(account.color)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -178,21 +152,21 @@ private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = M
     ) {
         Box(
             modifier = Modifier
-                .size(28.dp)
-                .clip(CircleShape)
-                .background(AccountVisuals.color(account.color)),
+                .size(36.dp)
+                .clip(AvatarShape)
+                .background(color.copy(alpha = AVATAR_TINT_ALPHA)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = AccountVisuals.icon(account.icon),
                 contentDescription = null,
-                tint = Color.White,
-                modifier = Modifier.size(16.dp),
+                tint = color,
+                modifier = Modifier.size(20.dp),
             )
         }
         Text(
             text = account.name,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
@@ -201,7 +175,7 @@ private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = M
         )
         Text(
             text = MoneyFormatter.format(item.balance, account.currency),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             color = if (item.balance.signum() < 0) {
                 MaterialTheme.colorScheme.error
             } else {
@@ -211,125 +185,138 @@ private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = M
     }
 }
 
-/**
- * A "Today" / "This month" summary card: expenses, income and net (or balance)
- * as three stats, with an optional month-over-month comparison line.
- */
+/** The "Today" and current-month cards, side by side and equal height. */
 @Composable
-internal fun PeriodCard(
+internal fun PeriodCardsRow(
+    date: LocalDate,
+    today: PeriodFlow,
+    month: PeriodFlow,
+    currency: Currency,
+    modifier: Modifier = Modifier,
+) {
+    val locale = LocalConfiguration.current.locales[0]
+    val monthTitle = remember(date, locale) {
+        date.format(DateTimeFormatter.ofPattern("LLLL", locale))
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        PeriodCompactCard(
+            title = stringResource(R.string.dashboard_today),
+            flow = today,
+            currency = currency,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        )
+        PeriodCompactCard(
+            title = monthTitle,
+            flow = month,
+            currency = currency,
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        )
+    }
+}
+
+@Composable
+private fun PeriodCompactCard(
     title: String,
-    netLabel: String,
     flow: PeriodFlow,
     currency: Currency,
     modifier: Modifier = Modifier,
-    comparison: BigDecimal? = null,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                StatCell(
-                    label = stringResource(R.string.dashboard_stat_expenses),
-                    value = MoneyFormatter.format(flow.spend, currency),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                StatCell(
-                    label = stringResource(R.string.dashboard_stat_incomes),
-                    value = MoneyFormatter.formatSigned(flow.income, currency),
-                    color = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.weight(1f),
-                )
-                StatCell(
-                    label = netLabel,
-                    value = MoneyFormatter.formatSigned(flow.net, currency),
-                    color = netColor(flow.net),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            if (comparison != null) {
-                Spacer(Modifier.height(16.dp))
-                ComparisonRow(delta = comparison, currency = currency)
-            }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = MoneyFormatter.formatSigned(flow.net, currency),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = netColor(flow.net),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(12.dp))
+            StatLine(
+                label = stringResource(R.string.dashboard_stat_expenses),
+                value = MoneyFormatter.formatSigned(flow.spend, currency),
+            )
+            Spacer(Modifier.height(2.dp))
+            StatLine(
+                label = stringResource(R.string.dashboard_stat_incomes),
+                value = MoneyFormatter.formatSigned(flow.income, currency),
+            )
         }
     }
 }
 
 @Composable
-private fun StatCell(
-    label: String,
-    value: String,
-    color: Color,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
+private fun StatLine(label: String, value: String, modifier: Modifier = Modifier) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.size(6.dp))
         Text(
             text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = color,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
+/** Standalone reference line: how much had been spent by this day last month. */
 @Composable
-private fun ComparisonRow(
-    delta: BigDecimal,
+internal fun MonthComparisonRow(
+    previousSpend: BigDecimal,
+    spentMore: Boolean,
     currency: Currency,
     modifier: Modifier = Modifier,
 ) {
-    val spentMore = delta.signum() > 0
-    val spentLess = delta.signum() < 0
-    val icon = if (spentMore) {
-        Icons.AutoMirrored.Outlined.TrendingUp
-    } else {
-        Icons.AutoMirrored.Outlined.TrendingDown
-    }
-    val tint = when {
-        spentMore -> MaterialTheme.colorScheme.onSurfaceVariant
-        spentLess -> MaterialTheme.colorScheme.tertiary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    val text = when {
-        spentMore -> stringResource(
-            R.string.dashboard_month_more,
-            MoneyFormatter.format(delta.abs(), currency),
-        )
-
-        spentLess -> stringResource(
-            R.string.dashboard_month_less,
-            MoneyFormatter.format(delta.abs(), currency),
-        )
-
-        else -> stringResource(R.string.dashboard_month_same)
-    }
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Icon(
-            imageVector = icon,
+            imageVector = if (spentMore) {
+                Icons.AutoMirrored.Outlined.TrendingUp
+            } else {
+                Icons.AutoMirrored.Outlined.TrendingDown
+            },
             contentDescription = null,
-            tint = tint,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp),
         )
         Spacer(Modifier.size(8.dp))
         Text(
-            text = text,
+            text = stringResource(
+                R.string.dashboard_month_comparison,
+                MoneyFormatter.format(previousSpend, currency),
+            ),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -341,7 +328,7 @@ private fun ComparisonRow(
 internal fun SubscriptionsTeaser(modifier: Modifier = Modifier) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
@@ -353,7 +340,7 @@ internal fun SubscriptionsTeaser(modifier: Modifier = Modifier) {
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(CircleShape)
+                    .clip(AvatarShape)
                     .background(MaterialTheme.colorScheme.secondaryContainer),
                 contentAlignment = Alignment.Center,
             ) {
@@ -367,7 +354,7 @@ internal fun SubscriptionsTeaser(modifier: Modifier = Modifier) {
             Column(modifier = Modifier.padding(start = 16.dp)) {
                 Text(
                     text = stringResource(R.string.dashboard_subscriptions_title),
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
                     text = stringResource(R.string.dashboard_subscriptions_soon),
@@ -379,8 +366,46 @@ internal fun SubscriptionsTeaser(modifier: Modifier = Modifier) {
     }
 }
 
+/** Recent movements as a single grouped card with flat, tappable rows. */
+@Composable
+internal fun RecentMovementsCard(
+    items: List<TransactionListItem>,
+    onItemClick: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ),
+    ) {
+        Column {
+            items.forEachIndexed { index, item ->
+                if (index > 0) {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
+                Surface(
+                    onClick = { onItemClick(item.id) },
+                    color = Color.Transparent,
+                ) {
+                    TransactionRowContent(
+                        item = item,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun netColor(value: BigDecimal): Color = when {
     value.signum() > 0 -> MaterialTheme.colorScheme.tertiary
     else -> MaterialTheme.colorScheme.onSurface
 }
+
+private const val AVATAR_TINT_ALPHA = 0.16f

@@ -3,18 +3,20 @@ package com.callbackdev.saldo.navigation
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
@@ -29,42 +31,36 @@ import com.callbackdev.saldo.feature.stats.StatsScreen
 import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
 
-/** Root composable: scaffold with bottom navigation and Navigation 3 display. */
+/** Height of the Material 3 navigation bar content (excluding the system inset). */
+private val BottomBarHeight = 80.dp
+
+/**
+ * Root composable: the Navigation 3 display with a bottom navigation bar shown
+ * only on the top-level destinations.
+ *
+ * The bottom bar is drawn as an overlay on top of the display rather than in a
+ * Scaffold slot on purpose: a Scaffold's bottom bar reshapes the shared content
+ * area, and animating its visibility makes that area's height jump when the
+ * enter/exit animation ends, so a destination that anchors content to the
+ * bottom (e.g. the amount keypad) visibly snaps down after opening. With the
+ * overlay, every destination is laid out at its final size from the first
+ * frame - top-level screens simply reserve [BottomBarHeight] at the bottom -
+ * and only the bar itself slides in and out.
+ */
 @Composable
 fun SaldoApp() {
     val backStack = rememberNavBackStack(DashboardRoute)
     val currentRoute = backStack.lastOrNull()
     val isTopLevel = TopLevelDestination.entries.any { it.route == currentRoute }
 
-    Scaffold(
-        // Each screen owns its insets (top app bars, FABs); the outer scaffold
-        // only carves out space for the bottom navigation bar.
-        contentWindowInsets = WindowInsets(0.dp),
-        bottomBar = {
-            AnimatedVisibility(
-                visible = isTopLevel,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it }),
-            ) {
-                NavigationBar {
-                    TopLevelDestination.entries.forEach { destination ->
-                        val label = stringResource(destination.labelRes)
-                        NavigationBarItem(
-                            selected = currentRoute == destination.route,
-                            onClick = { backStack.switchTopLevelTab(destination.route) },
-                            icon = {
-                                Icon(imageVector = destination.icon, contentDescription = label)
-                            },
-                            label = { Text(label) },
-                        )
-                    }
-                }
-            }
-        },
-    ) { innerPadding ->
+    // Reserve space for the bar only where it is shown; detail screens fill the
+    // whole height so their bottom-anchored content lands in its final place.
+    val topLevelModifier = Modifier.padding(bottom = BottomBarHeight)
+
+    Box(modifier = Modifier.fillMaxSize()) {
         NavDisplay(
             backStack = backStack,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.fillMaxSize(),
             onBack = { backStack.removeLastOrNull() },
             entryDecorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator(),
@@ -73,6 +69,7 @@ fun SaldoApp() {
             entryProvider = entryProvider {
                 entry<DashboardRoute> {
                     DashboardScreen(
+                        modifier = topLevelModifier,
                         onNavigateToAccounts = { backStack.add(AccountsRoute) },
                         onCreateFirstAccount = { backStack.add(AccountEditorRoute()) },
                         onNavigateToNewTransaction = { type ->
@@ -86,6 +83,7 @@ fun SaldoApp() {
                 }
                 entry<TransactionsRoute> {
                     TransactionsScreen(
+                        modifier = topLevelModifier,
                         onNavigateToNewTransaction = { backStack.add(TransactionEditorRoute()) },
                         onNavigateToEditTransaction = { id ->
                             backStack.add(TransactionEditorRoute(id))
@@ -93,9 +91,10 @@ fun SaldoApp() {
                         onNavigateToAccounts = { backStack.add(AccountsRoute) },
                     )
                 }
-                entry<StatsRoute> { StatsScreen() }
+                entry<StatsRoute> { StatsScreen(modifier = topLevelModifier) }
                 entry<SettingsRoute> {
                     SettingsScreen(
+                        modifier = topLevelModifier,
                         onNavigateToCategories = { backStack.add(CategoriesRoute) },
                     )
                 }
@@ -137,5 +136,38 @@ fun SaldoApp() {
                 }
             },
         )
+
+        AnimatedVisibility(
+            visible = isTopLevel,
+            enter = slideInVertically(initialOffsetY = { it }),
+            exit = slideOutVertically(targetOffsetY = { it }),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            SaldoBottomBar(
+                currentRoute = currentRoute,
+                onSelect = { backStack.switchTopLevelTab(it) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SaldoBottomBar(
+    currentRoute: NavKey?,
+    onSelect: (NavKey) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    NavigationBar(modifier = modifier) {
+        TopLevelDestination.entries.forEach { destination ->
+            val label = stringResource(destination.labelRes)
+            NavigationBarItem(
+                selected = currentRoute == destination.route,
+                onClick = { onSelect(destination.route) },
+                icon = {
+                    Icon(imageVector = destination.icon, contentDescription = label)
+                },
+                label = { Text(label) },
+            )
+        }
     }
 }

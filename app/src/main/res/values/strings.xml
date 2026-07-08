@@ -37,6 +37,7 @@
     <string name="dashboard_month_more">%1$s more than by this day last month</string>
     <string name="dashboard_month_less">%1$s less than by this day last month</string>
     <string name="dashboard_month_same">Same as by this day last month</string>
+    <string name="dashboard_month_comparison">By this point last month you had spent %1$s</string>
     <string name="dashboard_subscriptions_title">Subscriptions</string>
     <string name="dashboard_subscriptions_soon">Coming with recurring movements</string>
     <string name="dashboard_recent_title">Recent movements</string>

@@ -59,6 +59,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 
@@ -307,7 +308,7 @@ internal fun AccountAvatar(
     Box(
         modifier = modifier
             .size(44.dp)
-            .clip(CircleShape)
+            .clip(AvatarShape)
             .background(AccountVisuals.color(account.color)),
         contentAlignment = Alignment.Center,
     ) {

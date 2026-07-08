@@ -26,7 +26,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.SaveButton
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.navigation.AccountEditorRoute
 import java.util.Currency
@@ -108,13 +108,10 @@ fun AccountEditorScreen(
                     }
                 },
                 actions = {
-                    FilledTonalButton(
+                    SaveButton(
                         onClick = viewModel::save,
                         enabled = !uiState.isLoading,
-                        modifier = Modifier.padding(end = 8.dp),
-                    ) {
-                        Text(stringResource(R.string.action_save))
-                    }
+                    )
                 },
             )
         },

@@ -36,6 +36,7 @@
     <string name="dashboard_month_more">%1$s in più rispetto a questo punto del mese scorso</string>
     <string name="dashboard_month_less">%1$s in meno rispetto a questo punto del mese scorso</string>
     <string name="dashboard_month_same">Come a questo punto del mese scorso</string>
+    <string name="dashboard_month_comparison">A questo punto del mese scorso avevi speso %1$s</string>
     <string name="dashboard_subscriptions_title">Abbonamenti</string>
     <string name="dashboard_subscriptions_soon">In arrivo con le ricorrenze</string>
     <string name="dashboard_recent_title">Ultimi movimenti</string>
