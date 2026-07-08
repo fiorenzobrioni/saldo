@@ -91,7 +91,7 @@ app/src/main/kotlin/com/callbackdev/saldo/
 ├── feature/
 │   ├── accounts/        # account: lista, editor, rettifica saldo (da Fase 2)
 │   ├── dashboard/       # schermata "Oggi"
-│   ├── transactions/    # movimenti
+│   ├── transactions/    # movimenti: editor con tastierino, lista per giorno (da Fase 3)
 │   ├── stats/           # statistiche
 │   └── settings/        # impostazioni
 └── navigation/          # route NavKey, scaffold, bottom bar

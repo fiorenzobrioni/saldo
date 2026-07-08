@@ -76,15 +76,15 @@
 
 ## Fase 3 - Movimenti (CRUD)
 
-- [ ] Schermata inserimento spesa/entrata: tastierino importo subito attivo, categoria a griglia, account di default preselezionato, data = oggi modificabile
-- [ ] Obiettivo UX verificato: spesa tipica in ≤ 3 tap + importo
-- [ ] Inserimento trasferimento (da → a, importo; due importi se valute diverse)
-- [ ] Lista movimenti raggruppata per giorno con totali giornalieri
-- [ ] Modifica movimento
-- [ ] Eliminazione con swipe + undo (Snackbar)
-- [ ] Tag: creazione inline e assegnazione
-- [ ] Flag "escludi dalle statistiche" e flag "rimborso" (versione semplificata MVP)
-- [ ] Test: ViewModel inserimento, effetti sul saldo per ogni tipo
+- [x] Schermata inserimento spesa/entrata: tastierino importo subito attivo, categoria a griglia, account di default preselezionato, data = oggi modificabile
+- [x] Obiettivo UX verificato: spesa tipica in ≤ 3 tap + importo (FAB → categoria → salva; default coperti da unit test, UI test strumentato rimandato a quando ci sarà un emulatore)
+- [x] Inserimento trasferimento (da → a, importo; due importi se valute diverse)
+- [x] Lista movimenti raggruppata per giorno con totali giornalieri
+- [x] Modifica movimento
+- [x] Eliminazione con swipe + undo (Snackbar)
+- [x] Tag: creazione inline e assegnazione
+- [x] Flag "escludi dalle statistiche" e flag "rimborso" (versione semplificata MVP)
+- [x] Test: ViewModel inserimento, effetti sul saldo per ogni tipo
 
 ## Fase 4 - Categorie
 
