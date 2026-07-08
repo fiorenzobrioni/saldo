@@ -11,6 +11,69 @@
     <!-- Placeholder screens (Phase 0) -->
     <string name="placeholder_screen_body">This section will be available soon.</string>
 
+    <!-- Common actions -->
+    <string name="action_back">Back</string>
+    <string name="action_close">Close</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_undo">Undo</string>
+    <string name="action_toggle_sign">Toggle sign</string>
+
+    <!-- Settings (Phase 2) -->
+    <string name="settings_accounts">Accounts</string>
+    <string name="settings_accounts_hint">Bank accounts, cards and cash</string>
+
+    <!-- Accounts (Phase 2) -->
+    <string name="accounts_title">Accounts</string>
+    <string name="accounts_new">New account</string>
+    <string name="accounts_create_first">Create your first account</string>
+    <string name="accounts_empty_title">No accounts yet</string>
+    <string name="accounts_empty_body">Create your first account to start tracking your money: a bank account, a card or your cash.</string>
+    <string name="accounts_archived_header">Archived (%1$d)</string>
+    <string name="accounts_archived_label">Archived</string>
+    <string name="accounts_excluded_from_total">Excluded from total</string>
+    <string name="account_type_checking">Bank account</string>
+    <string name="account_type_card">Card</string>
+    <string name="account_type_cash">Cash</string>
+    <string name="account_type_digital_wallet">Digital wallet</string>
+    <string name="account_type_other">Other</string>
+    <string name="account_action_edit">Edit</string>
+    <string name="account_action_adjust_balance">Adjust balance</string>
+    <string name="account_action_archive">Archive</string>
+    <string name="account_action_unarchive">Restore</string>
+    <string name="account_action_delete">Delete</string>
+    <string name="accounts_snackbar_archived">"%1$s" archived</string>
+    <string name="accounts_snackbar_deleted">Account deleted</string>
+    <string name="accounts_snackbar_adjusted">Adjustment of %1$s recorded</string>
+    <string name="accounts_adjust_title">Adjust balance</string>
+    <string name="accounts_adjust_current">Current balance: %1$s</string>
+    <string name="accounts_adjust_real_balance">Actual balance</string>
+    <string name="accounts_adjust_preview">An adjustment of %1$s will be recorded</string>
+    <string name="accounts_adjust_no_change">The balance is already correct</string>
+    <string name="accounts_adjust_confirm">Adjust</string>
+    <string name="accounts_delete_title">Delete account?</string>
+    <string name="accounts_delete_body">"%1$s" has no movements and will be permanently deleted.</string>
+    <string name="accounts_cannot_delete_title">Cannot delete</string>
+    <plurals name="accounts_cannot_delete_body">
+        <item quantity="one">"%1$s" has %2$d movement. Deleting it would lose your history: archive it instead.</item>
+        <item quantity="other">"%1$s" has %2$d movements. Deleting it would lose your history: archive it instead.</item>
+    </plurals>
+    <string name="account_editor_title_new">New account</string>
+    <string name="account_editor_title_edit">Edit account</string>
+    <string name="account_editor_name">Name</string>
+    <string name="account_editor_name_error">Enter a name</string>
+    <string name="account_editor_section_type">Type</string>
+    <string name="account_editor_currency">Currency</string>
+    <string name="account_editor_currency_locked">Cannot be changed: the account already has movements</string>
+    <string name="account_editor_initial_balance">Initial balance</string>
+    <string name="account_editor_initial_balance_hint">The current balance is computed from here</string>
+    <string name="account_editor_section_color">Color</string>
+    <string name="account_editor_section_icon">Icon</string>
+    <string name="account_editor_color_option">Color %1$d</string>
+    <string name="account_editor_icon_option">Icon %1$d</string>
+    <string name="account_editor_include_in_total">Include in total balance</string>
+    <string name="account_editor_include_in_total_hint">If off, the account is tracked but does not count towards the total</string>
+
     <!-- Default categories seeded on first launch (Phase 1). Editable by the user afterwards. -->
     <string name="seed_category_home">Home</string>
     <string name="seed_category_rent_mortgage">Rent &amp; mortgage</string>

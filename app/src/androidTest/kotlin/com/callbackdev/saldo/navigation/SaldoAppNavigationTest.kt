@@ -33,6 +33,14 @@ class SaldoAppNavigationTest {
     fun tappingSettingsTab_opensSettingsScreen() {
         composeRule.onNodeWithText(string(R.string.nav_settings)).performClick()
 
-        composeRule.onNodeWithText(string(R.string.placeholder_screen_body)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.settings_accounts)).assertIsDisplayed()
+    }
+
+    @Test
+    fun settingsAccountsEntry_opensAccountsList() {
+        composeRule.onNodeWithText(string(R.string.nav_settings)).performClick()
+        composeRule.onNodeWithText(string(R.string.settings_accounts)).performClick()
+
+        composeRule.onNodeWithText(string(R.string.accounts_empty_title)).assertIsDisplayed()
     }
 }

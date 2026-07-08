@@ -19,3 +19,11 @@ data object StatsRoute : NavKey
 
 @Serializable
 data object SettingsRoute : NavKey
+
+/** Account list, reached from Settings (and from the Dashboard in Phase 5). */
+@Serializable
+data object AccountsRoute : NavKey
+
+/** Account editor: create mode when [accountId] is null, edit mode otherwise. */
+@Serializable
+data class AccountEditorRoute(val accountId: Long? = null) : NavKey

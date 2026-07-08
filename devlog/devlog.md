@@ -14,6 +14,27 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-08 - Fase 2: account
+
+**Fatto:** implementata l'intera feature Account. Lista account (`feature/accounts`) con saldo corrente calcolato via Flow, sezione archiviati collassabile, empty state con CTA e FAB "Nuovo account"; accesso dalla voce "Account" in Impostazioni (la card della dashboard arriverà in Fase 5). Tap su un account: bottom sheet con azioni rapide (modifica, rettifica saldo, archivia/ripristina, elimina). Editor account (creazione/modifica) con nome, tipo (chip), valuta (dropdown con ~35 valute, prima quella della locale), saldo iniziale (input con toggle segno, sanitizzato sui fraction digits della valuta), palette di 14 colori, griglia di 16 icone Material Symbols (default guidata dal tipo finché l'utente non ne sceglie una), switch "includi nel saldo totale". Rettifica saldo: dialog con saldo attuale, input del saldo reale e anteprima della differenza; `AdjustBalanceUseCase` (core/domain) crea il movimento ADJUSTMENT con il delta (no-op se il saldo coincide). Eliminazione: consentita solo senza movimenti (conferma), altrimenti dialog che propone l'archiviazione; archiviazione immediata con Snackbar + Annulla (undo al posto dei dialog di conferma, come da VISION). Archiviati esclusi dal totale (già a livello query, Fase 1). Stringhe IT/EN complete, plurals inclusi.
+
+**Verifica:** `assembleDebug testDebugUnitTest lint detekt` verdi in locale (Gradle 8.14.3, JDK 21). 47 unit test JVM verdi (25 nuovi): `AdjustBalanceUseCase` (delta positivo/negativo, no-op, arrotondamento HALF_UP, valute a 0 decimali, account mancante), `MoneyInput`/`MoneyFormatter` (sanitizzazione input, parsing con virgola/punto, formato localizzato e segno esplicito), `AccountsViewModel` (split attivi/archiviati, archiviazione con evento undo, guardia di eliminazione, flusso rettifica), `AccountEditorViewModel` (salvataggio, validazione, load in modifica con lock valuta, icona di default per tipo, cambio valuta con riscalatura). Test strumentati aggiornati/aggiunti (compilano; esecuzione rimandata a quando ci sarà un emulatore): `BalanceAdjustmentTest` (rettifica end-to-end su Room in-memory, idempotenza alla ripetizione), navigazione Impostazioni → Account. Lint: 0 errori; warning solo sui pin di versione deliberati (ADR 14).
+
+**Decisioni:**
+- Aggiunta dipendenza `androidx.hilt:hilt-navigation-compose` (concordato): pattern ufficiale Nav3 per `hiltViewModel()`, con assisted injection della route (`AccountEditorRoute` passata al ViewModel via `@AssistedFactory`, come nelle recipes Google). Versione fissata a 1.3.0: la 1.4.0 trascina lifecycle 2.11 che richiede compileSdk 37/AGP 9.1 (nota SDK 37 in PLANNING.md); nota nel Version Catalog.
+- `NavDisplay` ora con `entryDecorators` espliciti (`rememberSaveableStateHolderNavEntryDecorator` + `rememberViewModelStoreNavEntryDecorator`): i ViewModel sono scopati alla singola entry dello stack. API verificate sugli artefatti 1.1.4/2.10.0, non a memoria.
+- Scaffold esterno con `contentWindowInsets` a zero e bottom bar animata, visibile solo sulle destinazioni top-level: le schermate interne (Account, editor) gestiscono i propri insets con il proprio `Scaffold`/top bar.
+- `Clock` iniettato via Hilt (`ClockModule`): rettifiche deterministiche nei test (timestamp e offset dal clock, non da `Instant.now()`).
+- Valuta non modificabile se l'account ha movimenti (i movimenti conservano la valuta dell'account: cambiarla mischierebbe valute nel saldo); cambio valuta in creazione riscala l'importo digitato sui nuovi fraction digits invece di strippare il separatore (evita un 12,34 → 1234 passando a JPY).
+- Icone account come chiavi stringa (nomi Material Symbols) risolte da `AccountVisuals`: la palette può crescere senza migration.
+- `countForAccount` esposto sul `TransactionRepository` per la guardia di eliminazione (la FK `NO_ACTION` della Fase 1 resta l'ultima difesa a livello DB).
+
+**Problemi:** lint (regola nuova `LocalContextGetResourceValueCall`) rifiuta `LocalContext` per leggere stringhe negli effect: usato `LocalResources.current`. detekt: `TooManyFunctions` sull'editor risolto estraendo i picker colore/icona in `AccountEditorPickers.kt`.
+
+**Prossimo:** Fase 3, movimenti: inserimento spesa/entrata in ≤3 tap, trasferimenti, lista raggruppata per giorno, modifica ed eliminazione con undo, tag.
+
+---
+
 ## 2026-07-07 - Fase 1: data layer (fondamenta)
 
 **Fatto:** implementato l'intero data layer. Entity Room (`accounts`, `categories`, `transactions`, `tags`, `transaction_tag_cross_ref`, `recurring_rules`) con foreign key e indici; enum di dominio (`TransactionType`, `AccountType`, `CategoryType`, `RecurrenceFrequency`, `RecurrenceMode`) persistiti via `Converters` come `name`. Modelli di dominio + mapper entity↔dominio; `MoneyMapper` per la conversione centesimi↔`BigDecimal` basata sui fraction digits della valuta (HALF_UP, mai float/double). DAO con le query fondamentali: saldo per account e saldo totale (solo account inclusi e non archiviati) come Flow, movimenti per intervallo/account, aggregati per categoria. Repository (interfacce nel dominio, implementazioni Room) esposti via Hilt (`DatabaseModule` + `RepositoryModule`). Seed delle 21 categorie predefinite (16 spese + 5 entrate) alla prima creazione del DB, localizzate da `strings.xml` (IT/EN) in base alla locale. Schema Room esportato in `app/schemas` (versione 1) per i futuri test di migration. Rifinita l'icona launcher (vedi sotto).
