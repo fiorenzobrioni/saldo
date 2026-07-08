@@ -71,4 +71,7 @@ interface TransactionDao {
 
     @Query("SELECT COUNT(*) FROM transactions WHERE accountId = :accountId OR transferAccountId = :accountId")
     suspend fun countForAccount(accountId: Long): Int
+
+    @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId")
+    suspend fun countForCategory(categoryId: Long): Int
 }

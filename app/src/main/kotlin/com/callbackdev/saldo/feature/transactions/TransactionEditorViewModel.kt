@@ -88,7 +88,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
             Form(
                 isLoading = route.transactionId != null,
                 isNew = route.transactionId == null,
-                type = TransactionType.EXPENSE,
+                type = route.initialType(),
                 date = now.toLocalDate(),
                 time = now.toLocalTime(),
             ),
@@ -441,6 +441,20 @@ class TransactionEditorViewModel @AssistedInject constructor(
 
     private fun plainInput(amount: BigDecimal): String =
         amount.stripTrailingZeros().toPlainString()
+
+    /**
+     * The type a freshly created movement starts with. Only EXPENSE, INCOME and
+     * TRANSFER can be requested (the dashboard quick actions); anything else,
+     * including ADJUSTMENT, falls back to EXPENSE.
+     */
+    private fun TransactionEditorRoute.initialType(): TransactionType {
+        val requested = initialTypeName
+            ?.let { runCatching { TransactionType.valueOf(it) }.getOrNull() }
+        return when (requested) {
+            TransactionType.INCOME, TransactionType.TRANSFER -> requested
+            else -> TransactionType.EXPENSE
+        }
+    }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

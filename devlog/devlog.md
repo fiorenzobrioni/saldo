@@ -14,6 +14,56 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-08 - Fase 5: Dashboard "Oggi" + rifinitura UI
+
+**Fatto:** implementata la Dashboard "Oggi", la schermata iniziale.
+- **Card saldo totale** (hero) con dettaglio account espandibile e richiamo "Gestisci account".
+- **Card Oggi** (spese/entrate/netto) e **Card Questo mese** (spese/entrate/saldo) con confronto rispetto allo stesso giorno del mese precedente (icona trend + testo).
+- **Teaser Abbonamenti** (placeholder finché la Fase 6 non porta le ricorrenze).
+- **Ultimi movimenti** (max 7, riusano la riga della lista movimenti) con tap → modifica, e "Vedi tutti" → tab Movimenti.
+- **FAB speed-dial**: il FAB principale si espande in 3 quick action (spesa/entrata/trasferimento) con scrim; ogni azione apre l'editor col tipo preimpostato (nuovo campo `initialTypeName` su `TransactionEditorRoute`).
+- **Empty state** prima apertura con CTA "Crea il primo account".
+- `DashboardViewModel` reattivo: combina account + movimenti + categorie e deriva tutto (saldo, finestre oggi/mese, confronto, recenti) senza ricalcoli manuali. Unit test su saldo/valuta principale, finestre oggi/mese + confronto, cap a 7 e risoluzione account/categoria, empty state.
+
+**Rifinitura UI richiesta:**
+- **Bottone Salva** negli editor (account, categoria, movimento) da `TextButton` a `FilledTonalButton` in alto a destra: più visibile.
+- **Top app bar** delle schermate a lista (Account, Categorie, Movimenti) da `LargeTopAppBar` a `TopAppBar` compatta: eliminato lo spazio vuoto in alto, look più coerente e "content-first".
+- **Punti d'accesso rivisti**: la gestione account si raggiunge dalla card saldo della Dashboard; rimossa da Impostazioni. Le categorie restano in Impostazioni (configurazione dell'app, nessuna casa contestuale più naturale; Impostazioni si popolerà in Fase 9).
+
+**Decisioni:**
+- **Valuta principale** derivata dagli account (quella condivisa dalla maggioranza degli account inclusi nel totale, fallback locale). Somme Oggi/Mese ristrette a quella valuta: multi-valuta con conversione è v2.0 (VISION).
+- **Totali di cassa**: Oggi/Mese includono i movimenti "esclusi dalle statistiche" (hanno comunque mosso il saldo); l'esclusione vale solo per le statistiche di Fase 7. Trasferimenti e rettifiche sempre esclusi.
+- **Speed-dial fatto a mano** (nessuna libreria aggiunta): Column nel slot FAB + scrim gestito a livello schermata.
+- Riuso della riga movimento resa `internal` invece di duplicarla.
+
+**Problemi:** nessuno. `assembleDebug`/`testDebugUnitTest`/`lint`/`detekt` verdi. Verifica visiva su emulatore rimandata (coerente con le fasi precedenti); logica coperta da unit test.
+
+**Prossimo:** Fase 6, ricorrenze e abbonamenti (sbloccano anche la card abbonamenti reale).
+
+---
+
+## 2026-07-08 - Fase 4: gestione categorie
+
+**Fatto:** implementata la Fase 4 (categorie), raggiungibile da Impostazioni → Categorie.
+- **Lista a tab** Spese/Entrate (`PrimaryTabRow`): ogni categoria compare nel tab del suo tipo; le categorie `BOTH` ("entrambi") compaiono in entrambi i tab. Tap sulla riga → editor; FAB → nuova categoria col tipo del tab corrente preimpostato.
+- **Editor** con anteprima live dell'avatar: nome, tipo (Spesa/Entrata/Entrambi), colore da palette condivisa (18 tinte), icona da un set ampliato di Material Symbols (~35 icone). Validazione del nome.
+- **Eliminazione con riassegnazione**: dal pulsante Elimina nell'editor. Se la categoria non etichetta movimenti → conferma semplice. Se ne etichetta ed esistono categorie compatibili → dialog con picker della destinazione (preselezionata la categoria "Altro" predefinita quando presente) che riassegna i movimenti e poi elimina, in un'unica transazione Room. Se non esistono categorie compatibili → conferma che i movimenti resteranno senza categoria (FK `SET_NULL`).
+- **Riordino manuale (drag)**: handle di trascinamento per riga con componente reorderable custom (`core/designsystem/component/ReorderableListState.kt`), auto-scroll ai bordi. Il riordino di un tab riscrive solo gli slot di quel tab nell'ordine globale `sortOrder`, che resta l'unica fonte di verità (usata anche dalla griglia categorie dell'inserimento movimento).
+- Data layer: `CategoryDao` (maxSortOrder, updateAll, reassign+delete atomico), `TransactionDao.countForCategory`, estensioni ai repository. Stringhe IT+EN. Unit test dei due ViewModel (split tab, riordino incluso il caso BOTH, drop stale ignorato, flussi di eliminazione/riassegnazione). `versionCode` 3, `versionName` 0.4.0.
+
+**Decisioni:**
+- **Tab invece di sezioni** per "diviso spese/entrate": più pulito e scalabile; la scelta rende il riordino non ambiguo perché ogni tab è una lista senza header intermedi.
+- **`BOTH` mantenuto** (VISION lo prevede) senza complicare il riordino: il drag opera sull'ordine globale proiettato attraverso il filtro del tab; una categoria `BOTH` spostata in un tab si sposta coerentemente anche nell'altro.
+- **Eliminazione nell'editor** (non nella lista): la riga resta focalizzata su riordino + navigazione, il flusso di riassegnazione vive dove si modifica la categoria (come il delete nell'editor movimento).
+- **Nessuna libreria di reorder aggiunta** (vincolo CLAUDE.md): componente scritto a mano, ~180 righe, testabile a livello di logica nel ViewModel.
+- Allineati 4 colori del seed alla palette dell'editor, così il colore di ogni categoria predefinita risulta selezionato nel picker (il test del seed verifica solo il conteggio).
+
+**Problemi:** nessuno. `assembleDebug`/`testDebugUnitTest`/`lint`/`detekt` verdi. Test UI strumentato del drag rimandato a quando ci sarà un emulatore (coerente con le fasi precedenti); verificata la logica via unit test.
+
+**Prossimo:** Fase 5, dashboard "Oggi".
+
+---
+
 ## 2026-07-08 - Chore: keystore di debug condiviso
 
 **Fatto:** aggiunto `keystore/debug.keystore` (committato, validità 30 anni, alias `androiddebugkey`) e `signingConfigs.debug` in `app/build.gradle.kts` che lo usa esplicitamente. Prima ogni build (locale o CI) firmava con il keystore di debug di default della macchina che compilava: build diverse avevano firme diverse e Android rifiutava l'aggiornamento in-place dell'APK, costringendo l'utente a disinstallare/reinstallare (perdendo i dati di test) a ogni nuova build scaricata dalla CI. Con la firma condivisa, unita al bump di `versionCode` già in atto (regola CLAUDE.md), l'APK si aggiorna in place mantenendo i dati.

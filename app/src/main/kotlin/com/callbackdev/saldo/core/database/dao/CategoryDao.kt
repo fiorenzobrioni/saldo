@@ -5,11 +5,13 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.callbackdev.saldo.core.database.entity.CategoryEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@Suppress("TooManyFunctions")
 interface CategoryDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
@@ -20,6 +22,10 @@ interface CategoryDao {
 
     @Update
     suspend fun update(category: CategoryEntity)
+
+    /** Persists a new ordering (used by manual reorder). */
+    @Update
+    suspend fun updateAll(categories: List<CategoryEntity>)
 
     @Delete
     suspend fun delete(category: CategoryEntity)
@@ -41,4 +47,24 @@ interface CategoryDao {
 
     @Query("SELECT COUNT(*) FROM categories")
     suspend fun count(): Int
+
+    /** Highest sortOrder in use, or -1 when the table is empty (new rows append). */
+    @Query("SELECT COALESCE(MAX(sortOrder), -1) FROM categories")
+    suspend fun maxSortOrder(): Int
+
+    @Query("UPDATE transactions SET categoryId = :targetId WHERE categoryId = :categoryId")
+    suspend fun reassignTransactions(categoryId: Long, targetId: Long)
+
+    @Query("DELETE FROM categories WHERE id = :categoryId")
+    suspend fun deleteById(categoryId: Long)
+
+    /**
+     * Reassigns every movement of [categoryId] to [targetId] and then deletes the
+     * category, atomically, so history is never left dangling mid-operation.
+     */
+    @Transaction
+    suspend fun reassignTransactionsAndDelete(categoryId: Long, targetId: Long) {
+        reassignTransactions(categoryId, targetId)
+        deleteById(categoryId)
+    }
 }

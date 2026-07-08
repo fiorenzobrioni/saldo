@@ -21,6 +21,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.callbackdev.saldo.feature.accounts.AccountEditorScreen
 import com.callbackdev.saldo.feature.accounts.AccountsScreen
+import com.callbackdev.saldo.feature.categories.CategoriesScreen
+import com.callbackdev.saldo.feature.categories.CategoryEditorScreen
 import com.callbackdev.saldo.feature.dashboard.DashboardScreen
 import com.callbackdev.saldo.feature.settings.SettingsScreen
 import com.callbackdev.saldo.feature.stats.StatsScreen
@@ -69,7 +71,19 @@ fun SaldoApp() {
                 rememberViewModelStoreNavEntryDecorator(),
             ),
             entryProvider = entryProvider {
-                entry<DashboardRoute> { DashboardScreen() }
+                entry<DashboardRoute> {
+                    DashboardScreen(
+                        onNavigateToAccounts = { backStack.add(AccountsRoute) },
+                        onCreateFirstAccount = { backStack.add(AccountEditorRoute()) },
+                        onNavigateToNewTransaction = { type ->
+                            backStack.add(TransactionEditorRoute(initialTypeName = type.name))
+                        },
+                        onNavigateToEditTransaction = { id ->
+                            backStack.add(TransactionEditorRoute(id))
+                        },
+                        onSeeAllTransactions = { backStack.switchTopLevelTab(TransactionsRoute) },
+                    )
+                }
                 entry<TransactionsRoute> {
                     TransactionsScreen(
                         onNavigateToNewTransaction = { backStack.add(TransactionEditorRoute()) },
@@ -82,7 +96,7 @@ fun SaldoApp() {
                 entry<StatsRoute> { StatsScreen() }
                 entry<SettingsRoute> {
                     SettingsScreen(
-                        onNavigateToAccounts = { backStack.add(AccountsRoute) },
+                        onNavigateToCategories = { backStack.add(CategoriesRoute) },
                     )
                 }
                 entry<AccountsRoute> {
@@ -94,6 +108,23 @@ fun SaldoApp() {
                 }
                 entry<AccountEditorRoute> { route ->
                     AccountEditorScreen(
+                        route = route,
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                    )
+                }
+                entry<CategoriesRoute> {
+                    CategoriesScreen(
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onNavigateToNewCategory = { type ->
+                            backStack.add(CategoryEditorRoute(initialTypeName = type.name))
+                        },
+                        onNavigateToEditCategory = { id ->
+                            backStack.add(CategoryEditorRoute(categoryId = id))
+                        },
+                    )
+                }
+                entry<CategoryEditorRoute> { route ->
+                    CategoryEditorScreen(
                         route = route,
                         onNavigateBack = { backStack.removeLastOrNull() },
                     )

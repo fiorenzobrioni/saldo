@@ -19,9 +19,36 @@
     <string name="action_undo">Undo</string>
     <string name="action_toggle_sign">Toggle sign</string>
 
-    <!-- Settings (Phase 2) -->
-    <string name="settings_accounts">Accounts</string>
-    <string name="settings_accounts_hint">Bank accounts, cards and cash</string>
+    <!-- Dashboard (Phase 5) -->
+    <string name="dashboard_balance_total">Total balance</string>
+    <plurals name="dashboard_accounts_count">
+        <item quantity="one">%1$d account</item>
+        <item quantity="other">%1$d accounts</item>
+    </plurals>
+    <string name="dashboard_accounts_expand">Show accounts</string>
+    <string name="dashboard_accounts_collapse">Hide accounts</string>
+    <string name="dashboard_manage_accounts">Manage accounts</string>
+    <string name="dashboard_today">Today</string>
+    <string name="dashboard_month">This month</string>
+    <string name="dashboard_stat_expenses">Expenses</string>
+    <string name="dashboard_stat_incomes">Income</string>
+    <string name="dashboard_stat_net">Net</string>
+    <string name="dashboard_stat_balance">Balance</string>
+    <string name="dashboard_month_more">%1$s more than by this day last month</string>
+    <string name="dashboard_month_less">%1$s less than by this day last month</string>
+    <string name="dashboard_month_same">Same as by this day last month</string>
+    <string name="dashboard_subscriptions_title">Subscriptions</string>
+    <string name="dashboard_subscriptions_soon">Coming with recurring movements</string>
+    <string name="dashboard_recent_title">Recent movements</string>
+    <string name="dashboard_recent_see_all">See all</string>
+    <string name="dashboard_recent_empty">No movements yet</string>
+    <string name="dashboard_empty_title">Welcome to Saldo</string>
+    <string name="dashboard_empty_body">Create your first account to start tracking your money.</string>
+    <string name="dashboard_empty_cta">Create your first account</string>
+    <string name="dashboard_fab_add">Add movement</string>
+    <string name="dashboard_fab_expense">Expense</string>
+    <string name="dashboard_fab_income">Income</string>
+    <string name="dashboard_fab_transfer">Transfer</string>
 
     <!-- Accounts (Phase 2) -->
     <string name="accounts_title">Accounts</string>
@@ -117,6 +144,45 @@
     <string name="transaction_editor_refund_hint">An income that offsets an expense of the chosen category</string>
     <string name="transaction_editor_delete">Delete</string>
     <string name="keypad_backspace">Delete last digit</string>
+
+    <!-- Categories (Phase 4) -->
+    <string name="settings_categories">Categories</string>
+    <string name="settings_categories_hint">Expense and income labels</string>
+    <string name="categories_title">Categories</string>
+    <string name="categories_new">New category</string>
+    <string name="categories_tab_expenses">Expenses</string>
+    <string name="categories_tab_incomes">Income</string>
+    <string name="categories_reorder">Drag to reorder</string>
+    <string name="categories_empty_title">No categories here</string>
+    <string name="categories_empty_body">Add one with the button below.</string>
+    <string name="category_type_expense">Expense</string>
+    <string name="category_type_income">Income</string>
+    <string name="category_type_both">Both</string>
+    <string name="category_type_both_hint">Expenses and income</string>
+    <string name="category_editor_title_new">New category</string>
+    <string name="category_editor_title_edit">Edit category</string>
+    <string name="category_editor_name">Name</string>
+    <string name="category_editor_name_error">Enter a name</string>
+    <string name="category_editor_section_type">Type</string>
+    <string name="category_editor_section_color">Color</string>
+    <string name="category_editor_section_icon">Icon</string>
+    <string name="category_editor_color_option">Color %1$d</string>
+    <string name="category_editor_icon_option">Icon %1$d</string>
+    <string name="category_editor_delete">Delete category</string>
+    <string name="category_delete_title">Delete category?</string>
+    <string name="category_delete_body">"%1$s" is not used by any transaction and will be permanently deleted.</string>
+    <string name="category_delete_confirm">Delete</string>
+    <plurals name="category_delete_uncategorize_body">
+        <item quantity="one">"%1$s" labels %2$d transaction. It will be left without a category.</item>
+        <item quantity="other">"%1$s" labels %2$d transactions. They will be left without a category.</item>
+    </plurals>
+    <string name="category_reassign_title">Reassign transactions</string>
+    <plurals name="category_reassign_body">
+        <item quantity="one">"%1$s" labels %2$d transaction. Move it to another category before deleting.</item>
+        <item quantity="other">"%1$s" labels %2$d transactions. Move them to another category before deleting.</item>
+    </plurals>
+    <string name="category_reassign_target">Move to</string>
+    <string name="category_reassign_confirm">Reassign and delete</string>
 
     <!-- Default categories seeded on first launch (Phase 1). Editable by the user afterwards. -->
     <string name="seed_category_home">Home</string>

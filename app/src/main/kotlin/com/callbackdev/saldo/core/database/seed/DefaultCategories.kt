@@ -38,14 +38,14 @@ internal object DefaultCategories {
         Seed(R.string.seed_category_bills_utilities, "receipt_long", color = 0x78909C, CategoryType.EXPENSE),
         Seed(R.string.seed_category_education, "school", color = 0x9CCC65, CategoryType.EXPENSE),
         Seed(R.string.seed_category_gifts_given, "card_giftcard", color = 0xD4E157, CategoryType.EXPENSE),
-        Seed(R.string.seed_category_taxes, "account_balance", color = 0xBDBDBD, CategoryType.EXPENSE),
+        Seed(R.string.seed_category_taxes, "account_balance", color = 0xFF7043, CategoryType.EXPENSE),
         Seed(R.string.seed_category_other_expense, "category", color = 0x90A4AE, CategoryType.EXPENSE),
         // Incomes
-        Seed(R.string.seed_category_salary, "payments", color = 0x43A047, CategoryType.INCOME),
-        Seed(R.string.seed_category_freelance, "work", color = 0x00897B, CategoryType.INCOME),
+        Seed(R.string.seed_category_salary, "payments", color = 0x66BB6A, CategoryType.INCOME),
+        Seed(R.string.seed_category_freelance, "work", color = 0x26A69A, CategoryType.INCOME),
         Seed(R.string.seed_category_gifts_received, "redeem", color = 0xF06292, CategoryType.INCOME),
         Seed(R.string.seed_category_refunds, "currency_exchange", color = 0x26C6DA, CategoryType.INCOME),
-        Seed(R.string.seed_category_other_income, "category", color = 0xA1887F, CategoryType.INCOME),
+        Seed(R.string.seed_category_other_income, "category", color = 0x90A4AE, CategoryType.INCOME),
     )
 
     /** Number of default categories, exposed for tests. */

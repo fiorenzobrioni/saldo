@@ -17,9 +17,37 @@
     <string name="action_undo">Annulla</string>
     <string name="action_toggle_sign">Cambia segno</string>
 
-    <!-- Impostazioni (Fase 2) -->
-    <string name="settings_accounts">Account</string>
-    <string name="settings_accounts_hint">Conti, carte e contanti</string>
+    <!-- Dashboard (Fase 5) -->
+    <string name="dashboard_balance_total">Saldo totale</string>
+    <plurals name="dashboard_accounts_count">
+        <item quantity="one">%1$d conto</item>
+        <item quantity="many">%1$d conti</item>
+        <item quantity="other">%1$d conti</item>
+    </plurals>
+    <string name="dashboard_accounts_expand">Mostra i conti</string>
+    <string name="dashboard_accounts_collapse">Nascondi i conti</string>
+    <string name="dashboard_manage_accounts">Gestisci account</string>
+    <string name="dashboard_today">Oggi</string>
+    <string name="dashboard_month">Questo mese</string>
+    <string name="dashboard_stat_expenses">Spese</string>
+    <string name="dashboard_stat_incomes">Entrate</string>
+    <string name="dashboard_stat_net">Netto</string>
+    <string name="dashboard_stat_balance">Saldo</string>
+    <string name="dashboard_month_more">%1$s in più rispetto a questo punto del mese scorso</string>
+    <string name="dashboard_month_less">%1$s in meno rispetto a questo punto del mese scorso</string>
+    <string name="dashboard_month_same">Come a questo punto del mese scorso</string>
+    <string name="dashboard_subscriptions_title">Abbonamenti</string>
+    <string name="dashboard_subscriptions_soon">In arrivo con le ricorrenze</string>
+    <string name="dashboard_recent_title">Ultimi movimenti</string>
+    <string name="dashboard_recent_see_all">Vedi tutti</string>
+    <string name="dashboard_recent_empty">Ancora nessun movimento</string>
+    <string name="dashboard_empty_title">Benvenuto in Saldo</string>
+    <string name="dashboard_empty_body">Crea il primo account per iniziare a tracciare i tuoi soldi.</string>
+    <string name="dashboard_empty_cta">Crea il primo account</string>
+    <string name="dashboard_fab_add">Aggiungi movimento</string>
+    <string name="dashboard_fab_expense">Spesa</string>
+    <string name="dashboard_fab_income">Entrata</string>
+    <string name="dashboard_fab_transfer">Trasferimento</string>
 
     <!-- Account (Fase 2) -->
     <string name="accounts_title">Account</string>
@@ -115,6 +143,47 @@
     <string name="transaction_editor_refund_hint">Un\'entrata che compensa una spesa della categoria scelta</string>
     <string name="transaction_editor_delete">Elimina</string>
     <string name="keypad_backspace">Cancella l\'ultima cifra</string>
+
+    <!-- Categorie (Fase 4) -->
+    <string name="settings_categories">Categorie</string>
+    <string name="settings_categories_hint">Etichette di spese ed entrate</string>
+    <string name="categories_title">Categorie</string>
+    <string name="categories_new">Nuova categoria</string>
+    <string name="categories_tab_expenses">Spese</string>
+    <string name="categories_tab_incomes">Entrate</string>
+    <string name="categories_reorder">Trascina per riordinare</string>
+    <string name="categories_empty_title">Nessuna categoria qui</string>
+    <string name="categories_empty_body">Aggiungine una con il pulsante in basso.</string>
+    <string name="category_type_expense">Spesa</string>
+    <string name="category_type_income">Entrata</string>
+    <string name="category_type_both">Entrambi</string>
+    <string name="category_type_both_hint">Spese ed entrate</string>
+    <string name="category_editor_title_new">Nuova categoria</string>
+    <string name="category_editor_title_edit">Modifica categoria</string>
+    <string name="category_editor_name">Nome</string>
+    <string name="category_editor_name_error">Inserisci un nome</string>
+    <string name="category_editor_section_type">Tipo</string>
+    <string name="category_editor_section_color">Colore</string>
+    <string name="category_editor_section_icon">Icona</string>
+    <string name="category_editor_color_option">Colore %1$d</string>
+    <string name="category_editor_icon_option">Icona %1$d</string>
+    <string name="category_editor_delete">Elimina categoria</string>
+    <string name="category_delete_title">Eliminare la categoria?</string>
+    <string name="category_delete_body">"%1$s" non è usata da alcun movimento e verrà eliminata definitivamente.</string>
+    <string name="category_delete_confirm">Elimina</string>
+    <plurals name="category_delete_uncategorize_body">
+        <item quantity="one">"%1$s" etichetta %2$d movimento. Resterà senza categoria.</item>
+        <item quantity="many">"%1$s" etichetta %2$d movimenti. Resteranno senza categoria.</item>
+        <item quantity="other">"%1$s" etichetta %2$d movimenti. Resteranno senza categoria.</item>
+    </plurals>
+    <string name="category_reassign_title">Riassegna i movimenti</string>
+    <plurals name="category_reassign_body">
+        <item quantity="one">"%1$s" etichetta %2$d movimento. Spostalo in un\'altra categoria prima di eliminare.</item>
+        <item quantity="many">"%1$s" etichetta %2$d movimenti. Spostali in un\'altra categoria prima di eliminare.</item>
+        <item quantity="other">"%1$s" etichetta %2$d movimenti. Spostali in un\'altra categoria prima di eliminare.</item>
+    </plurals>
+    <string name="category_reassign_target">Sposta in</string>
+    <string name="category_reassign_confirm">Riassegna ed elimina</string>
 
     <!-- Categorie predefinite create alla prima apertura (Fase 1). Modificabili dall'utente. -->
     <string name="seed_category_home">Casa</string>

@@ -28,6 +28,28 @@ data object AccountsRoute : NavKey
 @Serializable
 data class AccountEditorRoute(val accountId: Long? = null) : NavKey
 
-/** Transaction editor: create mode when [transactionId] is null, edit mode otherwise. */
+/** Category list, reached from Settings. */
 @Serializable
-data class TransactionEditorRoute(val transactionId: Long? = null) : NavKey
+data object CategoriesRoute : NavKey
+
+/**
+ * Category editor: create mode when [categoryId] is null, edit mode otherwise.
+ * [initialTypeName] preselects the type (the tab the editor was opened from);
+ * it is a [com.callbackdev.saldo.core.domain.model.CategoryType] name.
+ */
+@Serializable
+data class CategoryEditorRoute(
+    val categoryId: Long? = null,
+    val initialTypeName: String? = null,
+) : NavKey
+
+/**
+ * Transaction editor: create mode when [transactionId] is null, edit mode otherwise.
+ * [initialTypeName] preselects the movement type on creation (used by the dashboard
+ * quick actions); it is a [com.callbackdev.saldo.core.domain.model.TransactionType] name.
+ */
+@Serializable
+data class TransactionEditorRoute(
+    val transactionId: Long? = null,
+    val initialTypeName: String? = null,
+) : NavKey
