@@ -26,6 +26,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        // Shared debug keystore (committed on purpose: a debug cert has no
+        // release value) so every build - local or CI - produces the same
+        // signature. Without it each machine's own ~/.android/debug.keystore
+        // would sign differently and Android would refuse to update the app
+        // in place, forcing an uninstall that wipes the test device's data.
+        getByName("debug") {
+            storeFile = rootProject.file("keystore/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true

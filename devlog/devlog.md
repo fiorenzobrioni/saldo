@@ -14,6 +14,21 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-08 - Chore: keystore di debug condiviso
+
+**Fatto:** aggiunto `keystore/debug.keystore` (committato, validità 30 anni, alias `androiddebugkey`) e `signingConfigs.debug` in `app/build.gradle.kts` che lo usa esplicitamente. Prima ogni build (locale o CI) firmava con il keystore di debug di default della macchina che compilava: build diverse avevano firme diverse e Android rifiutava l'aggiornamento in-place dell'APK, costringendo l'utente a disinstallare/reinstallare (perdendo i dati di test) a ogni nuova build scaricata dalla CI. Con la firma condivisa, unita al bump di `versionCode` già in atto (regola CLAUDE.md), l'APK si aggiorna in place mantenendo i dati.
+
+**Decisioni:**
+- Password/alias sono i default storici di Android (`android`/`androiddebugkey`): non sono un segreto (chiunque conosce questi valori per il keystore di debug di AGP), quindi nessun bisogno di GitHub Secrets o di escludere il file dal repo.
+- `.gitignore` aveva un blanket `*.keystore`: aggiunta un'eccezione esplicita (`!keystore/debug.keystore`) con commento, per non escludere involontariamente il file firmato di release in futuro (quello resta privato, mai committato).
+- Verificato che l'APK prodotto sia firmato con il certificato del keystore condiviso (`apksigner verify --print-certs`, fingerprint SHA-256 corrispondente).
+
+**Problemi:** nessuno.
+
+**Prossimo:** Fase 4, categorie.
+
+---
+
 ## 2026-07-08 - Fase 3: movimenti (CRUD)
 
 **Fatto:** implementata l'intera feature Movimenti. Editor movimento (`TransactionEditorRoute`, create/edit) con selettore tipo a segmented buttons (Spesa/Entrata/Trasferimento), tastierino numerico custom in-app (concordato con l'utente al posto della tastiera di sistema: attivo subito all'apertura, separatore decimale della locale, tasto `00`, backspace con long press per azzerare, tasto salva prominente), display importo grande e cliccabile, griglia categorie a 4 colonne colorata per categoria, chip account/data (data = oggi, modificabile con il date picker Material), campo descrizione, tag con creazione inline da bottom sheet (riuso case-insensitive dei nomi esistenti), switch "escludi dalle statistiche" e "rimborso" (solo entrate: il rimborso usa le categorie di spesa e netta la categoria nelle statistiche, semantica di Fase 1). Trasferimento nella stessa schermata: due account picker (gamba opposta disabilitata nel sheet), secondo importo mostrato solo se le valute differiscono. Flusso spesa tipica in 3 tap + importo: FAB → categoria → salva, con tipo spesa, account di default e data odierna preimpostati. Account di default = ultimo usato, persistito in DataStore Preferences (`UserPreferencesRepository`, `core/common/prefs`); in Fase 9 arriverà l'impostazione esplicita. Lista movimenti raggruppata per giorno con sticky header (giorno calcolato con l'offset salvato per movimento, ADR 7), etichette Oggi/Ieri/data localizzata, totale giornaliero netto per valuta (solo spese+entrate: trasferimenti e rettifiche esclusi), riga con avatar categoria (o icona transfer/rettifica), descrizione, account (per i trasferimenti "da → a"), importo con segno e colore per tipo, icona "esclusa dalle statistiche". Swipe end-to-start per eliminare con Snackbar + Annulla (l'undo reinserisce il movimento e riattacca i tag, catturati prima della cancellazione); eliminazione anche dall'editor con dialog di conferma. Empty state doppio: senza account la CTA porta alla creazione account, con account alla registrazione del primo movimento. Modifica: tap sulla riga; il tipo resta bloccato per trasferimenti e rettifiche (spesa/entrata intercambiabili), campi non toccati dal form (nota, regola ricorrente) preservati. Stringhe IT/EN complete.
