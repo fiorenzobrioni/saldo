@@ -9,6 +9,70 @@
     <!-- Placeholder screens (Phase 0) -->
     <string name="placeholder_screen_body">Questa sezione sarà disponibile presto.</string>
 
+    <!-- Azioni comuni -->
+    <string name="action_back">Indietro</string>
+    <string name="action_close">Chiudi</string>
+    <string name="action_save">Salva</string>
+    <string name="action_cancel">Annulla</string>
+    <string name="action_undo">Annulla</string>
+    <string name="action_toggle_sign">Cambia segno</string>
+
+    <!-- Impostazioni (Fase 2) -->
+    <string name="settings_accounts">Account</string>
+    <string name="settings_accounts_hint">Conti, carte e contanti</string>
+
+    <!-- Account (Fase 2) -->
+    <string name="accounts_title">Account</string>
+    <string name="accounts_new">Nuovo account</string>
+    <string name="accounts_create_first">Crea il primo account</string>
+    <string name="accounts_empty_title">Nessun account</string>
+    <string name="accounts_empty_body">Crea il primo account per iniziare a tracciare i tuoi soldi: un conto, una carta o i contanti.</string>
+    <string name="accounts_archived_header">Archiviati (%1$d)</string>
+    <string name="accounts_archived_label">Archiviato</string>
+    <string name="accounts_excluded_from_total">Escluso dal totale</string>
+    <string name="account_type_checking">Conto corrente</string>
+    <string name="account_type_card">Carta</string>
+    <string name="account_type_cash">Contanti</string>
+    <string name="account_type_digital_wallet">Wallet digitale</string>
+    <string name="account_type_other">Altro</string>
+    <string name="account_action_edit">Modifica</string>
+    <string name="account_action_adjust_balance">Rettifica saldo</string>
+    <string name="account_action_archive">Archivia</string>
+    <string name="account_action_unarchive">Ripristina</string>
+    <string name="account_action_delete">Elimina</string>
+    <string name="accounts_snackbar_archived">"%1$s" archiviato</string>
+    <string name="accounts_snackbar_deleted">Account eliminato</string>
+    <string name="accounts_snackbar_adjusted">Rettifica di %1$s registrata</string>
+    <string name="accounts_adjust_title">Rettifica saldo</string>
+    <string name="accounts_adjust_current">Saldo attuale: %1$s</string>
+    <string name="accounts_adjust_real_balance">Saldo reale</string>
+    <string name="accounts_adjust_preview">Verrà registrata una rettifica di %1$s</string>
+    <string name="accounts_adjust_no_change">Il saldo è già corretto</string>
+    <string name="accounts_adjust_confirm">Rettifica</string>
+    <string name="accounts_delete_title">Eliminare l\'account?</string>
+    <string name="accounts_delete_body">"%1$s" non ha movimenti e verrà eliminato definitivamente.</string>
+    <string name="accounts_cannot_delete_title">Impossibile eliminare</string>
+    <plurals name="accounts_cannot_delete_body">
+        <item quantity="one">"%1$s" ha %2$d movimento. Eliminandolo perderesti lo storico: archivialo invece.</item>
+        <item quantity="many">"%1$s" ha %2$d movimenti. Eliminandolo perderesti lo storico: archivialo invece.</item>
+        <item quantity="other">"%1$s" ha %2$d movimenti. Eliminandolo perderesti lo storico: archivialo invece.</item>
+    </plurals>
+    <string name="account_editor_title_new">Nuovo account</string>
+    <string name="account_editor_title_edit">Modifica account</string>
+    <string name="account_editor_name">Nome</string>
+    <string name="account_editor_name_error">Inserisci un nome</string>
+    <string name="account_editor_section_type">Tipo</string>
+    <string name="account_editor_currency">Valuta</string>
+    <string name="account_editor_currency_locked">Non modificabile: l\'account ha già dei movimenti</string>
+    <string name="account_editor_initial_balance">Saldo iniziale</string>
+    <string name="account_editor_initial_balance_hint">Il saldo corrente è calcolato a partire da qui</string>
+    <string name="account_editor_section_color">Colore</string>
+    <string name="account_editor_section_icon">Icona</string>
+    <string name="account_editor_color_option">Colore %1$d</string>
+    <string name="account_editor_icon_option">Icona %1$d</string>
+    <string name="account_editor_include_in_total">Includi nel saldo totale</string>
+    <string name="account_editor_include_in_total_hint">Se disattivato, l\'account è tracciato ma non conta nel totale</string>
+
     <!-- Categorie predefinite create alla prima apertura (Fase 1). Modificabili dall'utente. -->
     <string name="seed_category_home">Casa</string>
     <string name="seed_category_rent_mortgage">Affitto/Mutuo</string>

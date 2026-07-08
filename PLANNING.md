@@ -67,12 +67,12 @@
 
 ## Fase 2 - Account
 
-- [ ] Lista account con saldo corrente
-- [ ] Creazione/modifica account (nome, tipo, valuta, saldo iniziale, colore, icona, incluso nel totale)
-- [ ] Archiviazione account (+ vista archiviati)
-- [ ] **Rettifica saldo**: inserisco il saldo reale → l'app genera il movimento ADJUSTMENT con la differenza
-- [ ] Eliminazione account: consentita solo se senza movimenti, altrimenti proporre archiviazione
-- [ ] Test: rettifica saldo, esclusione archiviati dal totale
+- [x] Lista account con saldo corrente
+- [x] Creazione/modifica account (nome, tipo, valuta, saldo iniziale, colore, icona, incluso nel totale)
+- [x] Archiviazione account (+ vista archiviati)
+- [x] **Rettifica saldo**: inserisco il saldo reale → l'app genera il movimento ADJUSTMENT con la differenza
+- [x] Eliminazione account: consentita solo se senza movimenti, altrimenti proporre archiviazione
+- [x] Test: rettifica saldo, esclusione archiviati dal totale
 
 ## Fase 3 - Movimenti (CRUD)
 

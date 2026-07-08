@@ -31,6 +31,9 @@ interface TransactionRepository {
 
     suspend fun getTransaction(id: Long): Transaction?
 
+    /** Number of movements that touch [accountId] as source or transfer destination. */
+    suspend fun countForAccount(accountId: Long): Int
+
     /** Inserts a new movement (id == 0) or updates an existing one. Returns its id. */
     suspend fun upsert(transaction: Transaction): Long
 

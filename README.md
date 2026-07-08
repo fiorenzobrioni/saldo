@@ -89,6 +89,7 @@ app/src/main/kotlin/com/callbackdev/saldo/
 │   ├── designsystem/    # tema Material 3, componenti UI condivisi
 │   └── domain/          # modelli e logica di dominio (da Fase 1)
 ├── feature/
+│   ├── accounts/        # account: lista, editor, rettifica saldo (da Fase 2)
 │   ├── dashboard/       # schermata "Oggi"
 │   ├── transactions/    # movimenti
 │   ├── stats/           # statistiche

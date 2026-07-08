@@ -43,6 +43,9 @@ class RoomTransactionRepository @Inject constructor(
     override suspend fun getTransaction(id: Long): Transaction? =
         transactionDao.getById(id)?.toDomain()
 
+    override suspend fun countForAccount(accountId: Long): Int =
+        transactionDao.countForAccount(accountId)
+
     override suspend fun upsert(transaction: Transaction): Long {
         val entity = transaction.toEntity()
         return if (entity.id == 0L) {
