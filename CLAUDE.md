@@ -65,5 +65,6 @@ Quando scrivi, modifichi o generi testo per i file di documentazione del reposit
 ## Qualità e verifica
 
 - Prima di considerare concluso un task: `./gradlew assembleDebug testDebugUnitTest lint` deve passare.
+- **Versioning delle build di test**: al termine di ogni implementazione che modifica l'app (non per modifiche solo alla documentazione), incrementa `versionCode` di 1 in `app/build.gradle.kts` e allinea `versionName` allo schema `0.<ultima fase completata>.<incremento>`. Serve ad aggiornare in place l'APK debug sul device di test senza reinstallare (e senza perdere i dati inseriti). Il bump fa parte del commit dell'implementazione, non richiede una build dedicata.
 - Unit test obbligatori per: mapper importi, motore ricorrenze (mesi corti, idempotenza, catch-up), calcolo saldi, round-trip backup export→import.
 - Non introdurre regressioni sui saldi: se tocchi query o mapper, riesegui i test relativi.
