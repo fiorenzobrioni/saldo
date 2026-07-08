@@ -74,6 +74,50 @@
     <string name="account_editor_include_in_total">Include in total balance</string>
     <string name="account_editor_include_in_total_hint">If off, the account is tracked but does not count towards the total</string>
 
+    <!-- Transactions (Phase 3) -->
+    <string name="transactions_new">New transaction</string>
+    <string name="transactions_empty_title">No transactions yet</string>
+    <string name="transactions_empty_body">Record your first expense or income: it takes three taps.</string>
+    <string name="transactions_empty_no_accounts_body">To record transactions you first need an account.</string>
+    <string name="transactions_add_first">Add transaction</string>
+    <string name="transactions_create_account">Create an account</string>
+    <string name="transactions_snackbar_deleted">Transaction deleted</string>
+    <string name="date_today">Today</string>
+    <string name="date_yesterday">Yesterday</string>
+    <string name="transaction_type_expense">Expense</string>
+    <string name="transaction_type_income">Income</string>
+    <string name="transaction_type_transfer">Transfer</string>
+    <string name="transaction_type_adjustment">Balance adjustment</string>
+    <string name="transaction_uncategorized">No category</string>
+    <string name="transaction_transfer_route" translatable="false">%1$s → %2$s</string>
+    <string name="transaction_refund_label">Refund</string>
+    <string name="transaction_delete_title">Delete transaction?</string>
+    <string name="transaction_delete_body">The transaction will be permanently deleted.</string>
+
+    <!-- Transaction editor (Phase 3) -->
+    <string name="transaction_editor_title_new">New transaction</string>
+    <string name="transaction_editor_title_edit">Edit transaction</string>
+    <string name="transaction_editor_title_edit_transfer">Edit transfer</string>
+    <string name="transaction_editor_title_edit_adjustment">Edit adjustment</string>
+    <string name="transaction_editor_account">Account</string>
+    <string name="transaction_editor_from_account">From account</string>
+    <string name="transaction_editor_to_account">To account</string>
+    <string name="transaction_editor_sent_amount">Sent (%1$s)</string>
+    <string name="transaction_editor_received_amount">Received (%1$s)</string>
+    <string name="transaction_editor_category">Category</string>
+    <string name="transaction_editor_category_error">Choose a category</string>
+    <string name="transaction_editor_description">Description</string>
+    <string name="transaction_editor_tags">Tags</string>
+    <string name="transaction_editor_new_tag">New tag</string>
+    <string name="transaction_editor_add_tag">Add tag</string>
+    <string name="transaction_editor_remove_tag">Remove tag</string>
+    <string name="transaction_editor_exclude_stats">Exclude from statistics</string>
+    <string name="transaction_editor_exclude_stats_hint">Not counted in charts and statistics totals</string>
+    <string name="transaction_editor_refund">Refund</string>
+    <string name="transaction_editor_refund_hint">An income that offsets an expense of the chosen category</string>
+    <string name="transaction_editor_delete">Delete</string>
+    <string name="keypad_backspace">Delete last digit</string>
+
     <!-- Default categories seeded on first launch (Phase 1). Editable by the user afterwards. -->
     <string name="seed_category_home">Home</string>
     <string name="seed_category_rent_mortgage">Rent &amp; mortgage</string>

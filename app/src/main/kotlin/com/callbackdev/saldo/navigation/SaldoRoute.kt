@@ -27,3 +27,7 @@ data object AccountsRoute : NavKey
 /** Account editor: create mode when [accountId] is null, edit mode otherwise. */
 @Serializable
 data class AccountEditorRoute(val accountId: Long? = null) : NavKey
+
+/** Transaction editor: create mode when [transactionId] is null, edit mode otherwise. */
+@Serializable
+data class TransactionEditorRoute(val transactionId: Long? = null) : NavKey
