@@ -5,10 +5,12 @@
     non-generic launcher icon; placeholder until final branding.
 
     The whole artwork is wrapped in one group that scales it down and nudges it
-    slightly up, so it keeps a comfortable margin from the maskable edge and the
-    solid wallet body reads as vertically centred: a purely geometric centre
-    looks low here, since the top is the two pointed cards while the bottom is a
-    full rounded body. The wallet stitch line is a thick pill.
+    slightly below the geometric centre, so it keeps a comfortable margin from
+    the maskable edge and reads as vertically centred. The nudge stops short of a
+    full geometric centring on purpose: the light, pointed cards sit on top and
+    the solid rounded body at the bottom, so the eye settles on the body; the
+    artwork looks balanced when the body straddles the centre line rather than
+    sitting above it. The wallet stitch line is a thick pill.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -21,7 +23,7 @@
         android:pivotY="54"
         android:scaleX="0.80"
         android:scaleY="0.80"
-        android:translateY="-1.0">
+        android:translateY="2.5">
 
         <group
             android:pivotX="15"

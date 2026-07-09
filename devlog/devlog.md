@@ -14,6 +14,16 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-09 - Icona app: nudge verso il basso per centratura visiva
+
+**Fatto:** l'icona launcher (adaptive `ic_launcher_foreground` + monocromatica) passa da `translateY -1.0` a `translateY 2.5` sul gruppo esterno (scala 0.80 invariata). Il disegno scende di 3.5 unità sul canvas 108, così il corpo pieno del portafoglio straddle la linea centrale invece di restare sopra: prima l'insieme risultava alto, con più aria in basso. Foreground e monocromatica tenute in sync.
+
+**Decisioni:** la posizione non è la centratura geometrica del bounding box (che, col corpo pieno in basso e le due carte appuntite in alto, apparirebbe bassa) ma un compromesso visivo: si ferma poco prima, dove il baricentro percepito coincide con il centro. Valore scelto confrontando le rese mascherate (cerchio/squircle) a -1.0, +1.5, +2.5, +3.5: +2.5 è il punto in cui l'icona appare centrata senza sembrare bassa.
+
+**Prossimo:** Fase 6 (ricorrenze e abbonamenti).
+
+---
+
 ## 2026-07-09 - Icona app rimpicciolita e ricentrata; icone interne ripristinate
 
 **Fatto:**
