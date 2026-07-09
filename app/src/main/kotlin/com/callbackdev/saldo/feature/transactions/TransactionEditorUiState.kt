@@ -28,6 +28,8 @@ data class TransactionEditorUiState(
     val type: TransactionType = TransactionType.EXPENSE,
     /** True when editing a transfer or an adjustment: the type cannot change. */
     val isTypeLocked: Boolean = false,
+    /** True when the type was chosen upfront (quick action): no in-form type selector. */
+    val isTypePreset: Boolean = false,
     val amountInput: String = "",
     val toAmountInput: String = "",
     val amountTarget: AmountTarget = AmountTarget.AMOUNT,

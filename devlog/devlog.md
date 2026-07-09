@@ -14,6 +14,88 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-09 - Icona app rimpicciolita e ricentrata; icone interne ripristinate
+
+**Fatto:**
+- **Icone interne** (avatar di movimenti, conti, dashboard, cella categoria) riportate alle dimensioni precedenti, che andavano bene: la richiesta di margine riguardava l'icona dell'app, non queste.
+- **Icona launcher** (adaptive `ic_launcher_foreground` + monocromatica): il gruppo esterno passa da scala 0.88 / translateY +5.4 a scala 0.80 / translateY -1.0. Rimpicciolita per più margine dal bordo mascherabile e alzata leggermente.
+
+**Decisioni:** l'alzata segue il baricentro visivo, non quello geometrico. Il +5.4 spingeva il corpo pieno del portafoglio in basso (centro attorno a y=60 su un canvas 108, centro 54), facendolo sembrare basso rispetto alle due carte appuntite in alto; centrare geometricamente non basta perché sopra è vuoto/arrotondato e sotto è pieno. Con translateY -1.0 il corpo pieno del portafoglio cade sul centro del canvas, quindi appare centrato. Foreground e monocromatica tenute in sync.
+
+**Prossimo:** Fase 6 (ricorrenze).
+
+---
+
+## 2026-07-09 - Editor uniformi, lista Movimenti a card, margini icone
+
+**Fatto:**
+- **Bottone Salva uniforme**: spostato in basso a tutta larghezza anche negli editor Conto e Categoria (label "Salva account" / "Salva categoria"), come già fatto per i movimenti. Nuovo componente condiviso `EditorBottomBar` + `EditorSaveButton` (Surface con inset nav bar unito a IME); rimosso il vecchio `SaveButton` in alto a destra. I tre editor ora hanno lo stesso layout.
+- **Lista Movimenti** ridisegnata come la sezione "Ultimi movimenti" della dashboard: ogni giorno è un'unica card (`DayCard`) con righe flat separate da una linea divisoria; swipe-to-delete mantenuto (sfondo rosso rivelato sotto la riga, angoli tagliati dalla card). Rimossi gli header sticky a tutta larghezza che creavano il disallineamento coi bordi laterali delle card.
+- **Intestazione dei giorni**: da `titleSmall` (più piccola dei dettagli) a `titleMedium`, senza banda bianca di sfondo; il totale del giorno resta a destra, tenue.
+- **Margine icone**: ridotto il disegno dentro gli avatar squircle (movimenti, conti, dashboard) per dare più aria al bordo (44dp: 22 -> 20; 40dp: 22 -> 20; 36dp: 20 -> 18; cella categoria: 22 -> 20). Gli avatar delle categorie restano cerchi, come da mockup.
+
+**Decisioni (concordo con le richieste):**
+- Salva in basso su tutti gli editor: coerenza tra schermate e CTA primaria più evidente e comoda; esteso anche all'editor Conto, oltre alla Categoria richiesta, per uniformità piena.
+- Lista Movimenti a card con divisori: elimina il mismatch header-a-tutta-larghezza contro card-inset e allinea lo stile alla dashboard.
+- Header giorni ingrandito: essere più piccolo dei dettagli lo rendeva poco leggibile come intestazione, ora ha il peso giusto.
+- Trade-off: persi gli header sticky durante lo scroll, ma per liste lunghe la data resta comunque sopra ogni card.
+
+**Problemi:** nessun emulatore in sessione: niente UI test strumentati, verifica affidata al build (`gradle assembleDebug testDebugUnitTest lint detekt` verde).
+
+**Prossimo:** Fase 6 (ricorrenze).
+
+---
+
+## 2026-07-09 - Redesign inserimento movimenti + transizioni più rapide
+
+**Fatto:**
+- **Schermata inserimento movimento** ridisegnata sul mockup:
+  - Importo senza bordo, grande e centrato, con cursore lampeggiante; zero placeholder scalato sulla valuta ("0,00").
+  - Chip conto e data centrati, con icona e caret a discesa; data compatta tipo "Oggi, 6 lug" (nuovo `chipDayLabel`).
+  - Sezione Categoria con link "Tutte": griglia limitata a 8 (la categoria selezionata resta sempre visibile) più un bottom sheet con l'elenco completo (`CategoryPickerSheet`).
+  - Descrizione come campo inline senza bordo, con icona.
+  - Tastierino piatto a 3 colonne (1-9, separatore, 0, backspace); rimossi il tasto "00" e il tasto Salva dalla colonna azioni. Toggle segno (solo rettifiche) sopra la griglia.
+  - Azione primaria "Salva spesa/entrata/..." come bottone a tutta larghezza sotto il tastierino; rimosso il bottone Salva in alto a destra (l'editor tiene solo Chiudi ed Elimina). Titolo e label specifici per tipo.
+  - Selettore tipo mostrato solo per il "nuovo generico" (FAB della lista Movimenti) e in modifica; nascosto quando il tipo è scelto a monte dalle quick action del FAB dashboard (nuovo campo `isTypePreset`).
+- **Bottom bar dell'editor**: tastierino (visibile quando l'importo è in modifica) più bottone Salva, con inset corretti (nav bar unito a IME) così il bottone sale sopra la tastiera quando si scrive la descrizione.
+- **Transizioni tra schermate**: sostituito il default di Navigation 3 (fade da 700ms, percepito lento) con uno slide orizzontale più fade da 300ms (easing FastOutSlowIn), con specifiche dedicate per push, pop e predictive-pop; allineata a 300ms anche la comparsa/scomparsa della bottom bar.
+
+**Decisioni:**
+- Salva spostato in basso a tutta larghezza (come nel mockup) e abilitato quando l'importo è valido; gli altri errori (categoria, conto) restano evidenziati al tap.
+- "Tutte" con griglia limitata a 8 più sheet completo, invece di elencare inline tutte le categorie (le 16 spese di default sarebbero 4 righe).
+- Toggle segno per le rettifiche mantenuto (caso di modifica) ma spostato sopra la griglia, per non rompere la griglia a 3 colonne.
+
+**Problemi:** un paio di rilievi detekt nell'editor (TooManyFunctions, ReturnCount) risolti con l'inline di un helper e meno return; un `padding(horizontal=, bottom=)` inesistente corretto. Nessun emulatore in sessione: niente UI test strumentati, verifica affidata al build.
+
+**Prossimo:** popolare la card Abbonamenti con la Fase 6.
+
+---
+
+## 2026-07-08 - Redesign Dashboard, sistema di forme, fix animazione bottom bar
+
+**Fatto:**
+- **Sistema di forme** (`SaldoShapes`, nuovo `theme/Shapes.kt`) con raggi corti al posto dei default Material 3 (che arrotondano le card fino a 28dp): extraLarge 16dp, large 12dp, medium 8dp, small 6dp, extraSmall 4dp. I frame diventano pannelli netti, "quasi ad angolo". Applicato a tutta l'app via `MaterialTheme(shapes = ...)`, quindi lo stile si propaga a tutte le schermate già fatte.
+- **`AvatarShape`** (squircle basato su percentuale, 30%) per gli avatar di conti e movimenti, prima cerchi.
+- **Dashboard ridisegnata** sul mockup fornito:
+  - Header con titolo "Saldo" e data compatta (es. "mar 8 lug").
+  - Card saldo (hero) con dettaglio conti sempre visibile (avatar squircle a tinta tenue) e richiamo "Gestisci account"; rimosso il toggle espandi/comprimi.
+  - Card Oggi e mese corrente affiancate, stessa altezza: netto in evidenza + righe Spese/Entrate sotto.
+  - Riga di confronto separata "A questo punto del mese scorso avevi speso X" (nuovo campo `previousMonthSpendToDate` nel ViewModel; `monthVsPreviousToDate` resta per la direzione dell'icona e per gli unit test).
+  - Ultimi movimenti in un'unica card raggruppata con righe flat e divisori: estratto `TransactionRowContent` e riusato da lista movimenti e dashboard.
+- **Bottone Salva** in alto a destra (editor conto/categoria/movimento): da `FilledTonalButton` piccolo al componente condiviso `SaveButton` (filled, altezza minima 44dp), più prominente e con touch target comodo.
+- **Fix animazione bottom bar**: la navigation bar non è più uno slot dello `Scaffold` ma un overlay in `SaldoApp`. Il `NavDisplay` occupa sempre tutta l'altezza e solo le schermate top-level riservano lo spazio della barra (`BottomBarHeight = 80dp`). Prima l'`AnimatedVisibility` nello slot bottomBar manteneva l'altezza misurata fino a fine animazione, quindi il padding di fondo condiviso dal `NavDisplay` crollava di colpo a transizione conclusa e il contenuto ancorato in basso (il tastierino importo) scattava verso il basso. Ora ogni destinazione è alla dimensione finale dal primo frame e solo la barra scorre.
+
+**Decisioni:**
+- Overlay invece dello slot Scaffold: in transizione le due schermate coesistono e servono inset di fondo indipendenti e stabili; un unico padding animato condiviso era la causa dello scatto. Il system inset lo aggiunge lo Scaffold interno di ciascuna schermata, quindi non va sommato a mano.
+- Teaser Abbonamenti lasciato come placeholder (Fase 6 non pronta): nessun dato finto, solo restyle coerente col resto.
+- Avatar dei conti: tinta tenue sulla dashboard (come nel mockup), colore pieno nella schermata Account (identità forte); entrambi squircle.
+
+**Problemi:** nessun emulatore disponibile in sessione, quindi niente UI test strumentati; verifica affidata al build (`gradle assembleDebug testDebugUnitTest lint detekt` verde).
+
+**Prossimo:** Fase 6 (ricorrenze) per popolare davvero la card Abbonamenti.
+
+---
+
 ## 2026-07-08 - Fase 5: Dashboard "Oggi" + rifinitura UI
 
 **Fatto:** implementata la Dashboard "Oggi", la schermata iniziale.

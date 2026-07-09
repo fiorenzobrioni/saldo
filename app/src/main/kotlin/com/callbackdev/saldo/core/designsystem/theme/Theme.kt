@@ -28,6 +28,7 @@ fun SaldoTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = SaldoTypography,
+        shapes = SaldoShapes,
         content = content,
     )
 }

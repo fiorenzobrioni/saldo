@@ -36,6 +36,7 @@
     <string name="dashboard_month_more">%1$s in più rispetto a questo punto del mese scorso</string>
     <string name="dashboard_month_less">%1$s in meno rispetto a questo punto del mese scorso</string>
     <string name="dashboard_month_same">Come a questo punto del mese scorso</string>
+    <string name="dashboard_month_comparison">A questo punto del mese scorso avevi speso %1$s</string>
     <string name="dashboard_subscriptions_title">Abbonamenti</string>
     <string name="dashboard_subscriptions_soon">In arrivo con le ricorrenze</string>
     <string name="dashboard_recent_title">Ultimi movimenti</string>
@@ -87,6 +88,7 @@
     </plurals>
     <string name="account_editor_title_new">Nuovo account</string>
     <string name="account_editor_title_edit">Modifica account</string>
+    <string name="account_editor_save">Salva account</string>
     <string name="account_editor_name">Nome</string>
     <string name="account_editor_name_error">Inserisci un nome</string>
     <string name="account_editor_section_type">Tipo</string>
@@ -122,9 +124,18 @@
 
     <!-- Editor movimento (Fase 3) -->
     <string name="transaction_editor_title_new">Nuovo movimento</string>
+    <string name="transaction_editor_title_new_expense">Nuova spesa</string>
+    <string name="transaction_editor_title_new_income">Nuova entrata</string>
+    <string name="transaction_editor_title_new_transfer">Nuovo trasferimento</string>
     <string name="transaction_editor_title_edit">Modifica movimento</string>
     <string name="transaction_editor_title_edit_transfer">Modifica trasferimento</string>
     <string name="transaction_editor_title_edit_adjustment">Modifica rettifica</string>
+    <string name="transaction_editor_save_expense">Salva spesa</string>
+    <string name="transaction_editor_save_income">Salva entrata</string>
+    <string name="transaction_editor_save_transfer">Salva trasferimento</string>
+    <string name="transaction_editor_save_adjustment">Salva rettifica</string>
+    <string name="transaction_editor_categories_all">Tutte</string>
+    <string name="transaction_editor_description_hint">Aggiungi descrizione…</string>
     <string name="transaction_editor_account">Account</string>
     <string name="transaction_editor_from_account">Account di partenza</string>
     <string name="transaction_editor_to_account">Account di arrivo</string>
@@ -160,6 +171,7 @@
     <string name="category_type_both_hint">Spese ed entrate</string>
     <string name="category_editor_title_new">Nuova categoria</string>
     <string name="category_editor_title_edit">Modifica categoria</string>
+    <string name="category_editor_save">Salva categoria</string>
     <string name="category_editor_name">Nome</string>
     <string name="category_editor_name_error">Inserisci un nome</string>
     <string name="category_editor_section_type">Tipo</string>

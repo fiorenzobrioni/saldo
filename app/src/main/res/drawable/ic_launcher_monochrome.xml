@@ -3,7 +3,7 @@
     Themed/monochrome variant (Android 13+ "themed icons"): same silhouette as
     ic_launcher_foreground, single white fill with alpha for layering since
     the system applies its own tint at runtime. Kept in sync with the foreground:
-    same scale/recenter wrapper and same thick stitch pill.
+    same scale/nudge-up wrapper and same thick stitch pill.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -14,9 +14,9 @@
     <group
         android:pivotX="54"
         android:pivotY="54"
-        android:scaleX="0.88"
-        android:scaleY="0.88"
-        android:translateY="5.4">
+        android:scaleX="0.80"
+        android:scaleY="0.80"
+        android:translateY="-1.0">
 
         <group
             android:pivotX="15"

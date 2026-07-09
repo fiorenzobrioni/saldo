@@ -49,6 +49,14 @@ data class DashboardUiState(
      * no baseline last month.
      */
     val monthVsPreviousToDate: BigDecimal? = null,
+    /**
+     * Positive magnitude of what had been spent by this same day last month, the
+     * reference figure shown under the period cards; null when there is nothing
+     * to compare against.
+     */
+    val previousMonthSpendToDate: BigDecimal? = null,
+    /** Whether more has been spent so far this month than by this day last month. */
+    val spentMoreThanLastMonth: Boolean = false,
     val recent: List<TransactionListItem> = emptyList(),
     val date: LocalDate = LocalDate.ofEpochDay(0),
 ) {
@@ -112,6 +120,8 @@ class DashboardViewModel @Inject constructor(
         }
         val comparison =
             if (previousSpend.signum() > 0) monthToDateSpend.subtract(previousSpend) else null
+        val previousReference = previousSpend.takeIf { it.signum() > 0 }
+        val spentMore = monthToDateSpend > previousSpend
 
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
@@ -133,6 +143,8 @@ class DashboardViewModel @Inject constructor(
             today = todayFlow,
             month = monthFlow,
             monthVsPreviousToDate = comparison,
+            previousMonthSpendToDate = previousReference,
+            spentMoreThanLastMonth = spentMore,
             recent = recent,
             date = today,
         )

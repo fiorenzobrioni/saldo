@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
@@ -45,7 +44,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.domain.model.TransactionType
-import com.callbackdev.saldo.feature.transactions.TransactionRow
 
 /**
  * The "Today" home screen: a single glance at total balance, today's and this
@@ -131,10 +129,10 @@ private fun DashboardContent(
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item { DashboardDate(uiState.date, Modifier.padding(start = 4.dp)) }
+        item { DashboardHeader(uiState.date, Modifier.padding(horizontal = 4.dp, vertical = 4.dp)) }
         item {
             BalanceCard(
                 totalBalance = uiState.totalBalance,
@@ -144,21 +142,21 @@ private fun DashboardContent(
             )
         }
         item {
-            PeriodCard(
-                title = stringResource(R.string.dashboard_today),
-                netLabel = stringResource(R.string.dashboard_stat_net),
-                flow = uiState.today,
+            PeriodCardsRow(
+                date = uiState.date,
+                today = uiState.today,
+                month = uiState.month,
                 currency = uiState.primaryCurrency,
             )
         }
-        item {
-            PeriodCard(
-                title = stringResource(R.string.dashboard_month),
-                netLabel = stringResource(R.string.dashboard_stat_balance),
-                flow = uiState.month,
-                currency = uiState.primaryCurrency,
-                comparison = uiState.monthVsPreviousToDate,
-            )
+        uiState.previousMonthSpendToDate?.let { previousSpend ->
+            item {
+                MonthComparisonRow(
+                    previousSpend = previousSpend,
+                    spentMore = uiState.spentMoreThanLastMonth,
+                    currency = uiState.primaryCurrency,
+                )
+            }
         }
         item { SubscriptionsTeaser() }
         item { RecentHeader(onSeeAll = onSeeAllTransactions) }
@@ -172,8 +170,11 @@ private fun DashboardContent(
                 )
             }
         } else {
-            items(uiState.recent, key = { it.id }) { item ->
-                TransactionRow(item = item, onClick = { onTransactionClick(item.id) })
+            item {
+                RecentMovementsCard(
+                    items = uiState.recent,
+                    onItemClick = onTransactionClick,
+                )
             }
         }
     }

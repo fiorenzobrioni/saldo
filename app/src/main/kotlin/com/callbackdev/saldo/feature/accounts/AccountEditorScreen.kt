@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -26,7 +25,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
+import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.navigation.AccountEditorRoute
 import java.util.Currency
@@ -107,16 +107,18 @@ fun AccountEditorScreen(
                         )
                     }
                 },
-                actions = {
-                    FilledTonalButton(
+            )
+        },
+        bottomBar = {
+            if (!uiState.isLoading) {
+                EditorBottomBar {
+                    EditorSaveButton(
+                        text = stringResource(R.string.account_editor_save),
                         onClick = viewModel::save,
                         enabled = !uiState.isLoading,
-                        modifier = Modifier.padding(end = 8.dp),
-                    ) {
-                        Text(stringResource(R.string.action_save))
-                    }
-                },
-            )
+                    )
+                }
+            }
         },
     ) { innerPadding ->
         if (uiState.isLoading) {
@@ -141,7 +143,6 @@ fun AccountEditorScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
-                    .imePadding()
                     .padding(horizontal = 16.dp),
             )
         }
