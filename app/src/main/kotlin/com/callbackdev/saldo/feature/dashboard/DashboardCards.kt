@@ -90,7 +90,14 @@ internal fun BalanceCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
     ) {
-        Column(modifier = Modifier.padding(SaldoDimens.cardPaddingLarge)) {
+        Column(
+            modifier = Modifier.padding(
+                start = SaldoDimens.cardPaddingLarge,
+                end = SaldoDimens.cardPaddingLarge,
+                top = SaldoDimens.cardPaddingLarge,
+                bottom = 8.dp,
+            ),
+        ) {
             Text(
                 text = stringResource(R.string.dashboard_balance_total),
                 style = MaterialTheme.typography.labelLarge,
@@ -108,9 +115,9 @@ internal fun BalanceCard(
                 },
             )
             if (accounts.isNotEmpty()) {
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
                 accounts.forEach { item -> AccountBreakdownRow(item = item) }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Surface(
                     onClick = onManageAccounts,
@@ -121,7 +128,7 @@ internal fun BalanceCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = SaldoDimens.rowPaddingVertical),
+                            .padding(vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
@@ -149,7 +156,7 @@ private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = M
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(

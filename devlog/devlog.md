@@ -14,6 +14,19 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-09 - Rifinitura UI 2: date picker, card saldo compatta, elenco account a lista
+
+**Fatto (feedback):**
+- **Date picker**: `showModeToggle = false` applicato anche al selettore data dell'editor movimenti (prima solo su quello abbonamenti); elimina l'animazione lenta/scattosa del toggle penna/calendario ovunque venga usato il controllo Data.
+- **Card saldo (dashboard)**: resa più compatta in verticale - righe conto meno distanziate (padding verticale 8→4), meno spazio prima/dopo il divisore, "Gestisci account" con meno aria sotto (padding di fondo della card 16→8 e riga 10→6). Eliminato lo spazio vuoto percepito.
+- **Elenco account**: da schede separate per conto a un'unica card con righe divise da hairline, come Movimenti e Abbonamenti (attivi e archiviati in due card distinte). `AccountRow` (Surface-card) sostituito da `AccountRowContent` flat dentro `AccountsCard`.
+
+**Verifica:** `assembleDebug testDebugUnitTest detekt lintDebug` verdi; 128 unit test invariati.
+
+**Prossimo:** Fase 6 incremento 2 (WorkManager periodico, notifiche, conferma/importo variabile con movimento pending).
+
+---
+
 ## 2026-07-09 - Rifinitura UI: schede compatte, editor abbonamenti premium, titolo movimento contestuale
 
 **Fatto (feedback post-Fase 6):**

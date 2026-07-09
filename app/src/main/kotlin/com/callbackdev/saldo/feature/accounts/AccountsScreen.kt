@@ -16,17 +16,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -196,10 +198,12 @@ private fun AccountsList(
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
-        items(uiState.active, key = { it.account.id }) { item ->
-            AccountRow(item = item, onClick = { onAccountClick(item) })
+        if (uiState.active.isNotEmpty()) {
+            item(key = "active") {
+                AccountsCard(items = uiState.active, onAccountClick = onAccountClick)
+            }
         }
 
         if (uiState.archived.isNotEmpty()) {
@@ -211,8 +215,47 @@ private fun AccountsList(
                 )
             }
             if (archivedExpanded) {
-                items(uiState.archived, key = { it.account.id }) { item ->
-                    AccountRow(item = item, onClick = { onAccountClick(item) })
+                item(key = "archived") {
+                    AccountsCard(items = uiState.archived, onAccountClick = onAccountClick)
+                }
+            }
+        }
+    }
+}
+
+/** All accounts of a section in one grouped card, split by hairline dividers. */
+@Composable
+private fun AccountsCard(
+    items: List<AccountWithBalance>,
+    onAccountClick: (AccountWithBalance) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ),
+    ) {
+        Column {
+            items.forEachIndexed { index, item ->
+                if (index > 0) {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        modifier = Modifier.padding(horizontal = SaldoDimens.rowPaddingHorizontal),
+                    )
+                }
+                Surface(
+                    onClick = { onAccountClick(item) },
+                    color = Color.Transparent,
+                ) {
+                    AccountRowContent(
+                        item = item,
+                        modifier = Modifier.padding(
+                            horizontal = SaldoDimens.rowPaddingHorizontal,
+                            vertical = SaldoDimens.rowPaddingVertical,
+                        ),
+                    )
                 }
             }
         }
@@ -249,55 +292,48 @@ private fun ArchivedHeader(
     }
 }
 
+/** Flat account row (avatar, name/detail, balance) for the grouped list card. */
 @Composable
-internal fun AccountRow(
+internal fun AccountRowContent(
     item: AccountWithBalance,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val account = item.account
-    Surface(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = modifier.fillMaxWidth(),
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .alpha(if (account.isArchived) 0.6f else 1f),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
+        AccountAvatar(account = account)
+        Column(
             modifier = Modifier
-                .alpha(if (account.isArchived) 0.6f else 1f)
-                .padding(SaldoDimens.cardPadding),
-            verticalAlignment = Alignment.CenterVertically,
+                .weight(1f)
+                .padding(horizontal = 12.dp),
         ) {
-            AccountAvatar(account = account)
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 12.dp),
-            ) {
-                Text(
-                    text = account.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = accountSupportingText(account),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
             Text(
-                text = MoneyFormatter.format(item.balance, account.currency),
-                style = MaterialTheme.typography.titleMedium,
-                color = if (item.balance.signum() < 0) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
+                text = account.name,
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = accountSupportingText(account),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
+        Text(
+            text = MoneyFormatter.format(item.balance, account.currency),
+            style = MaterialTheme.typography.titleMedium,
+            color = if (item.balance.signum() < 0) {
+                MaterialTheme.colorScheme.error
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+        )
     }
 }
 

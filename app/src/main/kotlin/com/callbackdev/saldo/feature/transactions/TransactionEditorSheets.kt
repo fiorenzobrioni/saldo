@@ -279,7 +279,9 @@ internal fun TransactionDatePickerDialog(
             }
         },
     ) {
-        DatePicker(state = state)
+        // Calendar-only: the input/calendar mode toggle animates slowly and janky,
+        // and typing a date adds little here.
+        DatePicker(state = state, showModeToggle = false)
     }
 }
 
