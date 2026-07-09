@@ -11,16 +11,32 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Currency
 import javax.inject.Inject
+
+/** A movement created by [GenerateRecurringMovementsUseCase], for the caller to notify about. */
+data class GeneratedMovement(
+    val transactionId: Long,
+    val ruleId: Long,
+    val ruleName: String,
+    /** The charge magnitude; null for a variable-amount pending movement. */
+    val amount: BigDecimal?,
+    val currency: Currency,
+    val date: LocalDate,
+    /** True when the movement awaits confirmation (confirm mode / variable amount). */
+    val isPending: Boolean,
+)
 
 /**
  * Materializes the movements owed by recurring rules up to today. Runs on app
- * start (catch-up, PLANNING ADR 4) and is **idempotent**: every rule advances its
- * `lastGeneratedDate`, so re-running for the same day produces nothing.
+ * start (catch-up, PLANNING ADR 4) and from the periodic worker, and is
+ * **idempotent**: every rule advances its `lastGeneratedDate`, so re-running for
+ * the same day produces nothing.
  *
- * Scope for now: fixed-amount automatic rules. Confirm-mode and variable-amount
- * rules (which need a pending movement and a notification) are handled in a later
- * increment and are skipped here.
+ * Automatic fixed-amount rules produce confirmed movements. Confirm-mode and
+ * variable-amount rules produce **pending** movements (excluded from balances
+ * until the user confirms them). Returns everything created, so the caller can
+ * post the appropriate notifications.
  */
 class GenerateRecurringMovementsUseCase @Inject constructor(
     private val recurringRuleRepository: RecurringRuleRepository,
@@ -28,13 +44,13 @@ class GenerateRecurringMovementsUseCase @Inject constructor(
     private val clock: Clock,
 ) {
 
-    /** Generates due movements up to [today]; returns how many were created. */
-    suspend operator fun invoke(today: LocalDate = LocalDate.now(clock)): Int =
-        recurringRuleRepository.getRules().sumOf { rule -> generateForRule(rule, today) }
+    suspend operator fun invoke(today: LocalDate = LocalDate.now(clock)): List<GeneratedMovement> =
+        recurringRuleRepository.getRules().flatMap { rule -> generateForRule(rule, today) }
 
-    private suspend fun generateForRule(rule: RecurringRule, today: LocalDate): Int {
-        val amount = rule.amount
-        if (rule.mode != RecurrenceMode.AUTOMATIC || rule.isVariableAmount || amount == null) return 0
+    private suspend fun generateForRule(rule: RecurringRule, today: LocalDate): List<GeneratedMovement> {
+        val pending = rule.isVariableAmount || rule.mode == RecurrenceMode.CONFIRM
+        // A non-pending rule needs a fixed amount to materialize automatically.
+        if (!pending && rule.amount == null) return emptyList()
 
         val from = rule.lastGeneratedDate?.plusDays(1) ?: rule.startDate
         val occurrences = if (from > today) {
@@ -42,24 +58,31 @@ class GenerateRecurringMovementsUseCase @Inject constructor(
         } else {
             RecurrenceCalculator.occurrencesInClosedRange(rule, from, today)
         }
-        occurrences.forEach { date ->
-            transactionRepository.upsert(rule.toMovement(amount, date, clock.zone))
+        val generated = occurrences.map { date ->
+            val id = transactionRepository.upsert(rule.toMovement(date, pending, clock.zone))
+            GeneratedMovement(
+                transactionId = id,
+                ruleId = rule.id,
+                ruleName = rule.name,
+                amount = rule.amount.takeUnless { rule.isVariableAmount },
+                currency = rule.currency,
+                date = date,
+                isPending = pending,
+            )
         }
         occurrences.lastOrNull()?.let { last ->
             recurringRuleRepository.upsert(rule.copy(lastGeneratedDate = last))
         }
-        return occurrences.size
+        return generated
     }
 
-    private fun RecurringRule.toMovement(
-        amount: BigDecimal,
-        date: LocalDate,
-        zone: ZoneId,
-    ): Transaction {
+    private fun RecurringRule.toMovement(date: LocalDate, pending: Boolean, zone: ZoneId): Transaction {
         // Noon avoids the DST/midnight edge, so the movement's local date equals
         // the occurrence date regardless of timezone shifts.
         val zoned = date.atTime(GENERATION_HOUR, 0).atZone(zone)
-        val signed = if (type == TransactionType.EXPENSE) amount.negate() else amount
+        // Variable amount is unknown until confirmed; store zero in the meantime.
+        val magnitude = if (isVariableAmount) BigDecimal.ZERO else (amount ?: BigDecimal.ZERO)
+        val signed = if (type == TransactionType.EXPENSE) magnitude.negate() else magnitude
         return Transaction(
             type = type,
             amount = signed,
@@ -70,6 +93,7 @@ class GenerateRecurringMovementsUseCase @Inject constructor(
             categoryId = categoryId,
             description = name,
             recurringRuleId = id,
+            isPending = pending,
         )
     }
 

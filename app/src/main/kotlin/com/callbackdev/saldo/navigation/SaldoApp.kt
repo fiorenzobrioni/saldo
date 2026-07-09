@@ -34,6 +34,7 @@ import com.callbackdev.saldo.feature.accounts.AccountsScreen
 import com.callbackdev.saldo.feature.categories.CategoriesScreen
 import com.callbackdev.saldo.feature.categories.CategoryEditorScreen
 import com.callbackdev.saldo.feature.dashboard.DashboardScreen
+import com.callbackdev.saldo.feature.recurring.PendingMovementsScreen
 import com.callbackdev.saldo.feature.recurring.RecurringRuleEditorScreen
 import com.callbackdev.saldo.feature.recurring.SubscriptionsScreen
 import com.callbackdev.saldo.feature.settings.SettingsScreen
@@ -101,6 +102,7 @@ fun SaldoApp() {
                         },
                         onSeeAllTransactions = { backStack.switchTopLevelTab(TransactionsRoute) },
                         onNavigateToSubscriptions = { backStack.add(SubscriptionsRoute) },
+                        onNavigateToPending = { backStack.add(PendingMovementsRoute) },
                     )
                 }
                 entry<TransactionsRoute> {
@@ -171,6 +173,9 @@ fun SaldoApp() {
                         route = route,
                         onNavigateBack = { backStack.removeLastOrNull() },
                     )
+                }
+                entry<PendingMovementsRoute> {
+                    PendingMovementsScreen(onNavigateBack = { backStack.removeLastOrNull() })
                 }
             },
         )

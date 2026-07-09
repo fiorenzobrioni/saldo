@@ -59,6 +59,7 @@ fun DashboardScreen(
     onNavigateToEditTransaction: (Long) -> Unit,
     onSeeAllTransactions: () -> Unit,
     onNavigateToSubscriptions: () -> Unit,
+    onNavigateToPending: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -99,6 +100,7 @@ fun DashboardScreen(
                     onSeeAllTransactions = onSeeAllTransactions,
                     onTransactionClick = onNavigateToEditTransaction,
                     onSubscriptionsClick = onNavigateToSubscriptions,
+                    onPendingClick = onNavigateToPending,
                 )
             }
 
@@ -129,6 +131,7 @@ private fun DashboardContent(
     onSeeAllTransactions: () -> Unit,
     onTransactionClick: (Long) -> Unit,
     onSubscriptionsClick: () -> Unit,
+    onPendingClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -161,6 +164,9 @@ private fun DashboardContent(
                     currency = uiState.primaryCurrency,
                 )
             }
+        }
+        if (uiState.pendingCount > 0) {
+            item { PendingConfirmationCard(count = uiState.pendingCount, onClick = onPendingClick) }
         }
         item {
             SubscriptionsCard(

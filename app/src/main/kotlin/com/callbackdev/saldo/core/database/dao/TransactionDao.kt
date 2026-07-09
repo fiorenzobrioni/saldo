@@ -11,6 +11,7 @@ import com.callbackdev.saldo.core.database.relation.CategoryTotalRow
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@Suppress("TooManyFunctions") // A data-access interface naturally has many queries.
 interface TransactionDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
@@ -22,13 +23,19 @@ interface TransactionDao {
     @Delete
     suspend fun delete(transaction: TransactionEntity)
 
-    @Query("SELECT * FROM transactions ORDER BY timestampEpochMilli DESC, id DESC")
+    /** The confirmed ledger; pending recurring movements are excluded. */
+    @Query("SELECT * FROM transactions WHERE isPending = 0 ORDER BY timestampEpochMilli DESC, id DESC")
     fun observeAll(): Flow<List<TransactionEntity>>
+
+    /** Movements awaiting confirmation (confirm mode / variable amount), oldest first. */
+    @Query("SELECT * FROM transactions WHERE isPending = 1 ORDER BY timestampEpochMilli ASC, id ASC")
+    fun observePending(): Flow<List<TransactionEntity>>
 
     @Query(
         """
         SELECT * FROM transactions
-        WHERE timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        WHERE isPending = 0
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
         ORDER BY timestampEpochMilli DESC, id DESC
         """,
     )
@@ -37,7 +44,7 @@ interface TransactionDao {
     @Query(
         """
         SELECT * FROM transactions
-        WHERE accountId = :accountId OR transferAccountId = :accountId
+        WHERE isPending = 0 AND (accountId = :accountId OR transferAccountId = :accountId)
         ORDER BY timestampEpochMilli DESC, id DESC
         """,
     )
@@ -58,6 +65,7 @@ interface TransactionDao {
         WHERE categoryId IS NOT NULL
             AND type IN ('EXPENSE', 'INCOME')
             AND isExcludedFromStats = 0
+            AND isPending = 0
             AND currency = :currency
             AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
         GROUP BY categoryId

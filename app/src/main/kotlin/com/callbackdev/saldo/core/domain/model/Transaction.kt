@@ -42,4 +42,9 @@ data class Transaction(
     val isExcludedFromStats: Boolean = false,
     val isRefund: Boolean = false,
     val recurringRuleId: Long? = null,
+    /**
+     * True for a recurring movement awaiting confirmation (confirm mode / variable
+     * amount). Pending movements do not affect balances or statistics until confirmed.
+     */
+    val isPending: Boolean = false,
 )

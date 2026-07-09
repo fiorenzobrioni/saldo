@@ -1,7 +1,32 @@
 package com.callbackdev.saldo
 
 import android.app.Application
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
+import com.callbackdev.saldo.recurring.RecurringNotifier
+import com.callbackdev.saldo.recurring.RecurringWorkScheduler
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 @HiltAndroidApp
-class SaldoApplication : Application()
+class SaldoApplication : Application(), Configuration.Provider {
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    @Inject
+    lateinit var recurringNotifier: RecurringNotifier
+
+    // On-demand WorkManager initialization with the Hilt worker factory (the
+    // default initializer is removed in the manifest).
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
+
+    override fun onCreate() {
+        super.onCreate()
+        recurringNotifier.createChannels()
+        RecurringWorkScheduler.schedule(this)
+    }
+}

@@ -9,8 +9,11 @@ import java.util.Currency
 /** Read/write access to movements and their statistical aggregates. */
 interface TransactionRepository {
 
-    /** All movements, most recent first. */
+    /** Confirmed movements, most recent first (pending recurring movements excluded). */
     fun observeTransactions(): Flow<List<Transaction>>
+
+    /** Recurring movements awaiting confirmation, oldest first. */
+    fun observePendingTransactions(): Flow<List<Transaction>>
 
     /** Movements whose instant is in `[start, end)`, most recent first. */
     fun observeTransactionsBetween(start: Instant, end: Instant): Flow<List<Transaction>>

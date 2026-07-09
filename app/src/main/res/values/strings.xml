@@ -239,6 +239,12 @@
     <string name="subscription_editor_name_error">Enter a name</string>
     <string name="subscription_editor_amount">Amount</string>
     <string name="subscription_editor_amount_error">Enter an amount greater than zero</string>
+    <string name="subscription_editor_variable_amount">Variable amount</string>
+    <string name="subscription_editor_variable_amount_hint">You confirm the amount at each charge</string>
+    <string name="subscription_editor_variable_amount_note">The amount will be asked when the charge is due.</string>
+    <string name="subscription_editor_section_mode">Recording</string>
+    <string name="subscription_editor_mode_automatic">Automatic</string>
+    <string name="subscription_editor_mode_confirm">With confirmation</string>
     <string name="subscription_editor_account">Account</string>
     <string name="subscription_editor_account_error">Choose an account</string>
     <string name="subscription_editor_category">Category</string>
@@ -255,6 +261,29 @@
     <string name="subscription_editor_delete">Delete subscription</string>
     <string name="subscription_delete_title">Delete subscription?</string>
     <string name="subscription_delete_body">The rule will be removed and no new movements will be generated. Movements already recorded are kept.</string>
+    <string name="pending_title">To confirm</string>
+    <string name="pending_amount_to_enter">Amount to enter</string>
+    <string name="pending_confirm">Confirm</string>
+    <string name="pending_skip">Skip</string>
+    <string name="pending_empty_title">Nothing to confirm</string>
+    <string name="pending_empty_body">Recurring charges awaiting confirmation will show up here.</string>
+    <plurals name="dashboard_pending_title">
+        <item quantity="one">%1$d charge to confirm</item>
+        <item quantity="other">%1$d charges to confirm</item>
+    </plurals>
+    <string name="dashboard_pending_subtitle">Tap to confirm or skip</string>
+    <string name="notif_channel_activity_name">Recurring movements</string>
+    <string name="notif_channel_confirm_name">Subscription confirmations</string>
+    <plurals name="notif_activity_title">
+        <item quantity="one">%1$d recurring movement recorded</item>
+        <item quantity="other">%1$d recurring movements recorded</item>
+    </plurals>
+    <string name="notif_activity_body">Tap to review your movements.</string>
+    <plurals name="notif_confirm_title">
+        <item quantity="one">%1$d charge to confirm</item>
+        <item quantity="other">%1$d charges to confirm</item>
+    </plurals>
+    <string name="notif_confirm_body">Tap to confirm or skip them.</string>
 
     <!-- Default categories seeded on first launch (Phase 1). Editable by the user afterwards. -->
     <string name="seed_category_home">Home</string>

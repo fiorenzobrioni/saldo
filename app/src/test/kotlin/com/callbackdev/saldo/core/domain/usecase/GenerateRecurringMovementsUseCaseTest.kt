@@ -12,6 +12,8 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Clock
@@ -82,9 +84,9 @@ class GenerateRecurringMovementsUseCaseTest {
     fun `catches up every missed charge from the start date`() = runTest {
         val useCase = useCase(listOf(rule(startDate = LocalDate.of(2026, 5, 7))))
 
-        val count = useCase(today)
+        val result = useCase(today)
 
-        assertEquals(3, count)
+        assertEquals(3, result.size)
         assertEquals(
             listOf(LocalDate.of(2026, 5, 7), LocalDate.of(2026, 6, 7), LocalDate.of(2026, 7, 7)),
             generatedMovements.map { it.localDate() },
@@ -96,7 +98,8 @@ class GenerateRecurringMovementsUseCaseTest {
         assertEquals(5L, movement.categoryId)
         assertEquals(1L, movement.recurringRuleId)
         assertEquals("Netflix", movement.description)
-        // The rule advances to the last generated occurrence.
+        assertTrue(generatedMovements.none { it.isPending })
+        assertTrue(result.none { it.isPending })
         assertEquals(LocalDate.of(2026, 7, 7), updatedRules.single().lastGeneratedDate)
     }
 
@@ -106,13 +109,13 @@ class GenerateRecurringMovementsUseCaseTest {
             listOf(rule(startDate = LocalDate.of(2026, 1, 1), lastGenerated = LocalDate.of(2026, 5, 1))),
         )
 
-        val count = useCase(today)
+        val result = useCase(today)
 
         assertEquals(
             listOf(LocalDate.of(2026, 6, 1), LocalDate.of(2026, 7, 1)),
             generatedMovements.map { it.localDate() },
         )
-        assertEquals(2, count)
+        assertEquals(2, result.size)
     }
 
     @Test
@@ -121,9 +124,9 @@ class GenerateRecurringMovementsUseCaseTest {
             listOf(rule(startDate = LocalDate.of(2026, 1, 7), lastGenerated = LocalDate.of(2026, 7, 7))),
         )
 
-        val count = useCase(today)
+        val result = useCase(today)
 
-        assertEquals(0, count)
+        assertEquals(0, result.size)
         assertEquals(emptyList<Transaction>(), generatedMovements)
         coVerify(exactly = 0) { recurringRuleRepository.upsert(any()) }
     }
@@ -146,18 +149,45 @@ class GenerateRecurringMovementsUseCaseTest {
     }
 
     @Test
-    fun `skips confirm-mode, variable-amount and amount-less rules`() = runTest {
+    fun `confirm-mode rules generate pending movements with the fixed amount`() = runTest {
         val useCase = useCase(
-            listOf(
-                rule(id = 1L, startDate = LocalDate.of(2026, 6, 1), mode = RecurrenceMode.CONFIRM),
-                rule(id = 2L, startDate = LocalDate.of(2026, 6, 1), isVariable = true),
-                rule(id = 3L, startDate = LocalDate.of(2026, 6, 1), amount = null),
-            ),
+            listOf(rule(startDate = LocalDate.of(2026, 7, 7), mode = RecurrenceMode.CONFIRM)),
         )
 
-        val count = useCase(today)
+        val result = useCase(today)
 
-        assertEquals(0, count)
+        assertEquals(1, result.size)
+        val movement = generatedMovements.single()
+        assertTrue(movement.isPending)
+        assertEquals(BigDecimal("-12.99"), movement.amount)
+        assertTrue(result.single().isPending)
+        assertEquals(BigDecimal("12.99"), result.single().amount)
+    }
+
+    @Test
+    fun `variable-amount rules generate a pending movement with zero and no known amount`() = runTest {
+        val useCase = useCase(
+            listOf(rule(startDate = LocalDate.of(2026, 7, 7), amount = null, isVariable = true)),
+        )
+
+        val result = useCase(today)
+
+        assertEquals(1, result.size)
+        val movement = generatedMovements.single()
+        assertTrue(movement.isPending)
+        assertEquals(BigDecimal.ZERO.negate(), movement.amount)
+        assertNull(result.single().amount)
+    }
+
+    @Test
+    fun `skips automatic rules without an amount`() = runTest {
+        val useCase = useCase(
+            listOf(rule(startDate = LocalDate.of(2026, 6, 1), amount = null)),
+        )
+
+        val result = useCase(today)
+
+        assertEquals(0, result.size)
         assertEquals(emptyList<Transaction>(), generatedMovements)
     }
 
@@ -165,9 +195,9 @@ class GenerateRecurringMovementsUseCaseTest {
     fun `does not generate before the start date`() = runTest {
         val useCase = useCase(listOf(rule(startDate = LocalDate.of(2026, 8, 7))))
 
-        val count = useCase(today)
+        val result = useCase(today)
 
-        assertEquals(0, count)
+        assertEquals(0, result.size)
     }
 
     @Test

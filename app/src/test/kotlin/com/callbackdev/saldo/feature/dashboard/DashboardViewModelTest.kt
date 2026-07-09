@@ -90,6 +90,7 @@ class DashboardViewModelTest {
     ): DashboardViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         every { transactionRepository.observeTransactions() } returns flowOf(transactions)
+        every { transactionRepository.observePendingTransactions() } returns flowOf(emptyList<Transaction>())
         every { categoryRepository.observeCategories() } returns flowOf(categories)
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
         return DashboardViewModel(

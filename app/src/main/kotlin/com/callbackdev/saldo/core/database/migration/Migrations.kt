@@ -9,6 +9,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * v1 -> v2: adds the `color` and `icon` columns to `recurring_rules` so a
  * subscription can carry its own avatar, like accounts and categories. Both are
  * nullable, so existing rows keep NULL and no data is lost.
+ *
+ * v2 -> v3: adds `isPending` to `transactions` (confirm-mode / variable-amount
+ * recurring movements await confirmation). NOT NULL DEFAULT 0, so every existing
+ * movement is a confirmed one.
  */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -17,5 +21,12 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     }
 }
 
+@Suppress("MagicNumber") // Schema version numbers.
+val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN isPending INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
 /** All migrations, applied in order by Room. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2)
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)

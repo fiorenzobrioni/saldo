@@ -8,6 +8,7 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
+import com.callbackdev.saldo.core.domain.model.RecurrenceMode
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
@@ -49,6 +50,8 @@ data class RecurringRuleEditorUiState(
     val frequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY,
     val startDate: LocalDate = LocalDate.ofEpochDay(0),
     val endDate: LocalDate? = null,
+    val mode: RecurrenceMode = RecurrenceMode.AUTOMATIC,
+    val isVariableAmount: Boolean = false,
     val color: Int = CategoryVisuals.colors.first(),
     val icon: String = DEFAULT_ICON,
     val showValidation: Boolean = false,
@@ -152,6 +155,8 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
                 frequency = rule.frequency,
                 startDate = rule.startDate,
                 endDate = rule.endDate,
+                mode = rule.mode,
+                isVariableAmount = rule.isVariableAmount,
                 color = rule.color ?: CategoryVisuals.colors.first(),
                 icon = rule.icon ?: RecurringRuleEditorUiState.DEFAULT_ICON,
             )
@@ -196,6 +201,16 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         it.copy(endDate = if (enabled) it.startDate.plusYears(1) else null)
     }
 
+    fun onModeChanged(mode: RecurrenceMode) = _uiState.update { it.copy(mode = mode) }
+
+    /** Variable amount implies confirm mode (the amount is asked at each charge). */
+    fun onVariableAmountToggled(enabled: Boolean) = _uiState.update {
+        it.copy(
+            isVariableAmount = enabled,
+            mode = if (enabled) RecurrenceMode.CONFIRM else it.mode,
+        )
+    }
+
     fun onColorSelected(color: Int) = _uiState.update { it.copy(color = color) }
 
     fun onIconSelected(icon: String) {
@@ -234,9 +249,14 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         base: RecurringRule?,
         today: LocalDate,
     ): RecurringRule? {
-        val amount = MoneyInput.parse(state.amountInput)?.takeIf { it.signum() > 0 }
+        val amount = if (state.isVariableAmount) {
+            null
+        } else {
+            MoneyInput.parse(state.amountInput)?.takeIf { it.signum() > 0 }
+        }
         val account = state.account
-        if (!state.isNameValid || amount == null || account == null) return null
+        val amountMissing = !state.isVariableAmount && amount == null
+        if (!state.isNameValid || account == null || amountMissing) return null
         val rule = RecurringRule(
             id = base?.id ?: 0L,
             name = state.name.trim(),
@@ -249,6 +269,8 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
             categoryId = state.categoryId,
             dayOfReference = state.startDate.dayOfMonth,
             endDate = state.endDate,
+            mode = if (state.isVariableAmount) RecurrenceMode.CONFIRM else state.mode,
+            isVariableAmount = state.isVariableAmount,
             color = state.color,
             icon = state.icon,
             note = base?.note,

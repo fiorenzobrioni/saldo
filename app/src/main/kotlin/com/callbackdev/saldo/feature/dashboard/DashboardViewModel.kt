@@ -79,6 +79,8 @@ data class DashboardUiState(
     /** Whether more has been spent so far this month than by this day last month. */
     val spentMoreThanLastMonth: Boolean = false,
     val subscriptions: SubscriptionsSummary = SubscriptionsSummary(),
+    /** Number of recurring movements awaiting confirmation. */
+    val pendingCount: Int = 0,
     val recent: List<TransactionListItem> = emptyList(),
     val date: LocalDate = LocalDate.ofEpochDay(0),
 ) {
@@ -103,8 +105,9 @@ class DashboardViewModel @Inject constructor(
         transactionRepository.observeTransactions(),
         categoryRepository.observeCategories(),
         recurringRuleRepository.observeRules(),
-    ) { accounts, transactions, categories, rules ->
-        buildState(accounts, transactions, categories, rules)
+        transactionRepository.observePendingTransactions(),
+    ) { accounts, transactions, categories, rules, pending ->
+        buildState(accounts, transactions, categories, rules, pending.size)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -116,6 +119,7 @@ class DashboardViewModel @Inject constructor(
         transactions: List<Transaction>,
         categories: List<Category>,
         rules: List<RecurringRule>,
+        pendingCount: Int,
     ): DashboardUiState {
         val today = LocalDate.now(clock)
         val active = accounts.filter { !it.account.isArchived }
@@ -171,6 +175,7 @@ class DashboardViewModel @Inject constructor(
             previousMonthSpendToDate = previousReference,
             spentMoreThanLastMonth = spentMore,
             subscriptions = subscriptionsSummary(rules, primary, today),
+            pendingCount = pendingCount,
             recent = recent,
             date = today,
         )

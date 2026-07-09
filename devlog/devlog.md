@@ -14,6 +14,29 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-09 - Fase 6 completa (incremento 2): movimenti pending, WorkManager, notifiche
+
+**Fatto:**
+- **Movimenti pending** (modalità conferma / importo variabile): nuovo flag `isPending` su `transactions` (migration 2→3, `NOT NULL DEFAULT 0`) con test di migration. I pending sono **esclusi da saldi e statistiche** finché non confermati (filtro `isPending = 0` nelle query di saldo per conto/totale, negli aggregati per categoria e nel ledger; nuovo `observePending`).
+- **Generazione estesa** (`GenerateRecurringMovementsUseCase`): crea movimenti pending per le regole con conferma o importo variabile (variabile: importo 0 finché non inserito) e restituisce l'elenco dei movimenti creati per le notifiche. Le automatiche a importo fisso restano invariate.
+- **Editor abbonamento**: switch "Importo variabile" (nasconde l'importo e forza la conferma) e selettore segmentato "Registrazione" (Automatica / Con conferma).
+- **Schermata "Da confermare"** + card dashboard: elenco dei pending con avatar e data; tap → bottom sheet con campo importo (precompilato per i fissi, vuoto per i variabili) e azioni Conferma / Salta. Conferma applica il segno e toglie il pending; Salta elimina il movimento.
+- **WorkManager**: job periodico giornaliero `RecurringGenerationWorker` (@HiltWorker) che rigenera in background e notifica; `SaldoApplication` è `Configuration.Provider` con `HiltWorkerFactory` (initializer di default disabilitato nel manifest). Catch-up all'avvio invariato.
+- **Notifiche**: due canali (attività ricorrenti / conferme), notifica informativa per gli automatici e notifica di conferma per i pending; il tap apre l'app (conferma/modifica/salta avvengono nella schermata "Da confermare"). Permesso `POST_NOTIFICATIONS` richiesto a runtime (API 33+), con icona di notifica dedicata.
+
+**Decisioni:**
+- **Pending escluso dai saldi**: un addebito in attesa (importo da confermare o variabile) non deve muovere il saldo finché l'utente non conferma; filtro a livello di query SQL, così saldi e statistiche restano corretti.
+- **Notifiche tap-to-app** invece di azioni inline (conferma/salta dalla notifica): la conferma di un importo variabile richiede un valore, e le azioni via BroadcastReceiver non sono verificabili senza device; conferma/modifica/salta vivono nella schermata in-app, testata. Le azioni inline restano una rifinitura futura.
+- **`androidx.hilt` riportato a 1.3.0** (era 1.4.0 nel catalog, non ancora usato): la 1.4.0 tira lifecycle 2.11 che richiede compileSdk 37 (ADR 14); la 1.3.0 copre hilt-work, hilt-compiler e navigation-compose su compileSdk 36.
+
+**Problemi:** lint `MissingPermission` sul `notify()`: l'analisi è intraprocedurale e non vede la guardia in un metodo helper, quindi `@SuppressLint("MissingPermission")` motivato sul metodo `post` (che chiama comunque `hasNotificationPermission()`).
+
+**Verifica:** `assembleDebug testDebugUnitTest compileDebugAndroidTestKotlin detekt lintDebug` verdi; 134 unit test (0 falliti). Nuovi test: generazione pending (conferma/variabile), skip automatiche senza importo, `PendingMovementsViewModel` (conferma applica il segno e toglie il pending, salta elimina), editor (variabile forza conferma, fisso con conferma). Test di migration 2→3 strumentato. WorkManager/notifiche verificati a livello di build e grafo Hilt; il comportamento runtime (job periodico, notifiche, permesso) resta da provare sul device.
+
+**Prossimo:** Fase 7 (ricerca, filtri, statistiche).
+
+---
+
 ## 2026-07-09 - Rifinitura UI 2: date picker, card saldo compatta, elenco account a lista
 
 **Fatto (feedback):**

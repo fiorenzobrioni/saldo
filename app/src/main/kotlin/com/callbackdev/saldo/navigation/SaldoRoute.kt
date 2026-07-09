@@ -61,3 +61,7 @@ data object SubscriptionsRoute : NavKey
 /** Subscription editor: create mode when [ruleId] is null, edit mode otherwise. */
 @Serializable
 data class RecurringRuleEditorRoute(val ruleId: Long? = null) : NavKey
+
+/** Confirmation of pending recurring movements (confirm mode / variable amount). */
+@Serializable
+data object PendingMovementsRoute : NavKey

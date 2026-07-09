@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
+import com.callbackdev.saldo.core.domain.model.RecurrenceMode
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
@@ -22,6 +23,7 @@ import io.mockk.slot
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -145,6 +147,46 @@ class RecurringRuleEditorViewModelTest {
 
         assertTrue(viewModel.uiState.value.showValidation)
         coVerify(exactly = 0) { recurringRuleRepository.upsert(any()) }
+    }
+
+    @Test
+    fun `enabling variable amount forces confirm mode and drops the amount requirement`() = runTest {
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel()
+
+        viewModel.onNameChanged("Bolletta luce")
+        viewModel.onVariableAmountToggled(true)
+
+        with(viewModel.uiState.value) {
+            assertTrue(isVariableAmount)
+            assertEquals(RecurrenceMode.CONFIRM, mode)
+        }
+
+        viewModel.save() // no amount typed, but variable rules do not need one
+        with(saved.captured) {
+            assertNull(amount)
+            assertTrue(isVariableAmount)
+            assertEquals(RecurrenceMode.CONFIRM, mode)
+        }
+    }
+
+    @Test
+    fun `a fixed rule can be set to confirm mode`() = runTest {
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel()
+
+        viewModel.onNameChanged("Netflix")
+        viewModel.onAmountChanged("12,99")
+        viewModel.onModeChanged(RecurrenceMode.CONFIRM)
+        viewModel.save()
+
+        with(saved.captured) {
+            assertEquals(BigDecimal("12.99"), amount)
+            assertFalse(isVariableAmount)
+            assertEquals(RecurrenceMode.CONFIRM, mode)
+        }
     }
 
     @Test

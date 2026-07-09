@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +27,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -50,6 +55,7 @@ import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
+import com.callbackdev.saldo.core.domain.model.RecurrenceMode
 import com.callbackdev.saldo.navigation.RecurringRuleEditorRoute
 import java.time.LocalDate
 
@@ -191,12 +197,27 @@ private fun EditorForm(
             onNameChanged = viewModel::onNameChanged,
         )
         Spacer(Modifier.height(12.dp))
-        AmountField(
-            input = uiState.amountInput,
-            currency = uiState.currency,
-            showError = uiState.showValidation && !uiState.isAmountValid,
-            onChanged = viewModel::onAmountChanged,
+        if (uiState.isVariableAmount) {
+            VariableAmountNote()
+        } else {
+            AmountField(
+                input = uiState.amountInput,
+                currency = uiState.currency,
+                showError = uiState.showValidation && !uiState.isAmountValid,
+                onChanged = viewModel::onAmountChanged,
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        SwitchRow(
+            title = stringResource(R.string.subscription_editor_variable_amount),
+            subtitle = stringResource(R.string.subscription_editor_variable_amount_hint),
+            checked = uiState.isVariableAmount,
+            onToggle = viewModel::onVariableAmountToggled,
         )
+        if (!uiState.isVariableAmount) {
+            SectionLabel(stringResource(R.string.subscription_editor_section_mode))
+            ModeSelector(mode = uiState.mode, onModeChanged = viewModel::onModeChanged)
+        }
         Spacer(Modifier.height(12.dp))
         AccountField(
             accounts = uiState.accounts,
@@ -261,32 +282,12 @@ private fun EndDateControl(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.medium)
-                .toggleable(
-                    value = endDate != null,
-                    role = Role.Switch,
-                    onValueChange = onToggle,
-                )
-                .padding(vertical = 8.dp, horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.subscription_editor_has_end_date),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                Text(
-                    text = stringResource(R.string.subscription_editor_has_end_date_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Spacer(Modifier.size(16.dp))
-            Switch(checked = endDate != null, onCheckedChange = null)
-        }
+        SwitchRow(
+            title = stringResource(R.string.subscription_editor_has_end_date),
+            subtitle = stringResource(R.string.subscription_editor_has_end_date_hint),
+            checked = endDate != null,
+            onToggle = onToggle,
+        )
         if (endDate != null) {
             Spacer(Modifier.height(8.dp))
             DateField(
@@ -294,6 +295,94 @@ private fun EndDateControl(
                 date = endDate,
                 placeholder = "",
                 onClick = onDateClick,
+            )
+        }
+    }
+}
+
+/** A labelled switch row (title + hint), used for the variable-amount and end-date toggles. */
+@Composable
+private fun SwitchRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onToggle)
+            .padding(vertical = 8.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(text = title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.size(16.dp))
+        Switch(checked = checked, onCheckedChange = null)
+    }
+}
+
+/** Segmented selector for how a generated movement is registered. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ModeSelector(
+    mode: RecurrenceMode,
+    onModeChanged: (RecurrenceMode) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val options = listOf(RecurrenceMode.AUTOMATIC, RecurrenceMode.CONFIRM)
+    SingleChoiceSegmentedButtonRow(modifier = modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, option ->
+            SegmentedButton(
+                selected = option == mode,
+                onClick = { onModeChanged(option) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                label = {
+                    Text(
+                        stringResource(
+                            if (option == RecurrenceMode.AUTOMATIC) {
+                                R.string.subscription_editor_mode_automatic
+                            } else {
+                                R.string.subscription_editor_mode_confirm
+                            },
+                        ),
+                    )
+                },
+            )
+        }
+    }
+}
+
+/** Placeholder shown in place of the amount field for a variable-amount rule. */
+@Composable
+private fun VariableAmountNote(modifier: Modifier = Modifier) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = MaterialTheme.shapes.medium,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.size(12.dp))
+            Text(
+                text = stringResource(R.string.subscription_editor_variable_amount_note),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

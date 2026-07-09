@@ -242,6 +242,12 @@
     <string name="subscription_editor_name_error">Inserisci un nome</string>
     <string name="subscription_editor_amount">Importo</string>
     <string name="subscription_editor_amount_error">Inserisci un importo maggiore di zero</string>
+    <string name="subscription_editor_variable_amount">Importo variabile</string>
+    <string name="subscription_editor_variable_amount_hint">Confermi l\'importo a ogni addebito</string>
+    <string name="subscription_editor_variable_amount_note">L\'importo verrà chiesto quando arriva l\'addebito.</string>
+    <string name="subscription_editor_section_mode">Registrazione</string>
+    <string name="subscription_editor_mode_automatic">Automatica</string>
+    <string name="subscription_editor_mode_confirm">Con conferma</string>
     <string name="subscription_editor_account">Account</string>
     <string name="subscription_editor_account_error">Scegli un account</string>
     <string name="subscription_editor_category">Categoria</string>
@@ -258,6 +264,32 @@
     <string name="subscription_editor_delete">Elimina abbonamento</string>
     <string name="subscription_delete_title">Eliminare l\'abbonamento?</string>
     <string name="subscription_delete_body">La regola verrà rimossa e non genererà più movimenti. I movimenti già registrati restano.</string>
+    <string name="pending_title">Da confermare</string>
+    <string name="pending_amount_to_enter">Importo da inserire</string>
+    <string name="pending_confirm">Conferma</string>
+    <string name="pending_skip">Salta</string>
+    <string name="pending_empty_title">Niente da confermare</string>
+    <string name="pending_empty_body">Gli addebiti ricorrenti in attesa di conferma compaiono qui.</string>
+    <plurals name="dashboard_pending_title">
+        <item quantity="one">%1$d addebito da confermare</item>
+        <item quantity="many">%1$d addebiti da confermare</item>
+        <item quantity="other">%1$d addebiti da confermare</item>
+    </plurals>
+    <string name="dashboard_pending_subtitle">Tocca per confermare o saltare</string>
+    <string name="notif_channel_activity_name">Movimenti ricorrenti</string>
+    <string name="notif_channel_confirm_name">Conferme abbonamenti</string>
+    <plurals name="notif_activity_title">
+        <item quantity="one">%1$d movimento ricorrente registrato</item>
+        <item quantity="many">%1$d movimenti ricorrenti registrati</item>
+        <item quantity="other">%1$d movimenti ricorrenti registrati</item>
+    </plurals>
+    <string name="notif_activity_body">Tocca per rivedere i movimenti.</string>
+    <plurals name="notif_confirm_title">
+        <item quantity="one">%1$d addebito da confermare</item>
+        <item quantity="many">%1$d addebiti da confermare</item>
+        <item quantity="other">%1$d addebiti da confermare</item>
+    </plurals>
+    <string name="notif_confirm_body">Tocca per confermarli o saltarli.</string>
 
     <!-- Categorie predefinite create alla prima apertura (Fase 1). Modificabili dall'utente. -->
     <string name="seed_category_home">Casa</string>
