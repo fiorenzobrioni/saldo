@@ -123,9 +123,18 @@
 
     <!-- Editor movimento (Fase 3) -->
     <string name="transaction_editor_title_new">Nuovo movimento</string>
+    <string name="transaction_editor_title_new_expense">Nuova spesa</string>
+    <string name="transaction_editor_title_new_income">Nuova entrata</string>
+    <string name="transaction_editor_title_new_transfer">Nuovo trasferimento</string>
     <string name="transaction_editor_title_edit">Modifica movimento</string>
     <string name="transaction_editor_title_edit_transfer">Modifica trasferimento</string>
     <string name="transaction_editor_title_edit_adjustment">Modifica rettifica</string>
+    <string name="transaction_editor_save_expense">Salva spesa</string>
+    <string name="transaction_editor_save_income">Salva entrata</string>
+    <string name="transaction_editor_save_transfer">Salva trasferimento</string>
+    <string name="transaction_editor_save_adjustment">Salva rettifica</string>
+    <string name="transaction_editor_categories_all">Tutte</string>
+    <string name="transaction_editor_description_hint">Aggiungi descrizione…</string>
     <string name="transaction_editor_account">Account</string>
     <string name="transaction_editor_from_account">Account di partenza</string>
     <string name="transaction_editor_to_account">Account di arrivo</string>

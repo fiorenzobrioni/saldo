@@ -26,6 +26,25 @@ fun rememberDecimalSeparator(): Char {
 }
 
 /**
+ * Compact day label for the editor's date chip: "Today, 6 Jul" / "Yesterday,
+ * 5 Jul", otherwise a short date (with the year only when it differs).
+ */
+@Composable
+fun chipDayLabel(date: LocalDate, today: LocalDate): String {
+    val locale = currentLocale()
+    val shortDate = remember(date, today, locale) {
+        val skeleton = if (date.year == today.year) "dMMM" else "dMMMy"
+        val pattern = DateFormat.getBestDateTimePattern(locale, skeleton)
+        date.format(DateTimeFormatter.ofPattern(pattern, locale))
+    }
+    return when (date) {
+        today -> "${stringResource(R.string.date_today)}, $shortDate"
+        today.minusDays(1) -> "${stringResource(R.string.date_yesterday)}, $shortDate"
+        else -> shortDate
+    }
+}
+
+/**
  * Human day label: "Today", "Yesterday", then a localized weekday + date
  * (with the year only when it differs from the current one).
  */

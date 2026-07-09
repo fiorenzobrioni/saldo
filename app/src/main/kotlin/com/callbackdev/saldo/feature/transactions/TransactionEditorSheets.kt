@@ -48,6 +48,7 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
 import java.time.Instant
 import java.time.LocalDate
@@ -207,6 +208,37 @@ internal fun TagPickerSheet(
                     )
                 }
             }
+        }
+    }
+}
+
+/** Bottom sheet listing every category for the current type, opened from "All". */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun CategoryPickerSheet(
+    categories: List<Category>,
+    selectedId: Long?,
+    onSelect: (Long) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 24.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.transaction_editor_category),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 8.dp),
+            )
+            Spacer(Modifier.height(16.dp))
+            CategoryGrid(
+                categories = categories,
+                selectedId = selectedId,
+                onSelect = onSelect,
+            )
         }
     }
 }

@@ -124,9 +124,18 @@
 
     <!-- Transaction editor (Phase 3) -->
     <string name="transaction_editor_title_new">New transaction</string>
+    <string name="transaction_editor_title_new_expense">New expense</string>
+    <string name="transaction_editor_title_new_income">New income</string>
+    <string name="transaction_editor_title_new_transfer">New transfer</string>
     <string name="transaction_editor_title_edit">Edit transaction</string>
     <string name="transaction_editor_title_edit_transfer">Edit transfer</string>
     <string name="transaction_editor_title_edit_adjustment">Edit adjustment</string>
+    <string name="transaction_editor_save_expense">Save expense</string>
+    <string name="transaction_editor_save_income">Save income</string>
+    <string name="transaction_editor_save_transfer">Save transfer</string>
+    <string name="transaction_editor_save_adjustment">Save adjustment</string>
+    <string name="transaction_editor_categories_all">All</string>
+    <string name="transaction_editor_description_hint">Add a description…</string>
     <string name="transaction_editor_account">Account</string>
     <string name="transaction_editor_from_account">From account</string>
     <string name="transaction_editor_to_account">To account</string>

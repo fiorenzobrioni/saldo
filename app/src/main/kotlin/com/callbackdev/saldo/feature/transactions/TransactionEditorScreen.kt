@@ -1,43 +1,53 @@
 package com.callbackdev.saldo.feature.transactions
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,22 +61,22 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
-import com.callbackdev.saldo.core.designsystem.component.SaveButton
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
-import com.callbackdev.saldo.core.domain.model.Account
+import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
 import java.time.LocalDate
 
 /** Which modal surface of the editor is open. */
-private enum class EditorSheet { NONE, ACCOUNT, TO_ACCOUNT, TAGS }
+private enum class EditorSheet { NONE, ACCOUNT, TO_ACCOUNT, TAGS, CATEGORY }
 
 /**
- * Create/edit form for a movement. Optimized for the typical expense: the
- * in-app keypad is active on open, the type defaults to expense, the account
- * to the last used one and the date to today, so recording an expense is
- * FAB, amount, category, save (3 taps plus the amount).
+ * Create/edit form for a movement. The amount is the borderless focal point of
+ * the screen with the in-app keypad below it; the primary save action is a
+ * full-width button under the keypad. Optimized for the typical expense: the
+ * keypad is active on open, the type defaults to expense, the account to the
+ * last used one and the date to today.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,24 +138,19 @@ fun TransactionEditorScreen(
                             )
                         }
                     }
-                    SaveButton(
-                        onClick = viewModel::save,
-                        enabled = !uiState.isLoading,
-                    )
                 },
             )
         },
         bottomBar = {
-            AnimatedVisibility(
-                visible = uiState.amountTarget != AmountTarget.NONE && !uiState.isLoading,
-                enter = slideInVertically(initialOffsetY = { it }),
-                exit = slideOutVertically(targetOffsetY = { it }),
-            ) {
-                AmountKeypad(
+            if (!uiState.isLoading) {
+                EditorBottomBar(
+                    keypadVisible = uiState.amountTarget != AmountTarget.NONE,
+                    showSignToggle = uiState.type == TransactionType.ADJUSTMENT,
+                    decimalSeparator = decimalSeparator,
+                    saveLabel = stringResource(saveLabelRes(uiState.type)),
+                    saveEnabled = uiState.isAmountValid,
                     onKey = viewModel::onKeypadKey,
                     onSave = viewModel::save,
-                    decimalSeparator = decimalSeparator,
-                    showSignToggle = uiState.type == TransactionType.ADJUSTMENT,
                 )
             }
         },
@@ -167,11 +172,11 @@ fun TransactionEditorScreen(
                 onToAccountChipClick = { activeSheet = EditorSheet.TO_ACCOUNT },
                 onDateChipClick = { showDatePicker = true },
                 onAddTagClick = { activeSheet = EditorSheet.TAGS },
+                onShowAllCategories = { activeSheet = EditorSheet.CATEGORY },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
                     .verticalScroll(rememberScrollState())
-                    .imePadding()
                     .padding(horizontal = 16.dp),
             )
         }
@@ -216,6 +221,16 @@ fun TransactionEditorScreen(
             onDismiss = { activeSheet = EditorSheet.NONE },
         )
 
+        EditorSheet.CATEGORY -> CategoryPickerSheet(
+            categories = uiState.categories,
+            selectedId = uiState.categoryId,
+            onSelect = {
+                viewModel.onCategorySelected(it)
+                activeSheet = EditorSheet.NONE
+            },
+            onDismiss = { activeSheet = EditorSheet.NONE },
+        )
+
         EditorSheet.NONE -> Unit
     }
 
@@ -241,13 +256,74 @@ fun TransactionEditorScreen(
     }
 }
 
+/** The keypad (when an amount is being edited) and the full-width save button. */
+@Composable
+private fun EditorBottomBar(
+    keypadVisible: Boolean,
+    showSignToggle: Boolean,
+    decimalSeparator: Char,
+    saveLabel: String,
+    saveEnabled: Boolean,
+    onKey: (KeypadKey) -> Unit,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            AnimatedVisibility(
+                visible = keypadVisible,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+            ) {
+                AmountKeypad(
+                    onKey = onKey,
+                    decimalSeparator = decimalSeparator,
+                    showSignToggle = showSignToggle,
+                )
+            }
+            Button(
+                onClick = onSave,
+                enabled = saveEnabled,
+                shape = MaterialTheme.shapes.large,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+            ) {
+                Text(text = saveLabel, style = MaterialTheme.typography.titleMedium)
+            }
+        }
+    }
+}
+
 private fun editorTitleRes(uiState: TransactionEditorUiState): Int = when {
-    uiState.isNew -> R.string.transaction_editor_title_new
+    uiState.isNew && uiState.type == TransactionType.INCOME ->
+        R.string.transaction_editor_title_new_income
+
+    uiState.isNew && uiState.type == TransactionType.TRANSFER ->
+        R.string.transaction_editor_title_new_transfer
+
+    uiState.isNew -> R.string.transaction_editor_title_new_expense
     uiState.type == TransactionType.TRANSFER -> R.string.transaction_editor_title_edit_transfer
     uiState.type == TransactionType.ADJUSTMENT ->
         R.string.transaction_editor_title_edit_adjustment
 
     else -> R.string.transaction_editor_title_edit
+}
+
+private fun saveLabelRes(type: TransactionType): Int = when (type) {
+    TransactionType.EXPENSE -> R.string.transaction_editor_save_expense
+    TransactionType.INCOME -> R.string.transaction_editor_save_income
+    TransactionType.TRANSFER -> R.string.transaction_editor_save_transfer
+    TransactionType.ADJUSTMENT -> R.string.transaction_editor_save_adjustment
 }
 
 @Suppress("LongParameterList", "LongMethod")
@@ -261,11 +337,13 @@ private fun EditorForm(
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
     onAddTagClick: () -> Unit,
+    onShowAllCategories: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        Spacer(Modifier.height(12.dp))
-        if (!uiState.isTypeLocked) {
+        Spacer(Modifier.height(16.dp))
+        val showTypeSelector = !uiState.isTypeLocked && !(uiState.isNew && uiState.isTypePreset)
+        if (showTypeSelector) {
             TypeSelector(
                 selected = uiState.type,
                 options = if (uiState.isNew) {
@@ -312,7 +390,7 @@ private fun EditorForm(
                 ),
             )
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
         ContextChips(
             uiState = uiState,
             onAccountChipClick = onAccountChipClick,
@@ -323,23 +401,20 @@ private fun EditorForm(
             CategorySection(
                 uiState = uiState,
                 onSelect = viewModel::onCategorySelected,
+                onShowAll = onShowAllCategories,
             )
         }
         Spacer(Modifier.height(20.dp))
-        OutlinedTextField(
+        InlineDescriptionField(
             value = uiState.description,
             onValueChange = viewModel::onDescriptionChanged,
-            label = { Text(stringResource(R.string.transaction_editor_description)) },
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged { state ->
-                    if (state.isFocused) {
-                        viewModel.onAmountTargetChanged(AmountTarget.NONE)
-                    }
-                },
+            modifier = Modifier.onFocusChanged { state ->
+                if (state.isFocused) {
+                    viewModel.onAmountTargetChanged(AmountTarget.NONE)
+                }
+            },
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         TagsRow(uiState = uiState, onToggle = viewModel::onTagToggled, onAddClick = onAddTagClick)
         if (uiState.hasCategorySection) {
             Spacer(Modifier.height(8.dp))
@@ -358,7 +433,7 @@ private fun EditorForm(
                 onCheckedChange = viewModel::onExcludedFromStatsChanged,
             )
         }
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -372,19 +447,19 @@ private fun ContextChips(
 ) {
     val accountError = uiState.showValidation && !uiState.isAccountValid
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         modifier = modifier.fillMaxWidth(),
     ) {
         if (uiState.isTransfer) {
             EditorChip(
-                icon = accountChipIcon(uiState.account),
+                icon = AccountVisuals.icon(uiState.account?.icon),
                 label = uiState.account?.name
                     ?: stringResource(R.string.transaction_editor_from_account),
                 isError = accountError,
                 onClick = onAccountChipClick,
             )
             EditorChip(
-                icon = accountChipIcon(uiState.toAccount),
+                icon = AccountVisuals.icon(uiState.toAccount?.icon),
                 label = uiState.toAccount?.name
                     ?: stringResource(R.string.transaction_editor_to_account),
                 isError = uiState.showValidation && !uiState.isToAccountValid,
@@ -392,7 +467,7 @@ private fun ContextChips(
             )
         } else {
             EditorChip(
-                icon = accountChipIcon(uiState.account),
+                icon = AccountVisuals.icon(uiState.account?.icon),
                 label = uiState.account?.name
                     ?: stringResource(R.string.transaction_editor_account),
                 isError = accountError,
@@ -401,14 +476,12 @@ private fun ContextChips(
         }
         EditorChip(
             icon = Icons.Outlined.CalendarToday,
-            label = dayLabel(uiState.date, LocalDate.now()),
+            label = chipDayLabel(uiState.date, LocalDate.now()),
             isError = false,
             onClick = onDateChipClick,
         )
     }
 }
-
-private fun accountChipIcon(account: Account?): ImageVector = AccountVisuals.icon(account?.icon)
 
 @Composable
 private fun EditorChip(
@@ -421,20 +494,17 @@ private fun EditorChip(
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(
-            width = 1.dp,
-            color = if (isError) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.outlineVariant
-            },
-        ),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = if (isError) {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.error)
+        } else {
+            null
+        },
         modifier = modifier,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
         ) {
             Icon(
                 imageVector = icon,
@@ -456,6 +526,12 @@ private fun EditorChip(
                     MaterialTheme.colorScheme.onSurface
                 },
             )
+            Icon(
+                imageVector = Icons.Outlined.ArrowDropDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
@@ -464,20 +540,39 @@ private fun EditorChip(
 private fun CategorySection(
     uiState: TransactionEditorUiState,
     onSelect: (Long) -> Unit,
+    onShowAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val hasError = uiState.showValidation && !uiState.isCategoryValid
+    val visible = remember(uiState.categories, uiState.categoryId) {
+        visibleCategories(uiState.categories, uiState.categoryId)
+    }
     Column(modifier = modifier) {
-        Text(
-            text = stringResource(R.string.transaction_editor_category),
-            style = MaterialTheme.typography.titleSmall,
-            color = if (hasError) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.primary
-            },
-            modifier = Modifier.padding(top = 20.dp, bottom = 12.dp),
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.transaction_editor_category),
+                style = MaterialTheme.typography.titleSmall,
+                color = if (hasError) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+                modifier = Modifier.weight(1f),
+            )
+            if (uiState.categories.size > CATEGORY_GRID_CAP) {
+                TextButton(
+                    onClick = onShowAll,
+                    contentPadding = PaddingValues(horizontal = 8.dp),
+                ) {
+                    Text(stringResource(R.string.transaction_editor_categories_all))
+                }
+            }
+        }
         if (hasError) {
             Text(
                 text = stringResource(R.string.transaction_editor_category_error),
@@ -485,12 +580,29 @@ private fun CategorySection(
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(bottom = 8.dp),
             )
+        } else {
+            Spacer(Modifier.height(12.dp))
         }
         CategoryGrid(
-            categories = uiState.categories,
+            categories = visible,
             selectedId = uiState.categoryId,
             onSelect = onSelect,
         )
+    }
+}
+
+/**
+ * The categories shown inline: the first [CATEGORY_GRID_CAP] by order, always
+ * keeping the selected one visible; "All" opens the full list in a sheet.
+ */
+private fun visibleCategories(categories: List<Category>, selectedId: Long?): List<Category> {
+    if (categories.size <= CATEGORY_GRID_CAP) return categories
+    val head = categories.take(CATEGORY_GRID_CAP)
+    val selected = categories.firstOrNull { it.id == selectedId }
+    return if (selected == null || head.any { it.id == selected.id }) {
+        head
+    } else {
+        head.dropLast(1) + selected
     }
 }
 
@@ -533,3 +645,5 @@ private fun TagsRow(
         )
     }
 }
+
+private const val CATEGORY_GRID_CAP = 8

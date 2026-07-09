@@ -14,6 +14,31 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-09 - Redesign inserimento movimenti + transizioni più rapide
+
+**Fatto:**
+- **Schermata inserimento movimento** ridisegnata sul mockup:
+  - Importo senza bordo, grande e centrato, con cursore lampeggiante; zero placeholder scalato sulla valuta ("0,00").
+  - Chip conto e data centrati, con icona e caret a discesa; data compatta tipo "Oggi, 6 lug" (nuovo `chipDayLabel`).
+  - Sezione Categoria con link "Tutte": griglia limitata a 8 (la categoria selezionata resta sempre visibile) più un bottom sheet con l'elenco completo (`CategoryPickerSheet`).
+  - Descrizione come campo inline senza bordo, con icona.
+  - Tastierino piatto a 3 colonne (1-9, separatore, 0, backspace); rimossi il tasto "00" e il tasto Salva dalla colonna azioni. Toggle segno (solo rettifiche) sopra la griglia.
+  - Azione primaria "Salva spesa/entrata/..." come bottone a tutta larghezza sotto il tastierino; rimosso il bottone Salva in alto a destra (l'editor tiene solo Chiudi ed Elimina). Titolo e label specifici per tipo.
+  - Selettore tipo mostrato solo per il "nuovo generico" (FAB della lista Movimenti) e in modifica; nascosto quando il tipo è scelto a monte dalle quick action del FAB dashboard (nuovo campo `isTypePreset`).
+- **Bottom bar dell'editor**: tastierino (visibile quando l'importo è in modifica) più bottone Salva, con inset corretti (nav bar unito a IME) così il bottone sale sopra la tastiera quando si scrive la descrizione.
+- **Transizioni tra schermate**: sostituito il default di Navigation 3 (fade da 700ms, percepito lento) con uno slide orizzontale più fade da 300ms (easing FastOutSlowIn), con specifiche dedicate per push, pop e predictive-pop; allineata a 300ms anche la comparsa/scomparsa della bottom bar.
+
+**Decisioni:**
+- Salva spostato in basso a tutta larghezza (come nel mockup) e abilitato quando l'importo è valido; gli altri errori (categoria, conto) restano evidenziati al tap.
+- "Tutte" con griglia limitata a 8 più sheet completo, invece di elencare inline tutte le categorie (le 16 spese di default sarebbero 4 righe).
+- Toggle segno per le rettifiche mantenuto (caso di modifica) ma spostato sopra la griglia, per non rompere la griglia a 3 colonne.
+
+**Problemi:** un paio di rilievi detekt nell'editor (TooManyFunctions, ReturnCount) risolti con l'inline di un helper e meno return; un `padding(horizontal=, bottom=)` inesistente corretto. Nessun emulatore in sessione: niente UI test strumentati, verifica affidata al build.
+
+**Prossimo:** popolare la card Abbonamenti con la Fase 6.
+
+---
+
 ## 2026-07-08 - Redesign Dashboard, sistema di forme, fix animazione bottom bar
 
 **Fatto:**

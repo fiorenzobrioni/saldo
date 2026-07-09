@@ -1,8 +1,16 @@
 package com.callbackdev.saldo.navigation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -34,6 +42,12 @@ import com.callbackdev.saldo.feature.transactions.TransactionsScreen
 /** Height of the Material 3 navigation bar content (excluding the system inset). */
 private val BottomBarHeight = 80.dp
 
+/** Duration of the screen and bottom-bar transitions (the 700ms default feels slow). */
+private const val NAV_TRANSITION_MS = 300
+
+/** How far the incoming/outgoing screens slide, as a fraction (1/N) of their width. */
+private const val SLIDE_DIVISOR = 6
+
 /**
  * Root composable: the Navigation 3 display with a bottom navigation bar shown
  * only on the top-level destinations.
@@ -62,6 +76,11 @@ fun SaldoApp() {
             backStack = backStack,
             modifier = Modifier.fillMaxSize(),
             onBack = { backStack.removeLastOrNull() },
+            // The library default is a 700ms fade, which feels sluggish; a short
+            // slide + fade (~300ms) reads as snappy and premium instead.
+            transitionSpec = { forwardTransition() },
+            popTransitionSpec = { backwardTransition() },
+            predictivePopTransitionSpec = { backwardTransition() },
             entryDecorators = listOf(
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator(),
@@ -139,8 +158,8 @@ fun SaldoApp() {
 
         AnimatedVisibility(
             visible = isTopLevel,
-            enter = slideInVertically(initialOffsetY = { it }),
-            exit = slideOutVertically(targetOffsetY = { it }),
+            enter = slideInVertically(tween(NAV_TRANSITION_MS)) { it },
+            exit = slideOutVertically(tween(NAV_TRANSITION_MS)) { it },
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             SaldoBottomBar(
@@ -149,6 +168,24 @@ fun SaldoApp() {
             )
         }
     }
+}
+
+/** Push transition: the incoming screen slides in from the right and fades in. */
+private fun forwardTransition(): ContentTransform {
+    val enter = fadeIn(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) +
+        slideInHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { it / SLIDE_DIVISOR }
+    val exit = fadeOut(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) +
+        slideOutHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { -it / SLIDE_DIVISOR }
+    return enter togetherWith exit
+}
+
+/** Pop transition: the reverse of [forwardTransition], sliding back to the right. */
+private fun backwardTransition(): ContentTransform {
+    val enter = fadeIn(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) +
+        slideInHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { -it / SLIDE_DIVISOR }
+    val exit = fadeOut(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) +
+        slideOutHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { it / SLIDE_DIVISOR }
+    return enter togetherWith exit
 }
 
 @Composable
