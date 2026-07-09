@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -323,10 +324,16 @@ internal fun MonthComparisonRow(
     }
 }
 
-/** Teaser card for the subscriptions view, which lands with Phase 6 (recurrences). */
+/** Dashboard card for subscriptions: monthly total, active count and the next charge. */
 @Composable
-internal fun SubscriptionsTeaser(modifier: Modifier = Modifier) {
+internal fun SubscriptionsCard(
+    summary: SubscriptionsSummary,
+    currency: Currency,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Card(
+        onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
@@ -351,17 +358,62 @@ internal fun SubscriptionsTeaser(modifier: Modifier = Modifier) {
                     modifier = Modifier.size(22.dp),
                 )
             }
-            Column(modifier = Modifier.padding(start = 16.dp)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+            ) {
                 Text(
                     text = stringResource(R.string.dashboard_subscriptions_title),
                     style = MaterialTheme.typography.titleMedium,
                 )
-                Text(
-                    text = stringResource(R.string.dashboard_subscriptions_soon),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (summary.hasSubscriptions) {
+                    Text(
+                        text = stringResource(
+                            R.string.dashboard_subscriptions_summary,
+                            MoneyFormatter.format(summary.monthlyTotal, currency),
+                            pluralStringResource(
+                                R.plurals.dashboard_subscriptions_active,
+                                summary.activeCount,
+                                summary.activeCount,
+                            ),
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    summary.next?.let { next ->
+                        val locale = LocalConfiguration.current.locales[0]
+                        val dateText = remember(next.date, locale) {
+                            val pattern =
+                                android.text.format.DateFormat.getBestDateTimePattern(locale, "dMMM")
+                            next.date.format(DateTimeFormatter.ofPattern(pattern, locale))
+                        }
+                        Text(
+                            text = stringResource(
+                                R.string.dashboard_subscriptions_next,
+                                next.name,
+                                MoneyFormatter.format(next.amount, next.currency),
+                                dateText,
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                } else {
+                    Text(
+                        text = stringResource(R.string.dashboard_subscriptions_empty),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

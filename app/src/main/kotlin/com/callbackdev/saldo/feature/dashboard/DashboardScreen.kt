@@ -57,6 +57,7 @@ fun DashboardScreen(
     onNavigateToNewTransaction: (TransactionType) -> Unit,
     onNavigateToEditTransaction: (Long) -> Unit,
     onSeeAllTransactions: () -> Unit,
+    onNavigateToSubscriptions: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -96,6 +97,7 @@ fun DashboardScreen(
                     onManageAccounts = onNavigateToAccounts,
                     onSeeAllTransactions = onSeeAllTransactions,
                     onTransactionClick = onNavigateToEditTransaction,
+                    onSubscriptionsClick = onNavigateToSubscriptions,
                 )
             }
 
@@ -125,6 +127,7 @@ private fun DashboardContent(
     onManageAccounts: () -> Unit,
     onSeeAllTransactions: () -> Unit,
     onTransactionClick: (Long) -> Unit,
+    onSubscriptionsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -158,7 +161,13 @@ private fun DashboardContent(
                 )
             }
         }
-        item { SubscriptionsTeaser() }
+        item {
+            SubscriptionsCard(
+                summary = uiState.subscriptions,
+                currency = uiState.primaryCurrency,
+                onClick = onSubscriptionsClick,
+            )
+        }
         item { RecentHeader(onSeeAll = onSeeAllTransactions) }
         if (uiState.recent.isEmpty()) {
             item {

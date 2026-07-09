@@ -109,15 +109,17 @@
 
 ## Fase 6 - Ricorrenze
 
-- [ ] `RecurringRuleEntity`: frequenza, giorno, inizio/fine, importo fisso o variabile, modalità (auto/conferma), lastGeneratedDate
-- [ ] Motore di generazione idempotente (rieseguibile senza duplicati) + gestione mesi corti (31 → ultimo giorno)
-- [ ] WorkManager periodico + catch-up all'avvio app
-- [ ] Modalità automatica: crea movimento + notifica informativa
-- [ ] Modalità conferma / importo variabile: movimento "pending" + notifica di conferma (conferma/modifica/salta)
-- [ ] CRUD regole ricorrenti; eliminazione con scelta sui movimenti futuri
-- [ ] **Vista Abbonamenti**: lista, costo mensile equivalente, totale mese e proiezione annua
-- [ ] Collegamento card dashboard
-- [ ] Test approfonditi del motore: mesi corti, anni bisestili, catch-up dopo N giorni, idempotenza, DST
+> Spezzata in due incrementi. Incremento 1 (fatto): motore, vista Abbonamenti, editor CRUD, card dashboard, generazione automatica a importo fisso con catch-up all'avvio. Incremento 2 (da fare): WorkManager periodico, notifiche, modalità conferma / importo variabile con movimento "pending" (richiede una migration per il flag pending), ed eventuali ricorrenze di tipo entrata.
+
+- [x] `RecurringRuleEntity`: frequenza, giorno, inizio/fine, importo fisso o variabile, modalità (auto/conferma), lastGeneratedDate (schema dalla Fase 1; in Fase 6 aggiunti `color`/`icon` per l'avatar, migration 1→2)
+- [x] Motore di generazione idempotente (rieseguibile senza duplicati) + gestione mesi corti (31 → ultimo giorno) - `RecurrenceCalculator`
+- [ ] WorkManager periodico + catch-up all'avvio app (catch-up all'avvio: fatto in `MainActivity`; job periodico WorkManager: incremento 2)
+- [ ] Modalità automatica: crea movimento (fatto) + notifica informativa (incremento 2)
+- [ ] Modalità conferma / importo variabile: movimento "pending" + notifica di conferma (conferma/modifica/salta) - incremento 2
+- [x] CRUD regole ricorrenti; eliminazione (conferma; i movimenti già registrati restano, nessun movimento futuro è pre-generato in questo modello)
+- [x] **Vista Abbonamenti**: lista, costo mensile equivalente, totale mese e proiezione annua
+- [x] Collegamento card dashboard
+- [x] Test approfonditi del motore: mesi corti, anni bisestili, catch-up dopo N giorni, idempotenza (DST: evitato generando i movimenti a mezzogiorno; il motore lavora su `LocalDate`)
 
 ## Fase 7 - Ricerca, filtri e statistiche
 

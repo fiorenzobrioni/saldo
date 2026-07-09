@@ -34,6 +34,8 @@ import com.callbackdev.saldo.feature.accounts.AccountsScreen
 import com.callbackdev.saldo.feature.categories.CategoriesScreen
 import com.callbackdev.saldo.feature.categories.CategoryEditorScreen
 import com.callbackdev.saldo.feature.dashboard.DashboardScreen
+import com.callbackdev.saldo.feature.recurring.RecurringRuleEditorScreen
+import com.callbackdev.saldo.feature.recurring.SubscriptionsScreen
 import com.callbackdev.saldo.feature.settings.SettingsScreen
 import com.callbackdev.saldo.feature.stats.StatsScreen
 import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
@@ -98,6 +100,7 @@ fun SaldoApp() {
                             backStack.add(TransactionEditorRoute(id))
                         },
                         onSeeAllTransactions = { backStack.switchTopLevelTab(TransactionsRoute) },
+                        onNavigateToSubscriptions = { backStack.add(SubscriptionsRoute) },
                     )
                 }
                 entry<TransactionsRoute> {
@@ -115,6 +118,7 @@ fun SaldoApp() {
                     SettingsScreen(
                         modifier = topLevelModifier,
                         onNavigateToCategories = { backStack.add(CategoriesRoute) },
+                        onNavigateToSubscriptions = { backStack.add(SubscriptionsRoute) },
                     )
                 }
                 entry<AccountsRoute> {
@@ -149,6 +153,21 @@ fun SaldoApp() {
                 }
                 entry<TransactionEditorRoute> { route ->
                     TransactionEditorScreen(
+                        route = route,
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                    )
+                }
+                entry<SubscriptionsRoute> {
+                    SubscriptionsScreen(
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onNavigateToNewSubscription = { backStack.add(RecurringRuleEditorRoute()) },
+                        onNavigateToEditSubscription = { id ->
+                            backStack.add(RecurringRuleEditorRoute(id))
+                        },
+                    )
+                }
+                entry<RecurringRuleEditorRoute> { route ->
+                    RecurringRuleEditorScreen(
                         route = route,
                         onNavigateBack = { backStack.removeLastOrNull() },
                     )

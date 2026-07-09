@@ -8,6 +8,9 @@ interface RecurringRuleRepository {
 
     fun observeRules(): Flow<List<RecurringRule>>
 
+    /** One-shot snapshot of every rule, for the generation engine. */
+    suspend fun getRules(): List<RecurringRule>
+
     suspend fun getRule(id: Long): RecurringRule?
 
     /** Inserts a new rule (id == 0) or updates an existing one. Returns its id. */

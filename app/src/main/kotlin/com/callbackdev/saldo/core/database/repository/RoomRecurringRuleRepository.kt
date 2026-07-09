@@ -16,6 +16,9 @@ class RoomRecurringRuleRepository @Inject constructor(
     override fun observeRules(): Flow<List<RecurringRule>> =
         recurringRuleDao.observeAll().map { rows -> rows.map { it.toDomain() } }
 
+    override suspend fun getRules(): List<RecurringRule> =
+        recurringRuleDao.getAll().map { it.toDomain() }
+
     override suspend fun getRule(id: Long): RecurringRule? =
         recurringRuleDao.getById(id)?.toDomain()
 

@@ -7,10 +7,12 @@ import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
+import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.every
@@ -45,6 +47,7 @@ class DashboardViewModelTest {
     private val accountRepository = mockk<AccountRepository>()
     private val transactionRepository = mockk<TransactionRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
+    private val recurringRuleRepository = mockk<RecurringRuleRepository>()
 
     private fun account(
         id: Long,
@@ -83,11 +86,19 @@ class DashboardViewModelTest {
         accounts: List<AccountWithBalance> = emptyList(),
         transactions: List<Transaction> = emptyList(),
         categories: List<Category> = emptyList(),
+        rules: List<RecurringRule> = emptyList(),
     ): DashboardViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         every { transactionRepository.observeTransactions() } returns flowOf(transactions)
         every { categoryRepository.observeCategories() } returns flowOf(categories)
-        return DashboardViewModel(accountRepository, transactionRepository, categoryRepository, clock)
+        every { recurringRuleRepository.observeRules() } returns flowOf(rules)
+        return DashboardViewModel(
+            accountRepository,
+            transactionRepository,
+            categoryRepository,
+            recurringRuleRepository,
+            clock,
+        )
     }
 
     private suspend fun ReceiveTurbine<DashboardUiState>.awaitLoaded(): DashboardUiState {
@@ -164,6 +175,36 @@ class DashboardViewModelTest {
             assertEquals(7, state.recent.size)
             assertNotNull(state.recent.first().account)
             assertEquals(category, state.recent.first().category)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `subscriptions summary totals active recurring expenses and picks the next charge`() = runTest {
+        val rules = listOf(
+            RecurringRule(
+                id = 1L, name = "Netflix", type = TransactionType.EXPENSE, currency = eur, accountId = 1L,
+                frequency = com.callbackdev.saldo.core.domain.model.RecurrenceFrequency.MONTHLY,
+                startDate = LocalDate.of(2026, 7, 12), amount = BigDecimal("12.99"), dayOfReference = 12,
+            ),
+            RecurringRule(
+                id = 2L, name = "Insurance", type = TransactionType.EXPENSE, currency = eur, accountId = 1L,
+                frequency = com.callbackdev.saldo.core.domain.model.RecurrenceFrequency.SEMIANNUAL,
+                startDate = LocalDate.of(2026, 9, 15), amount = BigDecimal("96.00"), dayOfReference = 15,
+            ),
+        )
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("0.00"))),
+            rules = rules,
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(2, state.subscriptions.activeCount)
+            // 12.99 + 96.00/6 = 28.99
+            assertEquals(BigDecimal("28.99"), state.subscriptions.monthlyTotal)
+            assertEquals("Netflix", state.subscriptions.next?.name)
+            assertEquals(LocalDate.of(2026, 7, 12), state.subscriptions.next?.date)
             cancelAndIgnoreRemainingEvents()
         }
     }

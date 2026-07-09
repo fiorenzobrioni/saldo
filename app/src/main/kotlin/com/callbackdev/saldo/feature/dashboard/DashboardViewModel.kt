@@ -4,10 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
+import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
+import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import com.callbackdev.saldo.feature.transactions.localDate
@@ -31,6 +34,24 @@ data class PeriodFlow(
     val income: BigDecimal = BigDecimal.ZERO,
 ) {
     val net: BigDecimal get() = spend.add(income)
+}
+
+/** The soonest upcoming subscription charge, for the dashboard card preview. */
+data class NextSubscription(
+    val name: String,
+    /** Positive charge magnitude in [currency]. */
+    val amount: BigDecimal,
+    val currency: Currency,
+    val date: LocalDate,
+)
+
+/** The subscriptions summary shown on the dashboard card. */
+data class SubscriptionsSummary(
+    val monthlyTotal: BigDecimal = BigDecimal.ZERO,
+    val activeCount: Int = 0,
+    val next: NextSubscription? = null,
+) {
+    val hasSubscriptions: Boolean get() = activeCount > 0
 }
 
 /** Immutable UI state for the "Today" dashboard. */
@@ -57,6 +78,7 @@ data class DashboardUiState(
     val previousMonthSpendToDate: BigDecimal? = null,
     /** Whether more has been spent so far this month than by this day last month. */
     val spentMoreThanLastMonth: Boolean = false,
+    val subscriptions: SubscriptionsSummary = SubscriptionsSummary(),
     val recent: List<TransactionListItem> = emptyList(),
     val date: LocalDate = LocalDate.ofEpochDay(0),
 ) {
@@ -72,6 +94,7 @@ class DashboardViewModel @Inject constructor(
     accountRepository: AccountRepository,
     transactionRepository: TransactionRepository,
     categoryRepository: CategoryRepository,
+    recurringRuleRepository: RecurringRuleRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -79,8 +102,9 @@ class DashboardViewModel @Inject constructor(
         accountRepository.observeAccountsWithBalance(),
         transactionRepository.observeTransactions(),
         categoryRepository.observeCategories(),
-    ) { accounts, transactions, categories ->
-        buildState(accounts, transactions, categories)
+        recurringRuleRepository.observeRules(),
+    ) { accounts, transactions, categories, rules ->
+        buildState(accounts, transactions, categories, rules)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -91,6 +115,7 @@ class DashboardViewModel @Inject constructor(
         accounts: List<AccountWithBalance>,
         transactions: List<Transaction>,
         categories: List<Category>,
+        rules: List<RecurringRule>,
     ): DashboardUiState {
         val today = LocalDate.now(clock)
         val active = accounts.filter { !it.account.isArchived }
@@ -145,9 +170,38 @@ class DashboardViewModel @Inject constructor(
             monthVsPreviousToDate = comparison,
             previousMonthSpendToDate = previousReference,
             spentMoreThanLastMonth = spentMore,
+            subscriptions = subscriptionsSummary(rules, primary, today),
             recent = recent,
             date = today,
         )
+    }
+
+    /** Active recurring expenses: normalized monthly total, count, and next charge. */
+    private fun subscriptionsSummary(
+        rules: List<RecurringRule>,
+        primary: Currency,
+        today: LocalDate,
+    ): SubscriptionsSummary {
+        val active = rules.filter {
+            it.type == TransactionType.EXPENSE && (it.endDate == null || it.endDate >= today)
+        }
+        if (active.isEmpty()) return SubscriptionsSummary()
+
+        val monthlyTotal = active
+            .filter { it.currency == primary }
+            .fold(BigDecimal.ZERO) { acc, rule ->
+                acc.add(RecurrenceCalculator.monthlyEquivalent(rule) ?: BigDecimal.ZERO)
+            }
+        val next = active
+            .mapNotNull { rule ->
+                val amount = rule.amount ?: return@mapNotNull null
+                val floor = rule.lastGeneratedDate?.plusDays(1)?.takeIf { it > today } ?: today
+                RecurrenceCalculator.nextOccurrence(rule, floor)?.let { date ->
+                    NextSubscription(rule.name, amount, rule.currency, date)
+                }
+            }
+            .minByOrNull { it.date }
+        return SubscriptionsSummary(monthlyTotal, active.size, next)
     }
 
     private fun periodFlow(

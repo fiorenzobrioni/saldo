@@ -53,3 +53,11 @@ data class TransactionEditorRoute(
     val transactionId: Long? = null,
     val initialTypeName: String? = null,
 ) : NavKey
+
+/** Subscriptions (recurring expenses) view, reached from the dashboard card and Settings. */
+@Serializable
+data object SubscriptionsRoute : NavKey
+
+/** Subscription editor: create mode when [ruleId] is null, edit mode otherwise. */
+@Serializable
+data class RecurringRuleEditorRoute(val ruleId: Long? = null) : NavKey

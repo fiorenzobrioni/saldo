@@ -20,8 +20,8 @@ android {
         applicationId = "com.callbackdev.saldo"
         minSdk = 33
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.5.5"
+        versionCode = 10
+        versionName = "0.5.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -59,6 +59,9 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // Exposes the exported Room schemas to MigrationTestHelper (instrumented tests).
+    sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
 }
 
 kotlin {

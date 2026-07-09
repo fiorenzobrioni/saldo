@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -26,6 +27,7 @@ import com.callbackdev.saldo.R
 @Composable
 fun SettingsScreen(
     onNavigateToCategories: () -> Unit,
+    onNavigateToSubscriptions: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -39,6 +41,12 @@ fun SettingsScreen(
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
+            SettingsEntry(
+                title = stringResource(R.string.settings_subscriptions),
+                hint = stringResource(R.string.settings_subscriptions_hint),
+                icon = Icons.Outlined.Subscriptions,
+                onClick = onNavigateToSubscriptions,
+            )
             SettingsEntry(
                 title = stringResource(R.string.settings_categories),
                 hint = stringResource(R.string.settings_categories_hint),

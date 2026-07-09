@@ -11,8 +11,9 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 
 /**
  * Room row for a recurring rule. Dates are stored as epoch days
- * ([java.time.LocalDate.toEpochDay]); [amountMinor] is null for variable-amount rules.
- * The generation engine is Phase 6.
+ * ([java.time.LocalDate.toEpochDay]); [amountMinor] is null for variable-amount
+ * rules. [color] (0xRRGGBB) and [icon] (Material Symbols key) drive the
+ * subscription avatar and were added in schema version 2 (both nullable).
  */
 @Entity(
     tableName = "recurring_rules",
@@ -52,5 +53,7 @@ data class RecurringRuleEntity(
     val isVariableAmount: Boolean = false,
     @ColumnInfo(name = "lastGeneratedEpochDay")
     val lastGeneratedEpochDay: Long? = null,
+    val color: Int? = null,
+    val icon: String? = null,
     val note: String? = null,
 )
