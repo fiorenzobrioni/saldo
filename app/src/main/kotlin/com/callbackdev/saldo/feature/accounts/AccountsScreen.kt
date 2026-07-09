@@ -60,6 +60,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
+import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 
@@ -264,7 +265,7 @@ internal fun AccountRow(
         Row(
             modifier = Modifier
                 .alpha(if (account.isArchived) 0.6f else 1f)
-                .padding(16.dp),
+                .padding(SaldoDimens.cardPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AccountAvatar(account = account)

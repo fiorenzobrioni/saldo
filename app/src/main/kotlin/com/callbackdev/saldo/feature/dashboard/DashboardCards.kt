@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
+import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
@@ -89,7 +90,7 @@ internal fun BalanceCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(SaldoDimens.cardPaddingLarge)) {
             Text(
                 text = stringResource(R.string.dashboard_balance_total),
                 style = MaterialTheme.typography.labelLarge,
@@ -120,7 +121,7 @@ internal fun BalanceCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp),
+                            .padding(vertical = SaldoDimens.rowPaddingVertical),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
@@ -204,7 +205,7 @@ internal fun PeriodCardsRow(
         modifier = modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
         PeriodCompactCard(
             title = stringResource(R.string.dashboard_today),
@@ -239,7 +240,7 @@ private fun PeriodCompactCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(SaldoDimens.cardPadding)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
@@ -341,7 +342,7 @@ internal fun SubscriptionsCard(
         ),
     ) {
         Row(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(SaldoDimens.cardPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -446,7 +447,10 @@ internal fun RecentMovementsCard(
                 ) {
                     TransactionRowContent(
                         item = item,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(
+                            horizontal = SaldoDimens.rowPaddingHorizontal,
+                            vertical = SaldoDimens.rowPaddingVertical,
+                        ),
                     )
                 }
             }

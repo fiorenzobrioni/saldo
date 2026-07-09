@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
+import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.TransactionType
 
@@ -88,7 +89,10 @@ internal fun SwipeableTransactionRow(
         ) {
             TransactionRowContent(
                 item = item,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                modifier = Modifier.padding(
+                    horizontal = SaldoDimens.rowPaddingHorizontal,
+                    vertical = SaldoDimens.rowPaddingVertical,
+                ),
             )
         }
     }

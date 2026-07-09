@@ -27,6 +27,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,6 +55,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import java.math.BigDecimal
 import java.util.Currency
 
@@ -86,15 +88,16 @@ fun SubscriptionsScreen(
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = onNavigateToNewSubscription) {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = stringResource(R.string.subscriptions_new),
-                        )
-                    }
-                },
             )
+        },
+        floatingActionButton = {
+            if (!uiState.isLoading && !uiState.isEmpty) {
+                ExtendedFloatingActionButton(
+                    onClick = onNavigateToNewSubscription,
+                    icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.subscriptions_new)) },
+                )
+            }
         },
     ) { innerPadding ->
         when {
@@ -129,8 +132,8 @@ private fun SubscriptionsContent(
 ) {
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
         item {
             MonthlyTotalCard(
@@ -167,7 +170,7 @@ private fun MonthlyTotalCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(SaldoDimens.cardPaddingLarge)) {
             Text(
                 text = stringResource(R.string.subscriptions_this_month),
                 style = MaterialTheme.typography.labelLarge,
@@ -211,7 +214,7 @@ private fun AnnualProjectionCard(
         ),
     ) {
         Row(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(SaldoDimens.cardPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -306,7 +309,10 @@ private fun SubscriptionsListCard(
                     SubscriptionRowContent(
                         item = item,
                         today = today,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(
+                            horizontal = SaldoDimens.rowPaddingHorizontal,
+                            vertical = SaldoDimens.rowPaddingVertical,
+                        ),
                     )
                 }
             }

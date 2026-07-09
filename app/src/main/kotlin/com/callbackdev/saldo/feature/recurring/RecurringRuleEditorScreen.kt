@@ -1,8 +1,10 @@
 package com.callbackdev.saldo.feature.recurring
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -23,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -36,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,6 +51,7 @@ import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.navigation.RecurringRuleEditorRoute
+import java.time.LocalDate
 
 /**
  * Create/edit form for a subscription (recurring expense): a live preview avatar
@@ -184,46 +190,48 @@ private fun EditorForm(
             showError = uiState.showValidation && !uiState.isNameValid,
             onNameChanged = viewModel::onNameChanged,
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         AmountField(
             input = uiState.amountInput,
             currency = uiState.currency,
             showError = uiState.showValidation && !uiState.isAmountValid,
             onChanged = viewModel::onAmountChanged,
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         AccountField(
             accounts = uiState.accounts,
             selectedId = uiState.accountId,
             showError = uiState.showValidation && !uiState.isAccountValid,
             onSelected = viewModel::onAccountSelected,
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         CategoryField(
             categories = uiState.categories,
             selectedId = uiState.categoryId,
             onSelected = viewModel::onCategorySelected,
         )
-        Spacer(Modifier.height(16.dp))
-        FrequencyField(
-            frequencies = viewModel.frequencies,
-            selected = uiState.frequency,
-            onSelected = viewModel::onFrequencySelected,
-        )
-        Spacer(Modifier.height(16.dp))
-        DateField(
-            label = stringResource(R.string.subscription_editor_first_charge),
-            date = uiState.startDate,
-            placeholder = "",
-            onClick = onStartDateClick,
-        )
-        Spacer(Modifier.height(16.dp))
-        DateField(
-            label = stringResource(R.string.subscription_editor_end_date),
-            date = uiState.endDate,
-            placeholder = stringResource(R.string.subscription_editor_end_date_none),
-            onClick = onEndDateClick,
-            onClear = { viewModel.onEndDateSelected(null) },
+        Spacer(Modifier.height(12.dp))
+        // Frequency and first charge read as a pair: how often, starting when.
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            FrequencyField(
+                frequencies = viewModel.frequencies,
+                selected = uiState.frequency,
+                onSelected = viewModel::onFrequencySelected,
+                modifier = Modifier.weight(1f),
+            )
+            DateField(
+                label = stringResource(R.string.subscription_editor_first_charge),
+                date = uiState.startDate,
+                placeholder = "",
+                onClick = onStartDateClick,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        EndDateControl(
+            endDate = uiState.endDate,
+            onToggle = viewModel::onEndDateToggled,
+            onDateClick = onEndDateClick,
         )
         SectionLabel(stringResource(R.string.subscription_editor_section_color))
         SubscriptionColorPicker(selected = uiState.color, onColorSelected = viewModel::onColorSelected)
@@ -238,6 +246,56 @@ private fun EditorForm(
             DeleteButton(onDelete = viewModel::requestDelete)
         }
         Spacer(Modifier.height(32.dp))
+    }
+}
+
+/**
+ * "Has an end date" switch that reveals the date field when on. Toggling off
+ * clears the end date (the earlier inline clear was masked by the tap overlay).
+ */
+@Composable
+private fun EndDateControl(
+    endDate: LocalDate?,
+    onToggle: (Boolean) -> Unit,
+    onDateClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.medium)
+                .toggleable(
+                    value = endDate != null,
+                    role = Role.Switch,
+                    onValueChange = onToggle,
+                )
+                .padding(vertical = 8.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.subscription_editor_has_end_date),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(
+                    text = stringResource(R.string.subscription_editor_has_end_date_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(Modifier.size(16.dp))
+            Switch(checked = endDate != null, onCheckedChange = null)
+        }
+        if (endDate != null) {
+            Spacer(Modifier.height(8.dp))
+            DateField(
+                label = stringResource(R.string.subscription_editor_end_date),
+                date = endDate,
+                placeholder = "",
+                onClick = onDateClick,
+            )
+        }
     }
 }
 

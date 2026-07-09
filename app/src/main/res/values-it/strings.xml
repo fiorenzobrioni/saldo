@@ -249,8 +249,8 @@
     <string name="subscription_editor_frequency">Frequenza</string>
     <string name="subscription_editor_first_charge">Primo addebito</string>
     <string name="subscription_editor_end_date">Data di fine</string>
-    <string name="subscription_editor_end_date_none">Nessuna scadenza</string>
-    <string name="subscription_editor_end_date_clear">Rimuovi la data di fine</string>
+    <string name="subscription_editor_has_end_date">Con scadenza</string>
+    <string name="subscription_editor_has_end_date_hint">L\'abbonamento termina a una data scelta</string>
     <string name="subscription_editor_section_color">Colore</string>
     <string name="subscription_editor_section_icon">Icona</string>
     <string name="subscription_editor_color_option">Colore %1$d</string>

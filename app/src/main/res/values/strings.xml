@@ -246,8 +246,8 @@
     <string name="subscription_editor_frequency">Frequency</string>
     <string name="subscription_editor_first_charge">First charge</string>
     <string name="subscription_editor_end_date">End date</string>
-    <string name="subscription_editor_end_date_none">No end date</string>
-    <string name="subscription_editor_end_date_clear">Clear end date</string>
+    <string name="subscription_editor_has_end_date">Has an end date</string>
+    <string name="subscription_editor_has_end_date_hint">The subscription stops on a chosen date</string>
     <string name="subscription_editor_section_color">Color</string>
     <string name="subscription_editor_section_icon">Icon</string>
     <string name="subscription_editor_color_option">Color %1$d</string>

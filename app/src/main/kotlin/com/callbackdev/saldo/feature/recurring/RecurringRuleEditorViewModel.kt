@@ -191,6 +191,11 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
 
     fun onEndDateSelected(date: LocalDate?) = _uiState.update { it.copy(endDate = date) }
 
+    /** Toggles the presence of an end date; enabling seeds a sensible default. */
+    fun onEndDateToggled(enabled: Boolean) = _uiState.update {
+        it.copy(endDate = if (enabled) it.startDate.plusYears(1) else null)
+    }
+
     fun onColorSelected(color: Int) = _uiState.update { it.copy(color = color) }
 
     fun onIconSelected(icon: String) {

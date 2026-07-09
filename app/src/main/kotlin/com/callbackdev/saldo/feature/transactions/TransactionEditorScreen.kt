@@ -262,6 +262,10 @@ fun TransactionEditorScreen(
 }
 
 private fun editorTitleRes(uiState: TransactionEditorUiState): Int = when {
+    // Generic "new movement" (from the ledger FAB): the type selector is visible,
+    // so a specific title would be misleading. Quick actions preset the type and
+    // hide the selector, so they keep the specific, confirming title.
+    uiState.isNew && !uiState.isTypePreset -> R.string.transaction_editor_title_new
     uiState.isNew && uiState.type == TransactionType.INCOME ->
         R.string.transaction_editor_title_new_income
 

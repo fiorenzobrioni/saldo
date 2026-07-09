@@ -2,6 +2,8 @@ package com.callbackdev.saldo.feature.recurring
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.FlowRow
@@ -12,19 +14,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -42,9 +46,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
@@ -91,10 +94,11 @@ internal fun AmountField(
         onValueChange = onChanged,
         label = { Text(stringResource(R.string.subscription_editor_amount)) },
         placeholder = { Text("0") },
-        suffix = currency?.let { { Text(it.symbol) } },
+        prefix = currency?.let { { Text(it.symbol) } },
         singleLine = true,
         isError = showError,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        textStyle = MaterialTheme.typography.headlineSmall,
         supportingText = if (showError) {
             { Text(stringResource(R.string.subscription_editor_amount_error)) }
         } else {
@@ -126,6 +130,15 @@ internal fun AccountField(
             readOnly = true,
             isError = showError,
             label = { Text(stringResource(R.string.subscription_editor_account)) },
+            leadingIcon = selected?.let { account ->
+                {
+                    Icon(
+                        imageVector = AccountVisuals.icon(account.icon),
+                        contentDescription = null,
+                        tint = AccountVisuals.color(account.color),
+                    )
+                }
+            },
             supportingText = if (showError) {
                 { Text(stringResource(R.string.subscription_editor_account_error)) }
             } else {
@@ -140,6 +153,13 @@ internal fun AccountField(
             accounts.forEach { account ->
                 DropdownMenuItem(
                     text = { Text(account.name) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = AccountVisuals.icon(account.icon),
+                            contentDescription = null,
+                            tint = AccountVisuals.color(account.color),
+                        )
+                    },
                     onClick = {
                         onSelected(account.id)
                         expanded = false
@@ -171,6 +191,14 @@ internal fun CategoryField(
             onValueChange = {},
             readOnly = true,
             label = { Text(stringResource(R.string.subscription_editor_category)) },
+            leadingIcon = {
+                Icon(
+                    imageVector = selected?.let { CategoryVisuals.icon(it.icon) } ?: Icons.Outlined.Category,
+                    contentDescription = null,
+                    tint = selected?.let { CategoryVisuals.color(it.color) }
+                        ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
@@ -187,6 +215,13 @@ internal fun CategoryField(
             categories.forEach { category ->
                 DropdownMenuItem(
                     text = { Text(category.name) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = CategoryVisuals.icon(category.icon),
+                            contentDescription = null,
+                            tint = CategoryVisuals.color(category.color),
+                        )
+                    },
                     onClick = {
                         onSelected(category.id)
                         expanded = false
@@ -215,7 +250,9 @@ internal fun FrequencyField(
             value = stringResource(selected.labelRes()),
             onValueChange = {},
             readOnly = true,
+            singleLine = true,
             label = { Text(stringResource(R.string.subscription_editor_frequency)) },
+            leadingIcon = { Icon(Icons.Outlined.Repeat, contentDescription = null) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
@@ -235,7 +272,7 @@ internal fun FrequencyField(
     }
 }
 
-/** Read-only date field: shows the date (or a placeholder), opens a picker on tap. */
+/** Read-only date field with a leading calendar glyph; opens a picker on tap. */
 @Composable
 internal fun DateField(
     label: String,
@@ -243,26 +280,15 @@ internal fun DateField(
     placeholder: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onClear: (() -> Unit)? = null,
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = date?.let { formattedDate(it) } ?: placeholder,
             onValueChange = {},
             readOnly = true,
+            singleLine = true,
             label = { Text(label) },
-            trailingIcon = {
-                if (onClear != null && date != null) {
-                    IconButton(onClick = onClear) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = stringResource(R.string.subscription_editor_end_date_clear),
-                        )
-                    }
-                } else {
-                    Icon(imageVector = Icons.Outlined.CalendarMonth, contentDescription = null)
-                }
-            },
+            leadingIcon = { Icon(Icons.Outlined.CalendarMonth, contentDescription = null) },
             modifier = Modifier.fillMaxWidth(),
         )
         // Overlay so a tap opens the picker instead of focusing the read-only field.
@@ -370,7 +396,11 @@ internal fun SubscriptionIconPicker(
     }
 }
 
-/** Material date picker, optionally floored at [minDate] (for the end date). */
+/**
+ * Material date picker locked to calendar mode ([showModeToggle] off): the
+ * input/calendar toggle animation was slow and janky, and typing a date adds
+ * little here. [minDate] floors the selectable range (for the end date).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun RecurringDatePickerDialog(
@@ -379,14 +409,19 @@ internal fun RecurringDatePickerDialog(
     onDismiss: () -> Unit,
     minDate: LocalDate? = null,
 ) {
+    val selectableDates = remember(minDate) {
+        if (minDate == null) {
+            DatePickerDefaults.AllDates
+        } else {
+            object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                    !Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneOffset.UTC).toLocalDate().isBefore(minDate)
+            }
+        }
+    }
     val state = rememberDatePickerState(
         initialSelectedDateMillis = initialDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
-        selectableDates = minDate?.let { floor ->
-            object : androidx.compose.material3.SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean =
-                    !Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneOffset.UTC).toLocalDate().isBefore(floor)
-            }
-        } ?: androidx.compose.material3.DatePickerDefaults.AllDates,
+        selectableDates = selectableDates,
     )
     DatePickerDialog(
         onDismissRequest = onDismiss,
@@ -406,6 +441,6 @@ internal fun RecurringDatePickerDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     ) {
-        DatePicker(state = state)
+        DatePicker(state = state, showModeToggle = false)
     }
 }
