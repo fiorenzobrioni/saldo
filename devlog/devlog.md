@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-09 - Icona app rimpicciolita e ricentrata; icone interne ripristinate
+
+**Fatto:**
+- **Icone interne** (avatar di movimenti, conti, dashboard, cella categoria) riportate alle dimensioni precedenti, che andavano bene: la richiesta di margine riguardava l'icona dell'app, non queste.
+- **Icona launcher** (adaptive `ic_launcher_foreground` + monocromatica): il gruppo esterno passa da scala 0.88 / translateY +5.4 a scala 0.80 / translateY -1.0. Rimpicciolita per più margine dal bordo mascherabile e alzata leggermente.
+
+**Decisioni:** l'alzata segue il baricentro visivo, non quello geometrico. Il +5.4 spingeva il corpo pieno del portafoglio in basso (centro attorno a y=60 su un canvas 108, centro 54), facendolo sembrare basso rispetto alle due carte appuntite in alto; centrare geometricamente non basta perché sopra è vuoto/arrotondato e sotto è pieno. Con translateY -1.0 il corpo pieno del portafoglio cade sul centro del canvas, quindi appare centrato. Foreground e monocromatica tenute in sync.
+
+**Prossimo:** Fase 6 (ricorrenze).
+
+---
+
 ## 2026-07-09 - Editor uniformi, lista Movimenti a card, margini icone
 
 **Fatto:**

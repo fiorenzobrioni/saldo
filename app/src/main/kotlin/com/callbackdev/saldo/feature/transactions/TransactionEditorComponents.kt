@@ -266,7 +266,7 @@ private fun CategoryCell(
                 imageVector = CategoryVisuals.icon(category.icon),
                 contentDescription = null,
                 tint = if (isSelected) Color.White else color,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(22.dp),
             )
         }
         Spacer(Modifier.size(4.dp))

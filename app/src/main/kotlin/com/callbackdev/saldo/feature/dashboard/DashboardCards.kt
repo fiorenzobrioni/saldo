@@ -161,7 +161,7 @@ private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = M
                 imageVector = AccountVisuals.icon(account.icon),
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(20.dp),
             )
         }
         Text(
@@ -348,7 +348,7 @@ internal fun SubscriptionsTeaser(modifier: Modifier = Modifier) {
                     imageVector = Icons.Outlined.Subscriptions,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(22.dp),
                 )
             }
             Column(modifier = Modifier.padding(start = 16.dp)) {
