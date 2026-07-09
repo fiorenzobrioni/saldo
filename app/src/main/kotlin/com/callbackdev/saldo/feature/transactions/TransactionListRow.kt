@@ -38,7 +38,11 @@ import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.TransactionType
 
-/** A movement row that can be swiped away (end to start) to delete it. */
+/**
+ * A movement row that can be swiped away (end to start) to delete it. Flat, so
+ * it sits inside a day's grouped card: the opaque foreground hides the delete
+ * background until swiped, and the parent card clips the rounded corners.
+ */
 @Composable
 internal fun SwipeableTransactionRow(
     item: TransactionListItem,
@@ -65,7 +69,6 @@ internal fun SwipeableTransactionRow(
                 contentAlignment = Alignment.CenterEnd,
                 modifier = Modifier
                     .fillMaxSize()
-                    .clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.errorContainer),
             ) {
                 Icon(
@@ -78,27 +81,16 @@ internal fun SwipeableTransactionRow(
         },
         modifier = modifier,
     ) {
-        TransactionRow(item = item, onClick = onClick)
-    }
-}
-
-/** A tappable movement row (avatar, title/subtitle, signed amount). Reused by the dashboard. */
-@Composable
-internal fun TransactionRow(
-    item: TransactionListItem,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        TransactionRowContent(
-            item = item,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-        )
+        Surface(
+            onClick = onClick,
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            TransactionRowContent(
+                item = item,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+        }
     }
 }
 
@@ -190,7 +182,7 @@ private fun TransactionAvatar(
             imageVector = icon,
             contentDescription = null,
             tint = tint,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(20.dp),
         )
     }
 }

@@ -88,6 +88,7 @@
     </plurals>
     <string name="account_editor_title_new">Nuovo account</string>
     <string name="account_editor_title_edit">Modifica account</string>
+    <string name="account_editor_save">Salva account</string>
     <string name="account_editor_name">Nome</string>
     <string name="account_editor_name_error">Inserisci un nome</string>
     <string name="account_editor_section_type">Tipo</string>
@@ -170,6 +171,7 @@
     <string name="category_type_both_hint">Spese ed entrate</string>
     <string name="category_editor_title_new">Nuova categoria</string>
     <string name="category_editor_title_edit">Modifica categoria</string>
+    <string name="category_editor_save">Salva categoria</string>
     <string name="category_editor_name">Nome</string>
     <string name="category_editor_name_error">Inserisci un nome</string>
     <string name="category_editor_section_type">Tipo</string>

@@ -316,7 +316,7 @@ internal fun AccountAvatar(
             imageVector = AccountVisuals.icon(account.icon),
             contentDescription = null,
             tint = Color.White,
-            modifier = Modifier.size(22.dp),
+            modifier = Modifier.size(20.dp),
         )
     }
 }

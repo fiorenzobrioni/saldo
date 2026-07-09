@@ -13,16 +13,11 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -31,7 +26,6 @@ import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -61,6 +55,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
+import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
@@ -143,15 +139,24 @@ fun TransactionEditorScreen(
         },
         bottomBar = {
             if (!uiState.isLoading) {
-                EditorBottomBar(
-                    keypadVisible = uiState.amountTarget != AmountTarget.NONE,
-                    showSignToggle = uiState.type == TransactionType.ADJUSTMENT,
-                    decimalSeparator = decimalSeparator,
-                    saveLabel = stringResource(saveLabelRes(uiState.type)),
-                    saveEnabled = uiState.isAmountValid,
-                    onKey = viewModel::onKeypadKey,
-                    onSave = viewModel::save,
-                )
+                EditorBottomBar {
+                    AnimatedVisibility(
+                        visible = uiState.amountTarget != AmountTarget.NONE,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically(),
+                    ) {
+                        AmountKeypad(
+                            onKey = viewModel::onKeypadKey,
+                            decimalSeparator = decimalSeparator,
+                            showSignToggle = uiState.type == TransactionType.ADJUSTMENT,
+                        )
+                    }
+                    EditorSaveButton(
+                        text = stringResource(saveLabelRes(uiState.type)),
+                        onClick = viewModel::save,
+                        enabled = uiState.isAmountValid,
+                    )
+                }
             }
         },
     ) { innerPadding ->
@@ -253,54 +258,6 @@ fun TransactionEditorScreen(
             },
             onDismiss = { showDeleteDialog = false },
         )
-    }
-}
-
-/** The keypad (when an amount is being edited) and the full-width save button. */
-@Composable
-private fun EditorBottomBar(
-    keypadVisible: Boolean,
-    showSignToggle: Boolean,
-    decimalSeparator: Char,
-    saveLabel: String,
-    saveEnabled: Boolean,
-    onKey: (KeypadKey) -> Unit,
-    onSave: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
-                .padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            AnimatedVisibility(
-                visible = keypadVisible,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
-            ) {
-                AmountKeypad(
-                    onKey = onKey,
-                    decimalSeparator = decimalSeparator,
-                    showSignToggle = showSignToggle,
-                )
-            }
-            Button(
-                onClick = onSave,
-                enabled = saveEnabled,
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-            ) {
-                Text(text = saveLabel, style = MaterialTheme.typography.titleMedium)
-            }
-        }
     }
 }
 

@@ -1,6 +1,6 @@
 package com.callbackdev.saldo.feature.transactions
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,9 +19,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -127,7 +130,6 @@ fun TransactionsScreen(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TransactionsList(
     days: List<TransactionDayGroup>,
@@ -138,19 +140,53 @@ private fun TransactionsList(
 ) {
     LazyColumn(
         modifier = modifier,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
     ) {
-        days.forEach { day ->
-            stickyHeader(key = "day-${day.date}") {
+        items(days, key = { it.date }) { day ->
+            Column(
+                modifier = Modifier
+                    .animateItem()
+                    .padding(bottom = 12.dp),
+            ) {
                 DayHeader(day = day, today = today)
+                Spacer(Modifier.height(6.dp))
+                DayCard(
+                    items = day.items,
+                    onItemClick = onItemClick,
+                    onItemDelete = onItemDelete,
+                )
             }
-            items(day.items, key = { it.id }) { item ->
+        }
+    }
+}
+
+/** All of a day's movements in a single grouped card, split by hairline dividers. */
+@Composable
+private fun DayCard(
+    items: List<TransactionListItem>,
+    onItemClick: (TransactionListItem) -> Unit,
+    onItemDelete: (TransactionListItem) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ),
+    ) {
+        Column(modifier = Modifier.animateContentSize()) {
+            items.forEachIndexed { index, item ->
+                if (index > 0) {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
                 SwipeableTransactionRow(
                     item = item,
                     onClick = { onItemClick(item) },
                     onDelete = { onItemDelete(item) },
-                    modifier = Modifier.animateItem(),
                 )
             }
         }
@@ -166,14 +202,12 @@ private fun DayHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(top = 12.dp, bottom = 4.dp),
+            .padding(start = 4.dp, end = 4.dp, top = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = dayLabel(day.date, today),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.weight(1f),
         )
         Text(
