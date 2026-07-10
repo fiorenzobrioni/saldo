@@ -14,6 +14,28 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-10 - Fase 6 incremento 3: entrate ricorrenti, radar pre-rinnovo, fix status bar
+
+**Fatto:**
+- **Fix status bar in tema scuro forzato**: con tema app scuro e sistema chiaro le icone della status bar restavano scure su sfondo scuro (barra illeggibile). `enableEdgeToEdge()` senza argomenti segue solo il uiMode di sistema: ora viene riapplicata dentro `setContent` con `SystemBarStyle.auto` agganciato al tema risolto in-app (`DisposableEffect(darkTheme)`), per status e navigation bar. La chiamata no-arg in `onCreate` resta per il primo frame in modalità sistema.
+- **Entrate ricorrenti + hub "Ricorrenze"**: la vista Abbonamenti diventa un hub con due tab (`PrimaryTabRow`, stesso pattern di Categorie): Abbonamenti (spese, figure invariate) ed Entrate (stipendio, affitti attivi), ognuno con totale mensile equivalente, proiezione annua, conteggio attivi e prossimo addebito/accredito. Il motore supportava già `INCOME`: l'editor non hard-coda più `EXPENSE` e prende il tipo dal tab di provenienza via `RecurringRuleEditorRoute.initialTypeName` (stesso pattern di `CategoryEditorRoute`); categorie filtrate per tipo (INCOME/BOTH vs EXPENSE/BOTH), etichette, icona default ("payments") e categoria default (Stipendio) adattate. Rinominati route e file (`RecurrencesRoute`, `RecurrencesScreen/ViewModel/UiState`); etichette di ordinamento per tab ("Per prossimo accredito", "Per importo"). Card dashboard invariata (resta focalizzata sugli abbonamenti).
+- **Radar pre-rinnovo**: notifica opzionale prima dell'addebito ("Netflix si rinnova tra 3 giorni") e degli accrediti ("Stipendio in arrivo domani"). Nuova sezione Notifiche in Impostazioni: toggle (default off) + anticipo 1/2/3/7 giorni (`SingleChoiceSegmentedButtonRow`), persistiti in DataStore. Nuovo use case `CheckUpcomingRenewalsUseCase` eseguito dal worker giornaliero esistente dopo la generazione (un addebito dovuto oggi viene registrato, non annunciato). Watermark `lastReminderEpochDay` su `recurring_rules` (migration 4→5, DB v5): una sola notifica per occorrenza, robusta ai giorni saltati dal worker (device spento: avvisa comunque alla prima occasione utile). Avanzamento watermark con UPDATE mirato per non interferire con l'upsert della generazione. Terzo canale notifiche `recurring_upcoming` (id 1003): notifica singola nominale con importo nel body, oppure summary con i nomi per più rinnovi.
+- Versione a 0.6.6 (versionCode 15). PLANNING.md aggiornato: radar spostato da "Note e appunti" alla Fase 6, "Spendibile oggi" e "Rilevamento automatico ricorrenze" annotati come rimandati di proposito, bug status bar spuntato in "Bug conosciuti".
+
+**Decisioni:**
+- Entrate ricorrenti in un hub unico a tab invece di una vista separata: meno navigazione, totali per tab coerenti (mai segni misti in uno stesso totale), un solo punto di accesso da Impostazioni ("Ricorrenze") e dalla card dashboard.
+- Tipo della regola fissato dal tab di provenienza, nessun selettore nell'editor: un cambio tipo live dovrebbe ricaricare e potenzialmente invalidare la categoria scelta e rietichettare mezzo form; il contesto del tab disambigua già (stesso approccio dell'editor categorie).
+- Promemoria pre-rinnovo globale e opt-in (default off): una notifica che compare non richiesta dopo un update è peggio di un tap in più in Impostazioni. Anticipo per-regola rimandato: il caso d'uso reale è un unico anticipo per tutto.
+- Watermark promemoria come colonna sulla regola (non DataStore): stesso ciclo di vita di `lastGeneratedDate` (cancellato con la regola, incluso nel backup di Fase 8), migration banale e testata col pattern esistente.
+
+**Problemi:** detekt sulla prima stesura (complessità/numero funzioni nell'editor screen, return multipli nel use case): risolti estraendo le etichette per tipo in `RecurringLabels.kt` e compattando i guard clause. Nessun emulatore in sessione: migration test 4→5 compilato ma da eseguire su device; verifica visiva di tab, notifiche e status bar rimandata al device.
+
+**Verifica:** `assembleDebug testDebugUnitTest lint detekt compileDebugAndroidTestKotlin` verdi; 163 unit test (0 falliti). Nuovi test: `CheckUpcomingRenewalsUseCaseTest` (finestra a 1/2/3/7 giorni, watermark anti-duplicato, catch-up giorni saltati, setting off senza scritture, income, regole terminate, occorrenza generata oggi non annunciata, importo variabile senza importo), editor con tipo INCOME (categorie filtrate, salvataggio, edit che conserva il tipo, fallback a EXPENSE), `RecurrencesViewModelTest` (sezione entrate con totali e prossimo accredito, separazione spese/entrate, test esistenti ritargetizzati).
+
+**Prossimo:** Fase 7 (ricerca, filtri, statistiche con Vico). In coda dalle idee di luglio 2026: rilevamento automatico ricorrenze (da agganciare all'hub) e "Spendibile oggi" (dopo il budget v1.5).
+
+---
+
 ## 2026-07-10 - Review completa: bug fix e Fase 6.5 (design system e omogeneità)
 
 **Fatto:**

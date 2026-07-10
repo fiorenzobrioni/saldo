@@ -66,17 +66,19 @@ class CheckUpcomingRenewalsUseCase @Inject constructor(
         val floor = if (afterGenerated != null && afterGenerated > today) afterGenerated else today
         val next = RecurrenceCalculator.nextOccurrence(this, floor) ?: return null
         val daysUntil = ChronoUnit.DAYS.between(today, next).toInt()
-        if (daysUntil > leadDays) return null
         val alreadyReminded = lastReminderDate != null && lastReminderDate >= next
-        if (alreadyReminded) return null
-        return UpcomingRenewal(
-            ruleId = id,
-            ruleName = name,
-            type = type,
-            amount = amount.takeUnless { isVariableAmount },
-            currency = currency,
-            dueDate = next,
-            daysUntil = daysUntil,
-        )
+        return if (daysUntil > leadDays || alreadyReminded) {
+            null
+        } else {
+            UpcomingRenewal(
+                ruleId = id,
+                ruleName = name,
+                type = type,
+                amount = amount.takeUnless { isVariableAmount },
+                currency = currency,
+                dueDate = next,
+                daysUntil = daysUntil,
+            )
+        }
     }
 }

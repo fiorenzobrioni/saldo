@@ -26,7 +26,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - 📊 **Dashboard "Oggi"** - saldo totale, spese del giorno e del mese, ultimi movimenti: tutto in 5 secondi
 - 💸 **Movimenti** - spese, entrate e trasferimenti tra account, registrabili in 2-3 tap
 - 🏦 **Account multipli** - con saldo iniziale, rettifica saldo e archiviazione
-- 🔁 **Ricorrenze e abbonamenti** - registrazione automatica o con conferma, vista dedicata con totale mensile
+- 🔁 **Ricorrenze** - abbonamenti ed entrate ricorrenti (stipendio, affitti attivi) con registrazione automatica o con conferma, hub dedicato con totale mensile e proiezione annua per tab, notifica di pre-rinnovo opzionale ("Netflix si rinnova tra 3 giorni") con anticipo configurabile
 - 🏷️ **Categorie e tag personalizzabili**
 - 🔍 **Ricerca e filtri combinabili** con totale della vista filtrata
 - 📈 **Statistiche** - spese per categoria, trend mensile, entrate vs uscite, andamento saldo
@@ -94,7 +94,7 @@ app/src/main/kotlin/com/callbackdev/saldo/
 │   ├── categories/      # categorie: tab spese/entrate, editor, riordino drag (da Fase 4)
 │   ├── dashboard/       # schermata "Oggi": saldo, oggi/mese, ultimi movimenti, FAB (da Fase 5)
 │   ├── transactions/    # movimenti: editor con tastierino, lista per giorno (da Fase 3)
-│   ├── recurring/       # abbonamenti: vista, editor, motore ricorrenze (da Fase 6)
+│   ├── recurring/       # ricorrenze: hub abbonamenti/entrate, editor, motore (da Fase 6)
 │   ├── stats/           # statistiche
 │   └── settings/        # impostazioni
 └── navigation/          # route NavKey, scaffold, bottom bar

@@ -106,19 +106,7 @@ fun RecurringRuleEditorScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = {
-                    val isIncome = uiState.type == TransactionType.INCOME
-                    Text(
-                        stringResource(
-                            when {
-                                uiState.isNew && isIncome -> R.string.income_editor_title_new
-                                uiState.isNew -> R.string.subscription_editor_title_new
-                                isIncome -> R.string.income_editor_title_edit
-                                else -> R.string.subscription_editor_title_edit
-                            },
-                        ),
-                    )
-                },
+                title = { Text(stringResource(editorTitleRes(uiState.isNew, uiState.type))) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -133,13 +121,7 @@ fun RecurringRuleEditorScreen(
             if (!uiState.isLoading) {
                 EditorBottomBar {
                     EditorSaveButton(
-                        text = stringResource(
-                            if (uiState.type == TransactionType.INCOME) {
-                                R.string.income_editor_save
-                            } else {
-                                R.string.subscription_editor_save
-                            },
-                        ),
+                        text = stringResource(editorSaveRes(uiState.type)),
                         onClick = viewModel::save,
                         enabled = !uiState.isLoading,
                     )
@@ -487,7 +469,7 @@ private fun DeleteButton(type: TransactionType, onDelete: () -> Unit, modifier: 
         )
         Spacer(Modifier.size(8.dp))
         Text(
-            text = stringResource(deleteLabelRes(type)),
+            text = stringResource(editorDeleteRes(type)),
             color = MaterialTheme.colorScheme.error,
         )
     }
@@ -517,7 +499,7 @@ private fun DeleteRuleDialog(
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(
-                    text = stringResource(deleteLabelRes(type)),
+                    text = stringResource(editorDeleteRes(type)),
                     color = MaterialTheme.colorScheme.error,
                 )
             }
@@ -527,10 +509,3 @@ private fun DeleteRuleDialog(
         },
     )
 }
-
-private fun deleteLabelRes(type: TransactionType): Int =
-    if (type == TransactionType.INCOME) {
-        R.string.income_editor_delete
-    } else {
-        R.string.subscription_editor_delete
-    }

@@ -110,7 +110,7 @@
 
 ## Fase 6 - Ricorrenze
 
-> Completata in due incrementi. Incremento 1: motore, vista Abbonamenti, editor CRUD, card dashboard, generazione automatica a importo fisso con catch-up all'avvio. Incremento 2: WorkManager periodico, notifiche informative e di conferma, modalità conferma / importo variabile con movimento "pending" (migration 2→3), conferma/modifica/salta in-app (schermata "Da confermare" + card dashboard).
+> Completata in tre incrementi. Incremento 1: motore, vista Abbonamenti, editor CRUD, card dashboard, generazione automatica a importo fisso con catch-up all'avvio. Incremento 2: WorkManager periodico, notifiche informative e di conferma, modalità conferma / importo variabile con movimento "pending" (migration 2→3), conferma/modifica/salta in-app (schermata "Da confermare" + card dashboard). Incremento 3 (luglio 2026): entrate ricorrenti con hub "Ricorrenze" a tab e notifica di pre-rinnovo configurabile (radar, migration 4→5).
 
 - [x] `RecurringRuleEntity`: frequenza, giorno, inizio/fine, importo fisso o variabile, modalità (auto/conferma), lastGeneratedDate (schema dalla Fase 1; in Fase 6 aggiunti `color`/`icon` per l'avatar, migration 1→2)
 - [x] Motore di generazione idempotente (rieseguibile senza duplicati) + gestione mesi corti (31 → ultimo giorno) - `RecurrenceCalculator`
@@ -121,6 +121,8 @@
 - [x] **Vista Abbonamenti**: lista, costo mensile equivalente, totale mese e proiezione annua
 - [x] Collegamento card dashboard
 - [x] Test approfonditi del motore: mesi corti, anni bisestili, catch-up dopo N giorni, idempotenza (DST: evitato generando i movimenti a mezzogiorno; il motore lavora su `LocalDate`)
+- [x] **Entrate ricorrenti**: la vista Abbonamenti diventa l'hub "Ricorrenze" con due tab (Abbonamenti / Entrate), ognuno con totale mensile, proiezione annua e prossimo addebito/accredito; l'editor prende il tipo dal tab di provenienza (il motore supportava già `INCOME`)
+- [x] **Radar pre-rinnovo**: notifica opzionale prima dell'addebito/accredito ("Netflix si rinnova tra 3 giorni"), anticipo configurabile 1/2/3/7 giorni da Impostazioni (default: off); watermark `lastReminderEpochDay` per regola (migration 4→5) garantisce una sola notifica per occorrenza anche se il worker salta giorni
 
 ## Fase 6.5 - Design system e omogeneità (dalla review di luglio 2026)
 
@@ -228,10 +230,9 @@
 
 - Chore da pianificare: migrazione ad AGP 9.x + Gradle 9.1+ e compileSdk/targetSdk 37, da fare quando Android 17 (API 37) diventa stabile: a luglio 2026 è ancora in Beta (verificato su developer.android.com/about/versions/17), quindi il valore fissato 36 (ADR 14) è anche l'ultimo stabile disponibile. Vincoli attuali: Hilt 2.59+ richiede AGP 9; androidx core 1.19, lifecycle 2.11 e Compose BOM 2026.06 richiedono compileSdk 37 (AGP 9.1+). Fino ad allora restano fissati: AGP 8.13.2, Hilt 2.58, compileSdk/targetSdk 36, core-ktx 1.18.0, lifecycle 2.10.0, BOM 2026.02.01, activity-compose 1.12.4.
 - Nota ambiente Claude Code web: il download delle distribuzioni Gradle è bloccato dal proxy (il redirect finale punta a un asset GitHub fuori dallo scope di rete della sessione); i build locali usano il Gradle preinstallato in `/opt/gradle`. AGP e le librerie si scaricano normalmente da Google Maven/Maven Central; `sdkmanager` funziona (dl.google.com), incluso `platforms;android-37.0` quando servirà.
-- Idee "wow" dalla review completa di luglio 2026 (tutte compatibili con VISION: offline-first, privacy-first, niente open banking). Non implementarle senza deciderlo esplicitamente:
-  - "Spendibile oggi" (safe-to-spend): un numero in dashboard = budget del mese - speso - ricorrenze in arrivo. Si aggancia al budget v1.5 e alla Fase 6. Trasforma il tracker da passivo a proattivo.
-  - Radar abbonamenti: la vista Abbonamenti ha già totale mensile, proiezione annua e prossimo addebito; il pezzo mancante a più alto valore è la notifica di pre-rinnovo configurabile ("Netflix si rinnova tra 3 giorni"): oggi le notifiche partono solo dopo la generazione dell'addebito.
-  - Rilevamento automatico ricorrenze: euristica on-device che nota spese simili ripetute a cadenza regolare e propone di creare la regola. "Intelligenza senza cloud", coerente col posizionamento privacy.
+- Idee "wow" dalla review completa di luglio 2026 (tutte compatibili con VISION: offline-first, privacy-first, niente open banking). Non implementarle senza deciderlo esplicitamente. Il "Radar abbonamenti" è stato implementato a luglio 2026 (Fase 6, incremento 3):
+  - "Spendibile oggi" (safe-to-spend): un numero in dashboard = budget del mese - speso - ricorrenze in arrivo. Si aggancia al budget v1.5 e alla Fase 6. Trasforma il tracker da passivo a proattivo. Rimandata di proposito (luglio 2026): richiede prima il budget della v1.5.
+  - Rilevamento automatico ricorrenze: euristica on-device che nota spese simili ripetute a cadenza regolare e propone di creare la regola. "Intelligenza senza cloud", coerente col posizionamento privacy. Rimandata di proposito (luglio 2026): da implementare in una fase successiva, agganciandola all'hub Ricorrenze.
   - Recap mensile condivisibile (stile Wrapped): report generato sul device, esportabile come immagine, zero dati che escono.
   - Quick-add ovunque: widget home (già in v1.5), app shortcut statici, Quick Settings tile: spesa registrata in 2 tap senza aprire l'app.
   - Quick entry testuale: parser offline di "12,50 pizza" → importo + categoria suggerita.
@@ -250,3 +251,4 @@ Trovati dalla review completa di luglio 2026:
 - [x] Cambio cadenza di una regola ricorrente manteneva il vecchio `lastGeneratedDate`, disallineato con la nuova schedule (commit 74c805e)
 - [x] Notifica di conferma con il conteggio del solo batch appena generato invece dei pending totali in attesa (commit 74c805e)
 - [ ] Riordino categorie: il `sortOrder` globale accoppia i tab; riordinare Spese può rimescolare l'ordine relativo delle categorie "entrambi" nel tab Entrate. Da decidere: accettare (documentato) o passare a un sortOrder per tipo.
+- [x] Tema scuro forzato dall'app con sistema in chiaro: `enableEdgeToEdge()` senza argomenti segue solo il uiMode di sistema, quindi le icone della status bar restavano scure su sfondo scuro (barra illeggibile, "tutta nera"). Fix: `enableEdgeToEdge` riapplicata in `setContent` con `SystemBarStyle` agganciato al tema risolto in-app (commit 15eb056)
