@@ -41,10 +41,13 @@ interface AccountDao {
         """
         SELECT a.*,
             a.initialBalanceMinor
-            + COALESCE((SELECT SUM(t.amountMinor) FROM transactions t WHERE t.accountId = a.id), 0)
+            + COALESCE((
+                SELECT SUM(t.amountMinor) FROM transactions t
+                WHERE t.accountId = a.id AND t.isPending = 0
+            ), 0)
             + COALESCE((
                 SELECT SUM(t2.transferAmountMinor) FROM transactions t2
-                WHERE t2.type = 'TRANSFER' AND t2.transferAccountId = a.id
+                WHERE t2.type = 'TRANSFER' AND t2.transferAccountId = a.id AND t2.isPending = 0
             ), 0) AS balanceMinor
         FROM accounts a
         ORDER BY a.sortOrder ASC, a.id ASC
@@ -57,10 +60,13 @@ interface AccountDao {
         """
         SELECT
             (SELECT initialBalanceMinor FROM accounts WHERE id = :accountId)
-            + COALESCE((SELECT SUM(amountMinor) FROM transactions WHERE accountId = :accountId), 0)
+            + COALESCE((
+                SELECT SUM(amountMinor) FROM transactions
+                WHERE accountId = :accountId AND isPending = 0
+            ), 0)
             + COALESCE((
                 SELECT SUM(transferAmountMinor) FROM transactions
-                WHERE type = 'TRANSFER' AND transferAccountId = :accountId
+                WHERE type = 'TRANSFER' AND transferAccountId = :accountId AND isPending = 0
             ), 0)
         """,
     )
@@ -80,12 +86,13 @@ interface AccountDao {
             + COALESCE((
                 SELECT SUM(t.amountMinor) FROM transactions t
                 INNER JOIN accounts a ON t.accountId = a.id
-                WHERE a.isIncludedInTotal = 1 AND a.isArchived = 0 AND a.currency = :currency
+                WHERE t.isPending = 0 AND a.isIncludedInTotal = 1
+                    AND a.isArchived = 0 AND a.currency = :currency
             ), 0)
             + COALESCE((
                 SELECT SUM(t.transferAmountMinor) FROM transactions t
                 INNER JOIN accounts a ON t.transferAccountId = a.id
-                WHERE t.type = 'TRANSFER' AND a.isIncludedInTotal = 1
+                WHERE t.type = 'TRANSFER' AND t.isPending = 0 AND a.isIncludedInTotal = 1
                     AND a.isArchived = 0 AND a.currency = :currency
             ), 0)
         """,

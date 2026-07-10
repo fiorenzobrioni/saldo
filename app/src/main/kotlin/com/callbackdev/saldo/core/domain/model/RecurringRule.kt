@@ -8,11 +8,14 @@ import java.util.Currency
  * A rule that periodically generates a movement (an expense or an income),
  * typically a subscription.
  *
- * Only the schema lives here in Phase 1: the generation engine (idempotent
- * generation, short months, catch-up) arrives in Phase 6. [amount] is null for
- * variable-amount rules (the movement is created pending and the user fills it in).
- * [dayOfReference] is the day-of-month for monthly-and-longer frequencies
- * (clamped to the last day of short months by the engine).
+ * The generation engine (idempotent generation, short months, catch-up) lives
+ * in [com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator]. [amount]
+ * is a positive magnitude (the sign is applied from [type] when a movement is
+ * generated); it is null for variable-amount rules (the movement is created
+ * pending and the user fills it in). [dayOfReference] is the day-of-month for
+ * monthly-and-longer frequencies (clamped to the last day of short months by the
+ * engine). [color] and [icon] drive the subscription avatar, mirroring accounts
+ * and categories.
  */
 data class RecurringRule(
     val name: String,
@@ -29,5 +32,7 @@ data class RecurringRule(
     val mode: RecurrenceMode = RecurrenceMode.AUTOMATIC,
     val isVariableAmount: Boolean = false,
     val lastGeneratedDate: LocalDate? = null,
+    val color: Int? = null,
+    val icon: String? = null,
     val note: String? = null,
 )

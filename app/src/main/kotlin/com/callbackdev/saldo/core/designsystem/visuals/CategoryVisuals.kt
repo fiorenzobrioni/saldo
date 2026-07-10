@@ -9,14 +9,17 @@ import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Celebration
 import androidx.compose.material.icons.outlined.Checkroom
 import androidx.compose.material.icons.outlined.ChildCare
+import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Commute
 import androidx.compose.material.icons.outlined.Computer
+import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.HealthAndSafety
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.HomeWork
+import androidx.compose.material.icons.outlined.LiveTv
 import androidx.compose.material.icons.outlined.LocalBar
 import androidx.compose.material.icons.outlined.LocalCafe
 import androidx.compose.material.icons.outlined.LocalGasStation
@@ -35,6 +38,7 @@ import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material.icons.outlined.VolunteerActivism
+import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material.icons.outlined.Work
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -101,6 +105,7 @@ object CategoryVisuals {
         "spa" to Icons.Outlined.Spa,
         "sports_esports" to Icons.Outlined.SportsEsports,
         "music_note" to Icons.Outlined.MusicNote,
+        "live_tv" to Icons.Outlined.LiveTv,
         "checkroom" to Icons.Outlined.Checkroom,
         "pets" to Icons.Outlined.Pets,
         "child_care" to Icons.Outlined.ChildCare,
@@ -108,6 +113,9 @@ object CategoryVisuals {
         "volunteer_activism" to Icons.Outlined.VolunteerActivism,
         "computer" to Icons.Outlined.Computer,
         "phone" to Icons.Outlined.Phone,
+        "wifi" to Icons.Outlined.Wifi,
+        "cloud" to Icons.Outlined.Cloud,
+        "directions_car" to Icons.Outlined.DirectionsCar,
         "category" to Icons.Outlined.Category,
     )
 

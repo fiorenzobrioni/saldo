@@ -38,7 +38,14 @@
     <string name="dashboard_month_same">Come a questo punto del mese scorso</string>
     <string name="dashboard_month_comparison">A questo punto del mese scorso avevi speso %1$s</string>
     <string name="dashboard_subscriptions_title">Abbonamenti</string>
-    <string name="dashboard_subscriptions_soon">In arrivo con le ricorrenze</string>
+    <string name="dashboard_subscriptions_summary">%1$s · %2$s</string>
+    <plurals name="dashboard_subscriptions_active">
+        <item quantity="one">%1$d attivo</item>
+        <item quantity="many">%1$d attivi</item>
+        <item quantity="other">%1$d attivi</item>
+    </plurals>
+    <string name="dashboard_subscriptions_next">Prossimo: %1$s %2$s · %3$s</string>
+    <string name="dashboard_subscriptions_empty">Nessun abbonamento · tocca per aggiungerne</string>
     <string name="dashboard_recent_title">Ultimi movimenti</string>
     <string name="dashboard_recent_see_all">Vedi tutti</string>
     <string name="dashboard_recent_empty">Ancora nessun movimento</string>
@@ -196,6 +203,93 @@
     </plurals>
     <string name="category_reassign_target">Sposta in</string>
     <string name="category_reassign_confirm">Riassegna ed elimina</string>
+
+    <!-- Abbonamenti / ricorrenze (Fase 6) -->
+    <string name="settings_subscriptions">Abbonamenti</string>
+    <string name="settings_subscriptions_hint">Spese ricorrenti e il loro costo</string>
+    <string name="recurrence_daily">Giornaliero</string>
+    <string name="recurrence_weekly">Settimanale</string>
+    <string name="recurrence_monthly">Mensile</string>
+    <string name="recurrence_bimonthly">Bimestrale</string>
+    <string name="recurrence_quarterly">Trimestrale</string>
+    <string name="recurrence_semiannual">Semestrale</string>
+    <string name="recurrence_annual">Annuale</string>
+    <string name="subscriptions_title">Abbonamenti</string>
+    <string name="subscriptions_new">Nuovo abbonamento</string>
+    <string name="subscriptions_this_month">Questo mese</string>
+    <plurals name="subscriptions_active_count">
+        <item quantity="one">%1$d abbonamento attivo</item>
+        <item quantity="many">%1$d abbonamenti attivi</item>
+        <item quantity="other">%1$d abbonamenti attivi</item>
+    </plurals>
+    <string name="subscriptions_annual_projection">Di questo passo, in un anno</string>
+    <string name="subscriptions_sort">Ordina</string>
+    <string name="subscriptions_sort_next_charge">Per prossimo addebito</string>
+    <string name="subscriptions_sort_cost">Per costo</string>
+    <string name="subscriptions_sort_name">Per nome</string>
+    <string name="subscriptions_monthly_equivalent">equiv. / mese</string>
+    <string name="subscriptions_charged_on">addebito il %1$s</string>
+    <string name="subscriptions_charge_today">Oggi</string>
+    <string name="subscriptions_charge_tomorrow">Domani</string>
+    <string name="subscriptions_prorated_note">I costi non mensili sono ripartiti sul mese per il totale.</string>
+    <string name="subscriptions_empty_title">Nessun abbonamento</string>
+    <string name="subscriptions_empty_body">Aggiungi le tue spese ricorrenti per vedere quanto costano ogni mese e in un anno.</string>
+    <string name="subscription_editor_title_new">Nuovo abbonamento</string>
+    <string name="subscription_editor_title_edit">Modifica abbonamento</string>
+    <string name="subscription_editor_save">Salva abbonamento</string>
+    <string name="subscription_editor_name">Nome</string>
+    <string name="subscription_editor_name_hint">Netflix, Spotify, assicurazione auto…</string>
+    <string name="subscription_editor_name_error">Inserisci un nome</string>
+    <string name="subscription_editor_amount">Importo</string>
+    <string name="subscription_editor_amount_error">Inserisci un importo maggiore di zero</string>
+    <string name="subscription_editor_variable_amount">Importo variabile</string>
+    <string name="subscription_editor_variable_amount_hint">Confermi l\'importo a ogni addebito</string>
+    <string name="subscription_editor_variable_amount_note">L\'importo verrà chiesto quando arriva l\'addebito.</string>
+    <string name="subscription_editor_section_mode">Registrazione</string>
+    <string name="subscription_editor_mode_automatic">Automatica</string>
+    <string name="subscription_editor_mode_confirm">Con conferma</string>
+    <string name="subscription_editor_account">Account</string>
+    <string name="subscription_editor_account_error">Scegli un account</string>
+    <string name="subscription_editor_category">Categoria</string>
+    <string name="subscription_editor_category_none">Nessuna</string>
+    <string name="subscription_editor_frequency">Frequenza</string>
+    <string name="subscription_editor_first_charge">Primo addebito</string>
+    <string name="subscription_editor_end_date">Data di fine</string>
+    <string name="subscription_editor_has_end_date">Con scadenza</string>
+    <string name="subscription_editor_has_end_date_hint">L\'abbonamento termina a una data scelta</string>
+    <string name="subscription_editor_section_color">Colore</string>
+    <string name="subscription_editor_section_icon">Icona</string>
+    <string name="subscription_editor_color_option">Colore %1$d</string>
+    <string name="subscription_editor_icon_option">Icona %1$d</string>
+    <string name="subscription_editor_delete">Elimina abbonamento</string>
+    <string name="subscription_delete_title">Eliminare l\'abbonamento?</string>
+    <string name="subscription_delete_body">La regola verrà rimossa e non genererà più movimenti. I movimenti già registrati restano.</string>
+    <string name="pending_title">Da confermare</string>
+    <string name="pending_amount_to_enter">Importo da inserire</string>
+    <string name="pending_confirm">Conferma</string>
+    <string name="pending_skip">Salta</string>
+    <string name="pending_empty_title">Niente da confermare</string>
+    <string name="pending_empty_body">Gli addebiti ricorrenti in attesa di conferma compaiono qui.</string>
+    <plurals name="dashboard_pending_title">
+        <item quantity="one">%1$d addebito da confermare</item>
+        <item quantity="many">%1$d addebiti da confermare</item>
+        <item quantity="other">%1$d addebiti da confermare</item>
+    </plurals>
+    <string name="dashboard_pending_subtitle">Tocca per confermare o saltare</string>
+    <string name="notif_channel_activity_name">Movimenti ricorrenti</string>
+    <string name="notif_channel_confirm_name">Conferme abbonamenti</string>
+    <plurals name="notif_activity_title">
+        <item quantity="one">%1$d movimento ricorrente registrato</item>
+        <item quantity="many">%1$d movimenti ricorrenti registrati</item>
+        <item quantity="other">%1$d movimenti ricorrenti registrati</item>
+    </plurals>
+    <string name="notif_activity_body">Tocca per rivedere i movimenti.</string>
+    <plurals name="notif_confirm_title">
+        <item quantity="one">%1$d addebito da confermare</item>
+        <item quantity="many">%1$d addebiti da confermare</item>
+        <item quantity="other">%1$d addebiti da confermare</item>
+    </plurals>
+    <string name="notif_confirm_body">Tocca per confermarli o saltarli.</string>
 
     <!-- Categorie predefinite create alla prima apertura (Fase 1). Modificabili dall'utente. -->
     <string name="seed_category_home">Casa</string>

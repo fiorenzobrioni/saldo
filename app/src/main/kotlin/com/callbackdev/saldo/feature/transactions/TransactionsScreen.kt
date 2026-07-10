@@ -50,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import java.time.LocalDate
 
 /**
@@ -146,7 +147,7 @@ private fun TransactionsList(
             Column(
                 modifier = Modifier
                     .animateItem()
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = SaldoDimens.cardSpacing),
             ) {
                 DayHeader(day = day, today = today)
                 Spacer(Modifier.height(6.dp))

@@ -14,6 +14,98 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-09 - Fase 6 completa (incremento 2): movimenti pending, WorkManager, notifiche
+
+**Fatto:**
+- **Movimenti pending** (modalità conferma / importo variabile): nuovo flag `isPending` su `transactions` (migration 2→3, `NOT NULL DEFAULT 0`) con test di migration. I pending sono **esclusi da saldi e statistiche** finché non confermati (filtro `isPending = 0` nelle query di saldo per conto/totale, negli aggregati per categoria e nel ledger; nuovo `observePending`).
+- **Generazione estesa** (`GenerateRecurringMovementsUseCase`): crea movimenti pending per le regole con conferma o importo variabile (variabile: importo 0 finché non inserito) e restituisce l'elenco dei movimenti creati per le notifiche. Le automatiche a importo fisso restano invariate.
+- **Editor abbonamento**: switch "Importo variabile" (nasconde l'importo e forza la conferma) e selettore segmentato "Registrazione" (Automatica / Con conferma).
+- **Schermata "Da confermare"** + card dashboard: elenco dei pending con avatar e data; tap → bottom sheet con campo importo (precompilato per i fissi, vuoto per i variabili) e azioni Conferma / Salta. Conferma applica il segno e toglie il pending; Salta elimina il movimento.
+- **WorkManager**: job periodico giornaliero `RecurringGenerationWorker` (@HiltWorker) che rigenera in background e notifica; `SaldoApplication` è `Configuration.Provider` con `HiltWorkerFactory` (initializer di default disabilitato nel manifest). Catch-up all'avvio invariato.
+- **Notifiche**: due canali (attività ricorrenti / conferme), notifica informativa per gli automatici e notifica di conferma per i pending; il tap apre l'app (conferma/modifica/salta avvengono nella schermata "Da confermare"). Permesso `POST_NOTIFICATIONS` richiesto a runtime (API 33+), con icona di notifica dedicata.
+
+**Decisioni:**
+- **Pending escluso dai saldi**: un addebito in attesa (importo da confermare o variabile) non deve muovere il saldo finché l'utente non conferma; filtro a livello di query SQL, così saldi e statistiche restano corretti.
+- **Notifiche tap-to-app** invece di azioni inline (conferma/salta dalla notifica): la conferma di un importo variabile richiede un valore, e le azioni via BroadcastReceiver non sono verificabili senza device; conferma/modifica/salta vivono nella schermata in-app, testata. Le azioni inline restano una rifinitura futura.
+- **`androidx.hilt` riportato a 1.3.0** (era 1.4.0 nel catalog, non ancora usato): la 1.4.0 tira lifecycle 2.11 che richiede compileSdk 37 (ADR 14); la 1.3.0 copre hilt-work, hilt-compiler e navigation-compose su compileSdk 36.
+
+**Problemi:** lint `MissingPermission` sul `notify()`: l'analisi è intraprocedurale e non vede la guardia in un metodo helper, quindi `@SuppressLint("MissingPermission")` motivato sul metodo `post` (che chiama comunque `hasNotificationPermission()`).
+
+**Verifica:** `assembleDebug testDebugUnitTest compileDebugAndroidTestKotlin detekt lintDebug` verdi; 134 unit test (0 falliti). Nuovi test: generazione pending (conferma/variabile), skip automatiche senza importo, `PendingMovementsViewModel` (conferma applica il segno e toglie il pending, salta elimina), editor (variabile forza conferma, fisso con conferma). Test di migration 2→3 strumentato. WorkManager/notifiche verificati a livello di build e grafo Hilt; il comportamento runtime (job periodico, notifiche, permesso) resta da provare sul device.
+
+**Prossimo:** Fase 7 (ricerca, filtri, statistiche).
+
+---
+
+## 2026-07-09 - Rifinitura UI 2: date picker, card saldo compatta, elenco account a lista
+
+**Fatto (feedback):**
+- **Date picker**: `showModeToggle = false` applicato anche al selettore data dell'editor movimenti (prima solo su quello abbonamenti); elimina l'animazione lenta/scattosa del toggle penna/calendario ovunque venga usato il controllo Data.
+- **Card saldo (dashboard)**: resa più compatta in verticale - righe conto meno distanziate (padding verticale 8→4), meno spazio prima/dopo il divisore, "Gestisci account" con meno aria sotto (padding di fondo della card 16→8 e riga 10→6). Eliminato lo spazio vuoto percepito.
+- **Elenco account**: da schede separate per conto a un'unica card con righe divise da hairline, come Movimenti e Abbonamenti (attivi e archiviati in due card distinte). `AccountRow` (Surface-card) sostituito da `AccountRowContent` flat dentro `AccountsCard`.
+
+**Verifica:** `assembleDebug testDebugUnitTest detekt lintDebug` verdi; 128 unit test invariati.
+
+**Prossimo:** Fase 6 incremento 2 (WorkManager periodico, notifiche, conferma/importo variabile con movimento pending).
+
+---
+
+## 2026-07-09 - Rifinitura UI: schede compatte, editor abbonamenti premium, titolo movimento contestuale
+
+**Fatto (feedback post-Fase 6):**
+- **Spaziatura schede più compatta e omogenea** (`SaldoDimens`, nuovo `theme/SaldoDimens.kt`): padding interno delle card ridotto (hero 20→16, standard 16/20→14), righe dei gruppi 12→10 in verticale, spazio tra le card 12→8. Applicato a Dashboard, Abbonamenti, Movimenti, Account (le Categorie erano già a questi valori). Più dati per videata senza risultare compresso.
+- **Abbonamenti**: il "+" in alto a destra è diventato un Extended FAB "Nuovo abbonamento" in basso, come Account/Movimenti/Categorie; padding di fondo adeguato.
+- **Editor abbonamento più premium e omogeneo**: ogni campo ha un glifo colorato a sinistra (avatar del conto e della categoria, icona ricorrenza, calendario); importo con simbolo valuta come prefisso e testo più grande; **Frequenza e Primo addebito su una sola riga**; la data di fine è ora uno switch "Con scadenza" che rivela il campo data.
+- **Bug data di fine risolto**: impostata la data non si poteva più tornare a "Nessuna scadenza" perché il vecchio tasto X era coperto dall'overlay di tap del campo; lo switch la azzera in modo pulito.
+- **Fix animazione date picker**: selettore bloccato in modalità calendario (`showModeToggle = false`), eliminando l'animazione lenta e scattosa del toggle penna/calendario; l'oggetto `SelectableDates` è ora `remember`izzato (niente ricreazione a ogni recomposition).
+- **Titolo Nuovo movimento contestuale**: dal FAB generico dei Movimenti (selettore tipo visibile) il titolo è "Nuovo movimento", coerente con "Modifica movimento"; dalle quick action della dashboard, dove il tipo è preimpostato e il selettore è nascosto, resta il titolo specifico ("Nuova spesa/entrata/trasferimento") che conferma l'azione toccata.
+
+**Decisioni:**
+- Scala di spaziatura centralizzata in `SaldoDimens` per garantire l'omogeneità richiesta su tutte le schermate a schede.
+- Data di fine come switch (default all'attivazione: primo addebito + 1 anno, modificabile) invece di un campo sempre presente: più pulito e azzerabile.
+- Date picker in sola modalità calendario: l'input testuale aggiungeva poco ed era la causa del jank riportato.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest detekt lintDebug` verdi in locale; 128 unit test invariati verdi (modifiche UI/spaziatura, API dei ViewModel stabile). Senza emulatore, verifica visiva rimandata al device.
+
+**Prossimo:** Fase 6 incremento 2 (WorkManager periodico, notifiche, conferma/importo variabile con movimento pending).
+
+---
+
+## 2026-07-09 - Fase 6 (incremento 1): motore ricorrenze e vista Abbonamenti
+
+**Fatto:**
+- **Motore ricorrenze** `RecurrenceCalculator` (dominio puro, senza Android): occorrenze per frequenza (giornaliera → annuale), clamp dei mesi corti (giorno 31 → ultimo giorno, ri-derivato dal giorno di riferimento ogni periodo e mai trascinato), anni bisestili, prossima occorrenza, occorrenze in un intervallo chiuso (catch-up), ultima occorrenza prima di una data (per non retro-generare storia), costo mensile equivalente.
+- **Use case** `GenerateRecurringMovementsUseCase`: materializza i movimenti dovuti fino a oggi, idempotente (avanza `lastGeneratedDate`), con catch-up all'avvio in `MainActivity`. Per ora solo regole automatiche a importo fisso (conferma/variabile: incremento 2).
+- **Vista Abbonamenti** (`feature/recurring`) sul mockup: card "Questo mese" (totale mensile-equivalente + conteggio attivi), card tinta "Di questo passo, in un anno" (totale × 12), lista ordinabile (prossimo addebito / costo / nome) con avatar tinto, badge Oggi/Domani, sottotitolo frequenza · addebito · conto, importo mensile-equivalente con etichetta "equiv. / mese" per i non-mensili, nota a piè di pagina.
+- **Editor abbonamento** (CRUD) nello stile degli altri editor: anteprima avatar, nome, importo, conto (deriva la valuta), categoria (preselezione "Abbonamenti"), frequenza, primo addebito, data di fine opzionale, colore/icona, eliminazione con conferma.
+- **Card dashboard** Abbonamenti reale (totale mensile, conteggio, prossimo addebito) collegata alla vista; voce anche in Impostazioni.
+- **Dati**: aggiunti `color`/`icon` a `RecurringRuleEntity` con migration esplicita 1→2 (colonne nullable) e test di migration strumentato; `getAll`/`getRules` per il motore. Aggiunte alcune icone al set condiviso (directions_car, live_tv, wifi, cloud).
+
+**Decisioni:**
+- **Fase spezzata**: incremento 1 (visibile e verificabile via build/unit test) ora; automazione in background (WorkManager periodico, notifiche informative e di conferma, modalità conferma/variabile con movimento "pending") come incremento 2, perché richiede infrastruttura non verificabile senza emulatore e una migration per lo stato pending.
+- **"Questo mese" e proiezione annua** usano il costo mensile-equivalente (i costi non mensili ripartiti sul mese; annuo = mensile × 12), coerente col mockup (47,97 → 575,64).
+- **Niente retro-generazione**: alla creazione `lastGeneratedDate` è seminato all'ultima occorrenza prima di oggi, così un abbonamento con primo addebito passato non inserisce spese storiche; l'addebito dovuto oggi viene comunque creato.
+- Movimenti generati a mezzogiorno per far coincidere la data locale con l'occorrenza ed evitare i bordi DST.
+- Abbonamenti = ricorrenze di spesa (come da mockup); il motore è agnostico al tipo, le entrate ricorrenti (es. stipendio) restano per un incremento successivo.
+
+**Problemi:** un import errato di `matchParentSize` (membro di `BoxScope`, non importabile) risolto usandolo dallo scope del `Box`. Rilievi detekt sistemati: `TooManyFunctions`/`ReturnCount`/`ComplexCondition` sull'editor VM (suppress motivato + estrazione di `buildValidRule`), `ReturnCount` sul motore di generazione, `MagicNumber` sugli step dei mesi, `SpreadOperator` nel modulo DB, `TooManyFunctions` di file su `DashboardCards` (helper data inlineato).
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest compileDebugAndroidTestKotlin detekt lintDebug` verdi in locale. Nuovi unit test: `RecurrenceCalculator` (mesi corti, bisestili, next/range/idempotenza, equivalente mensile), `GenerateRecurringMovementsUseCase` (catch-up, resume, idempotenza, segno, skip conferma/variabile, endDate), `SubscriptionsViewModel` (totali, ordinamenti, esclusione entrate/scaduti), `RecurringRuleEditorViewModel` (default, save, validazione, no-backfill, edit), più un assert sulla card dashboard. Test di migration 1→2 strumentato (compila; esecuzione rimandata all'emulatore). Nessun emulatore in sessione: UI test strumentati rimandati.
+
+**Prossimo:** incremento 2 (WorkManager periodico, notifiche, movimento pending con migration, conferma/modifica/salta).
+
+---
+
+## 2026-07-09 - Icona app: nudge verso il basso per centratura visiva
+
+**Fatto:** l'icona launcher (adaptive `ic_launcher_foreground` + monocromatica) passa da `translateY -1.0` a `translateY 2.5` sul gruppo esterno (scala 0.80 invariata). Il disegno scende di 3.5 unità sul canvas 108, così il corpo pieno del portafoglio straddle la linea centrale invece di restare sopra: prima l'insieme risultava alto, con più aria in basso. Foreground e monocromatica tenute in sync.
+
+**Decisioni:** la posizione non è la centratura geometrica del bounding box (che, col corpo pieno in basso e le due carte appuntite in alto, apparirebbe bassa) ma un compromesso visivo: si ferma poco prima, dove il baricentro percepito coincide con il centro. Valore scelto confrontando le rese mascherate (cerchio/squircle) a -1.0, +1.5, +2.5, +3.5: +2.5 è il punto in cui l'icona appare centrata senza sembrare bassa.
+
+**Prossimo:** Fase 6 (ricorrenze e abbonamenti).
+
+---
+
 ## 2026-07-09 - Icona app rimpicciolita e ricentrata; icone interne ripristinate
 
 **Fatto:**

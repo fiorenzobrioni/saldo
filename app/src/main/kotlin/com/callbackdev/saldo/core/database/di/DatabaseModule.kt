@@ -8,6 +8,7 @@ import com.callbackdev.saldo.core.database.dao.CategoryDao
 import com.callbackdev.saldo.core.database.dao.RecurringRuleDao
 import com.callbackdev.saldo.core.database.dao.TagDao
 import com.callbackdev.saldo.core.database.dao.TransactionDao
+import com.callbackdev.saldo.core.database.migration.ALL_MIGRATIONS
 import com.callbackdev.saldo.core.database.seed.DatabaseSeedCallback
 import dagger.Module
 import dagger.Provides
@@ -28,6 +29,7 @@ object DatabaseModule {
     ): SaldoDatabase =
         Room.databaseBuilder(context, SaldoDatabase::class.java, SaldoDatabase.NAME)
             .addCallback(seedCallback)
+            .apply { ALL_MIGRATIONS.forEach { addMigrations(it) } }
             .build()
 
     @Provides

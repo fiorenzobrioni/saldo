@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions") // A collection of dashboard card composables.
+
 package com.callbackdev.saldo.feature.dashboard
 
 import androidx.compose.foundation.background
@@ -16,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
+import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
@@ -88,7 +93,14 @@ internal fun BalanceCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(
+            modifier = Modifier.padding(
+                start = SaldoDimens.cardPaddingLarge,
+                end = SaldoDimens.cardPaddingLarge,
+                top = SaldoDimens.cardPaddingLarge,
+                bottom = 8.dp,
+            ),
+        ) {
             Text(
                 text = stringResource(R.string.dashboard_balance_total),
                 style = MaterialTheme.typography.labelLarge,
@@ -106,9 +118,9 @@ internal fun BalanceCard(
                 },
             )
             if (accounts.isNotEmpty()) {
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
                 accounts.forEach { item -> AccountBreakdownRow(item = item) }
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(6.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Surface(
                     onClick = onManageAccounts,
@@ -119,7 +131,7 @@ internal fun BalanceCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp),
+                            .padding(vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
@@ -147,7 +159,7 @@ private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = M
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -203,7 +215,7 @@ internal fun PeriodCardsRow(
         modifier = modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
         PeriodCompactCard(
             title = stringResource(R.string.dashboard_today),
@@ -238,7 +250,7 @@ private fun PeriodCompactCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(SaldoDimens.cardPadding)) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
@@ -323,10 +335,74 @@ internal fun MonthComparisonRow(
     }
 }
 
-/** Teaser card for the subscriptions view, which lands with Phase 6 (recurrences). */
+/** Attention card shown when recurring movements await confirmation. */
 @Composable
-internal fun SubscriptionsTeaser(modifier: Modifier = Modifier) {
+internal fun PendingConfirmationCard(
+    count: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(SaldoDimens.cardPadding),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(AvatarShape)
+                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.NotificationsActive,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+            ) {
+                Text(
+                    text = pluralStringResource(R.plurals.dashboard_pending_title, count, count),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                Text(
+                    text = stringResource(R.string.dashboard_pending_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+        }
+    }
+}
+
+/** Dashboard card for subscriptions: monthly total, active count and the next charge. */
+@Composable
+internal fun SubscriptionsCard(
+    summary: SubscriptionsSummary,
+    currency: Currency,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
@@ -334,7 +410,7 @@ internal fun SubscriptionsTeaser(modifier: Modifier = Modifier) {
         ),
     ) {
         Row(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(SaldoDimens.cardPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -351,17 +427,62 @@ internal fun SubscriptionsTeaser(modifier: Modifier = Modifier) {
                     modifier = Modifier.size(22.dp),
                 )
             }
-            Column(modifier = Modifier.padding(start = 16.dp)) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+            ) {
                 Text(
                     text = stringResource(R.string.dashboard_subscriptions_title),
                     style = MaterialTheme.typography.titleMedium,
                 )
-                Text(
-                    text = stringResource(R.string.dashboard_subscriptions_soon),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                if (summary.hasSubscriptions) {
+                    Text(
+                        text = stringResource(
+                            R.string.dashboard_subscriptions_summary,
+                            MoneyFormatter.format(summary.monthlyTotal, currency),
+                            pluralStringResource(
+                                R.plurals.dashboard_subscriptions_active,
+                                summary.activeCount,
+                                summary.activeCount,
+                            ),
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    summary.next?.let { next ->
+                        val locale = LocalConfiguration.current.locales[0]
+                        val dateText = remember(next.date, locale) {
+                            val pattern =
+                                android.text.format.DateFormat.getBestDateTimePattern(locale, "dMMM")
+                            next.date.format(DateTimeFormatter.ofPattern(pattern, locale))
+                        }
+                        Text(
+                            text = stringResource(
+                                R.string.dashboard_subscriptions_next,
+                                next.name,
+                                MoneyFormatter.format(next.amount, next.currency),
+                                dateText,
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                } else {
+                    Text(
+                        text = stringResource(R.string.dashboard_subscriptions_empty),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -394,7 +515,10 @@ internal fun RecentMovementsCard(
                 ) {
                     TransactionRowContent(
                         item = item,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(
+                            horizontal = SaldoDimens.rowPaddingHorizontal,
+                            vertical = SaldoDimens.rowPaddingVertical,
+                        ),
                     )
                 }
             }

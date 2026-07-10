@@ -76,4 +76,11 @@ data class TransactionEntity(
     val isExcludedFromStats: Boolean = false,
     val isRefund: Boolean = false,
     val recurringRuleId: Long? = null,
+    /**
+     * A recurring movement awaiting confirmation (confirm mode / variable amount).
+     * Pending movements are excluded from balances and statistics until confirmed.
+     * Added in schema version 3.
+     */
+    @ColumnInfo(name = "isPending", defaultValue = "0")
+    val isPending: Boolean = false,
 )

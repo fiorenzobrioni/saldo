@@ -19,6 +19,9 @@ class RoomTransactionRepository @Inject constructor(
     override fun observeTransactions(): Flow<List<Transaction>> =
         transactionDao.observeAll().map { rows -> rows.map { it.toDomain() } }
 
+    override fun observePendingTransactions(): Flow<List<Transaction>> =
+        transactionDao.observePending().map { rows -> rows.map { it.toDomain() } }
+
     override fun observeTransactionsBetween(
         start: Instant,
         end: Instant,

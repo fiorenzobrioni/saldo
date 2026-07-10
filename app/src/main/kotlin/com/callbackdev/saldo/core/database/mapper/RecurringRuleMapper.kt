@@ -23,6 +23,8 @@ fun RecurringRuleEntity.toDomain(): RecurringRule {
         mode = mode,
         isVariableAmount = isVariableAmount,
         lastGeneratedDate = lastGeneratedEpochDay?.let(LocalDate::ofEpochDay),
+        color = color,
+        icon = icon,
         note = note,
     )
 }
@@ -42,5 +44,7 @@ fun RecurringRule.toEntity(): RecurringRuleEntity = RecurringRuleEntity(
     mode = mode,
     isVariableAmount = isVariableAmount,
     lastGeneratedEpochDay = lastGeneratedDate?.toEpochDay(),
+    color = color,
+    icon = icon,
     note = note,
 )

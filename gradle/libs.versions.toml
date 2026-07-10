@@ -16,9 +16,10 @@ navigation3 = "1.1.4"
 room = "2.8.4"
 datastore = "1.2.1"
 work = "2.11.2"
-androidxHilt = "1.4.0"
 # androidx.hilt 1.4.0 pulls lifecycle 2.11 (needs compileSdk 37/AGP 9.1): 1.3.0 is the
 # latest compatible with the pinned lifecycle 2.10 (see the SDK 37 chore note in PLANNING.md).
+# Covers hilt-work, hilt-compiler and hilt-navigation-compose.
+androidxHilt = "1.3.0"
 androidxHiltNavigationCompose = "1.3.0"
 
 # Google

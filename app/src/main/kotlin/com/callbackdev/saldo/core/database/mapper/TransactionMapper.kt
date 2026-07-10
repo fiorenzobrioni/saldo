@@ -31,6 +31,7 @@ fun TransactionEntity.toDomain(): Transaction {
         isExcludedFromStats = isExcludedFromStats,
         isRefund = isRefund,
         recurringRuleId = recurringRuleId,
+        isPending = isPending,
     )
 }
 
@@ -53,6 +54,7 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     isExcludedFromStats = isExcludedFromStats,
     isRefund = isRefund,
     recurringRuleId = recurringRuleId,
+    isPending = isPending,
 )
 
 fun CategoryTotalRow.toDomain(currency: Currency): CategoryTotal = CategoryTotal(

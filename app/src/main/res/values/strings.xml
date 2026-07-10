@@ -39,7 +39,13 @@
     <string name="dashboard_month_same">Same as by this day last month</string>
     <string name="dashboard_month_comparison">By this point last month you had spent %1$s</string>
     <string name="dashboard_subscriptions_title">Subscriptions</string>
-    <string name="dashboard_subscriptions_soon">Coming with recurring movements</string>
+    <string name="dashboard_subscriptions_summary">%1$s · %2$s</string>
+    <plurals name="dashboard_subscriptions_active">
+        <item quantity="one">%1$d active</item>
+        <item quantity="other">%1$d active</item>
+    </plurals>
+    <string name="dashboard_subscriptions_next">Next: %1$s %2$s · %3$s</string>
+    <string name="dashboard_subscriptions_empty">No subscriptions yet · tap to add one</string>
     <string name="dashboard_recent_title">Recent movements</string>
     <string name="dashboard_recent_see_all">See all</string>
     <string name="dashboard_recent_empty">No movements yet</string>
@@ -195,6 +201,89 @@
     </plurals>
     <string name="category_reassign_target">Move to</string>
     <string name="category_reassign_confirm">Reassign and delete</string>
+
+    <!-- Subscriptions / recurrences (Phase 6) -->
+    <string name="settings_subscriptions">Subscriptions</string>
+    <string name="settings_subscriptions_hint">Recurring expenses and their cost</string>
+    <string name="recurrence_daily">Daily</string>
+    <string name="recurrence_weekly">Weekly</string>
+    <string name="recurrence_monthly">Monthly</string>
+    <string name="recurrence_bimonthly">Every 2 months</string>
+    <string name="recurrence_quarterly">Quarterly</string>
+    <string name="recurrence_semiannual">Semi-annual</string>
+    <string name="recurrence_annual">Yearly</string>
+    <string name="subscriptions_title">Subscriptions</string>
+    <string name="subscriptions_new">New subscription</string>
+    <string name="subscriptions_this_month">This month</string>
+    <plurals name="subscriptions_active_count">
+        <item quantity="one">%1$d active subscription</item>
+        <item quantity="other">%1$d active subscriptions</item>
+    </plurals>
+    <string name="subscriptions_annual_projection">At this rate, over a year</string>
+    <string name="subscriptions_sort">Sort</string>
+    <string name="subscriptions_sort_next_charge">By next charge</string>
+    <string name="subscriptions_sort_cost">By cost</string>
+    <string name="subscriptions_sort_name">By name</string>
+    <string name="subscriptions_monthly_equivalent">equiv. / month</string>
+    <string name="subscriptions_charged_on">charged on %1$s</string>
+    <string name="subscriptions_charge_today">Today</string>
+    <string name="subscriptions_charge_tomorrow">Tomorrow</string>
+    <string name="subscriptions_prorated_note">Non-monthly costs are spread over the month for the total.</string>
+    <string name="subscriptions_empty_title">No subscriptions yet</string>
+    <string name="subscriptions_empty_body">Add your recurring expenses to see how much they cost each month and over a year.</string>
+    <string name="subscription_editor_title_new">New subscription</string>
+    <string name="subscription_editor_title_edit">Edit subscription</string>
+    <string name="subscription_editor_save">Save subscription</string>
+    <string name="subscription_editor_name">Name</string>
+    <string name="subscription_editor_name_hint">Netflix, Spotify, car insurance…</string>
+    <string name="subscription_editor_name_error">Enter a name</string>
+    <string name="subscription_editor_amount">Amount</string>
+    <string name="subscription_editor_amount_error">Enter an amount greater than zero</string>
+    <string name="subscription_editor_variable_amount">Variable amount</string>
+    <string name="subscription_editor_variable_amount_hint">You confirm the amount at each charge</string>
+    <string name="subscription_editor_variable_amount_note">The amount will be asked when the charge is due.</string>
+    <string name="subscription_editor_section_mode">Recording</string>
+    <string name="subscription_editor_mode_automatic">Automatic</string>
+    <string name="subscription_editor_mode_confirm">With confirmation</string>
+    <string name="subscription_editor_account">Account</string>
+    <string name="subscription_editor_account_error">Choose an account</string>
+    <string name="subscription_editor_category">Category</string>
+    <string name="subscription_editor_category_none">None</string>
+    <string name="subscription_editor_frequency">Frequency</string>
+    <string name="subscription_editor_first_charge">First charge</string>
+    <string name="subscription_editor_end_date">End date</string>
+    <string name="subscription_editor_has_end_date">Has an end date</string>
+    <string name="subscription_editor_has_end_date_hint">The subscription stops on a chosen date</string>
+    <string name="subscription_editor_section_color">Color</string>
+    <string name="subscription_editor_section_icon">Icon</string>
+    <string name="subscription_editor_color_option">Color %1$d</string>
+    <string name="subscription_editor_icon_option">Icon %1$d</string>
+    <string name="subscription_editor_delete">Delete subscription</string>
+    <string name="subscription_delete_title">Delete subscription?</string>
+    <string name="subscription_delete_body">The rule will be removed and no new movements will be generated. Movements already recorded are kept.</string>
+    <string name="pending_title">To confirm</string>
+    <string name="pending_amount_to_enter">Amount to enter</string>
+    <string name="pending_confirm">Confirm</string>
+    <string name="pending_skip">Skip</string>
+    <string name="pending_empty_title">Nothing to confirm</string>
+    <string name="pending_empty_body">Recurring charges awaiting confirmation will show up here.</string>
+    <plurals name="dashboard_pending_title">
+        <item quantity="one">%1$d charge to confirm</item>
+        <item quantity="other">%1$d charges to confirm</item>
+    </plurals>
+    <string name="dashboard_pending_subtitle">Tap to confirm or skip</string>
+    <string name="notif_channel_activity_name">Recurring movements</string>
+    <string name="notif_channel_confirm_name">Subscription confirmations</string>
+    <plurals name="notif_activity_title">
+        <item quantity="one">%1$d recurring movement recorded</item>
+        <item quantity="other">%1$d recurring movements recorded</item>
+    </plurals>
+    <string name="notif_activity_body">Tap to review your movements.</string>
+    <plurals name="notif_confirm_title">
+        <item quantity="one">%1$d charge to confirm</item>
+        <item quantity="other">%1$d charges to confirm</item>
+    </plurals>
+    <string name="notif_confirm_body">Tap to confirm or skip them.</string>
 
     <!-- Default categories seeded on first launch (Phase 1). Editable by the user afterwards. -->
     <string name="seed_category_home">Home</string>

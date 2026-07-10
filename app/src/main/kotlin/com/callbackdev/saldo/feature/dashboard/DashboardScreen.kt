@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.domain.model.TransactionType
 
 /**
@@ -57,6 +58,8 @@ fun DashboardScreen(
     onNavigateToNewTransaction: (TransactionType) -> Unit,
     onNavigateToEditTransaction: (Long) -> Unit,
     onSeeAllTransactions: () -> Unit,
+    onNavigateToSubscriptions: () -> Unit,
+    onNavigateToPending: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -96,6 +99,8 @@ fun DashboardScreen(
                     onManageAccounts = onNavigateToAccounts,
                     onSeeAllTransactions = onSeeAllTransactions,
                     onTransactionClick = onNavigateToEditTransaction,
+                    onSubscriptionsClick = onNavigateToSubscriptions,
+                    onPendingClick = onNavigateToPending,
                 )
             }
 
@@ -125,12 +130,14 @@ private fun DashboardContent(
     onManageAccounts: () -> Unit,
     onSeeAllTransactions: () -> Unit,
     onTransactionClick: (Long) -> Unit,
+    onSubscriptionsClick: () -> Unit,
+    onPendingClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
         item { DashboardHeader(uiState.date, Modifier.padding(horizontal = 4.dp, vertical = 4.dp)) }
         item {
@@ -158,7 +165,16 @@ private fun DashboardContent(
                 )
             }
         }
-        item { SubscriptionsTeaser() }
+        if (uiState.pendingCount > 0) {
+            item { PendingConfirmationCard(count = uiState.pendingCount, onClick = onPendingClick) }
+        }
+        item {
+            SubscriptionsCard(
+                summary = uiState.subscriptions,
+                currency = uiState.primaryCurrency,
+                onClick = onSubscriptionsClick,
+            )
+        }
         item { RecentHeader(onSeeAll = onSeeAllTransactions) }
         if (uiState.recent.isEmpty()) {
             item {
