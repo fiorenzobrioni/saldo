@@ -6,7 +6,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.callbackdev.saldo.R
-import java.text.DecimalFormatSymbols
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -16,13 +15,6 @@ import java.util.Locale
 private fun currentLocale(): Locale {
     val configuration = LocalConfiguration.current
     return remember(configuration) { configuration.locales[0] ?: Locale.getDefault() }
-}
-
-/** The decimal separator of the current locale, for keypad and amount display. */
-@Composable
-fun rememberDecimalSeparator(): Char {
-    val locale = currentLocale()
-    return remember(locale) { DecimalFormatSymbols.getInstance(locale).decimalSeparator }
 }
 
 /**

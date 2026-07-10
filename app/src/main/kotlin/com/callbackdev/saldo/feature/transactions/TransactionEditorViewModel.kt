@@ -74,7 +74,6 @@ class TransactionEditorViewModel @AssistedInject constructor(
         val isTypePreset: Boolean = false,
         val amountInput: String = "",
         val toAmountInput: String = "",
-        val amountTarget: AmountTarget = AmountTarget.AMOUNT,
         val accountId: Long? = null,
         val toAccountId: Long? = null,
         val categoryId: Long? = null,
@@ -179,44 +178,23 @@ class TransactionEditorViewModel @AssistedInject constructor(
         form.update { it.copy(description = description) }
     }
 
-    fun onAmountTargetChanged(target: AmountTarget) {
-        form.update { it.copy(amountTarget = target) }
+    fun onAmountChanged(raw: String) {
+        val digits = uiState.value.currency?.let(MoneyMapper::fractionDigits) ?: DEFAULT_FRACTION_DIGITS
+        form.update {
+            it.copy(
+                amountInput = MoneyInput.sanitize(
+                    raw,
+                    digits,
+                    allowNegative = it.type == TransactionType.ADJUSTMENT,
+                ),
+            )
+        }
     }
 
-    fun onKeypadKey(key: KeypadKey) {
-        val state = uiState.value
-        when (form.value.amountTarget) {
-            AmountTarget.AMOUNT -> {
-                val digits = state.currency?.let(MoneyMapper::fractionDigits)
-                    ?: DEFAULT_FRACTION_DIGITS
-                form.update {
-                    it.copy(
-                        amountInput = AmountInputEditor.apply(
-                            current = it.amountInput,
-                            key = key,
-                            fractionDigits = digits,
-                            allowNegative = it.type == TransactionType.ADJUSTMENT,
-                        ),
-                    )
-                }
-            }
-
-            AmountTarget.TO_AMOUNT -> {
-                val digits = state.toAccount?.currency?.let(MoneyMapper::fractionDigits)
-                    ?: DEFAULT_FRACTION_DIGITS
-                form.update {
-                    it.copy(
-                        toAmountInput = AmountInputEditor.apply(
-                            current = it.toAmountInput,
-                            key = key,
-                            fractionDigits = digits,
-                        ),
-                    )
-                }
-            }
-
-            AmountTarget.NONE -> Unit
-        }
+    fun onToAmountChanged(raw: String) {
+        val digits = uiState.value.toAccount?.currency?.let(MoneyMapper::fractionDigits)
+            ?: DEFAULT_FRACTION_DIGITS
+        form.update { it.copy(toAmountInput = MoneyInput.sanitize(raw, digits, allowNegative = false)) }
     }
 
     fun onTagToggled(tag: Tag) {
@@ -305,7 +283,6 @@ class TransactionEditorViewModel @AssistedInject constructor(
             isTypePreset = current.isTypePreset,
             amountInput = current.amountInput,
             toAmountInput = current.toAmountInput,
-            amountTarget = current.amountTarget,
             accounts = pickable,
             account = current.accountId?.let { byId[it]?.account },
             toAccount = current.toAccountId?.let { byId[it]?.account },

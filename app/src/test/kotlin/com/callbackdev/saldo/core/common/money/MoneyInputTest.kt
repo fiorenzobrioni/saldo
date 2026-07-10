@@ -34,6 +34,21 @@ class MoneyInputTest {
     }
 
     @Test
+    fun `sanitize normalizes leading zeros`() {
+        assertEquals("5", MoneyInput.sanitize("05", fractionDigits = 2))
+        assertEquals("0,5", MoneyInput.sanitize(",5", fractionDigits = 2))
+        assertEquals("0", MoneyInput.sanitize("0", fractionDigits = 2))
+        assertEquals("0,50", MoneyInput.sanitize("00,50", fractionDigits = 2))
+    }
+
+    @Test
+    fun `sanitize caps the integer part so minor units fit in a Long`() {
+        val twelve = "123456789012"
+        assertEquals(twelve, MoneyInput.sanitize(twelve, fractionDigits = 2))
+        assertEquals("$twelve.99", MoneyInput.sanitize("${twelve}345.99", fractionDigits = 2))
+    }
+
+    @Test
     fun `parse understands both decimal separators`() {
         assertEquals(BigDecimal("12.34"), MoneyInput.parse("12,34"))
         assertEquals(BigDecimal("12.34"), MoneyInput.parse("12.34"))

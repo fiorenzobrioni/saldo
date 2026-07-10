@@ -1,10 +1,5 @@
 package com.callbackdev.saldo.feature.transactions
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,10 +43,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -70,11 +63,12 @@ import java.time.LocalDate
 private enum class EditorSheet { NONE, ACCOUNT, TO_ACCOUNT, TAGS, CATEGORY }
 
 /**
- * Create/edit form for a movement. The amount is the borderless focal point of
- * the screen with the in-app keypad below it; the primary save action is a
- * full-width button under the keypad. Optimized for the typical expense: the
- * keypad is active on open, the type defaults to expense, the account to the
- * last used one and the date to today.
+ * Create/edit form for a movement. The amount is the prominent focal point at
+ * the top; the primary save action is a full-width button in the bottom bar,
+ * kept above the keyboard by the window insets. Optimized for the typical
+ * expense: the amount field takes focus on open (so the keyboard is up
+ * immediately), the type defaults to expense, the account to the last used one
+ * and the date to today.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -109,15 +103,6 @@ fun TransactionEditorScreen(
     var activeSheet by rememberSaveable { mutableStateOf(EditorSheet.NONE) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val decimalSeparator = rememberDecimalSeparator()
-
-    val focusAmount: (AmountTarget) -> Unit = { target ->
-        focusManager.clearFocus()
-        keyboardController?.hide()
-        viewModel.onAmountTargetChanged(target)
-    }
 
     Scaffold(
         modifier = modifier,
@@ -149,17 +134,6 @@ fun TransactionEditorScreen(
         bottomBar = {
             if (!uiState.isLoading) {
                 EditorBottomBar {
-                    AnimatedVisibility(
-                        visible = uiState.amountTarget != AmountTarget.NONE,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically(),
-                    ) {
-                        AmountKeypad(
-                            onKey = viewModel::onKeypadKey,
-                            decimalSeparator = decimalSeparator,
-                            showSignToggle = uiState.type == TransactionType.ADJUSTMENT,
-                        )
-                    }
                     EditorSaveButton(
                         text = stringResource(saveLabelRes(uiState.type)),
                         onClick = viewModel::save,
@@ -180,8 +154,6 @@ fun TransactionEditorScreen(
             EditorForm(
                 uiState = uiState,
                 viewModel = viewModel,
-                decimalSeparator = decimalSeparator,
-                onAmountClick = focusAmount,
                 onAccountChipClick = { activeSheet = EditorSheet.ACCOUNT },
                 onToAccountChipClick = { activeSheet = EditorSheet.TO_ACCOUNT },
                 onDateChipClick = { showDatePicker = true },
@@ -301,8 +273,6 @@ private fun saveLabelRes(type: TransactionType): Int = when (type) {
 private fun EditorForm(
     uiState: TransactionEditorUiState,
     viewModel: TransactionEditorViewModel,
-    decimalSeparator: Char,
-    onAmountClick: (AmountTarget) -> Unit,
     onAccountChipClick: () -> Unit,
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
@@ -310,6 +280,12 @@ private fun EditorForm(
     onShowAllCategories: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val amountFocus = remember { FocusRequester() }
+    // On a new movement the amount is what the user came to type: take focus so
+    // the keyboard is up immediately, matching the old always-on keypad.
+    LaunchedEffect(Unit) {
+        if (uiState.isNew) amountFocus.requestFocus()
+    }
     Column(modifier = modifier) {
         Spacer(Modifier.height(16.dp))
         val showTypeSelector = !uiState.isTypeLocked && !(uiState.isNew && uiState.isTypePreset)
@@ -329,31 +305,30 @@ private fun EditorForm(
             )
             Spacer(Modifier.height(16.dp))
         }
-        AmountDisplay(
+        AmountField(
             input = uiState.amountInput,
             currency = uiState.currency,
-            isActive = uiState.amountTarget == AmountTarget.AMOUNT,
             isError = uiState.showValidation && !uiState.isAmountValid,
-            decimalSeparator = decimalSeparator,
-            onClick = { onAmountClick(AmountTarget.AMOUNT) },
+            showSignToggle = uiState.type == TransactionType.ADJUSTMENT,
+            onValueChange = viewModel::onAmountChanged,
+            focusRequester = amountFocus,
             label = if (uiState.isCrossCurrency) {
                 stringResource(
                     R.string.transaction_editor_sent_amount,
                     uiState.account?.currency?.currencyCode.orEmpty(),
                 )
             } else {
-                null
+                stringResource(R.string.transaction_editor_amount)
             },
         )
         if (uiState.isCrossCurrency) {
             Spacer(Modifier.height(8.dp))
-            AmountDisplay(
+            AmountField(
                 input = uiState.toAmountInput,
                 currency = uiState.toAccount?.currency,
-                isActive = uiState.amountTarget == AmountTarget.TO_AMOUNT,
                 isError = uiState.showValidation && !uiState.isToAmountValid,
-                decimalSeparator = decimalSeparator,
-                onClick = { onAmountClick(AmountTarget.TO_AMOUNT) },
+                showSignToggle = false,
+                onValueChange = viewModel::onToAmountChanged,
                 label = stringResource(
                     R.string.transaction_editor_received_amount,
                     uiState.toAccount?.currency?.currencyCode.orEmpty(),
@@ -378,11 +353,6 @@ private fun EditorForm(
         InlineDescriptionField(
             value = uiState.description,
             onValueChange = viewModel::onDescriptionChanged,
-            modifier = Modifier.onFocusChanged { state ->
-                if (state.isFocused) {
-                    viewModel.onAmountTargetChanged(AmountTarget.NONE)
-                }
-            },
         )
         Spacer(Modifier.height(12.dp))
         TagsRow(uiState = uiState, onToggle = viewModel::onTagToggled, onAddClick = onAddTagClick)

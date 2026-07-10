@@ -146,6 +146,7 @@
     <string name="transaction_editor_account">Account</string>
     <string name="transaction_editor_from_account">From account</string>
     <string name="transaction_editor_to_account">To account</string>
+    <string name="transaction_editor_amount">Amount</string>
     <string name="transaction_editor_sent_amount">Sent (%1$s)</string>
     <string name="transaction_editor_received_amount">Received (%1$s)</string>
     <string name="transaction_editor_category">Category</string>

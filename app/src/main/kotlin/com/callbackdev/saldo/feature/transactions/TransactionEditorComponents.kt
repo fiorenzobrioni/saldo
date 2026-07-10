@@ -1,14 +1,7 @@
 package com.callbackdev.saldo.feature.transactions
 
 import androidx.annotation.StringRes
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,9 +14,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Notes
+import androidx.compose.material.icons.outlined.Exposure
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -31,17 +29,16 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -49,7 +46,6 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
-import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import java.util.Currency
 
 /** User-facing label for a [TransactionType]. */
@@ -82,92 +78,50 @@ internal fun TypeSelector(
 }
 
 /**
- * The big, centered amount readout driven by the in-app keypad. Borderless: the
- * amount is the focal point of the screen. Tapping it makes it the keypad target
- * (and brings the keypad back when a text field had the focus); a caret blinks
- * while it is active. An empty amount shows a muted, currency-scaled zero.
+ * The prominent amount field. A system-keyboard [OutlinedTextField] with a large
+ * text style so the amount stays the focal point, the currency symbol as prefix,
+ * and (for a balance adjustment) a sign-toggle trailing icon. The raw text is
+ * sanitized by the ViewModel, so both `.` and `,` are accepted while typing.
  */
 @Composable
-internal fun AmountDisplay(
+internal fun AmountField(
     input: String,
     currency: Currency?,
-    isActive: Boolean,
     isError: Boolean,
-    decimalSeparator: Char,
-    onClick: () -> Unit,
+    showSignToggle: Boolean,
+    onValueChange: (String) -> Unit,
+    label: String,
     modifier: Modifier = Modifier,
-    label: String? = null,
+    focusRequester: FocusRequester? = null,
 ) {
-    val fractionDigits = currency?.let { MoneyMapper.fractionDigits(it) } ?: DEFAULT_FRACTION_DIGITS
-    val isPlaceholder = input.isEmpty()
-    val display = if (isPlaceholder) {
-        zeroText(fractionDigits, decimalSeparator)
-    } else {
-        input.replace('.', decimalSeparator)
-    }
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.large)
-            .clickable(onClick = onClick)
-            .padding(vertical = 12.dp, horizontal = 16.dp),
-    ) {
-        label?.let {
-            Text(
-                text = it,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.size(4.dp))
-        }
-        Row(verticalAlignment = Alignment.Bottom) {
-            Text(
-                text = display,
-                style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                color = when {
-                    isError -> MaterialTheme.colorScheme.error
-                    isPlaceholder -> MaterialTheme.colorScheme.onSurfaceVariant
-                    else -> MaterialTheme.colorScheme.onSurface
-                },
-            )
-            if (isActive) {
-                AmountCaret()
+    OutlinedTextField(
+        value = input,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
+        prefix = currency?.let { { Text(it.symbol) } },
+        singleLine = true,
+        isError = isError,
+        textStyle = MaterialTheme.typography.headlineMedium,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        trailingIcon = if (showSignToggle) {
+            {
+                IconButton(onClick = { onValueChange(toggleSign(input)) }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Exposure,
+                        contentDescription = stringResource(R.string.action_toggle_sign),
+                    )
+                }
             }
-            currency?.let {
-                Text(
-                    text = it.symbol,
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 6.dp, bottom = 8.dp),
-                )
-            }
-        }
-    }
+        } else {
+            null
+        },
+        modifier = (focusRequester?.let { modifier.focusRequester(it) } ?: modifier).fillMaxWidth(),
+    )
 }
 
-@Composable
-private fun AmountCaret(modifier: Modifier = Modifier) {
-    val transition = rememberInfiniteTransition(label = "amount-caret")
-    val alpha by transition.animateFloat(
-        initialValue = 1f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = CARET_BLINK_MILLIS, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "amount-caret-alpha",
-    )
-    Box(
-        modifier = modifier
-            .padding(start = 4.dp, end = 4.dp, bottom = 8.dp)
-            .size(width = 2.dp, height = 36.dp)
-            .alpha(alpha)
-            .background(MaterialTheme.colorScheme.primary, MaterialTheme.shapes.extraSmall),
-    )
-}
+private fun toggleSign(input: String): String =
+    if (input.startsWith("-")) input.removePrefix("-") else "-$input"
 
 /** Borderless inline description field with a leading icon, matching the amount's flat look. */
 @Composable
@@ -200,12 +154,6 @@ internal fun InlineDescriptionField(
         modifier = modifier.fillMaxWidth(),
     )
 }
-
-private fun zeroText(fractionDigits: Int, separator: Char): String =
-    if (fractionDigits <= 0) "0" else "0" + separator + "0".repeat(fractionDigits)
-
-private const val DEFAULT_FRACTION_DIGITS = 2
-private const val CARET_BLINK_MILLIS = 600
 
 /** Grid of selectable categories (4 per row), colored per category. */
 @Composable

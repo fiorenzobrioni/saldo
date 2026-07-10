@@ -146,6 +146,7 @@
     <string name="transaction_editor_account">Account</string>
     <string name="transaction_editor_from_account">Account di partenza</string>
     <string name="transaction_editor_to_account">Account di arrivo</string>
+    <string name="transaction_editor_amount">Importo</string>
     <string name="transaction_editor_sent_amount">In uscita (%1$s)</string>
     <string name="transaction_editor_received_amount">In entrata (%1$s)</string>
     <string name="transaction_editor_category">Categoria</string>
