@@ -14,6 +14,29 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-10 - Review completa: bug fix e Fase 6.5 (design system e omogeneità)
+
+**Fatto:**
+- **Review completa dell'app** (bug, refactor, UI/UX, omogeneità): esiti tracciati in PLANNING.md ("Bug conosciuti" per i bug, "Note e appunti" per le idee emerse, nuova Fase 6.5 per il lavoro UI).
+- **Fix generazione ricorrenze non atomica** (il bug più serio trovato): insert dei movimenti e avanzamento di `lastGeneratedDate` ora avvengono in un'unica transazione Room per regola (`TransactionRunner`); mutex nel use case (ora `@Singleton`) per serializzare worker e catch-up; catch-up spostato dal `lifecycleScope` (cancellabile a rotazione) a uno scope applicativo; backstop a livello DB con colonna `recurringOccurrenceEpochDay` + unique index su (recurringRuleId, occorrenza), migration 3→4 con backfill che non scarta i duplicati pre-esistenti (restano a NULL). Insert della generazione con `OnConflictStrategy.IGNORE`: un'occorrenza già presente viene saltata senza rigenerarla né rinotificarla.
+- **Error handling uniforme negli editor** (movimento, conto, categoria, abbonamento): guardia anti doppio-tap `isSaving` con reset, `suspendRunCatching` (rilancia le cancellazioni), evento `WriteFailed` + snackbar; prima un errore di scrittura lasciava l'editor bloccato per sempre.
+- **Fix minori**: seed categorie ora sincrono dentro `onCreate` sulla stessa connessione (crash-safe, prima era fire-and-forget su scope detached); `spentMoreThanLastMonth` coerente con la baseline (prima poteva essere true senza confronto); conteggio abbonamenti allineato alla valuta del totale (dashboard e vista Abbonamenti); watermark ri-seedato quando cambia la cadenza di una regola; notifica di conferma con il totale dei pending invece del solo batch; placeholder "0" hardcoded portato in strings.
+- **Fase 6.5 - design system**: componenti condivisi `EmptyState`/`LoadingState` (via le 5 copie), `SaldoTypography` con headline/title SemiBold, `tabularNumbers()` sugli importi, `MoneyColors` come unica fonte semantica dei colori denaro, avatar squircle uniformi, haptics (tastierino, swipe-delete, FAB, drag reorder).
+- **Fase 6.5 - tema**: palette brand statica di default (seed teal, tertiary verde per le entrate) con dynamic color opt-in e tema chiaro/scuro/sistema in Impostazioni (DataStore + `SettingsViewModel`); ADR 15.
+- **Refactor dashboard**: aggregati oggi/mese/confronto calcolati in SQL con una query multi-finestra (`observeDashboardTotals`) e recenti con `LIMIT`; il ViewModel non carica più l'intero registro in memoria.
+
+**Decisioni:**
+- ADR 15 (rivede in parte ADR 9): palette brand di default, Material You come scelta esplicita; identità riconoscibile su store e screenshot.
+- Colore spese deliberatamente neutro in `MoneyColors`: il segno e l'icona distinguono (anche per daltonici), colorare tutto il registro urlerebbe; entrate in verde (tertiary).
+- Finestre della dashboard risolte nella zona del device: un movimento registrato in un'altra timezone può cadere nel giorno dell'istante, non della sua data locale; approssimazione accettabile per i totali a colpo d'occhio (il registro conserva l'offset per movimento).
+- Riordino categorie con `sortOrder` globale accoppiato tra i tab: documentato in "Bug conosciuti", non fixato (richiede decisione: accettare o passare a sortOrder per tipo).
+
+**Verifica:** `assembleDebug testDebugUnitTest lint detekt compileDebugAndroidTestKotlin` verdi; 146 unit test (0 falliti). Nuovi test: idempotenza generazione con occorrenze già persistite (watermark stale), serializzazione esecuzioni concorrenti, BIMONTHLY/SEMIANNUAL, catch-up daily/weekly multi-settimana, migration 3→4 con duplicati e backfill (strumentato), mapper occorrenza round-trip, totali dashboard (NULL→zero, negazione to-date), finestre aggregate derivate dal clock, confronto mese senza baseline. Nessun emulatore in sessione: verifica visiva del tema/haptics rimandata al device.
+
+**Prossimo:** Fase 7 (ricerca, filtri, statistiche con Vico), che nasce direttamente sui componenti condivisi della 6.5.
+
+---
+
 ## 2026-07-09 - Fase 6 completa (incremento 2): movimenti pending, WorkManager, notifiche
 
 **Fatto:**
