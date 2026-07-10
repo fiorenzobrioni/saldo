@@ -14,6 +14,28 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-10 - Tastiera di sistema per gli importi, header dashboard, fix sfarfallio
+
+**Fatto:**
+- **Fix sfarfallio bianco nelle transizioni (tema scuro)**: con tema scuro in-app e sistema chiaro, durante il fade delle transizioni Nav3 si intravedeva la finestra Android chiara sotto Compose (stessa famiglia del bug status bar). `SaldoTheme` ora avvolge il contenuto in un `Surface` a tutto schermo con `colorScheme.background`: backdrop opaco a tema sempre presente, niente flash, e come effetto collaterale l'area delle system bar viene dipinta col colore del tema.
+- **Tastiera di sistema per tutti gli importi (ADR 16)**: rimosso il tastierino custom dall'editor movimenti; ora l'importo si inserisce con `OutlinedTextField` + `KeyboardType.Decimal` come in tutti gli altri editor. Campo prominente (stile testo grande, simbolo valuta come prefisso), auto-focus sul nuovo movimento così la tastiera compare subito; il segno della rettifica passa a un toggle trailing-icon. Eliminati `AmountKeypad`, `AmountInputEditor`/`KeypadKey`, `AmountDisplay`, `rememberDecimalSeparator`. Cap cifre intere e normalizzazione zeri iniziali spostati in `MoneyInput.sanitize`, così ogni campo importo è protetto dall'overflow di `Long` (prima solo il tastierino lo era).
+- **Header dashboard**: tolta la scritta "Saldo"; la data del giorno è passata in alto a destra nella card "Saldo totale" (formato esteso "Venerdì 10 luglio", mese minuscolo secondo norma IT, via `getBestDateTimePattern`). L'header ospita un saluto per fascia oraria (notte/mattina/pomeriggio/sera), scelto a caso una volta per apertura: banda e roll [0,1) fissati alla costruzione del `DashboardViewModel` (stabili a ricomposizione/rotazione), il composable indicizza l'array della banda. Primi `<string-array>` dell'app, testi curati e brevi in IT+EN, senza riferimenti a budget/obiettivi (feature non ancora presenti).
+- Versione a 0.6.7 (versionCode 16).
+
+**Decisioni:**
+- Tastiera di sistema ovunque su scelta esplicita dell'utente (feel nativo, accessibilità out-of-the-box, meno codice). La raccomandazione tecnica era di estendere invece il tastierino custom al resto degli editor, ma l'incoerenza andava chiusa e la scelta dell'utente è legittima; le regole di dominio restano garantite da `MoneyInput`/`MoneyMapper`. Registrata come ADR 16.
+- Cap cifre intere in `MoneyInput.sanitize`: rimuovendo `AmountInputEditor` si perdeva la protezione dall'overflow; spostarla nel sanitizer condiviso protegge tutti gli editor in un colpo solo (prima account/abbonamenti/rettifica erano esposti allo stesso rischio latente).
+- Saluto tenuto nel ViewModel (banda + roll) e non ripescato a ogni ricomposizione: resta stabile nella sessione e cambia solo a nuova apertura.
+- Backdrop a tema a livello di `SaldoTheme` invece che sul singolo container di navigazione: fix globale e canonico (pattern Now-in-Android), copre anche il primo frame.
+
+**Problemi:** detekt inizialmente lamentava complessità/return multipli nel codice del piano precedente (ricorrenze), già risolto; in questa fase nessun blocco. Nessun emulatore in sessione: la verifica visiva (campo importo con IME sopra il bottone salva, auto-focus, saluto e data, assenza di sfarfallio) resta da fare sul device.
+
+**Verifica:** `assembleDebug testDebugUnitTest lint detekt compileDebugAndroidTestKotlin` verdi; 155 unit test (0 falliti). Test aggiornati: `TransactionEditorViewModelTest` ora imposta l'importo via `onAmountChanged`/`onToAmountChanged` (logica di validazione/segno/transfer invariata); casi di cap cifre intere e zeri iniziali migrati in `MoneyInputTest`; nuovo `GreetingBandTest` per i confini delle fasce orarie. Rimosso `AmountInputEditorTest`.
+
+**Prossimo:** Fase 7 (ricerca, filtri, statistiche con Vico).
+
+---
+
 ## 2026-07-10 - Fase 6 incremento 3: entrate ricorrenti, radar pre-rinnovo, fix status bar
 
 **Fatto:**
