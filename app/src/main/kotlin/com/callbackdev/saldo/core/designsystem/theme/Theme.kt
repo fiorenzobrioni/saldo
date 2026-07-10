@@ -1,11 +1,14 @@
 package com.callbackdev.saldo.core.designsystem.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 
 /**
@@ -35,7 +38,16 @@ fun SaldoTheme(
     ) {
         CompositionLocalProvider(
             LocalMoneyColors provides moneyColors(colorScheme),
-            content = content,
-        )
+        ) {
+            // An opaque themed backdrop behind everything: without it, the light
+            // window background shows through the Nav 3 fade transitions when the
+            // in-app theme is dark but the system (hence the XML window theme) is
+            // light, causing a white flash between screens.
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = colorScheme.background,
+                content = content,
+            )
+        }
     }
 }
