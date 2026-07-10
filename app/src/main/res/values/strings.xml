@@ -21,6 +21,39 @@
 
     <!-- Dashboard (Phase 5) -->
     <string name="dashboard_balance_total">Total balance</string>
+    <!-- Time-of-day greetings shown in the dashboard header; one is picked at random per app open. -->
+    <string-array name="dashboard_greetings_night">
+        <item>Still up? A quick look at the numbers.</item>
+        <item>Night owl? Welcome back.</item>
+        <item>Savings never sleep.</item>
+        <item>A quiet moment for your accounts.</item>
+        <item>One last check before bed?</item>
+        <item>Good night.</item>
+    </string-array>
+    <string-array name="dashboard_greetings_morning">
+        <item>Good morning!</item>
+        <item>Good morning! How are the accounts?</item>
+        <item>New day, accounts in order.</item>
+        <item>Coffee and accounts?</item>
+        <item>Have a great day!</item>
+        <item>Morning! Let\'s track your day.</item>
+    </string-array>
+    <string-array name="dashboard_greetings_afternoon">
+        <item>Good afternoon!</item>
+        <item>How\'s the day going?</item>
+        <item>Everything under control?</item>
+        <item>A quick midday check-in.</item>
+        <item>You\'re doing great.</item>
+        <item>Good afternoon! Accounts in order?</item>
+    </string-array>
+    <string-array name="dashboard_greetings_evening">
+        <item>Good evening!</item>
+        <item>How did today go?</item>
+        <item>Time to take stock.</item>
+        <item>Good evening! Log the last expenses.</item>
+        <item>End of the day: all set?</item>
+        <item>Relax, we\'ve got the accounts.</item>
+    </string-array>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d account</item>
         <item quantity="other">%1$d accounts</item>

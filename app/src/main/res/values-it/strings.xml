@@ -19,6 +19,39 @@
 
     <!-- Dashboard (Fase 5) -->
     <string name="dashboard_balance_total">Saldo totale</string>
+    <!-- Saluti mostrati nell'header della dashboard; uno scelto a caso a ogni apertura. -->
+    <string-array name="dashboard_greetings_night">
+        <item>Ancora sveglio? Uno sguardo ai conti.</item>
+        <item>Nottambulo? Bentornato.</item>
+        <item>I risparmi non dormono mai.</item>
+        <item>Un momento di calma per i conti.</item>
+        <item>Un ultimo controllo prima di dormire?</item>
+        <item>Buonanotte.</item>
+    </string-array>
+    <string-array name="dashboard_greetings_morning">
+        <item>Buongiorno!</item>
+        <item>Buongiorno! Come vanno i conti?</item>
+        <item>Nuovo giorno, conti in ordine.</item>
+        <item>Caffè e conti?</item>
+        <item>Buona giornata!</item>
+        <item>Buongiorno! Teniamo d\'occhio le spese.</item>
+    </string-array>
+    <string-array name="dashboard_greetings_afternoon">
+        <item>Buon pomeriggio!</item>
+        <item>Come procede la giornata?</item>
+        <item>Tutto sotto controllo?</item>
+        <item>Un controllo veloce di metà giornata.</item>
+        <item>Stai andando alla grande.</item>
+        <item>Buon pomeriggio! Conti in ordine?</item>
+    </string-array>
+    <string-array name="dashboard_greetings_evening">
+        <item>Buonasera!</item>
+        <item>Com\'è andata oggi?</item>
+        <item>Tempo di fare il punto.</item>
+        <item>Buonasera! Registra le ultime spese.</item>
+        <item>Fine giornata: tutto a posto?</item>
+        <item>Rilassati, ai conti pensiamo noi.</item>
+    </string-array>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d conto</item>
         <item quantity="many">%1$d conti</item>
