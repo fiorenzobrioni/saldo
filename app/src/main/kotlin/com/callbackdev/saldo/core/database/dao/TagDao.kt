@@ -36,6 +36,10 @@ interface TagDao {
     )
     fun observeForTransaction(transactionId: Long): Flow<List<TagEntity>>
 
+    /** Every movement-tag assignment, for filtering the ledger by tag. */
+    @Query("SELECT * FROM transaction_tag_cross_ref")
+    fun observeAllCrossRefs(): Flow<List<TransactionTagCrossRef>>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertCrossRef(crossRef: TransactionTagCrossRef)
 

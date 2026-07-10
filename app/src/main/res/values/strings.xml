@@ -162,6 +162,37 @@
     <string name="transaction_delete_title">Delete transaction?</string>
     <string name="transaction_delete_body">The transaction will be permanently deleted.</string>
 
+    <!-- Search and filters (Phase 7) -->
+    <string name="transactions_search">Search transactions</string>
+    <string name="transactions_search_hint">Search transactions</string>
+    <string name="transactions_search_close">Close search</string>
+    <string name="transactions_search_clear">Clear search</string>
+    <string name="transactions_filters">Filters</string>
+    <string name="filter_date_all">All</string>
+    <string name="filter_date_this_month">This month</string>
+    <string name="filter_date_last_month">Last month</string>
+    <string name="filter_date_last_90_days">Last 90 days</string>
+    <string name="filter_date_this_year">This year</string>
+    <string name="filter_date_custom">Custom</string>
+    <string name="filter_section_type">Type</string>
+    <string name="filter_section_amount">Amount</string>
+    <string name="filter_amount_min">Minimum</string>
+    <string name="filter_amount_max">Maximum</string>
+    <string name="filter_amount_between">%1$s–%2$s</string>
+    <string name="filter_amount_at_least">≥ %1$s</string>
+    <string name="filter_amount_at_most">≤ %1$s</string>
+    <string name="filter_remove">Remove filter %1$s</string>
+    <string name="filter_reset">Reset</string>
+    <string name="filter_apply">Apply</string>
+    <string name="filter_clear_all">Clear filters</string>
+    <string name="filter_no_results_title">No results</string>
+    <string name="filter_no_results_body">No transaction matches the active filters.</string>
+    <string name="filter_total_net">Net %1$s</string>
+    <plurals name="filter_result_count">
+        <item quantity="one">%1$d transaction</item>
+        <item quantity="other">%1$d transactions</item>
+    </plurals>
+
     <!-- Transaction editor (Phase 3) -->
     <string name="transaction_editor_title_new">New transaction</string>
     <string name="transaction_editor_title_new_expense">New expense</string>

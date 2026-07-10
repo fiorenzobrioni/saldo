@@ -18,7 +18,9 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -33,6 +35,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Currency
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @ExtendWith(MainDispatcherExtension::class)
 class TransactionsViewModelTest {
 
@@ -90,17 +93,22 @@ class TransactionsViewModelTest {
     private fun viewModel(
         transactions: List<Transaction> = emptyList(),
         accounts: List<Account> = listOf(checking),
+        tags: List<Tag> = emptyList(),
+        tagAssignments: Map<Long, Set<Long>> = emptyMap(),
     ): TransactionsViewModel {
         every { transactionRepository.observeTransactions() } returns flowOf(transactions)
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
         every { categoryRepository.observeCategories() } returns flowOf(listOf(groceries))
+        every { tagRepository.observeTags() } returns flowOf(tags)
+        every { tagRepository.observeTagAssignments() } returns flowOf(tagAssignments)
         return TransactionsViewModel(
             transactionRepository = transactionRepository,
             accountRepository = accountRepository,
             categoryRepository = categoryRepository,
             tagRepository = tagRepository,
             clock = clock,
+            defaultDispatcher = UnconfinedTestDispatcher(),
         )
     }
 
@@ -187,6 +195,100 @@ class TransactionsViewModelTest {
                 TransactionsEvent.TransactionDeleted(target, listOf(5L)),
                 awaitItem(),
             )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `search narrows the list and the totals, and clearing restores it`() = runTest {
+        val coffee = transaction(id = 1L, amount = "-3.00")
+            .copy(description = "Caffè al bar")
+        val groceriesRun = transaction(id = 2L, amount = "-20.00")
+            .copy(description = "Spesa settimanale")
+        val viewModel = viewModel(transactions = listOf(coffee, groceriesRun))
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+            assertEquals(2, state.filteredCount)
+
+            viewModel.setQuery("caffe")
+            state = awaitItem()
+            assertEquals(1, state.filteredCount)
+            assertEquals(listOf(1L), state.days.single().items.map { it.id })
+            assertEquals(BigDecimal("-3.00"), state.filteredTotals.single().net)
+            assertTrue(state.filters.isActive)
+            assertTrue(state.hasAnyTransactions)
+
+            viewModel.clearFilters()
+            state = awaitItem()
+            assertEquals(2, state.filteredCount)
+            assertFalse(state.filters.isActive)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a filter matching nothing flags no-results instead of empty`() = runTest {
+        val viewModel = viewModel(transactions = listOf(transaction(id = 1L)))
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+
+            viewModel.setQuery("nothing matches this")
+            state = awaitItem()
+            assertTrue(state.isNoResults)
+            assertFalse(state.isEmpty)
+            assertEquals(0, state.filteredCount)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `tag filter uses the observed assignments`() = runTest {
+        val tagged = transaction(id = 1L)
+        val untagged = transaction(id = 2L)
+        val viewModel = viewModel(
+            transactions = listOf(tagged, untagged),
+            tags = listOf(Tag("work", id = 5L)),
+            tagAssignments = mapOf(1L to setOf(5L)),
+        )
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+
+            viewModel.applyFilters(
+                com.callbackdev.saldo.feature.transactions.filter.TransactionFilters(
+                    tagIds = setOf(5L),
+                ),
+            )
+            state = awaitItem()
+            assertEquals(listOf(1L), state.days.single().items.map { it.id })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `filtered totals split expenses and incomes per currency`() = runTest {
+        val viewModel = viewModel(
+            transactions = listOf(
+                transaction(id = 1L, amount = "-10.00"),
+                transaction(id = 2L, type = TransactionType.INCOME, amount = "4.00"),
+                transaction(id = 3L, amount = "-5.00", currency = usd),
+                transaction(id = 4L, type = TransactionType.TRANSFER, amount = "-99.00"),
+            ),
+        )
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+            val byCurrency = state.filteredTotals.associateBy { it.currency }
+            assertEquals(BigDecimal("-10.00"), byCurrency.getValue(eur).expenses)
+            assertEquals(BigDecimal("4.00"), byCurrency.getValue(eur).incomes)
+            assertEquals(BigDecimal("-6.00"), byCurrency.getValue(eur).net)
+            assertEquals(BigDecimal("-5.00"), byCurrency.getValue(usd).net)
             cancelAndIgnoreRemainingEvents()
         }
     }

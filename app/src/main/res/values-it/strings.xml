@@ -162,6 +162,38 @@
     <string name="transaction_delete_title">Eliminare il movimento?</string>
     <string name="transaction_delete_body">Il movimento verrà eliminato definitivamente.</string>
 
+    <!-- Ricerca e filtri (Fase 7) -->
+    <string name="transactions_search">Cerca nei movimenti</string>
+    <string name="transactions_search_hint">Cerca nei movimenti</string>
+    <string name="transactions_search_close">Chiudi la ricerca</string>
+    <string name="transactions_search_clear">Cancella la ricerca</string>
+    <string name="transactions_filters">Filtri</string>
+    <string name="filter_date_all">Tutto</string>
+    <string name="filter_date_this_month">Questo mese</string>
+    <string name="filter_date_last_month">Mese scorso</string>
+    <string name="filter_date_last_90_days">Ultimi 90 giorni</string>
+    <string name="filter_date_this_year">Quest\'anno</string>
+    <string name="filter_date_custom">Personalizzato</string>
+    <string name="filter_section_type">Tipo</string>
+    <string name="filter_section_amount">Importo</string>
+    <string name="filter_amount_min">Minimo</string>
+    <string name="filter_amount_max">Massimo</string>
+    <string name="filter_amount_between">%1$s–%2$s</string>
+    <string name="filter_amount_at_least">≥ %1$s</string>
+    <string name="filter_amount_at_most">≤ %1$s</string>
+    <string name="filter_remove">Rimuovi filtro %1$s</string>
+    <string name="filter_reset">Azzera</string>
+    <string name="filter_apply">Applica</string>
+    <string name="filter_clear_all">Azzera i filtri</string>
+    <string name="filter_no_results_title">Nessun risultato</string>
+    <string name="filter_no_results_body">Nessun movimento corrisponde ai filtri attivi.</string>
+    <string name="filter_total_net">Netto %1$s</string>
+    <plurals name="filter_result_count">
+        <item quantity="one">%1$d movimento</item>
+        <item quantity="many">%1$d movimenti</item>
+        <item quantity="other">%1$d movimenti</item>
+    </plurals>
+
     <!-- Editor movimento (Fase 3) -->
     <string name="transaction_editor_title_new">Nuovo movimento</string>
     <string name="transaction_editor_title_new_expense">Nuova spesa</string>

@@ -140,9 +140,9 @@
 
 ## Fase 7 - Ricerca, filtri e statistiche
 
-- [ ] Filtri combinabili (data con preset, categorie, account, tipo, importo, tag) come chip
-- [ ] Ricerca full-text su descrizione
-- [ ] Totale della vista filtrata sempre visibile
+- [x] Filtri combinabili (data con preset, categorie, account, tipo, importo, tag) come chip
+- [x] Ricerca full-text su descrizione (e nota; in-memory con normalizzazione Unicode, insensibile ad accenti e maiuscole)
+- [x] Totale della vista filtrata sempre visibile
 - [ ] Statistiche (Vico):
   - [ ] anello spese per categoria + lista percentuali (mese/anno/custom)
   - [ ] barre trend spese 12 mesi
