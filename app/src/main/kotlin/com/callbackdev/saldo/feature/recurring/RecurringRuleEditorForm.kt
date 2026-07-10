@@ -93,7 +93,7 @@ internal fun AmountField(
         value = input,
         onValueChange = onChanged,
         label = { Text(stringResource(R.string.subscription_editor_amount)) },
-        placeholder = { Text("0") },
+        placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
         prefix = currency?.let { { Text(it.symbol) } },
         singleLine = true,
         isError = showError,

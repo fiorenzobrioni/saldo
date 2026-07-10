@@ -4,6 +4,8 @@ import com.callbackdev.saldo.core.database.dao.TransactionDao
 import com.callbackdev.saldo.core.database.mapper.toDomain
 import com.callbackdev.saldo.core.database.mapper.toEntity
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
+import com.callbackdev.saldo.core.domain.model.DashboardTotals
+import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
@@ -12,6 +14,7 @@ import java.time.Instant
 import java.util.Currency
 import javax.inject.Inject
 
+@Suppress("TooManyFunctions") // A data-access implementation naturally has many queries.
 class RoomTransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
 ) : TransactionRepository {
@@ -43,6 +46,23 @@ class RoomTransactionRepository @Inject constructor(
             currency.currencyCode,
         ).map { rows -> rows.map { it.toDomain(currency) } }
 
+    override fun observeRecentTransactions(limit: Int): Flow<List<Transaction>> =
+        transactionDao.observeRecent(limit).map { rows -> rows.map { it.toDomain() } }
+
+    override fun observeDashboardTotals(
+        windows: DashboardWindows,
+        currency: Currency,
+    ): Flow<DashboardTotals> =
+        transactionDao.observeDashboardTotals(
+            todayStart = windows.todayStart.toEpochMilli(),
+            todayEnd = windows.todayEnd.toEpochMilli(),
+            monthStart = windows.monthStart.toEpochMilli(),
+            monthEnd = windows.monthEnd.toEpochMilli(),
+            previousStart = windows.previousStart.toEpochMilli(),
+            previousToDateEnd = windows.previousToDateEnd.toEpochMilli(),
+            currency = currency.currencyCode,
+        ).map { row -> row.toDomain(currency) }
+
     override suspend fun getTransaction(id: Long): Transaction? =
         transactionDao.getById(id)?.toDomain()
 
@@ -61,6 +81,9 @@ class RoomTransactionRepository @Inject constructor(
             entity.id
         }
     }
+
+    override suspend fun insertIfAbsent(transaction: Transaction): Long =
+        transactionDao.insertIgnoringConflicts(transaction.toEntity())
 
     override suspend fun delete(transaction: Transaction) =
         transactionDao.delete(transaction.toEntity())

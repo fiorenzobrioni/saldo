@@ -70,6 +70,63 @@ class RecurrenceCalculatorTest {
     }
 
     @Test
+    fun `bimonthly steps by two months and clamps short months`() {
+        val r = rule(RecurrenceFrequency.BIMONTHLY, LocalDate.of(2025, 12, 31))
+        assertEquals(LocalDate.of(2025, 12, 31), RecurrenceCalculator.occurrence(r, 0))
+        // February 2026 has 28 days.
+        assertEquals(LocalDate.of(2026, 2, 28), RecurrenceCalculator.occurrence(r, 1))
+        assertEquals(LocalDate.of(2026, 4, 30), RecurrenceCalculator.occurrence(r, 2))
+        assertEquals(LocalDate.of(2026, 6, 30), RecurrenceCalculator.occurrence(r, 3))
+        assertEquals(LocalDate.of(2026, 8, 31), RecurrenceCalculator.occurrence(r, 4))
+    }
+
+    @Test
+    fun `semiannual steps by six months`() {
+        val r = rule(RecurrenceFrequency.SEMIANNUAL, LocalDate.of(2026, 1, 15))
+        assertEquals(LocalDate.of(2026, 7, 15), RecurrenceCalculator.occurrence(r, 1))
+        assertEquals(LocalDate.of(2027, 1, 15), RecurrenceCalculator.occurrence(r, 2))
+        assertEquals(LocalDate.of(2028, 7, 15), RecurrenceCalculator.occurrence(r, 5))
+    }
+
+    @Test
+    fun `daily catch-up returns every missed day across weeks`() {
+        val r = rule(RecurrenceFrequency.DAILY, LocalDate.of(2026, 1, 1))
+        val range = RecurrenceCalculator.occurrencesInClosedRange(
+            r,
+            LocalDate.of(2026, 2, 10),
+            LocalDate.of(2026, 3, 5),
+        )
+        assertEquals(24, range.size)
+        assertEquals(LocalDate.of(2026, 2, 10), range.first())
+        assertEquals(LocalDate.of(2026, 3, 5), range.last())
+    }
+
+    @Test
+    fun `weekly catch-up after weeks off resumes on the rule's weekday`() {
+        // Thursday-based rule; the device was off from mid-February to mid-April.
+        val r = rule(RecurrenceFrequency.WEEKLY, LocalDate.of(2026, 1, 1))
+        val range = RecurrenceCalculator.occurrencesInClosedRange(
+            r,
+            LocalDate.of(2026, 2, 13),
+            LocalDate.of(2026, 4, 16),
+        )
+        assertEquals(
+            listOf(
+                LocalDate.of(2026, 2, 19),
+                LocalDate.of(2026, 2, 26),
+                LocalDate.of(2026, 3, 5),
+                LocalDate.of(2026, 3, 12),
+                LocalDate.of(2026, 3, 19),
+                LocalDate.of(2026, 3, 26),
+                LocalDate.of(2026, 4, 2),
+                LocalDate.of(2026, 4, 9),
+                LocalDate.of(2026, 4, 16),
+            ),
+            range,
+        )
+    }
+
+    @Test
     fun `nextOccurrence returns the first occurrence on or after a date`() {
         val r = rule(RecurrenceFrequency.MONTHLY, LocalDate.of(2026, 1, 15))
         assertEquals(LocalDate.of(2026, 3, 15), RecurrenceCalculator.nextOccurrence(r, LocalDate.of(2026, 3, 10)))

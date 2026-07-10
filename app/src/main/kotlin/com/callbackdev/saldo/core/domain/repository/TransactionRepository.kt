@@ -1,12 +1,15 @@
 package com.callbackdev.saldo.core.domain.repository
 
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
+import com.callbackdev.saldo.core.domain.model.DashboardTotals
+import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.Transaction
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.util.Currency
 
 /** Read/write access to movements and their statistical aggregates. */
+@Suppress("TooManyFunctions") // A data-access interface naturally has many queries.
 interface TransactionRepository {
 
     /** Confirmed movements, most recent first (pending recurring movements excluded). */
@@ -32,6 +35,19 @@ interface TransactionRepository {
         currency: Currency,
     ): Flow<List<CategoryTotal>>
 
+    /** The latest confirmed movements, capped in SQL. */
+    fun observeRecentTransactions(limit: Int): Flow<List<Transaction>>
+
+    /**
+     * The dashboard's aggregate figures for [windows], restricted to [currency],
+     * computed by the database in a single query. Cash figures: movements
+     * flagged out of statistics still count (unlike [observeCategoryTotals]).
+     */
+    fun observeDashboardTotals(
+        windows: DashboardWindows,
+        currency: Currency,
+    ): Flow<DashboardTotals>
+
     suspend fun getTransaction(id: Long): Transaction?
 
     /** Number of movements that touch [accountId] as source or transfer destination. */
@@ -42,6 +58,13 @@ interface TransactionRepository {
 
     /** Inserts a new movement (id == 0) or updates an existing one. Returns its id. */
     suspend fun upsert(transaction: Transaction): Long
+
+    /**
+     * Inserts a new movement unless it collides with an already-generated
+     * recurring occurrence (same rule and occurrence date); returns the new id,
+     * or -1 when the movement already existed and nothing was written.
+     */
+    suspend fun insertIfAbsent(transaction: Transaction): Long
 
     suspend fun delete(transaction: Transaction)
 }

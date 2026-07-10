@@ -14,7 +14,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 
 /**
  * Drag-to-reorder support for a [androidx.compose.foundation.lazy.LazyColumn].
@@ -29,6 +31,7 @@ class ReorderableListState internal constructor(
     val listState: LazyListState,
     private val onMove: (from: Int, to: Int) -> Unit,
     private val onSettle: () -> Unit,
+    private val onPickUp: () -> Unit,
 ) {
 
     /** Index of the item under the finger, or null when idle. */
@@ -56,6 +59,7 @@ class ReorderableListState internal constructor(
         draggingItemIndex = index
         draggingItemInitialOffset = info.offset
         draggingDistance = 0f
+        onPickUp()
     }
 
     fun onDrag(delta: Float) {
@@ -134,11 +138,16 @@ fun rememberReorderableListState(
 ): ReorderableListState {
     val latestOnMove by rememberUpdatedState(onMove)
     val latestOnSettle by rememberUpdatedState(onSettle)
+    val haptics = LocalHapticFeedback.current
     val state = remember(listState) {
         ReorderableListState(
             listState = listState,
             onMove = { from, to -> latestOnMove(from, to) },
-            onSettle = { latestOnSettle() },
+            onSettle = {
+                haptics.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                latestOnSettle()
+            },
+            onPickUp = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) },
         )
     }
     LaunchedEffect(state.isDragging) {

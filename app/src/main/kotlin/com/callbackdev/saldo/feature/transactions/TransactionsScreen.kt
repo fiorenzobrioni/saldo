@@ -1,7 +1,6 @@
 package com.callbackdev.saldo.feature.transactions
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,17 +14,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -44,13 +40,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.EmptyState
+import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import java.time.LocalDate
 
 /**
@@ -106,12 +104,7 @@ fun TransactionsScreen(
         },
     ) { innerPadding ->
         when {
-            uiState.isLoading -> Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            uiState.isLoading -> LoadingState(Modifier.padding(innerPadding))
 
             uiState.isEmpty -> TransactionsEmptyState(
                 hasAccounts = uiState.hasAccounts,
@@ -215,7 +208,7 @@ private fun DayHeader(
             text = day.totals.joinToString(separator = "  ") { total ->
                 MoneyFormatter.formatSigned(total.amount, total.currency)
             },
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.titleSmall.tabularNumbers(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
@@ -228,53 +221,20 @@ private fun TransactionsEmptyState(
     onCreateAccount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            modifier = Modifier
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.secondaryContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.ReceiptLong,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(32.dp),
-            )
-        }
-        Spacer(Modifier.height(24.dp))
-        Text(
-            text = stringResource(R.string.transactions_empty_title),
-            style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = stringResource(
-                if (hasAccounts) {
-                    R.string.transactions_empty_body
-                } else {
-                    R.string.transactions_empty_no_accounts_body
-                },
-            ),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(24.dp))
-        if (hasAccounts) {
-            FilledTonalButton(onClick = onAddTransaction) {
-                Text(stringResource(R.string.transactions_add_first))
-            }
-        } else {
-            FilledTonalButton(onClick = onCreateAccount) {
-                Text(stringResource(R.string.transactions_create_account))
-            }
-        }
-    }
+    EmptyState(
+        icon = Icons.AutoMirrored.Outlined.ReceiptLong,
+        title = stringResource(R.string.transactions_empty_title),
+        body = stringResource(
+            if (hasAccounts) {
+                R.string.transactions_empty_body
+            } else {
+                R.string.transactions_empty_no_accounts_body
+            },
+        ),
+        actionLabel = stringResource(
+            if (hasAccounts) R.string.transactions_add_first else R.string.transactions_create_account,
+        ),
+        onAction = if (hasAccounts) onAddTransaction else onCreateAccount,
+        modifier = modifier,
+    )
 }

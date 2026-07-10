@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
@@ -50,6 +52,7 @@ internal fun DashboardSpeedDial(
         targetValue = if (expanded) 45f else 0f,
         label = "speed-dial-rotation",
     )
+    val haptics = LocalHapticFeedback.current
     Column(horizontalAlignment = Alignment.End, modifier = modifier) {
         AnimatedVisibility(
             visible = expanded,
@@ -78,7 +81,14 @@ internal fun DashboardSpeedDial(
                 )
             }
         }
-        FloatingActionButton(onClick = onToggle) {
+        FloatingActionButton(
+            onClick = {
+                haptics.performHapticFeedback(
+                    if (expanded) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn,
+                )
+                onToggle()
+            },
+        ) {
             Icon(
                 imageVector = Icons.Outlined.Add,
                 contentDescription = stringResource(R.string.dashboard_fab_add),

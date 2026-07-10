@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.callbackdev.saldo.core.database.migration.MIGRATION_1_2
 import com.callbackdev.saldo.core.database.migration.MIGRATION_2_3
+import com.callbackdev.saldo.core.database.migration.MIGRATION_3_4
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -14,8 +15,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Migration test for v1 -> v2 (adds `color`/`icon` to `recurring_rules`). Runs on
- * a device/emulator; validates the migrated schema against the exported v2 JSON.
+ * Migration tests for the schema history. Run on a device/emulator; each step
+ * validates the migrated schema against the exported JSON.
  */
 @RunWith(AndroidJUnit4::class)
 class RecurringRuleMigrationTest {
@@ -88,5 +89,87 @@ class RecurringRuleMigrationTest {
             // Existing movements are confirmed (not pending).
             assertEquals(0, cursor.getInt(0))
         }
+    }
+
+    @Test
+    fun migrate3To4_backfillsOccurrenceDay_leavingDuplicatesAndManualRowsNull() {
+        val dbName = "migration-test-3-4"
+        val dayEpoch = 20_000L
+        val noonMillis = dayEpoch * MILLIS_PER_DAY + MILLIS_PER_DAY / 2
+
+        helper.createDatabase(dbName, 3).use { db ->
+            db.insert(
+                "recurring_rules",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("id", 1L)
+                    put("name", "Netflix")
+                    put("type", "EXPENSE")
+                    put("currency", "EUR")
+                    put("accountId", 1L)
+                    put("frequency", "MONTHLY")
+                    put("startDateEpochDay", dayEpoch)
+                    put("mode", "AUTOMATIC")
+                    put("isVariableAmount", 0)
+                },
+            )
+            // Two duplicates of the same occurrence (the pre-fix bug) plus a manual movement.
+            repeat(2) {
+                db.insert(
+                    "transactions",
+                    android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                    ContentValues().apply {
+                        put("type", "EXPENSE")
+                        put("amountMinor", -1299L)
+                        put("currency", "EUR")
+                        put("accountId", 1L)
+                        put("timestampEpochMilli", noonMillis)
+                        put("zoneOffsetSeconds", 3600)
+                        put("isExcludedFromStats", 0)
+                        put("isRefund", 0)
+                        put("isPending", 0)
+                        put("recurringRuleId", 1L)
+                    },
+                )
+            }
+            db.insert(
+                "transactions",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("type", "EXPENSE")
+                    put("amountMinor", -500L)
+                    put("currency", "EUR")
+                    put("accountId", 1L)
+                    put("timestampEpochMilli", noonMillis)
+                    put("zoneOffsetSeconds", 3600)
+                    put("isExcludedFromStats", 0)
+                    put("isRefund", 0)
+                    put("isPending", 0)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 4, true, MIGRATION_3_4)
+
+        db.query(
+            "SELECT recurringRuleId, recurringOccurrenceEpochDay FROM transactions ORDER BY id",
+        ).use { cursor ->
+            // Oldest duplicate is backfilled with the occurrence day.
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1L, cursor.getLong(0))
+            assertEquals(dayEpoch, cursor.getLong(1))
+            // The newer duplicate keeps NULL so the unique index can be created without dropping it.
+            assertTrue(cursor.moveToNext())
+            assertEquals(1L, cursor.getLong(0))
+            assertTrue(cursor.isNull(1))
+            // Manual movements are untouched.
+            assertTrue(cursor.moveToNext())
+            assertTrue(cursor.isNull(0))
+            assertTrue(cursor.isNull(1))
+        }
+    }
+
+    private companion object {
+        const val MILLIS_PER_DAY = 86_400_000L
     }
 }

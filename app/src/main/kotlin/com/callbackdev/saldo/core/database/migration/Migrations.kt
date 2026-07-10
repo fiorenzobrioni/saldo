@@ -13,6 +13,13 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * v2 -> v3: adds `isPending` to `transactions` (confirm-mode / variable-amount
  * recurring movements await confirmation). NOT NULL DEFAULT 0, so every existing
  * movement is a confirmed one.
+ *
+ * v3 -> v4: adds `recurringOccurrenceEpochDay` to `transactions` plus a unique
+ * index on (recurringRuleId, recurringOccurrenceEpochDay), the database-level
+ * backstop against generating the same recurring occurrence twice. Existing
+ * generated movements are backfilled from their local date; if the pre-fix bug
+ * already produced duplicates, only the oldest row per occurrence is backfilled
+ * (the extras keep NULL, which the unique index permits) so no data is dropped.
  */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -28,5 +35,29 @@ val MIGRATION_2_3: Migration = object : Migration(2, 3) {
     }
 }
 
+@Suppress("MagicNumber") // Schema version numbers.
+val MIGRATION_3_4: Migration = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN recurringOccurrenceEpochDay INTEGER")
+        db.execSQL(
+            """
+            UPDATE transactions SET recurringOccurrenceEpochDay =
+                (timestampEpochMilli + zoneOffsetSeconds * 1000) / 86400000
+            WHERE recurringRuleId IS NOT NULL AND id IN (
+                SELECT MIN(id) FROM transactions
+                WHERE recurringRuleId IS NOT NULL
+                GROUP BY recurringRuleId,
+                    (timestampEpochMilli + zoneOffsetSeconds * 1000) / 86400000
+            )
+            """.trimIndent(),
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                "`index_transactions_recurringRuleId_recurringOccurrenceEpochDay` " +
+                "ON `transactions` (`recurringRuleId`, `recurringOccurrenceEpochDay`)",
+        )
+    }
+}
+
 /** All migrations, applied in order by Room. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)

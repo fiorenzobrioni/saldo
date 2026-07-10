@@ -9,7 +9,9 @@ import com.callbackdev.saldo.core.database.dao.RecurringRuleDao
 import com.callbackdev.saldo.core.database.dao.TagDao
 import com.callbackdev.saldo.core.database.dao.TransactionDao
 import com.callbackdev.saldo.core.database.migration.ALL_MIGRATIONS
+import com.callbackdev.saldo.core.database.repository.RoomTransactionRunner
 import com.callbackdev.saldo.core.database.seed.DatabaseSeedCallback
+import com.callbackdev.saldo.core.domain.repository.TransactionRunner
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,4 +49,8 @@ object DatabaseModule {
     @Provides
     fun provideRecurringRuleDao(database: SaldoDatabase): RecurringRuleDao =
         database.recurringRuleDao()
+
+    @Provides
+    fun provideTransactionRunner(database: SaldoDatabase): TransactionRunner =
+        RoomTransactionRunner(database)
 }

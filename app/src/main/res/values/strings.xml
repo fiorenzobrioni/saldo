@@ -307,4 +307,17 @@
     <string name="seed_category_gifts_received">Gifts received</string>
     <string name="seed_category_refunds">Refunds</string>
     <string name="seed_category_other_income">Other</string>
+
+    <!-- Shared editor feedback -->
+    <string name="editor_write_failed">Something went wrong. Please try again.</string>
+    <string name="editor_amount_placeholder" translatable="false">0</string>
+
+    <!-- Settings: appearance -->
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_management">Management</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_dynamic_color">Dynamic colors</string>
+    <string name="settings_dynamic_color_hint">Use colors from your wallpaper (Material You)</string>
 </resources>

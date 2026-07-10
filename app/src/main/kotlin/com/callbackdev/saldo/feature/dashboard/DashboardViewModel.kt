@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
+import com.callbackdev.saldo.core.domain.model.DashboardTotals
+import com.callbackdev.saldo.core.domain.model.DashboardWindows
+import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -13,11 +16,12 @@ import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
-import com.callbackdev.saldo.feature.transactions.localDate
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import java.math.BigDecimal
 import java.time.Clock
@@ -25,16 +29,6 @@ import java.time.LocalDate
 import java.util.Currency
 import java.util.Locale
 import javax.inject.Inject
-
-/** Net expense/income of a time window, in the dashboard's primary currency. */
-data class PeriodFlow(
-    /** Sum of expenses (<= 0). */
-    val spend: BigDecimal = BigDecimal.ZERO,
-    /** Sum of incomes (>= 0). */
-    val income: BigDecimal = BigDecimal.ZERO,
-) {
-    val net: BigDecimal get() = spend.add(income)
-}
 
 /** The soonest upcoming subscription charge, for the dashboard card preview. */
 data class NextSubscription(
@@ -62,8 +56,8 @@ data class DashboardUiState(
     val totalBalance: BigDecimal = BigDecimal.ZERO,
     /** Active (non-archived) accounts with balances, for the expandable detail. */
     val accounts: List<AccountWithBalance> = emptyList(),
-    val today: PeriodFlow = PeriodFlow(),
-    val month: PeriodFlow = PeriodFlow(),
+    val today: PeriodTotals = PeriodTotals(),
+    val month: PeriodTotals = PeriodTotals(),
     /**
      * Signed difference between what has been spent so far this month and by the
      * same day last month (positive = more spent this month); null when there is
@@ -94,67 +88,87 @@ data class DashboardUiState(
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     accountRepository: AccountRepository,
-    transactionRepository: TransactionRepository,
-    categoryRepository: CategoryRepository,
-    recurringRuleRepository: RecurringRuleRepository,
+    private val transactionRepository: TransactionRepository,
+    private val categoryRepository: CategoryRepository,
+    private val recurringRuleRepository: RecurringRuleRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
-    val uiState: StateFlow<DashboardUiState> = combine(
-        accountRepository.observeAccountsWithBalance(),
-        transactionRepository.observeTransactions(),
-        categoryRepository.observeCategories(),
-        recurringRuleRepository.observeRules(),
-        transactionRepository.observePendingTransactions(),
-    ) { accounts, transactions, categories, rules, pending ->
-        buildState(accounts, transactions, categories, rules, pending.size)
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-        initialValue = DashboardUiState(date = LocalDate.now(clock)),
+    /** Everything the dashboard combines besides the accounts themselves. */
+    private data class Sources(
+        val totals: DashboardTotals,
+        val recent: List<Transaction>,
+        val categories: List<Category>,
+        val rules: List<RecurringRule>,
+        val pendingCount: Int,
     )
+
+    /**
+     * The account list drives the primary currency and the aggregate windows;
+     * every figure is then computed by the database ([DashboardWindows],
+     * [TransactionRepository.observeDashboardTotals]) instead of loading the
+     * ledger in memory.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val uiState: StateFlow<DashboardUiState> = accountRepository.observeAccountsWithBalance()
+        .flatMapLatest { accounts ->
+            val today = LocalDate.now(clock)
+            val primary = primaryCurrency(accounts)
+            combine(
+                transactionRepository.observeDashboardTotals(
+                    windows = DashboardWindows.around(today, clock.zone),
+                    currency = primary,
+                ),
+                transactionRepository.observeRecentTransactions(RECENT_COUNT),
+                categoryRepository.observeCategories(),
+                recurringRuleRepository.observeRules(),
+                transactionRepository.observePendingTransactions(),
+            ) { totals, recent, categories, rules, pending ->
+                buildState(
+                    accounts = accounts,
+                    primary = primary,
+                    today = today,
+                    sources = Sources(totals, recent, categories, rules, pending.size),
+                )
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = DashboardUiState(date = LocalDate.now(clock)),
+        )
+
+    /**
+     * The primary currency is the one shared by most accounts that count in the
+     * total; multi-currency conversion is a later feature (VISION).
+     */
+    private fun primaryCurrency(accounts: List<AccountWithBalance>): Currency = accounts
+        .filter { !it.account.isArchived && it.account.isIncludedInTotal }
+        .groupingBy { it.account.currency }
+        .eachCount()
+        .maxByOrNull { it.value }?.key
+        ?: DashboardUiState.fallbackCurrency
 
     private fun buildState(
         accounts: List<AccountWithBalance>,
-        transactions: List<Transaction>,
-        categories: List<Category>,
-        rules: List<RecurringRule>,
-        pendingCount: Int,
+        primary: Currency,
+        today: LocalDate,
+        sources: Sources,
     ): DashboardUiState {
-        val today = LocalDate.now(clock)
         val active = accounts.filter { !it.account.isArchived }
-        val included = active.filter { it.account.isIncludedInTotal }
-
-        // The primary currency is the one shared by most accounts that count in
-        // the total; multi-currency conversion is a later feature (VISION).
-        val primary = included
-            .groupingBy { it.account.currency }
-            .eachCount()
-            .maxByOrNull { it.value }?.key
-            ?: DashboardUiState.fallbackCurrency
-        val totalBalance = included
-            .filter { it.account.currency == primary }
+        val totalBalance = active
+            .filter { it.account.isIncludedInTotal && it.account.currency == primary }
             .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.balance) }
 
-        val todayFlow = periodFlow(transactions, primary) { it.isEqual(today) }
-        val monthFlow = periodFlow(transactions, primary) { it.sameMonthAs(today) }
-
-        // "So far this month" against the same span of last month.
-        val monthToDateSpend = spendMagnitude(transactions, primary) {
-            it.sameMonthAs(today) && !it.isAfter(today)
-        }
-        val previousToDate = today.minusMonths(1)
-        val previousSpend = spendMagnitude(transactions, primary) {
-            it.sameMonthAs(previousToDate) && !it.isAfter(previousToDate)
-        }
-        val comparison =
-            if (previousSpend.signum() > 0) monthToDateSpend.subtract(previousSpend) else null
-        val previousReference = previousSpend.takeIf { it.signum() > 0 }
-        val spentMore = monthToDateSpend > previousSpend
+        val totals = sources.totals
+        val previousReference = totals.previousMonthToDateSpend.takeIf { it.signum() > 0 }
+        val comparison = previousReference?.let { totals.monthToDateSpend.subtract(it) }
+        // Meaningful only when a baseline exists, like the two figures above.
+        val spentMore = previousReference != null && totals.monthToDateSpend > previousReference
 
         val accountById = accounts.associate { it.account.id to it.account }
-        val categoryById = categories.associateBy { it.id }
-        val recent = transactions.take(RECENT_COUNT).map { transaction ->
+        val categoryById = sources.categories.associateBy { it.id }
+        val recent = sources.recent.map { transaction ->
             TransactionListItem(
                 transaction = transaction,
                 account = accountById[transaction.accountId],
@@ -169,13 +183,13 @@ class DashboardViewModel @Inject constructor(
             primaryCurrency = primary,
             totalBalance = totalBalance,
             accounts = active,
-            today = todayFlow,
-            month = monthFlow,
+            today = totals.today,
+            month = totals.month,
             monthVsPreviousToDate = comparison,
             previousMonthSpendToDate = previousReference,
             spentMoreThanLastMonth = spentMore,
-            subscriptions = subscriptionsSummary(rules, primary, today),
-            pendingCount = pendingCount,
+            subscriptions = subscriptionsSummary(sources.rules, primary, today),
+            pendingCount = sources.pendingCount,
             recent = recent,
             date = today,
         )
@@ -192,8 +206,8 @@ class DashboardViewModel @Inject constructor(
         }
         if (active.isEmpty()) return SubscriptionsSummary()
 
-        val monthlyTotal = active
-            .filter { it.currency == primary }
+        val primaryRules = active.filter { it.currency == primary }
+        val monthlyTotal = primaryRules
             .fold(BigDecimal.ZERO) { acc, rule ->
                 acc.add(RecurrenceCalculator.monthlyEquivalent(rule) ?: BigDecimal.ZERO)
             }
@@ -206,44 +220,9 @@ class DashboardViewModel @Inject constructor(
                 }
             }
             .minByOrNull { it.date }
-        return SubscriptionsSummary(monthlyTotal, active.size, next)
+        // The count shares the monthlyTotal's currency scope, so the card reads coherently.
+        return SubscriptionsSummary(monthlyTotal, primaryRules.size, next)
     }
-
-    private fun periodFlow(
-        transactions: List<Transaction>,
-        currency: Currency,
-        inWindow: (LocalDate) -> Boolean,
-    ): PeriodFlow {
-        var spend = BigDecimal.ZERO
-        var income = BigDecimal.ZERO
-        transactions.forEach { transaction ->
-            if (transaction.currency != currency) return@forEach
-            if (!inWindow(transaction.localDate)) return@forEach
-            when (transaction.type) {
-                TransactionType.EXPENSE -> spend = spend.add(transaction.amount)
-                TransactionType.INCOME -> income = income.add(transaction.amount)
-                else -> Unit
-            }
-        }
-        return PeriodFlow(spend = spend, income = income)
-    }
-
-    /** Positive magnitude of expenses in the window (expenses are stored negative). */
-    private fun spendMagnitude(
-        transactions: List<Transaction>,
-        currency: Currency,
-        inWindow: (LocalDate) -> Boolean,
-    ): BigDecimal = transactions
-        .filter {
-            it.currency == currency &&
-                it.type == TransactionType.EXPENSE &&
-                inWindow(it.localDate)
-        }
-        .fold(BigDecimal.ZERO) { acc, transaction -> acc.add(transaction.amount) }
-        .negate()
-
-    private fun LocalDate.sameMonthAs(other: LocalDate): Boolean =
-        year == other.year && monthValue == other.monthValue
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

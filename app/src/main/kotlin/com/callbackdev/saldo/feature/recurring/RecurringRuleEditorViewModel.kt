@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.recurring
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.money.MoneyInput
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Account
@@ -76,6 +77,9 @@ sealed interface RecurringRuleEditorEvent {
 
     /** The rule to edit no longer exists: leave the screen. */
     data object RuleMissing : RecurringRuleEditorEvent
+
+    /** A write failed: stay on the screen and let the user retry. */
+    data object WriteFailed : RecurringRuleEditorEvent
 }
 
 @Suppress("TooManyFunctions") // One callback per form field is the natural shape of an editor.
@@ -109,6 +113,9 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
     /** The persisted rule being edited; null in create mode. Preserves untouched fields. */
     private var existing: RecurringRule? = null
     private var userPickedIcon = false
+
+    /** Guards against a double-tap on save creating two rules; reset on failure. */
+    private var isSaving = false
 
     init {
         viewModelScope.launch { load() }
@@ -224,22 +231,28 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
     fun confirmDelete() {
         val rule = existing ?: return
         viewModelScope.launch {
-            recurringRuleRepository.delete(rule)
-            _events.send(RecurringRuleEditorEvent.Deleted)
+            val result = suspendRunCatching { recurringRuleRepository.delete(rule) }
+            _events.send(
+                if (result.isSuccess) RecurringRuleEditorEvent.Deleted else RecurringRuleEditorEvent.WriteFailed,
+            )
         }
     }
 
     fun save() {
         val state = _uiState.value
-        if (state.isLoading) return
+        if (state.isLoading || isSaving) return
         val rule = buildValidRule(state, existing, LocalDate.now(clock))
         if (rule == null) {
             _uiState.update { it.copy(showValidation = true) }
             return
         }
+        isSaving = true
         viewModelScope.launch {
-            recurringRuleRepository.upsert(rule)
-            _events.send(RecurringRuleEditorEvent.Saved)
+            val result = suspendRunCatching { recurringRuleRepository.upsert(rule) }
+            isSaving = false
+            _events.send(
+                if (result.isSuccess) RecurringRuleEditorEvent.Saved else RecurringRuleEditorEvent.WriteFailed,
+            )
         }
     }
 
@@ -276,10 +289,22 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
             note = base?.note,
         )
         // Preserve progress on edit; on create, skip past occurrences so an
-        // existing subscription is not back-filled with history.
+        // existing subscription is not back-filled with history. When the
+        // schedule itself changes, the old watermark no longer lies on the new
+        // cadence: re-seed it so generation resumes aligned (and without
+        // back-filling the new schedule's past occurrences).
+        val scheduleChanged = base != null &&
+            (
+                base.frequency != rule.frequency ||
+                    base.startDate != rule.startDate ||
+                    base.dayOfReference != rule.dayOfReference
+                )
         return rule.copy(
-            lastGeneratedDate = base?.lastGeneratedDate
-                ?: RecurrenceCalculator.latestOccurrenceBefore(rule, today),
+            lastGeneratedDate = if (base == null || scheduleChanged) {
+                RecurrenceCalculator.latestOccurrenceBefore(rule, today)
+            } else {
+                base.lastGeneratedDate
+            },
         )
     }
 

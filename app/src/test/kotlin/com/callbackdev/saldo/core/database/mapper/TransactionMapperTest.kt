@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.core.database.mapper
 
+import com.callbackdev.saldo.core.database.relation.DashboardTotalsRow
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.Currency
 
@@ -61,6 +63,49 @@ class TransactionMapperTest {
         assertEquals(expense.categoryId, restored.categoryId)
         assertEquals(expense.description, restored.description)
         assertEquals(expense.isExcludedFromStats, restored.isExcludedFromStats)
+    }
+
+    @Test
+    fun `round trip preserves the recurring occurrence date`() {
+        val generated = Transaction(
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-12.99"),
+            currency = eur,
+            accountId = 3L,
+            timestamp = Instant.ofEpochMilli(1_700_000_123_000L),
+            zoneOffset = ZoneOffset.ofHours(1),
+            recurringRuleId = 7L,
+            recurringOccurrenceDate = LocalDate.of(2026, 7, 8),
+        )
+
+        val restored = generated.toEntity().toDomain()
+
+        assertEquals(LocalDate.of(2026, 7, 8), restored.recurringOccurrenceDate)
+        assertEquals(7L, restored.recurringRuleId)
+        // Manual movements carry no occurrence.
+        val manual = generated.copy(recurringRuleId = null, recurringOccurrenceDate = null)
+        assertNull(manual.toEntity().recurringOccurrenceEpochDay)
+    }
+
+    @Test
+    fun `dashboard totals map null sums to zero and negate the to-date spends`() {
+        val row = DashboardTotalsRow(
+            todaySpendMinor = -1890L,
+            todayIncomeMinor = null,
+            monthSpendMinor = -11890L,
+            monthIncomeMinor = 500L,
+            monthToDateSpendMinor = -11890L,
+            previousToDateSpendMinor = null,
+        )
+
+        val totals = row.toDomain(eur)
+
+        assertEquals(0, BigDecimal("-18.90").compareTo(totals.today.spend))
+        assertEquals(0, BigDecimal.ZERO.compareTo(totals.today.income))
+        assertEquals(0, BigDecimal("-118.90").compareTo(totals.month.spend))
+        assertEquals(0, BigDecimal("5.00").compareTo(totals.month.income))
+        assertEquals(0, BigDecimal("118.90").compareTo(totals.monthToDateSpend))
+        assertEquals(0, BigDecimal.ZERO.compareTo(totals.previousMonthToDateSpend))
     }
 
     @Test
