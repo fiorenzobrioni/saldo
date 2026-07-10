@@ -21,8 +21,8 @@
     <string name="dashboard_balance_total">Saldo totale</string>
     <!-- Saluti mostrati nell'header della dashboard; uno scelto a caso a ogni apertura. -->
     <string-array name="dashboard_greetings_night">
-        <item>Ancora sveglio? Uno sguardo ai conti.</item>
-        <item>Nottambulo? Bentornato.</item>
+        <item>Ancora in piedi? Uno sguardo ai conti.</item>
+        <item>Notte fonda? Un\'occhiata veloce e a letto.</item>
         <item>I risparmi non dormono mai.</item>
         <item>Un momento di calma per i conti.</item>
         <item>Un ultimo controllo prima di dormire?</item>
@@ -41,7 +41,7 @@
         <item>Come procede la giornata?</item>
         <item>Tutto sotto controllo?</item>
         <item>Un controllo veloce di metà giornata.</item>
-        <item>Stai andando alla grande.</item>
+        <item>Anche le piccole spese contano.</item>
         <item>Buon pomeriggio! Conti in ordine?</item>
     </string-array>
     <string-array name="dashboard_greetings_evening">
@@ -50,7 +50,7 @@
         <item>Tempo di fare il punto.</item>
         <item>Buonasera! Registra le ultime spese.</item>
         <item>Fine giornata: tutto a posto?</item>
-        <item>Rilassati, ai conti pensiamo noi.</item>
+        <item>Un minuto ai conti, poi relax.</item>
     </string-array>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d conto</item>
@@ -82,7 +82,7 @@
     <string name="dashboard_recent_title">Ultimi movimenti</string>
     <string name="dashboard_recent_see_all">Vedi tutti</string>
     <string name="dashboard_recent_empty">Ancora nessun movimento</string>
-    <string name="dashboard_empty_title">Benvenuto in Saldo</string>
+    <string name="dashboard_empty_title">Ti diamo il benvenuto in Saldo</string>
     <string name="dashboard_empty_body">Crea il primo account per iniziare a tracciare i tuoi soldi.</string>
     <string name="dashboard_empty_cta">Crea il primo account</string>
     <string name="dashboard_fab_add">Aggiungi movimento</string>

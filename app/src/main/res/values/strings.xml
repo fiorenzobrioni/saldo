@@ -43,7 +43,7 @@
         <item>How\'s the day going?</item>
         <item>Everything under control?</item>
         <item>A quick midday check-in.</item>
-        <item>You\'re doing great.</item>
+        <item>Small expenses count too.</item>
         <item>Good afternoon! Accounts in order?</item>
     </string-array>
     <string-array name="dashboard_greetings_evening">
@@ -52,7 +52,7 @@
         <item>Time to take stock.</item>
         <item>Good evening! Log the last expenses.</item>
         <item>End of the day: all set?</item>
-        <item>Relax, we\'ve got the accounts.</item>
+        <item>One minute for the accounts, then relax.</item>
     </string-array>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d account</item>
