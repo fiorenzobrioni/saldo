@@ -2,13 +2,16 @@ package com.callbackdev.saldo
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -52,12 +55,24 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themePreferences by userPreferences.themePreferences
                 .collectAsStateWithLifecycle(initialValue = ThemePreferences())
+            val darkTheme = when (themePreferences.mode) {
+                ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+            // The no-arg enableEdgeToEdge above follows the system uiMode, which is
+            // wrong when the in-app theme is forced (dark app over light system left
+            // the status bar icons dark on dark). Re-apply the bar styles keyed to
+            // the resolved theme so icon contrast always matches what is on screen.
+            DisposableEffect(darkTheme) {
+                enableEdgeToEdge(
+                    statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkTheme },
+                    navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { darkTheme },
+                )
+                onDispose {}
+            }
             SaldoTheme(
-                darkTheme = when (themePreferences.mode) {
-                    ThemeMode.SYSTEM -> isSystemInDarkTheme()
-                    ThemeMode.LIGHT -> false
-                    ThemeMode.DARK -> true
-                },
+                darkTheme = darkTheme,
                 dynamicColor = themePreferences.useDynamicColor,
             ) {
                 SaldoApp()
