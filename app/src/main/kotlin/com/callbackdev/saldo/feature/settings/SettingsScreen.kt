@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.Subscriptions
+import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -37,7 +37,7 @@ import com.callbackdev.saldo.core.common.prefs.ThemeMode
 @Composable
 fun SettingsScreen(
     onNavigateToCategories: () -> Unit,
-    onNavigateToSubscriptions: () -> Unit,
+    onNavigateToRecurrences: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -73,10 +73,10 @@ fun SettingsScreen(
 
             SettingsSectionHeader(stringResource(R.string.settings_section_management))
             SettingsEntry(
-                title = stringResource(R.string.settings_subscriptions),
-                hint = stringResource(R.string.settings_subscriptions_hint),
-                icon = Icons.Outlined.Subscriptions,
-                onClick = onNavigateToSubscriptions,
+                title = stringResource(R.string.settings_recurrences),
+                hint = stringResource(R.string.settings_recurrences_hint),
+                icon = Icons.Outlined.EventRepeat,
+                onClick = onNavigateToRecurrences,
             )
             SettingsEntry(
                 title = stringResource(R.string.settings_categories),

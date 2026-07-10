@@ -58,13 +58,16 @@ import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.RecurrenceMode
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.navigation.RecurringRuleEditorRoute
 import java.time.LocalDate
 
 /**
- * Create/edit form for a subscription (recurring expense): a live preview avatar
- * plus name, amount, account, category, frequency, first-charge and optional end
- * date, color and icon. In edit mode it also hosts the delete flow.
+ * Create/edit form for a recurring rule (subscription or recurring income): a
+ * live preview avatar plus name, amount, account, category, frequency,
+ * first-charge and optional end date, color and icon. In edit mode it also
+ * hosts the delete flow. Labels adapt to the rule type; the type itself is
+ * fixed by the hub tab the editor was opened from (or by the edited rule).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,12 +107,14 @@ fun RecurringRuleEditorScreen(
         topBar = {
             TopAppBar(
                 title = {
+                    val isIncome = uiState.type == TransactionType.INCOME
                     Text(
                         stringResource(
-                            if (uiState.isNew) {
-                                R.string.subscription_editor_title_new
-                            } else {
-                                R.string.subscription_editor_title_edit
+                            when {
+                                uiState.isNew && isIncome -> R.string.income_editor_title_new
+                                uiState.isNew -> R.string.subscription_editor_title_new
+                                isIncome -> R.string.income_editor_title_edit
+                                else -> R.string.subscription_editor_title_edit
                             },
                         ),
                     )
@@ -128,7 +133,13 @@ fun RecurringRuleEditorScreen(
             if (!uiState.isLoading) {
                 EditorBottomBar {
                     EditorSaveButton(
-                        text = stringResource(R.string.subscription_editor_save),
+                        text = stringResource(
+                            if (uiState.type == TransactionType.INCOME) {
+                                R.string.income_editor_save
+                            } else {
+                                R.string.subscription_editor_save
+                            },
+                        ),
                         onClick = viewModel::save,
                         enabled = !uiState.isLoading,
                     )
@@ -180,7 +191,8 @@ fun RecurringRuleEditorScreen(
         )
     }
     if (uiState.showDeleteDialog) {
-        DeleteSubscriptionDialog(
+        DeleteRuleDialog(
+            type = uiState.type,
             onConfirm = viewModel::confirmDelete,
             onDismiss = viewModel::dismissDeleteDialog,
         )
@@ -195,18 +207,32 @@ private fun EditorForm(
     onEndDateClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isIncome = uiState.type == TransactionType.INCOME
     Column(modifier = modifier) {
         Spacer(Modifier.height(16.dp))
         PreviewAvatar(uiState = uiState)
         Spacer(Modifier.height(24.dp))
         NameField(
             name = uiState.name,
+            placeholderRes = if (isIncome) {
+                R.string.income_editor_name_hint
+            } else {
+                R.string.subscription_editor_name_hint
+            },
             showError = uiState.showValidation && !uiState.isNameValid,
             onNameChanged = viewModel::onNameChanged,
         )
         Spacer(Modifier.height(12.dp))
         if (uiState.isVariableAmount) {
-            VariableAmountNote()
+            VariableAmountNote(
+                text = stringResource(
+                    if (isIncome) {
+                        R.string.income_editor_variable_amount_note
+                    } else {
+                        R.string.subscription_editor_variable_amount_note
+                    },
+                ),
+            )
         } else {
             AmountField(
                 input = uiState.amountInput,
@@ -218,7 +244,13 @@ private fun EditorForm(
         Spacer(Modifier.height(4.dp))
         SwitchRow(
             title = stringResource(R.string.subscription_editor_variable_amount),
-            subtitle = stringResource(R.string.subscription_editor_variable_amount_hint),
+            subtitle = stringResource(
+                if (isIncome) {
+                    R.string.income_editor_variable_amount_hint
+                } else {
+                    R.string.subscription_editor_variable_amount_hint
+                },
+            ),
             checked = uiState.isVariableAmount,
             onToggle = viewModel::onVariableAmountToggled,
         )
@@ -249,7 +281,13 @@ private fun EditorForm(
                 modifier = Modifier.weight(1f),
             )
             DateField(
-                label = stringResource(R.string.subscription_editor_first_charge),
+                label = stringResource(
+                    if (isIncome) {
+                        R.string.income_editor_first_credit
+                    } else {
+                        R.string.subscription_editor_first_charge
+                    },
+                ),
                 date = uiState.startDate,
                 placeholder = "",
                 onClick = onStartDateClick,
@@ -272,7 +310,7 @@ private fun EditorForm(
         )
         if (!uiState.isNew) {
             Spacer(Modifier.height(32.dp))
-            DeleteButton(onDelete = viewModel::requestDelete)
+            DeleteButton(type = uiState.type, onDelete = viewModel::requestDelete)
         }
         Spacer(Modifier.height(32.dp))
     }
@@ -371,7 +409,7 @@ private fun ModeSelector(
 
 /** Placeholder shown in place of the amount field for a variable-amount rule. */
 @Composable
-private fun VariableAmountNote(modifier: Modifier = Modifier) {
+private fun VariableAmountNote(text: String, modifier: Modifier = Modifier) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = MaterialTheme.shapes.medium,
@@ -388,7 +426,7 @@ private fun VariableAmountNote(modifier: Modifier = Modifier) {
             )
             Spacer(Modifier.size(12.dp))
             Text(
-                text = stringResource(R.string.subscription_editor_variable_amount_note),
+                text = text,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -440,7 +478,7 @@ private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun DeleteButton(onDelete: () -> Unit, modifier: Modifier = Modifier) {
+private fun DeleteButton(type: TransactionType, onDelete: () -> Unit, modifier: Modifier = Modifier) {
     OutlinedButton(onClick = onDelete, modifier = modifier.fillMaxWidth()) {
         Icon(
             imageVector = Icons.Outlined.DeleteOutline,
@@ -449,25 +487,37 @@ private fun DeleteButton(onDelete: () -> Unit, modifier: Modifier = Modifier) {
         )
         Spacer(Modifier.size(8.dp))
         Text(
-            text = stringResource(R.string.subscription_editor_delete),
+            text = stringResource(deleteLabelRes(type)),
             color = MaterialTheme.colorScheme.error,
         )
     }
 }
 
 @Composable
-private fun DeleteSubscriptionDialog(
+private fun DeleteRuleDialog(
+    type: TransactionType,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.subscription_delete_title)) },
+        title = {
+            Text(
+                stringResource(
+                    if (type == TransactionType.INCOME) {
+                        R.string.income_delete_title
+                    } else {
+                        R.string.subscription_delete_title
+                    },
+                ),
+            )
+        },
+        // The body is type-agnostic: it explains rule vs already-recorded movements.
         text = { Text(stringResource(R.string.subscription_delete_body)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(
-                    text = stringResource(R.string.subscription_editor_delete),
+                    text = stringResource(deleteLabelRes(type)),
                     color = MaterialTheme.colorScheme.error,
                 )
             }
@@ -477,3 +527,10 @@ private fun DeleteSubscriptionDialog(
         },
     )
 }
+
+private fun deleteLabelRes(type: TransactionType): Int =
+    if (type == TransactionType.INCOME) {
+        R.string.income_editor_delete
+    } else {
+        R.string.subscription_editor_delete
+    }

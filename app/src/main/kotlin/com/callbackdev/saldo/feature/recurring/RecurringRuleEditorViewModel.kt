@@ -38,10 +38,11 @@ import java.time.LocalDate
 import java.util.Currency
 import javax.inject.Inject
 
-/** Immutable UI state of the subscription (recurring-rule) editor. */
+/** Immutable UI state of the recurring-rule (subscription or income) editor. */
 data class RecurringRuleEditorUiState(
     val isLoading: Boolean = true,
     val isNew: Boolean = true,
+    val type: TransactionType = TransactionType.EXPENSE,
     val name: String = "",
     val amountInput: String = "",
     val accountId: Long? = null,
@@ -67,6 +68,11 @@ data class RecurringRuleEditorUiState(
 
     companion object {
         const val DEFAULT_ICON = "subscriptions"
+        const val DEFAULT_INCOME_ICON = "payments"
+
+        /** The default avatar icon for a rule of [type]. */
+        fun defaultIcon(type: TransactionType): String =
+            if (type == TransactionType.INCOME) DEFAULT_INCOME_ICON else DEFAULT_ICON
     }
 }
 
@@ -99,10 +105,18 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
 
     val frequencies: List<RecurrenceFrequency> = RecurrenceFrequency.entries
 
+    /** The rule type on create, taken from the hub tab the editor was opened from. */
+    private val initialType: TransactionType = route.initialTypeName
+        ?.let { name -> TransactionType.entries.firstOrNull { it.name == name } }
+        ?.takeIf { it == TransactionType.EXPENSE || it == TransactionType.INCOME }
+        ?: TransactionType.EXPENSE
+
     private val _uiState = MutableStateFlow(
         RecurringRuleEditorUiState(
             isNew = route.ruleId == null,
+            type = initialType,
             startDate = LocalDate.now(clock),
+            icon = RecurringRuleEditorUiState.defaultIcon(initialType),
         ),
     )
     val uiState: StateFlow<RecurringRuleEditorUiState> = _uiState.asStateFlow()
@@ -125,18 +139,18 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         val accounts = accountRepository.observeAccountsWithBalance().first()
             .map { it.account }
             .filter { !it.isArchived }
-        val categories = categoryRepository.observeCategories().first()
-            .filter { it.type == CategoryType.EXPENSE || it.type == CategoryType.BOTH }
+        val allCategories = categoryRepository.observeCategories().first()
 
         val ruleId = route.ruleId
         if (ruleId == null) {
+            val categories = allCategories.forRuleType(initialType)
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     accounts = accounts,
                     accountId = accounts.firstOrNull()?.id,
                     categories = categories,
-                    categoryId = defaultCategoryId(categories),
+                    categoryId = defaultCategoryId(categories, initialType),
                 )
             }
             return
@@ -153,11 +167,12 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
             it.copy(
                 isLoading = false,
                 isNew = false,
+                type = rule.type,
                 name = rule.name,
                 amountInput = rule.amount?.stripTrailingZeros()?.toPlainString().orEmpty(),
                 accounts = accounts,
                 accountId = rule.accountId,
-                categories = categories,
+                categories = allCategories.forRuleType(rule.type),
                 categoryId = rule.categoryId,
                 frequency = rule.frequency,
                 startDate = rule.startDate,
@@ -165,9 +180,15 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
                 mode = rule.mode,
                 isVariableAmount = rule.isVariableAmount,
                 color = rule.color ?: CategoryVisuals.colors.first(),
-                icon = rule.icon ?: RecurringRuleEditorUiState.DEFAULT_ICON,
+                icon = rule.icon ?: RecurringRuleEditorUiState.defaultIcon(rule.type),
             )
         }
+    }
+
+    /** Categories a rule of [type] can be filed under (its own type, plus "both"). */
+    private fun List<Category>.forRuleType(type: TransactionType): List<Category> {
+        val own = if (type == TransactionType.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
+        return filter { it.type == own || it.type == CategoryType.BOTH }
     }
 
     fun onNameChanged(name: String) = _uiState.update { it.copy(name = name) }
@@ -273,7 +294,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         val rule = RecurringRule(
             id = base?.id ?: 0L,
             name = state.name.trim(),
-            type = TransactionType.EXPENSE,
+            type = state.type,
             currency = account.currency,
             accountId = account.id,
             frequency = state.frequency,
@@ -308,8 +329,13 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         )
     }
 
-    private fun defaultCategoryId(categories: List<Category>): Long? =
-        categories.firstOrNull { it.icon == RecurringRuleEditorUiState.DEFAULT_ICON }?.id
+    /**
+     * Preselects the natural category for a new rule: the seeded "Subscriptions"
+     * category for expenses, "Salary" for incomes (both matched by icon, which
+     * survives renames). Null when the user deleted it.
+     */
+    private fun defaultCategoryId(categories: List<Category>, type: TransactionType): Long? =
+        categories.firstOrNull { it.icon == RecurringRuleEditorUiState.defaultIcon(type) }?.id
 
     private companion object {
         const val DEFAULT_FRACTION_DIGITS = 2

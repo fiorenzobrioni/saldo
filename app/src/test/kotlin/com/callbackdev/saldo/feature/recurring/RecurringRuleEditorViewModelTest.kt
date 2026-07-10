@@ -63,6 +63,22 @@ class RecurringRuleEditorViewModelTest {
         icon = "subscriptions",
     )
 
+    private val salaryCategory = Category(
+        id = 20L,
+        name = "Stipendio",
+        type = CategoryType.INCOME,
+        color = 0x66BB6A,
+        icon = "payments",
+    )
+
+    private val bothCategory = Category(
+        id = 30L,
+        name = "Varie",
+        type = CategoryType.BOTH,
+        color = 0x26A69A,
+        icon = "category",
+    )
+
     private fun viewModel(
         route: RecurringRuleEditorRoute = RecurringRuleEditorRoute(),
         accounts: List<Account> = listOf(account(1L, eur), account(2L, jpy)),
@@ -136,6 +152,89 @@ class RecurringRuleEditorViewModelTest {
         viewModel.save()
 
         assertNull(saved.captured.lastGeneratedDate)
+    }
+
+    @Test
+    fun `a new income rule filters categories by type and defaults to the salary category`() = runTest {
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(initialTypeName = TransactionType.INCOME.name),
+            categories = listOf(subscriptionsCategory, salaryCategory, bothCategory),
+        )
+
+        with(viewModel.uiState.value) {
+            assertEquals(TransactionType.INCOME, type)
+            assertEquals(listOf(20L, 30L), categories.map { it.id })
+            assertEquals(20L, categoryId)
+            assertEquals("payments", icon)
+        }
+    }
+
+    @Test
+    fun `saving a new income rule builds an income-typed rule`() = runTest {
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(initialTypeName = TransactionType.INCOME.name),
+            categories = listOf(subscriptionsCategory, salaryCategory),
+        )
+
+        viewModel.onNameChanged("Stipendio")
+        viewModel.onAmountChanged("2000")
+        viewModel.save()
+
+        with(saved.captured) {
+            assertEquals(TransactionType.INCOME, type)
+            assertEquals(BigDecimal("2000"), amount)
+            assertEquals(20L, categoryId)
+        }
+    }
+
+    @Test
+    fun `editing an income rule keeps its type and filters categories accordingly`() = runTest {
+        val existing = RecurringRule(
+            id = 9L,
+            name = "Stipendio",
+            type = TransactionType.INCOME,
+            currency = eur,
+            accountId = 1L,
+            frequency = RecurrenceFrequency.MONTHLY,
+            startDate = LocalDate.of(2026, 1, 27),
+            amount = BigDecimal("2000.00"),
+            categoryId = 20L,
+            dayOfReference = 27,
+            lastGeneratedDate = LocalDate.of(2026, 6, 27),
+        )
+        coEvery { recurringRuleRepository.getRule(9L) } returns existing
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 9L
+
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(ruleId = 9L),
+            categories = listOf(subscriptionsCategory, salaryCategory, bothCategory),
+        )
+        with(viewModel.uiState.value) {
+            assertEquals(TransactionType.INCOME, type)
+            assertEquals(listOf(20L, 30L), categories.map { it.id })
+        }
+
+        viewModel.onAmountChanged("2100")
+        viewModel.save()
+
+        assertEquals(TransactionType.INCOME, saved.captured.type)
+        assertEquals(BigDecimal("2100"), saved.captured.amount)
+    }
+
+    @Test
+    fun `an unknown or missing initial type falls back to expense`() = runTest {
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(initialTypeName = "TRANSFER"),
+            categories = listOf(subscriptionsCategory, salaryCategory),
+        )
+
+        with(viewModel.uiState.value) {
+            assertEquals(TransactionType.EXPENSE, type)
+            assertEquals(listOf(10L), categories.map { it.id })
+        }
     }
 
     @Test

@@ -203,8 +203,8 @@
     <string name="category_reassign_confirm">Reassign and delete</string>
 
     <!-- Subscriptions / recurrences (Phase 6) -->
-    <string name="settings_subscriptions">Subscriptions</string>
-    <string name="settings_subscriptions_hint">Recurring expenses and their cost</string>
+    <string name="settings_recurrences">Recurring</string>
+    <string name="settings_recurrences_hint">Subscriptions and recurring income</string>
     <string name="recurrence_daily">Daily</string>
     <string name="recurrence_weekly">Weekly</string>
     <string name="recurrence_monthly">Monthly</string>
@@ -212,7 +212,9 @@
     <string name="recurrence_quarterly">Quarterly</string>
     <string name="recurrence_semiannual">Semi-annual</string>
     <string name="recurrence_annual">Yearly</string>
-    <string name="subscriptions_title">Subscriptions</string>
+    <string name="recurrences_title">Recurring</string>
+    <string name="recurrences_tab_subscriptions">Subscriptions</string>
+    <string name="recurrences_tab_incomes">Income</string>
     <string name="subscriptions_new">New subscription</string>
     <string name="subscriptions_this_month">This month</string>
     <plurals name="subscriptions_active_count">
@@ -231,6 +233,17 @@
     <string name="subscriptions_prorated_note">Non-monthly costs are spread over the month for the total.</string>
     <string name="subscriptions_empty_title">No subscriptions yet</string>
     <string name="subscriptions_empty_body">Add your recurring expenses to see how much they cost each month and over a year.</string>
+    <string name="incomes_new">New recurring income</string>
+    <plurals name="incomes_active_count">
+        <item quantity="one">%1$d recurring income</item>
+        <item quantity="other">%1$d recurring incomes</item>
+    </plurals>
+    <string name="incomes_sort_next_credit">By next credit</string>
+    <string name="incomes_sort_amount">By amount</string>
+    <string name="incomes_credited_on">credited on %1$s</string>
+    <string name="incomes_prorated_note">Non-monthly amounts are spread over the month for the total.</string>
+    <string name="incomes_empty_title">No recurring income yet</string>
+    <string name="incomes_empty_body">Add your salary, rent received or other regular income to see it at a glance.</string>
     <string name="subscription_editor_title_new">New subscription</string>
     <string name="subscription_editor_title_edit">Edit subscription</string>
     <string name="subscription_editor_save">Save subscription</string>
@@ -261,6 +274,15 @@
     <string name="subscription_editor_delete">Delete subscription</string>
     <string name="subscription_delete_title">Delete subscription?</string>
     <string name="subscription_delete_body">The rule will be removed and no new movements will be generated. Movements already recorded are kept.</string>
+    <string name="income_editor_title_new">New recurring income</string>
+    <string name="income_editor_title_edit">Edit recurring income</string>
+    <string name="income_editor_save">Save income</string>
+    <string name="income_editor_name_hint">Salary, rent, pension…</string>
+    <string name="income_editor_first_credit">First credit</string>
+    <string name="income_editor_variable_amount_hint">You confirm the amount at each credit</string>
+    <string name="income_editor_variable_amount_note">The amount will be asked when the credit is due.</string>
+    <string name="income_editor_delete">Delete recurring income</string>
+    <string name="income_delete_title">Delete recurring income?</string>
     <string name="pending_title">To confirm</string>
     <string name="pending_amount_to_enter">Amount to enter</string>
     <string name="pending_confirm">Confirm</string>

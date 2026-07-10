@@ -205,8 +205,8 @@
     <string name="category_reassign_confirm">Riassegna ed elimina</string>
 
     <!-- Abbonamenti / ricorrenze (Fase 6) -->
-    <string name="settings_subscriptions">Abbonamenti</string>
-    <string name="settings_subscriptions_hint">Spese ricorrenti e il loro costo</string>
+    <string name="settings_recurrences">Ricorrenze</string>
+    <string name="settings_recurrences_hint">Abbonamenti ed entrate ricorrenti</string>
     <string name="recurrence_daily">Giornaliero</string>
     <string name="recurrence_weekly">Settimanale</string>
     <string name="recurrence_monthly">Mensile</string>
@@ -214,7 +214,9 @@
     <string name="recurrence_quarterly">Trimestrale</string>
     <string name="recurrence_semiannual">Semestrale</string>
     <string name="recurrence_annual">Annuale</string>
-    <string name="subscriptions_title">Abbonamenti</string>
+    <string name="recurrences_title">Ricorrenze</string>
+    <string name="recurrences_tab_subscriptions">Abbonamenti</string>
+    <string name="recurrences_tab_incomes">Entrate</string>
     <string name="subscriptions_new">Nuovo abbonamento</string>
     <string name="subscriptions_this_month">Questo mese</string>
     <plurals name="subscriptions_active_count">
@@ -234,6 +236,18 @@
     <string name="subscriptions_prorated_note">I costi non mensili sono ripartiti sul mese per il totale.</string>
     <string name="subscriptions_empty_title">Nessun abbonamento</string>
     <string name="subscriptions_empty_body">Aggiungi le tue spese ricorrenti per vedere quanto costano ogni mese e in un anno.</string>
+    <string name="incomes_new">Nuova entrata ricorrente</string>
+    <plurals name="incomes_active_count">
+        <item quantity="one">%1$d entrata ricorrente</item>
+        <item quantity="many">%1$d entrate ricorrenti</item>
+        <item quantity="other">%1$d entrate ricorrenti</item>
+    </plurals>
+    <string name="incomes_sort_next_credit">Per prossimo accredito</string>
+    <string name="incomes_sort_amount">Per importo</string>
+    <string name="incomes_credited_on">accredito il %1$s</string>
+    <string name="incomes_prorated_note">Gli importi non mensili sono ripartiti sul mese per il totale.</string>
+    <string name="incomes_empty_title">Nessuna entrata ricorrente</string>
+    <string name="incomes_empty_body">Aggiungi stipendio, affitti attivi o altre entrate regolari per vederle a colpo d\'occhio.</string>
     <string name="subscription_editor_title_new">Nuovo abbonamento</string>
     <string name="subscription_editor_title_edit">Modifica abbonamento</string>
     <string name="subscription_editor_save">Salva abbonamento</string>
@@ -264,6 +278,15 @@
     <string name="subscription_editor_delete">Elimina abbonamento</string>
     <string name="subscription_delete_title">Eliminare l\'abbonamento?</string>
     <string name="subscription_delete_body">La regola verrà rimossa e non genererà più movimenti. I movimenti già registrati restano.</string>
+    <string name="income_editor_title_new">Nuova entrata ricorrente</string>
+    <string name="income_editor_title_edit">Modifica entrata ricorrente</string>
+    <string name="income_editor_save">Salva entrata</string>
+    <string name="income_editor_name_hint">Stipendio, affitto attivo, pensione…</string>
+    <string name="income_editor_first_credit">Primo accredito</string>
+    <string name="income_editor_variable_amount_hint">Confermi l\'importo a ogni accredito</string>
+    <string name="income_editor_variable_amount_note">L\'importo verrà chiesto quando l\'accredito è previsto.</string>
+    <string name="income_editor_delete">Elimina entrata ricorrente</string>
+    <string name="income_delete_title">Eliminare l\'entrata ricorrente?</string>
     <string name="pending_title">Da confermare</string>
     <string name="pending_amount_to_enter">Importo da inserire</string>
     <string name="pending_confirm">Conferma</string>
