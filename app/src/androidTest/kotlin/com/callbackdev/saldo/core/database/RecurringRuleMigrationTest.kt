@@ -8,6 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.callbackdev.saldo.core.database.migration.MIGRATION_1_2
 import com.callbackdev.saldo.core.database.migration.MIGRATION_2_3
 import com.callbackdev.saldo.core.database.migration.MIGRATION_3_4
+import com.callbackdev.saldo.core.database.migration.MIGRATION_4_5
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -165,6 +166,37 @@ class RecurringRuleMigrationTest {
             // Manual movements are untouched.
             assertTrue(cursor.moveToNext())
             assertTrue(cursor.isNull(0))
+            assertTrue(cursor.isNull(1))
+        }
+    }
+
+    @Test
+    fun migrate4To5_addsLastReminder_defaultingToNull() {
+        val dbName = "migration-test-4-5"
+
+        helper.createDatabase(dbName, 4).use { db ->
+            db.insert(
+                "recurring_rules",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("name", "Netflix")
+                    put("type", "EXPENSE")
+                    put("currency", "EUR")
+                    put("accountId", 1L)
+                    put("frequency", "MONTHLY")
+                    put("startDateEpochDay", 20_000L)
+                    put("mode", "AUTOMATIC")
+                    put("isVariableAmount", 0)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 5, true, MIGRATION_4_5)
+
+        db.query("SELECT name, lastReminderEpochDay FROM recurring_rules").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Netflix", cursor.getString(0))
+            // Existing rules have never been reminded.
             assertTrue(cursor.isNull(1))
         }
     }

@@ -306,6 +306,22 @@
         <item quantity="other">%1$d charges to confirm</item>
     </plurals>
     <string name="notif_confirm_body">Tap to confirm or skip them.</string>
+    <string name="notif_channel_upcoming_name">Upcoming renewals</string>
+    <plurals name="notif_upcoming_expense_title">
+        <item quantity="one">%1$s renews tomorrow</item>
+        <item quantity="other">%1$s renews in %2$d days</item>
+    </plurals>
+    <string name="notif_upcoming_expense_today">%1$s renews today</string>
+    <plurals name="notif_upcoming_income_title">
+        <item quantity="one">%1$s arrives tomorrow</item>
+        <item quantity="other">%1$s arrives in %2$d days</item>
+    </plurals>
+    <string name="notif_upcoming_income_today">%1$s arrives today</string>
+    <plurals name="notif_upcoming_summary_title">
+        <item quantity="one">%1$d upcoming renewal</item>
+        <item quantity="other">%1$d upcoming renewals</item>
+    </plurals>
+    <string name="notif_upcoming_body_variable">Variable amount</string>
 
     <!-- Default categories seeded on first launch (Phase 1). Editable by the user afterwards. -->
     <string name="seed_category_home">Home</string>
@@ -334,9 +350,16 @@
     <string name="editor_write_failed">Something went wrong. Please try again.</string>
     <string name="editor_amount_placeholder" translatable="false">0</string>
 
-    <!-- Settings: appearance -->
+    <!-- Settings: appearance and notifications -->
     <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_notifications">Notifications</string>
     <string name="settings_section_management">Management</string>
+    <string name="settings_renewal_reminder">Upcoming charge reminder</string>
+    <string name="settings_renewal_reminder_hint">Get notified before subscriptions renew and recurring income arrives</string>
+    <plurals name="settings_lead_days_option">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>

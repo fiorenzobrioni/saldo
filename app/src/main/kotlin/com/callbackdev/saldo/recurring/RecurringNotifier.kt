@@ -13,18 +13,22 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.GeneratedMovement
+import com.callbackdev.saldo.core.domain.usecase.UpcomingRenewal
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Posts notifications for movements created by the background generation worker:
- * an informative one for automatic movements, and a confirmation one for pending
- * movements (confirm mode / variable amount). Tapping either opens the app, where
- * the pending movements can be confirmed or skipped.
+ * Posts notifications for movements created by the background generation worker
+ * (an informative one for automatic movements, a confirmation one for pending
+ * movements) and the opt-in pre-renewal reminder for upcoming charges/credits
+ * ("Netflix renews in 3 days"). Tapping any of them opens the app, where the
+ * pending movements can be confirmed or skipped.
  *
  * On API 33+ posting is a no-op until the user grants POST_NOTIFICATIONS, so no
  * permission check is needed here.
@@ -45,6 +49,11 @@ class RecurringNotifier @Inject constructor(
         manager.createNotificationChannel(
             NotificationChannelCompat.Builder(CHANNEL_CONFIRM, NotificationManagerCompat.IMPORTANCE_DEFAULT)
                 .setName(context.getString(R.string.notif_channel_confirm_name))
+                .build(),
+        )
+        manager.createNotificationChannel(
+            NotificationChannelCompat.Builder(CHANNEL_UPCOMING, NotificationManagerCompat.IMPORTANCE_DEFAULT)
+                .setName(context.getString(R.string.notif_channel_upcoming_name))
                 .build(),
         )
     }
@@ -84,6 +93,56 @@ class RecurringNotifier @Inject constructor(
         }
     }
 
+    /**
+     * Posts the pre-renewal reminder: a named notification for a single upcoming
+     * charge/credit, or one summary for several. Fixed id, replaced on repost.
+     */
+    fun notifyUpcoming(renewals: List<UpcomingRenewal>) {
+        val renewal = renewals.singleOrNull()
+        when {
+            renewals.isEmpty() -> return
+
+            renewal != null -> post(
+                id = ID_UPCOMING,
+                channelId = CHANNEL_UPCOMING,
+                title = renewal.title(),
+                body = renewal.amount?.let { MoneyFormatter.format(it, renewal.currency) }
+                    ?: context.getString(R.string.notif_upcoming_body_variable),
+            )
+
+            else -> post(
+                id = ID_UPCOMING,
+                channelId = CHANNEL_UPCOMING,
+                title = context.resources.getQuantityString(
+                    R.plurals.notif_upcoming_summary_title,
+                    renewals.size,
+                    renewals.size,
+                ),
+                body = renewals.joinToString(separator = ", ") { it.ruleName },
+            )
+        }
+    }
+
+    private fun UpcomingRenewal.title(): String {
+        val isIncome = type == TransactionType.INCOME
+        return when {
+            daysUntil == 0 && isIncome -> context.getString(R.string.notif_upcoming_income_today, ruleName)
+            daysUntil == 0 -> context.getString(R.string.notif_upcoming_expense_today, ruleName)
+            isIncome -> context.resources.getQuantityString(
+                R.plurals.notif_upcoming_income_title,
+                daysUntil,
+                ruleName,
+                daysUntil,
+            )
+            else -> context.resources.getQuantityString(
+                R.plurals.notif_upcoming_expense_title,
+                daysUntil,
+                ruleName,
+                daysUntil,
+            )
+        }
+    }
+
     // Guarded by hasNotificationPermission(); lint's flow analysis is intraprocedural.
     @SuppressLint("MissingPermission")
     private fun post(id: Int, channelId: String, title: String, body: String) {
@@ -118,7 +177,9 @@ class RecurringNotifier @Inject constructor(
     private companion object {
         const val CHANNEL_ACTIVITY = "recurring_activity"
         const val CHANNEL_CONFIRM = "recurring_confirm"
+        const val CHANNEL_UPCOMING = "recurring_upcoming"
         const val ID_ACTIVITY = 1001
         const val ID_CONFIRM = 1002
+        const val ID_UPCOMING = 1003
     }
 }

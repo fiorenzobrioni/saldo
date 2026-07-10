@@ -313,6 +313,25 @@
         <item quantity="other">%1$d addebiti da confermare</item>
     </plurals>
     <string name="notif_confirm_body">Tocca per confermarli o saltarli.</string>
+    <string name="notif_channel_upcoming_name">Rinnovi in arrivo</string>
+    <plurals name="notif_upcoming_expense_title">
+        <item quantity="one">%1$s si rinnova domani</item>
+        <item quantity="many">%1$s si rinnova tra %2$d giorni</item>
+        <item quantity="other">%1$s si rinnova tra %2$d giorni</item>
+    </plurals>
+    <string name="notif_upcoming_expense_today">%1$s si rinnova oggi</string>
+    <plurals name="notif_upcoming_income_title">
+        <item quantity="one">%1$s in arrivo domani</item>
+        <item quantity="many">%1$s in arrivo tra %2$d giorni</item>
+        <item quantity="other">%1$s in arrivo tra %2$d giorni</item>
+    </plurals>
+    <string name="notif_upcoming_income_today">%1$s in arrivo oggi</string>
+    <plurals name="notif_upcoming_summary_title">
+        <item quantity="one">%1$d rinnovo in arrivo</item>
+        <item quantity="many">%1$d rinnovi in arrivo</item>
+        <item quantity="other">%1$d rinnovi in arrivo</item>
+    </plurals>
+    <string name="notif_upcoming_body_variable">Importo variabile</string>
 
     <!-- Categorie predefinite create alla prima apertura (Fase 1). Modificabili dall'utente. -->
     <string name="seed_category_home">Casa</string>
@@ -342,7 +361,15 @@
 
     <!-- Settings: appearance -->
     <string name="settings_section_appearance">Aspetto</string>
+    <string name="settings_section_notifications">Notifiche</string>
     <string name="settings_section_management">Gestione</string>
+    <string name="settings_renewal_reminder">Promemoria rinnovi</string>
+    <string name="settings_renewal_reminder_hint">Avvisa prima del rinnovo degli abbonamenti e degli accrediti ricorrenti</string>
+    <plurals name="settings_lead_days_option">
+        <item quantity="one">%1$d giorno</item>
+        <item quantity="many">%1$d giorni</item>
+        <item quantity="other">%1$d giorni</item>
+    </plurals>
     <string name="settings_theme_system">Sistema</string>
     <string name="settings_theme_light">Chiaro</string>
     <string name="settings_theme_dark">Scuro</string>

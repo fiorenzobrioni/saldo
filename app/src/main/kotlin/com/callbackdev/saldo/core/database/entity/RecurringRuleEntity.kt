@@ -14,6 +14,8 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
  * ([java.time.LocalDate.toEpochDay]); [amountMinor] is null for variable-amount
  * rules. [color] (0xRRGGBB) and [icon] (Material Symbols key) drive the
  * subscription avatar and were added in schema version 2 (both nullable).
+ * [lastReminderEpochDay] (schema version 5) is the occurrence date the last
+ * pre-renewal reminder was posted for, so each occurrence is reminded once.
  */
 @Entity(
     tableName = "recurring_rules",
@@ -56,4 +58,6 @@ data class RecurringRuleEntity(
     val color: Int? = null,
     val icon: String? = null,
     val note: String? = null,
+    @ColumnInfo(name = "lastReminderEpochDay")
+    val lastReminderEpochDay: Long? = null,
 )

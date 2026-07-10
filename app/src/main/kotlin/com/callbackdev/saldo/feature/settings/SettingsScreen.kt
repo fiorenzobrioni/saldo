@@ -26,11 +26,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,6 +44,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val themePreferences by viewModel.themePreferences.collectAsStateWithLifecycle()
+    val renewalReminder by viewModel.renewalReminderPreferences.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier,
@@ -70,6 +73,25 @@ fun SettingsScreen(
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
+
+            SettingsSectionHeader(stringResource(R.string.settings_section_notifications))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_renewal_reminder)) },
+                supportingContent = { Text(stringResource(R.string.settings_renewal_reminder_hint)) },
+                trailingContent = {
+                    Switch(
+                        checked = renewalReminder.enabled,
+                        onCheckedChange = viewModel::onRenewalReminderChanged,
+                    )
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            )
+            if (renewalReminder.enabled) {
+                RenewalLeadDaysSelector(
+                    selected = renewalReminder.leadDays,
+                    onSelected = viewModel::onRenewalLeadDaysSelected,
+                )
+            }
 
             SettingsSectionHeader(stringResource(R.string.settings_section_management))
             SettingsEntry(
@@ -121,6 +143,31 @@ private fun ThemeModeSelector(
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
             ) {
                 Text(stringResource(labelRes))
+            }
+        }
+    }
+}
+
+/** Lead-time choice for the pre-renewal reminder, shown only while it is enabled. */
+@Composable
+private fun RenewalLeadDaysSelector(
+    selected: Int,
+    onSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val options = RenewalReminderPreferences.allowedLeadDays
+    SingleChoiceSegmentedButtonRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    ) {
+        options.forEachIndexed { index, days ->
+            SegmentedButton(
+                selected = selected == days,
+                onClick = { onSelected(days) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+            ) {
+                Text(pluralStringResource(R.plurals.settings_lead_days_option, days, days))
             }
         }
     }
