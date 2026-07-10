@@ -1,5 +1,7 @@
 package com.callbackdev.saldo.feature.recurring
 
+import androidx.annotation.PluralsRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.Info
@@ -29,19 +32,23 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,30 +61,39 @@ import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import java.math.BigDecimal
 import java.util.Currency
 
 /**
- * The subscriptions view: this month's total and the annual projection at the
- * top, then the active recurring expenses sorted by next charge (or by cost or
- * name). Non-monthly costs are amortized to a monthly figure in the totals.
+ * The recurrences hub: a Subscriptions tab (recurring expenses) and an Incomes
+ * tab (salary, rent received...), each with this month's total, the annual
+ * projection and the active rules sorted by next charge (or by amount or name).
+ * Non-monthly amounts are amortized to a monthly figure in the totals.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SubscriptionsScreen(
+fun RecurrencesScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToNewSubscription: () -> Unit,
-    onNavigateToEditSubscription: (Long) -> Unit,
+    onNavigateToNewRule: (TransactionType) -> Unit,
+    onNavigateToEditRule: (Long) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SubscriptionsViewModel = hiltViewModel(),
+    viewModel: RecurrencesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    val tabType = if (selectedTab == 0) TransactionType.EXPENSE else TransactionType.INCOME
+    val section = uiState.section(tabType)
+    val newRuleLabel = stringResource(
+        if (tabType == TransactionType.INCOME) R.string.incomes_new else R.string.subscriptions_new,
+    )
 
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.subscriptions_title)) },
+                title = { Text(stringResource(R.string.recurrences_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -89,40 +105,64 @@ fun SubscriptionsScreen(
             )
         },
         floatingActionButton = {
-            if (!uiState.isLoading && !uiState.isEmpty) {
+            if (!uiState.isLoading && !section.isEmpty) {
                 ExtendedFloatingActionButton(
-                    onClick = onNavigateToNewSubscription,
+                    onClick = { onNavigateToNewRule(tabType) },
                     icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.subscriptions_new)) },
+                    text = { Text(newRuleLabel) },
                 )
             }
         },
     ) { innerPadding ->
-        when {
-            uiState.isLoading -> LoadingState(Modifier.padding(innerPadding))
+        Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            PrimaryTabRow(selectedTabIndex = selectedTab) {
+                Tab(
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
+                    text = { Text(stringResource(R.string.recurrences_tab_subscriptions)) },
+                )
+                Tab(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    text = { Text(stringResource(R.string.recurrences_tab_incomes)) },
+                )
+            }
 
-            uiState.isEmpty -> SubscriptionsEmptyState(
-                onCreate = onNavigateToNewSubscription,
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-            )
+            when {
+                uiState.isLoading -> LoadingState()
 
-            else -> SubscriptionsContent(
-                uiState = uiState,
-                onSortSelected = viewModel::onSortSelected,
-                onItemClick = onNavigateToEditSubscription,
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-            )
+                section.isEmpty -> RecurrencesEmptyState(
+                    type = tabType,
+                    actionLabel = newRuleLabel,
+                    onCreate = { onNavigateToNewRule(tabType) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+
+                else -> RecurrencesContent(
+                    section = section,
+                    type = tabType,
+                    sort = uiState.sort,
+                    today = uiState.today,
+                    onSortSelected = viewModel::onSortSelected,
+                    onItemClick = onNavigateToEditRule,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun SubscriptionsContent(
-    uiState: SubscriptionsUiState,
+private fun RecurrencesContent(
+    section: RecurrenceSection,
+    type: TransactionType,
+    sort: SubscriptionSort,
+    today: java.time.LocalDate,
     onSortSelected: (SubscriptionSort) -> Unit,
     onItemClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isIncome = type == TransactionType.INCOME
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
@@ -130,30 +170,57 @@ private fun SubscriptionsContent(
     ) {
         item {
             MonthlyTotalCard(
-                total = uiState.monthlyTotal,
-                currency = uiState.currency,
-                activeCount = uiState.activeCount,
+                total = section.monthlyTotal,
+                currency = section.currency,
+                activeCount = section.activeCount,
+                countRes = if (isIncome) {
+                    R.plurals.incomes_active_count
+                } else {
+                    R.plurals.subscriptions_active_count
+                },
             )
         }
-        item { AnnualProjectionCard(annual = uiState.annualProjection, currency = uiState.currency) }
-        item { SortHeader(sort = uiState.sort, onSortSelected = onSortSelected) }
         item {
-            SubscriptionsListCard(
-                items = uiState.items,
-                today = uiState.today,
+            AnnualProjectionCard(
+                annual = section.annualProjection,
+                currency = section.currency,
+                icon = if (isIncome) Icons.AutoMirrored.Outlined.TrendingUp else Icons.Outlined.EventRepeat,
+            )
+        }
+        item {
+            SortHeader(
+                sort = sort,
+                type = type,
+                onSortSelected = onSortSelected,
+            )
+        }
+        item {
+            RecurrencesListCard(
+                items = section.items,
+                type = type,
+                today = today,
                 onItemClick = onItemClick,
             )
         }
-        item { FooterNote() }
+        item {
+            FooterNote(
+                textRes = if (isIncome) {
+                    R.string.incomes_prorated_note
+                } else {
+                    R.string.subscriptions_prorated_note
+                },
+            )
+        }
     }
 }
 
-/** Neutral hero card: the normalized monthly cost and the active count. */
+/** Neutral hero card: the normalized monthly amount and the active count. */
 @Composable
 private fun MonthlyTotalCard(
     total: BigDecimal,
     currency: Currency,
     activeCount: Int,
+    @PluralsRes countRes: Int,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -178,11 +245,7 @@ private fun MonthlyTotalCard(
                 )
                 Spacer(Modifier.size(12.dp))
                 Text(
-                    text = pluralStringResource(
-                        R.plurals.subscriptions_active_count,
-                        activeCount,
-                        activeCount,
-                    ),
+                    text = pluralStringResource(countRes, activeCount, activeCount),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 6.dp),
@@ -197,6 +260,7 @@ private fun MonthlyTotalCard(
 private fun AnnualProjectionCard(
     annual: BigDecimal,
     currency: Currency,
+    icon: ImageVector,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -211,7 +275,7 @@ private fun AnnualProjectionCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                imageVector = Icons.Outlined.EventRepeat,
+                imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.size(28.dp),
@@ -236,6 +300,7 @@ private fun AnnualProjectionCard(
 @Composable
 private fun SortHeader(
     sort: SubscriptionSort,
+    type: TransactionType,
     onSortSelected: (SubscriptionSort) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -247,7 +312,7 @@ private fun SortHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = stringResource(sort.labelRes),
+            text = stringResource(sort.labelRes(type)),
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.weight(1f),
         )
@@ -261,7 +326,7 @@ private fun SortHeader(
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 SubscriptionSort.entries.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(stringResource(option.labelRes)) },
+                        text = { Text(stringResource(option.labelRes(type))) },
                         onClick = {
                             onSortSelected(option)
                             menuOpen = false
@@ -274,8 +339,9 @@ private fun SortHeader(
 }
 
 @Composable
-private fun SubscriptionsListCard(
+private fun RecurrencesListCard(
     items: List<SubscriptionItem>,
+    type: TransactionType,
     today: java.time.LocalDate,
     onItemClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -301,6 +367,7 @@ private fun SubscriptionsListCard(
                 ) {
                     SubscriptionRowContent(
                         item = item,
+                        type = type,
                         today = today,
                         modifier = Modifier.padding(
                             horizontal = SaldoDimens.rowPaddingHorizontal,
@@ -314,7 +381,7 @@ private fun SubscriptionsListCard(
 }
 
 @Composable
-private fun FooterNote(modifier: Modifier = Modifier) {
+private fun FooterNote(@StringRes textRes: Int, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -329,7 +396,7 @@ private fun FooterNote(modifier: Modifier = Modifier) {
         )
         Spacer(Modifier.size(8.dp))
         Text(
-            text = stringResource(R.string.subscriptions_prorated_note),
+            text = stringResource(textRes),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -337,15 +404,22 @@ private fun FooterNote(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SubscriptionsEmptyState(
+private fun RecurrencesEmptyState(
+    type: TransactionType,
+    actionLabel: String,
     onCreate: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isIncome = type == TransactionType.INCOME
     EmptyState(
-        icon = Icons.Outlined.Subscriptions,
-        title = stringResource(R.string.subscriptions_empty_title),
-        body = stringResource(R.string.subscriptions_empty_body),
-        actionLabel = stringResource(R.string.subscriptions_new),
+        icon = if (isIncome) Icons.AutoMirrored.Outlined.TrendingUp else Icons.Outlined.Subscriptions,
+        title = stringResource(
+            if (isIncome) R.string.incomes_empty_title else R.string.subscriptions_empty_title,
+        ),
+        body = stringResource(
+            if (isIncome) R.string.incomes_empty_body else R.string.subscriptions_empty_body,
+        ),
+        actionLabel = actionLabel,
         onAction = onCreate,
         modifier = modifier,
     )

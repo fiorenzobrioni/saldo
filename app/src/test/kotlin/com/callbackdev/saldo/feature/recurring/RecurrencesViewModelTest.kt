@@ -26,7 +26,7 @@ import java.time.ZoneId
 import java.util.Currency
 
 @ExtendWith(MainDispatcherExtension::class)
-class SubscriptionsViewModelTest {
+class RecurrencesViewModelTest {
 
     private val eur: Currency = Currency.getInstance("EUR")
     private val clock: Clock = Clock.fixed(Instant.parse("2026-07-09T09:00:00Z"), ZoneId.of("Europe/Rome"))
@@ -66,19 +66,27 @@ class SubscriptionsViewModelTest {
         4L, "Stipendio", RecurrenceFrequency.MONTHLY, "2000.00",
         LocalDate.of(2026, 7, 27), TransactionType.INCOME,
     )
+    private val rent = rule(
+        5L, "Affitto attivo", RecurrenceFrequency.MONTHLY, "650.00",
+        LocalDate.of(2026, 7, 3), TransactionType.INCOME,
+    )
     private val ended = rule(
-        5L, "Old", RecurrenceFrequency.MONTHLY, "5.00",
+        6L, "Old", RecurrenceFrequency.MONTHLY, "5.00",
         LocalDate.of(2025, 1, 1), endDate = LocalDate.of(2026, 1, 1),
     )
+    private val endedIncome = rule(
+        7L, "Old bonus", RecurrenceFrequency.MONTHLY, "100.00",
+        LocalDate.of(2025, 1, 1), TransactionType.INCOME, endDate = LocalDate.of(2026, 1, 1),
+    )
 
-    private fun viewModel(rules: List<RecurringRule>): SubscriptionsViewModel {
+    private fun viewModel(rules: List<RecurringRule>): RecurrencesViewModel {
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(emptyList<AccountWithBalance>())
         every { categoryRepository.observeCategories() } returns flowOf(emptyList<Category>())
-        return SubscriptionsViewModel(recurringRuleRepository, accountRepository, categoryRepository, clock)
+        return RecurrencesViewModel(recurringRuleRepository, accountRepository, categoryRepository, clock)
     }
 
-    private suspend fun ReceiveTurbine<SubscriptionsUiState>.awaitLoaded(): SubscriptionsUiState {
+    private suspend fun ReceiveTurbine<RecurrencesUiState>.awaitLoaded(): RecurrencesUiState {
         var state = awaitItem()
         while (state.isLoading) state = awaitItem()
         return state
@@ -90,11 +98,41 @@ class SubscriptionsViewModelTest {
 
         viewModel.uiState.test {
             val state = awaitLoaded()
-            // Income (salary) and the ended rule are excluded.
-            assertEquals(3, state.activeCount)
+            // Income (salary) and the ended rule are excluded from the expenses tab.
+            assertEquals(3, state.expenses.activeCount)
             // 12.99 + 9.99 + (96.00 / 6) = 38.98
-            assertEquals(BigDecimal("38.98"), state.monthlyTotal)
-            assertEquals(BigDecimal("467.76"), state.annualProjection)
+            assertEquals(BigDecimal("38.98"), state.expenses.monthlyTotal)
+            assertEquals(BigDecimal("467.76"), state.expenses.annualProjection)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `income section carries recurring incomes only, with totals and next credit`() = runTest {
+        val viewModel = viewModel(listOf(netflix, salary, rent, endedIncome))
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(2, state.incomes.activeCount)
+            // 2000.00 + 650.00; the ended income and the expense are excluded.
+            assertEquals(BigDecimal("2650.00"), state.incomes.monthlyTotal)
+            assertEquals(BigDecimal("31800.00"), state.incomes.annualProjection)
+            // Default sort by next credit: salary 27 Jul before rent 3 Aug
+            // (rent's July credit on the 3rd is already past today, 9 Jul).
+            assertEquals(listOf("Stipendio", "Affitto attivo"), state.incomes.items.map { it.rule.name })
+            assertEquals(LocalDate.of(2026, 7, 27), state.incomes.items[0].nextCharge)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `expense and income sections do not leak into each other`() = runTest {
+        val viewModel = viewModel(listOf(netflix, salary))
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(listOf("Netflix"), state.expenses.items.map { it.rule.name })
+            assertEquals(listOf("Stipendio"), state.incomes.items.map { it.rule.name })
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -106,7 +144,10 @@ class SubscriptionsViewModelTest {
         viewModel.uiState.test {
             val state = awaitLoaded()
             // Spotify 12 Jul, Netflix 7 Aug, Assicurazione 15 Sep.
-            assertEquals(listOf("Spotify", "Netflix", "Assicurazione"), state.items.map { it.rule.name })
+            assertEquals(
+                listOf("Spotify", "Netflix", "Assicurazione"),
+                state.expenses.items.map { it.rule.name },
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -121,7 +162,10 @@ class SubscriptionsViewModelTest {
             var state = awaitItem()
             while (state.sort != SubscriptionSort.COST) state = awaitItem()
             // 16.00, 12.99, 9.99
-            assertEquals(listOf("Assicurazione", "Netflix", "Spotify"), state.items.map { it.rule.name })
+            assertEquals(
+                listOf("Assicurazione", "Netflix", "Spotify"),
+                state.expenses.items.map { it.rule.name },
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -135,7 +179,10 @@ class SubscriptionsViewModelTest {
             viewModel.onSortSelected(SubscriptionSort.NAME)
             var state = awaitItem()
             while (state.sort != SubscriptionSort.NAME) state = awaitItem()
-            assertEquals(listOf("Assicurazione", "Netflix", "Spotify"), state.items.map { it.rule.name })
+            assertEquals(
+                listOf("Assicurazione", "Netflix", "Spotify"),
+                state.expenses.items.map { it.rule.name },
+            )
             cancelAndIgnoreRemainingEvents()
         }
     }

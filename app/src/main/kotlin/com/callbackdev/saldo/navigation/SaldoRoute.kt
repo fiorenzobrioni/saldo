@@ -54,13 +54,23 @@ data class TransactionEditorRoute(
     val initialTypeName: String? = null,
 ) : NavKey
 
-/** Subscriptions (recurring expenses) view, reached from the dashboard card and Settings. */
+/**
+ * Recurrences hub (subscriptions and recurring incomes), reached from the
+ * dashboard card and Settings.
+ */
 @Serializable
-data object SubscriptionsRoute : NavKey
+data object RecurrencesRoute : NavKey
 
-/** Subscription editor: create mode when [ruleId] is null, edit mode otherwise. */
+/**
+ * Recurring-rule editor: create mode when [ruleId] is null, edit mode otherwise.
+ * [initialTypeName] preselects the rule type on creation (the tab the editor was
+ * opened from); it is a [com.callbackdev.saldo.core.domain.model.TransactionType] name.
+ */
 @Serializable
-data class RecurringRuleEditorRoute(val ruleId: Long? = null) : NavKey
+data class RecurringRuleEditorRoute(
+    val ruleId: Long? = null,
+    val initialTypeName: String? = null,
+) : NavKey
 
 /** Confirmation of pending recurring movements (confirm mode / variable amount). */
 @Serializable

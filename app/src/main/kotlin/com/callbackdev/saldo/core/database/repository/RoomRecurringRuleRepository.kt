@@ -7,6 +7,7 @@ import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
 import javax.inject.Inject
 
 class RoomRecurringRuleRepository @Inject constructor(
@@ -33,4 +34,7 @@ class RoomRecurringRuleRepository @Inject constructor(
     }
 
     override suspend fun delete(rule: RecurringRule) = recurringRuleDao.delete(rule.toEntity())
+
+    override suspend fun updateLastReminderDate(ruleId: Long, date: LocalDate) =
+        recurringRuleDao.updateLastReminder(ruleId, date.toEpochDay())
 }

@@ -25,7 +25,7 @@ import com.callbackdev.saldo.core.database.entity.TransactionTagCrossRef
         TransactionTagCrossRef::class,
         RecurringRuleEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)

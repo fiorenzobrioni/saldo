@@ -20,6 +20,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * generated movements are backfilled from their local date; if the pre-fix bug
  * already produced duplicates, only the oldest row per occurrence is backfilled
  * (the extras keep NULL, which the unique index permits) so no data is dropped.
+ *
+ * v4 -> v5: adds `lastReminderEpochDay` to `recurring_rules`, the watermark of
+ * the pre-renewal reminder notification (the occurrence date last reminded, so
+ * each upcoming charge is reminded once). Nullable: existing rules have never
+ * been reminded.
  */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -59,5 +64,12 @@ val MIGRATION_3_4: Migration = object : Migration(3, 4) {
     }
 }
 
+@Suppress("MagicNumber") // Schema version numbers.
+val MIGRATION_4_5: Migration = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE recurring_rules ADD COLUMN lastReminderEpochDay INTEGER")
+    }
+}
+
 /** All migrations, applied in order by Room. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)

@@ -21,6 +21,39 @@
 
     <!-- Dashboard (Phase 5) -->
     <string name="dashboard_balance_total">Total balance</string>
+    <!-- Time-of-day greetings shown in the dashboard header; one is picked at random per app open. -->
+    <string-array name="dashboard_greetings_night">
+        <item>Still up? A quick look at the numbers.</item>
+        <item>Night owl? Welcome back.</item>
+        <item>Savings never sleep.</item>
+        <item>A quiet moment for your accounts.</item>
+        <item>One last check before bed?</item>
+        <item>Good night.</item>
+    </string-array>
+    <string-array name="dashboard_greetings_morning">
+        <item>Good morning!</item>
+        <item>Good morning! How are the accounts?</item>
+        <item>New day, accounts in order.</item>
+        <item>Coffee and accounts?</item>
+        <item>Have a great day!</item>
+        <item>Morning! Let\'s track your day.</item>
+    </string-array>
+    <string-array name="dashboard_greetings_afternoon">
+        <item>Good afternoon!</item>
+        <item>How\'s the day going?</item>
+        <item>Everything under control?</item>
+        <item>A quick midday check-in.</item>
+        <item>You\'re doing great.</item>
+        <item>Good afternoon! Accounts in order?</item>
+    </string-array>
+    <string-array name="dashboard_greetings_evening">
+        <item>Good evening!</item>
+        <item>How did today go?</item>
+        <item>Time to take stock.</item>
+        <item>Good evening! Log the last expenses.</item>
+        <item>End of the day: all set?</item>
+        <item>Relax, we\'ve got the accounts.</item>
+    </string-array>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d account</item>
         <item quantity="other">%1$d accounts</item>
@@ -146,6 +179,7 @@
     <string name="transaction_editor_account">Account</string>
     <string name="transaction_editor_from_account">From account</string>
     <string name="transaction_editor_to_account">To account</string>
+    <string name="transaction_editor_amount">Amount</string>
     <string name="transaction_editor_sent_amount">Sent (%1$s)</string>
     <string name="transaction_editor_received_amount">Received (%1$s)</string>
     <string name="transaction_editor_category">Category</string>
@@ -203,8 +237,8 @@
     <string name="category_reassign_confirm">Reassign and delete</string>
 
     <!-- Subscriptions / recurrences (Phase 6) -->
-    <string name="settings_subscriptions">Subscriptions</string>
-    <string name="settings_subscriptions_hint">Recurring expenses and their cost</string>
+    <string name="settings_recurrences">Recurring</string>
+    <string name="settings_recurrences_hint">Subscriptions and recurring income</string>
     <string name="recurrence_daily">Daily</string>
     <string name="recurrence_weekly">Weekly</string>
     <string name="recurrence_monthly">Monthly</string>
@@ -212,7 +246,9 @@
     <string name="recurrence_quarterly">Quarterly</string>
     <string name="recurrence_semiannual">Semi-annual</string>
     <string name="recurrence_annual">Yearly</string>
-    <string name="subscriptions_title">Subscriptions</string>
+    <string name="recurrences_title">Recurring</string>
+    <string name="recurrences_tab_subscriptions">Subscriptions</string>
+    <string name="recurrences_tab_incomes">Income</string>
     <string name="subscriptions_new">New subscription</string>
     <string name="subscriptions_this_month">This month</string>
     <plurals name="subscriptions_active_count">
@@ -231,6 +267,17 @@
     <string name="subscriptions_prorated_note">Non-monthly costs are spread over the month for the total.</string>
     <string name="subscriptions_empty_title">No subscriptions yet</string>
     <string name="subscriptions_empty_body">Add your recurring expenses to see how much they cost each month and over a year.</string>
+    <string name="incomes_new">New recurring income</string>
+    <plurals name="incomes_active_count">
+        <item quantity="one">%1$d recurring income</item>
+        <item quantity="other">%1$d recurring incomes</item>
+    </plurals>
+    <string name="incomes_sort_next_credit">By next credit</string>
+    <string name="incomes_sort_amount">By amount</string>
+    <string name="incomes_credited_on">credited on %1$s</string>
+    <string name="incomes_prorated_note">Non-monthly amounts are spread over the month for the total.</string>
+    <string name="incomes_empty_title">No recurring income yet</string>
+    <string name="incomes_empty_body">Add your salary, rent received or other regular income to see it at a glance.</string>
     <string name="subscription_editor_title_new">New subscription</string>
     <string name="subscription_editor_title_edit">Edit subscription</string>
     <string name="subscription_editor_save">Save subscription</string>
@@ -261,6 +308,15 @@
     <string name="subscription_editor_delete">Delete subscription</string>
     <string name="subscription_delete_title">Delete subscription?</string>
     <string name="subscription_delete_body">The rule will be removed and no new movements will be generated. Movements already recorded are kept.</string>
+    <string name="income_editor_title_new">New recurring income</string>
+    <string name="income_editor_title_edit">Edit recurring income</string>
+    <string name="income_editor_save">Save income</string>
+    <string name="income_editor_name_hint">Salary, rent, pension…</string>
+    <string name="income_editor_first_credit">First credit</string>
+    <string name="income_editor_variable_amount_hint">You confirm the amount at each credit</string>
+    <string name="income_editor_variable_amount_note">The amount will be asked when the credit is due.</string>
+    <string name="income_editor_delete">Delete recurring income</string>
+    <string name="income_delete_title">Delete recurring income?</string>
     <string name="pending_title">To confirm</string>
     <string name="pending_amount_to_enter">Amount to enter</string>
     <string name="pending_confirm">Confirm</string>
@@ -284,6 +340,22 @@
         <item quantity="other">%1$d charges to confirm</item>
     </plurals>
     <string name="notif_confirm_body">Tap to confirm or skip them.</string>
+    <string name="notif_channel_upcoming_name">Upcoming renewals</string>
+    <plurals name="notif_upcoming_expense_title">
+        <item quantity="one">%1$s renews tomorrow</item>
+        <item quantity="other">%1$s renews in %2$d days</item>
+    </plurals>
+    <string name="notif_upcoming_expense_today">%1$s renews today</string>
+    <plurals name="notif_upcoming_income_title">
+        <item quantity="one">%1$s arrives tomorrow</item>
+        <item quantity="other">%1$s arrives in %2$d days</item>
+    </plurals>
+    <string name="notif_upcoming_income_today">%1$s arrives today</string>
+    <plurals name="notif_upcoming_summary_title">
+        <item quantity="one">%1$d upcoming renewal</item>
+        <item quantity="other">%1$d upcoming renewals</item>
+    </plurals>
+    <string name="notif_upcoming_body_variable">Variable amount</string>
 
     <!-- Default categories seeded on first launch (Phase 1). Editable by the user afterwards. -->
     <string name="seed_category_home">Home</string>
@@ -312,9 +384,16 @@
     <string name="editor_write_failed">Something went wrong. Please try again.</string>
     <string name="editor_amount_placeholder" translatable="false">0</string>
 
-    <!-- Settings: appearance -->
+    <!-- Settings: appearance and notifications -->
     <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_notifications">Notifications</string>
     <string name="settings_section_management">Management</string>
+    <string name="settings_renewal_reminder">Upcoming charge reminder</string>
+    <string name="settings_renewal_reminder_hint">Get notified before subscriptions renew and recurring income arrives</string>
+    <plurals name="settings_lead_days_option">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>

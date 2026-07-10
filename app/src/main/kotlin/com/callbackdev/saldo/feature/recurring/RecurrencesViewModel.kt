@@ -25,12 +25,13 @@ import java.util.Currency
 import javax.inject.Inject
 
 /**
- * Drives the subscriptions screen: the list of active recurring expenses with
- * their monthly-equivalent cost and next charge, plus the monthly total and the
- * annual projection. All figures derive reactively from the database.
+ * Drives the recurrences hub: active recurring expenses (subscriptions) and
+ * recurring incomes, each with monthly-equivalent figures, the next
+ * charge/credit, the monthly total and the annual projection. All figures
+ * derive reactively from the database.
  */
 @HiltViewModel
-class SubscriptionsViewModel @Inject constructor(
+class RecurrencesViewModel @Inject constructor(
     recurringRuleRepository: RecurringRuleRepository,
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
@@ -39,7 +40,7 @@ class SubscriptionsViewModel @Inject constructor(
 
     private val sort = MutableStateFlow(SubscriptionSort.NEXT_CHARGE)
 
-    val uiState: StateFlow<SubscriptionsUiState> = combine(
+    val uiState: StateFlow<RecurrencesUiState> = combine(
         recurringRuleRepository.observeRules(),
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
@@ -49,7 +50,7 @@ class SubscriptionsViewModel @Inject constructor(
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-        initialValue = SubscriptionsUiState(today = LocalDate.now(clock)),
+        initialValue = RecurrencesUiState(today = LocalDate.now(clock)),
     )
 
     fun onSortSelected(newSort: SubscriptionSort) {
@@ -61,33 +62,40 @@ class SubscriptionsViewModel @Inject constructor(
         accounts: List<AccountWithBalance>,
         categories: List<Category>,
         sortOrder: SubscriptionSort,
-    ): SubscriptionsUiState {
+    ): RecurrencesUiState {
         val today = LocalDate.now(clock)
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
 
-        val active = rules.filter { it.type == TransactionType.EXPENSE && it.isActiveOn(today) }
-        val items = active
-            .map { rule -> rule.toItem(today, accountById[rule.accountId], categoryById[rule.categoryId]) }
-            .sortedWith(sortOrder.comparator())
+        fun sectionFor(type: TransactionType): RecurrenceSection {
+            val items = rules
+                .filter { it.type == type && it.isActiveOn(today) }
+                .map { rule -> rule.toItem(today, accountById[rule.accountId], categoryById[rule.categoryId]) }
+                .sortedWith(sortOrder.comparator())
 
-        val primary = items
-            .groupingBy { it.rule.currency }
-            .eachCount()
-            .maxByOrNull { it.value }?.key
-            ?: SubscriptionsUiState.fallbackCurrency
-        val primaryItems = items.filter { it.rule.currency == primary }
-        val monthlyTotal = primaryItems
-            .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.monthlyEquivalent) }
+            val primary = items
+                .groupingBy { it.rule.currency }
+                .eachCount()
+                .maxByOrNull { it.value }?.key
+                ?: RecurrencesUiState.fallbackCurrency
+            val primaryItems = items.filter { it.rule.currency == primary }
+            val monthlyTotal = primaryItems
+                .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.monthlyEquivalent) }
 
-        return SubscriptionsUiState(
+            return RecurrenceSection(
+                items = items,
+                monthlyTotal = monthlyTotal,
+                annualProjection = monthlyTotal.multiply(BigDecimal(MONTHS_PER_YEAR)),
+                // Same scope as monthlyTotal, so "N subscriptions - X/month" is coherent.
+                activeCount = primaryItems.size,
+                currency = primary,
+            )
+        }
+
+        return RecurrencesUiState(
             isLoading = false,
-            items = items,
-            monthlyTotal = monthlyTotal,
-            annualProjection = monthlyTotal.multiply(BigDecimal(MONTHS_PER_YEAR)),
-            // Same scope as monthlyTotal, so "N subscriptions - X/month" is coherent.
-            activeCount = primaryItems.size,
-            currency = primary,
+            expenses = sectionFor(TransactionType.EXPENSE),
+            incomes = sectionFor(TransactionType.INCOME),
             sort = sortOrder,
             today = today,
         )

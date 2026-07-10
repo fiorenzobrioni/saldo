@@ -26,9 +26,11 @@ import kotlinx.coroutines.flow.stateIn
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.Currency
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.random.Random
 
 /** The soonest upcoming subscription charge, for the dashboard card preview. */
 data class NextSubscription(
@@ -46,6 +48,31 @@ data class SubscriptionsSummary(
     val next: NextSubscription? = null,
 ) {
     val hasSubscriptions: Boolean get() = activeCount > 0
+}
+
+/** Time-of-day band that selects the dashboard greeting. */
+enum class GreetingBand {
+    NIGHT,
+    MORNING,
+    AFTERNOON,
+    EVENING,
+    ;
+
+    companion object {
+        /** 00-05 night, 06-11 morning, 12-17 afternoon, 18-23 evening. */
+        fun of(time: LocalTime): GreetingBand = when (time.hour) {
+            in NIGHT_END downTo 0 -> NIGHT
+            in MORNING_START..MORNING_END -> MORNING
+            in AFTERNOON_START..AFTERNOON_END -> AFTERNOON
+            else -> EVENING
+        }
+
+        private const val NIGHT_END = 5
+        private const val MORNING_START = 6
+        private const val MORNING_END = 11
+        private const val AFTERNOON_START = 12
+        private const val AFTERNOON_END = 17
+    }
 }
 
 /** Immutable UI state for the "Today" dashboard. */
@@ -77,6 +104,9 @@ data class DashboardUiState(
     val pendingCount: Int = 0,
     val recent: List<TransactionListItem> = emptyList(),
     val date: LocalDate = LocalDate.ofEpochDay(0),
+    /** Greeting band and a stable [0,1) roll, both fixed once per app-open. */
+    val greetingBand: GreetingBand = GreetingBand.MORNING,
+    val greetingRoll: Float = 0f,
 ) {
     companion object {
         val fallbackCurrency: Currency =
@@ -93,6 +123,12 @@ class DashboardViewModel @Inject constructor(
     private val recurringRuleRepository: RecurringRuleRepository,
     private val clock: Clock,
 ) : ViewModel() {
+
+    // Fixed once when the ViewModel is created (once per app-open): the greeting
+    // stays put across recomposition and rotation, and only re-rolls on a fresh
+    // open. The roll indexes the band's message array in the composable.
+    private val greetingBand: GreetingBand = GreetingBand.of(LocalTime.now(clock))
+    private val greetingRoll: Float = Random.nextFloat()
 
     /** Everything the dashboard combines besides the accounts themselves. */
     private data class Sources(
@@ -135,7 +171,11 @@ class DashboardViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-            initialValue = DashboardUiState(date = LocalDate.now(clock)),
+            initialValue = DashboardUiState(
+                date = LocalDate.now(clock),
+                greetingBand = greetingBand,
+                greetingRoll = greetingRoll,
+            ),
         )
 
     /**
@@ -192,6 +232,8 @@ class DashboardViewModel @Inject constructor(
             pendingCount = sources.pendingCount,
             recent = recent,
             date = today,
+            greetingBand = greetingBand,
+            greetingRoll = greetingRoll,
         )
     }
 

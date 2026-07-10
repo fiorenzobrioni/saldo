@@ -35,4 +35,6 @@ data class RecurringRule(
     val color: Int? = null,
     val icon: String? = null,
     val note: String? = null,
+    /** The occurrence date the last pre-renewal reminder was posted for (once per occurrence). */
+    val lastReminderDate: LocalDate? = null,
 )

@@ -9,18 +9,6 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import java.time.LocalDate
 import java.util.Currency
 
-/** Which raw amount text the in-app keypad is editing. */
-enum class AmountTarget {
-    /** Keypad hidden (e.g. while the description field owns the focus). */
-    NONE,
-
-    /** The main amount (in the source account's currency). */
-    AMOUNT,
-
-    /** The destination amount of a cross-currency transfer. */
-    TO_AMOUNT,
-}
-
 /** Immutable UI state of the transaction editor form. */
 data class TransactionEditorUiState(
     val isLoading: Boolean = true,
@@ -32,7 +20,6 @@ data class TransactionEditorUiState(
     val isTypePreset: Boolean = false,
     val amountInput: String = "",
     val toAmountInput: String = "",
-    val amountTarget: AmountTarget = AmountTarget.AMOUNT,
     /** Accounts offered by the pickers: active ones plus any referenced archived one. */
     val accounts: List<AccountWithBalance> = emptyList(),
     val account: Account? = null,

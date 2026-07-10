@@ -14,6 +14,50 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-10 - Tastiera di sistema per gli importi, header dashboard, fix sfarfallio
+
+**Fatto:**
+- **Fix sfarfallio bianco nelle transizioni (tema scuro)**: con tema scuro in-app e sistema chiaro, durante il fade delle transizioni Nav3 si intravedeva la finestra Android chiara sotto Compose (stessa famiglia del bug status bar). `SaldoTheme` ora avvolge il contenuto in un `Surface` a tutto schermo con `colorScheme.background`: backdrop opaco a tema sempre presente, niente flash, e come effetto collaterale l'area delle system bar viene dipinta col colore del tema.
+- **Tastiera di sistema per tutti gli importi (ADR 16)**: rimosso il tastierino custom dall'editor movimenti; ora l'importo si inserisce con `OutlinedTextField` + `KeyboardType.Decimal` come in tutti gli altri editor. Campo prominente (stile testo grande, simbolo valuta come prefisso), auto-focus sul nuovo movimento così la tastiera compare subito; il segno della rettifica passa a un toggle trailing-icon. Eliminati `AmountKeypad`, `AmountInputEditor`/`KeypadKey`, `AmountDisplay`, `rememberDecimalSeparator`. Cap cifre intere e normalizzazione zeri iniziali spostati in `MoneyInput.sanitize`, così ogni campo importo è protetto dall'overflow di `Long` (prima solo il tastierino lo era).
+- **Header dashboard**: tolta la scritta "Saldo"; la data del giorno è passata in alto a destra nella card "Saldo totale" (formato esteso "Venerdì 10 luglio", mese minuscolo secondo norma IT, via `getBestDateTimePattern`). L'header ospita un saluto per fascia oraria (notte/mattina/pomeriggio/sera), scelto a caso una volta per apertura: banda e roll [0,1) fissati alla costruzione del `DashboardViewModel` (stabili a ricomposizione/rotazione), il composable indicizza l'array della banda. Primi `<string-array>` dell'app, testi curati e brevi in IT+EN, senza riferimenti a budget/obiettivi (feature non ancora presenti).
+- Versione a 0.6.7 (versionCode 16).
+
+**Decisioni:**
+- Tastiera di sistema ovunque su scelta esplicita dell'utente (feel nativo, accessibilità out-of-the-box, meno codice). La raccomandazione tecnica era di estendere invece il tastierino custom al resto degli editor, ma l'incoerenza andava chiusa e la scelta dell'utente è legittima; le regole di dominio restano garantite da `MoneyInput`/`MoneyMapper`. Registrata come ADR 16.
+- Cap cifre intere in `MoneyInput.sanitize`: rimuovendo `AmountInputEditor` si perdeva la protezione dall'overflow; spostarla nel sanitizer condiviso protegge tutti gli editor in un colpo solo (prima account/abbonamenti/rettifica erano esposti allo stesso rischio latente).
+- Saluto tenuto nel ViewModel (banda + roll) e non ripescato a ogni ricomposizione: resta stabile nella sessione e cambia solo a nuova apertura.
+- Backdrop a tema a livello di `SaldoTheme` invece che sul singolo container di navigazione: fix globale e canonico (pattern Now-in-Android), copre anche il primo frame.
+
+**Problemi:** detekt inizialmente lamentava complessità/return multipli nel codice del piano precedente (ricorrenze), già risolto; in questa fase nessun blocco. Nessun emulatore in sessione: la verifica visiva (campo importo con IME sopra il bottone salva, auto-focus, saluto e data, assenza di sfarfallio) resta da fare sul device.
+
+**Verifica:** `assembleDebug testDebugUnitTest lint detekt compileDebugAndroidTestKotlin` verdi; 155 unit test (0 falliti). Test aggiornati: `TransactionEditorViewModelTest` ora imposta l'importo via `onAmountChanged`/`onToAmountChanged` (logica di validazione/segno/transfer invariata); casi di cap cifre intere e zeri iniziali migrati in `MoneyInputTest`; nuovo `GreetingBandTest` per i confini delle fasce orarie. Rimosso `AmountInputEditorTest`.
+
+**Prossimo:** Fase 7 (ricerca, filtri, statistiche con Vico).
+
+---
+
+## 2026-07-10 - Fase 6 incremento 3: entrate ricorrenti, radar pre-rinnovo, fix status bar
+
+**Fatto:**
+- **Fix status bar in tema scuro forzato**: con tema app scuro e sistema chiaro le icone della status bar restavano scure su sfondo scuro (barra illeggibile). `enableEdgeToEdge()` senza argomenti segue solo il uiMode di sistema: ora viene riapplicata dentro `setContent` con `SystemBarStyle.auto` agganciato al tema risolto in-app (`DisposableEffect(darkTheme)`), per status e navigation bar. La chiamata no-arg in `onCreate` resta per il primo frame in modalità sistema.
+- **Entrate ricorrenti + hub "Ricorrenze"**: la vista Abbonamenti diventa un hub con due tab (`PrimaryTabRow`, stesso pattern di Categorie): Abbonamenti (spese, figure invariate) ed Entrate (stipendio, affitti attivi), ognuno con totale mensile equivalente, proiezione annua, conteggio attivi e prossimo addebito/accredito. Il motore supportava già `INCOME`: l'editor non hard-coda più `EXPENSE` e prende il tipo dal tab di provenienza via `RecurringRuleEditorRoute.initialTypeName` (stesso pattern di `CategoryEditorRoute`); categorie filtrate per tipo (INCOME/BOTH vs EXPENSE/BOTH), etichette, icona default ("payments") e categoria default (Stipendio) adattate. Rinominati route e file (`RecurrencesRoute`, `RecurrencesScreen/ViewModel/UiState`); etichette di ordinamento per tab ("Per prossimo accredito", "Per importo"). Card dashboard invariata (resta focalizzata sugli abbonamenti).
+- **Radar pre-rinnovo**: notifica opzionale prima dell'addebito ("Netflix si rinnova tra 3 giorni") e degli accrediti ("Stipendio in arrivo domani"). Nuova sezione Notifiche in Impostazioni: toggle (default off) + anticipo 1/2/3/7 giorni (`SingleChoiceSegmentedButtonRow`), persistiti in DataStore. Nuovo use case `CheckUpcomingRenewalsUseCase` eseguito dal worker giornaliero esistente dopo la generazione (un addebito dovuto oggi viene registrato, non annunciato). Watermark `lastReminderEpochDay` su `recurring_rules` (migration 4→5, DB v5): una sola notifica per occorrenza, robusta ai giorni saltati dal worker (device spento: avvisa comunque alla prima occasione utile). Avanzamento watermark con UPDATE mirato per non interferire con l'upsert della generazione. Terzo canale notifiche `recurring_upcoming` (id 1003): notifica singola nominale con importo nel body, oppure summary con i nomi per più rinnovi.
+- Versione a 0.6.6 (versionCode 15). PLANNING.md aggiornato: radar spostato da "Note e appunti" alla Fase 6, "Spendibile oggi" e "Rilevamento automatico ricorrenze" annotati come rimandati di proposito, bug status bar spuntato in "Bug conosciuti".
+
+**Decisioni:**
+- Entrate ricorrenti in un hub unico a tab invece di una vista separata: meno navigazione, totali per tab coerenti (mai segni misti in uno stesso totale), un solo punto di accesso da Impostazioni ("Ricorrenze") e dalla card dashboard.
+- Tipo della regola fissato dal tab di provenienza, nessun selettore nell'editor: un cambio tipo live dovrebbe ricaricare e potenzialmente invalidare la categoria scelta e rietichettare mezzo form; il contesto del tab disambigua già (stesso approccio dell'editor categorie).
+- Promemoria pre-rinnovo globale e opt-in (default off): una notifica che compare non richiesta dopo un update è peggio di un tap in più in Impostazioni. Anticipo per-regola rimandato: il caso d'uso reale è un unico anticipo per tutto.
+- Watermark promemoria come colonna sulla regola (non DataStore): stesso ciclo di vita di `lastGeneratedDate` (cancellato con la regola, incluso nel backup di Fase 8), migration banale e testata col pattern esistente.
+
+**Problemi:** detekt sulla prima stesura (complessità/numero funzioni nell'editor screen, return multipli nel use case): risolti estraendo le etichette per tipo in `RecurringLabels.kt` e compattando i guard clause. Nessun emulatore in sessione: migration test 4→5 compilato ma da eseguire su device; verifica visiva di tab, notifiche e status bar rimandata al device.
+
+**Verifica:** `assembleDebug testDebugUnitTest lint detekt compileDebugAndroidTestKotlin` verdi; 163 unit test (0 falliti). Nuovi test: `CheckUpcomingRenewalsUseCaseTest` (finestra a 1/2/3/7 giorni, watermark anti-duplicato, catch-up giorni saltati, setting off senza scritture, income, regole terminate, occorrenza generata oggi non annunciata, importo variabile senza importo), editor con tipo INCOME (categorie filtrate, salvataggio, edit che conserva il tipo, fallback a EXPENSE), `RecurrencesViewModelTest` (sezione entrate con totali e prossimo accredito, separazione spese/entrate, test esistenti ritargetizzati).
+
+**Prossimo:** Fase 7 (ricerca, filtri, statistiche con Vico). In coda dalle idee di luglio 2026: rilevamento automatico ricorrenze (da agganciare all'hub) e "Spendibile oggi" (dopo il budget v1.5).
+
+---
+
 ## 2026-07-10 - Review completa: bug fix e Fase 6.5 (design system e omogeneità)
 
 **Fatto:**

@@ -126,10 +126,6 @@ class TransactionEditorViewModelTest {
         }
     }
 
-    private fun TransactionEditorViewModel.type(vararg keys: KeypadKey) {
-        keys.forEach(::onKeypadKey)
-    }
-
     @Test
     fun `new movement defaults to an expense today on the last used account`() = runTest {
         val viewModel = viewModel(lastUsedAccountId = 2L)
@@ -139,7 +135,6 @@ class TransactionEditorViewModelTest {
         assertEquals(TransactionType.EXPENSE, state.type)
         assertEquals(LocalDate.of(2026, 7, 8), state.date)
         assertEquals(cash, state.account)
-        assertEquals(AmountTarget.AMOUNT, state.amountTarget)
         assertEquals(listOf(groceries), state.categories)
     }
 
@@ -160,21 +155,15 @@ class TransactionEditorViewModelTest {
     }
 
     @Test
-    fun `keypad types within the currency rules`() = runTest {
+    fun `amount input is sanitized to the currency rules`() = runTest {
         val viewModel = viewModel(lastUsedAccountId = 1L)
         collectState(viewModel)
 
-        viewModel.type(
-            KeypadKey.Digit(1),
-            KeypadKey.Digit(2),
-            KeypadKey.DecimalSeparator,
-            KeypadKey.Digit(5),
-            KeypadKey.Digit(0),
-            KeypadKey.Digit(9), // beyond EUR's two decimals: ignored
-        )
+        // Beyond EUR's two decimals: extra digits are dropped.
+        viewModel.onAmountChanged("12.509")
         assertEquals("12.50", viewModel.uiState.value.amountInput)
 
-        viewModel.onKeypadKey(KeypadKey.Backspace)
+        viewModel.onAmountChanged("12.5")
         assertEquals("12.5", viewModel.uiState.value.amountInput)
     }
 
@@ -185,7 +174,7 @@ class TransactionEditorViewModelTest {
         collectState(viewModel)
         coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
 
-        viewModel.type(KeypadKey.Digit(1), KeypadKey.Digit(2), KeypadKey.DecimalSeparator, KeypadKey.Digit(5))
+        viewModel.onAmountChanged("12.5")
         viewModel.onCategorySelected(groceries.id)
         viewModel.onDescriptionChanged("  Weekly shop  ")
         viewModel.onTagToggled(Tag("work", id = 5L))
@@ -216,7 +205,7 @@ class TransactionEditorViewModelTest {
         coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
 
         viewModel.onTypeChanged(TransactionType.INCOME)
-        viewModel.type(KeypadKey.Digit(9), KeypadKey.DoubleZero)
+        viewModel.onAmountChanged("900")
         viewModel.onCategorySelected(salary.id)
         viewModel.onDateSelected(LocalDate.of(2026, 7, 5))
         viewModel.save()
@@ -238,7 +227,7 @@ class TransactionEditorViewModelTest {
         viewModel.onCategorySelected(groceries.id) // must not leak into the transfer
         viewModel.onTypeChanged(TransactionType.TRANSFER)
         viewModel.onToAccountSelected(cash)
-        viewModel.type(KeypadKey.Digit(5), KeypadKey.Digit(0))
+        viewModel.onAmountChanged("50")
         viewModel.save()
 
         val transaction = saved.captured
@@ -259,15 +248,14 @@ class TransactionEditorViewModelTest {
 
         viewModel.onTypeChanged(TransactionType.TRANSFER)
         viewModel.onToAccountSelected(dollars)
-        viewModel.type(KeypadKey.Digit(5), KeypadKey.Digit(0))
+        viewModel.onAmountChanged("50")
         viewModel.save()
 
         assertTrue(viewModel.uiState.value.showValidation)
         coVerify(exactly = 0) { transactionRepository.upsert(any()) }
 
         coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
-        viewModel.onAmountTargetChanged(AmountTarget.TO_AMOUNT)
-        viewModel.type(KeypadKey.Digit(5), KeypadKey.Digit(4), KeypadKey.DecimalSeparator, KeypadKey.Digit(2))
+        viewModel.onToAmountChanged("54.2")
         viewModel.save()
 
         assertEquals(BigDecimal("-50.00"), saved.captured.amount)
@@ -280,7 +268,7 @@ class TransactionEditorViewModelTest {
         val viewModel = viewModel(lastUsedAccountId = 1L)
         collectState(viewModel)
 
-        viewModel.type(KeypadKey.Digit(5))
+        viewModel.onAmountChanged("5")
         viewModel.save()
 
         assertTrue(viewModel.uiState.value.showValidation)
@@ -300,7 +288,7 @@ class TransactionEditorViewModelTest {
         viewModel.onRefundChanged(true)
         assertEquals(listOf(groceries), viewModel.uiState.value.categories)
 
-        viewModel.type(KeypadKey.Digit(8))
+        viewModel.onAmountChanged("8")
         viewModel.onCategorySelected(groceries.id)
         viewModel.save()
 
@@ -314,7 +302,7 @@ class TransactionEditorViewModelTest {
         val viewModel = viewModel(lastUsedAccountId = 1L)
         collectState(viewModel)
 
-        viewModel.type(KeypadKey.Digit(1), KeypadKey.Digit(2), KeypadKey.DecimalSeparator, KeypadKey.Digit(5))
+        viewModel.onAmountChanged("12.5")
         viewModel.onAccountSelected(yen)
 
         assertEquals("13", viewModel.uiState.value.amountInput)
@@ -378,7 +366,7 @@ class TransactionEditorViewModelTest {
         collectState(viewModel)
         coEvery { transactionRepository.upsert(capture(saved)) } returns 7L
 
-        viewModel.onKeypadKey(KeypadKey.Digit(5)) // 12 -> 125
+        viewModel.onAmountChanged("125") // was 12
         viewModel.save()
 
         assertEquals(7L, saved.captured.id)

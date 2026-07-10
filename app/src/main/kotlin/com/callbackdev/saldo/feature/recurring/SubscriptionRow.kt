@@ -27,19 +27,23 @@ import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 private const val AVATAR_TINT_ALPHA = 0.16f
 
 /**
- * A single subscription row: tinted avatar, name (with an imminent-charge badge),
- * frequency/next-charge/account subtitle, and the monthly-equivalent cost on the
- * right (labelled "equiv. / month" for non-monthly rules).
+ * A single recurring-rule row: tinted avatar, name (with an imminent-charge
+ * badge), frequency/next-charge/account subtitle, and the monthly-equivalent
+ * amount on the right (labelled "equiv. / month" for non-monthly rules). The
+ * subtitle wording follows [type]: "charged on" for expenses, "credited on"
+ * for incomes.
  */
 @Composable
 internal fun SubscriptionRowContent(
     item: SubscriptionItem,
+    type: TransactionType,
     today: LocalDate,
     modifier: Modifier = Modifier,
 ) {
@@ -79,7 +83,7 @@ internal fun SubscriptionRowContent(
                 ChargeBadge(nextCharge = item.nextCharge, today = today)
             }
             Text(
-                text = subscriptionSubtitle(item),
+                text = subscriptionSubtitle(item, type),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
@@ -130,9 +134,10 @@ private fun ChargeBadge(nextCharge: LocalDate?, today: LocalDate, modifier: Modi
 /**
  * "Monthly · charged on 7 Jul · Visa Card"; for non-monthly rules the actual
  * charge is prefixed to the frequency, e.g. "Semi-annual 96,00 € · charged on…".
+ * Income rules read "credited on" instead.
  */
 @Composable
-private fun subscriptionSubtitle(item: SubscriptionItem): String {
+private fun subscriptionSubtitle(item: SubscriptionItem, type: TransactionType): String {
     val rule = item.rule
     val frequency = stringResource(rule.frequency.labelRes())
     val leading = if (rule.frequency == RecurrenceFrequency.MONTHLY || rule.amount == null) {
@@ -140,9 +145,14 @@ private fun subscriptionSubtitle(item: SubscriptionItem): String {
     } else {
         "$frequency ${MoneyFormatter.format(rule.amount, rule.currency)}"
     }
+    val onDateRes = if (type == TransactionType.INCOME) {
+        R.string.incomes_credited_on
+    } else {
+        R.string.subscriptions_charged_on
+    }
     return buildList {
         add(leading)
-        item.nextCharge?.let { add(stringResource(R.string.subscriptions_charged_on, shortDate(it))) }
+        item.nextCharge?.let { add(stringResource(onDateRes, shortDate(it))) }
         item.account?.let { add(it.name) }
     }.joinToString(separator = " · ")
 }

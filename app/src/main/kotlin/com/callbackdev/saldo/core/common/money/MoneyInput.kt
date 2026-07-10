@@ -12,10 +12,19 @@ import java.math.BigDecimal
 object MoneyInput {
 
     /**
+     * The integer part is capped so the amount always fits comfortably in `Long`
+     * minor units: 12 digits leave ample headroom over the ~18 a signed Long can
+     * hold even at two decimals, well beyond any realistic personal figure.
+     */
+    private const val MAX_INTEGER_DIGITS = 12
+
+    /**
      * Strips [raw] down to a valid partial amount: digits, at most one decimal
      * separator (`.` or `,`, only when [fractionDigits] > 0) with at most
      * [fractionDigits] decimals, and an optional leading `-` when
-     * [allowNegative] is true.
+     * [allowNegative] is true. Leading zeros are normalized (`05` -> `5`, a
+     * leading separator gains a `0`) and the integer part is capped so the value
+     * cannot overflow `Long` minor units at save time.
      */
     fun sanitize(raw: String, fractionDigits: Int, allowNegative: Boolean = true): String {
         val builder = StringBuilder()
@@ -33,11 +42,31 @@ object MoneyInput {
         val text = builder.toString()
         val separatorIndex = text.indexOfFirst { it == '.' || it == ',' }
         val maxLength = separatorIndex + 1 + fractionDigits
-        return if (separatorIndex >= 0 && text.length > maxLength) {
+        val capped = if (separatorIndex >= 0 && text.length > maxLength) {
             text.substring(0, maxLength)
         } else {
             text
         }
+        return finalize(capped)
+    }
+
+    /** Normalizes leading zeros and caps the integer digits of a sanitized amount. */
+    private fun finalize(text: String): String {
+        val negative = text.startsWith("-")
+        var body = if (negative) text.drop(1) else text
+        while (body.length > 1 && body[0] == '0' && body[1].isDigit()) {
+            body = body.drop(1)
+        }
+        if (body.firstOrNull() == '.' || body.firstOrNull() == ',') {
+            body = "0$body"
+        }
+        val separatorIndex = body.indexOfFirst { it == '.' || it == ',' }
+        val integerPart = if (separatorIndex >= 0) body.substring(0, separatorIndex) else body
+        if (integerPart.length > MAX_INTEGER_DIGITS) {
+            val decimals = if (separatorIndex >= 0) body.substring(separatorIndex) else ""
+            body = integerPart.substring(0, MAX_INTEGER_DIGITS) + decimals
+        }
+        return if (negative) "-$body" else body
     }
 
     /**

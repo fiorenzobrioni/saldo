@@ -30,4 +30,11 @@ interface RecurringRuleDao {
 
     @Query("SELECT * FROM recurring_rules WHERE id = :id")
     suspend fun getById(id: Long): RecurringRuleEntity?
+
+    /**
+     * Advances the pre-renewal reminder watermark. A targeted UPDATE (not a
+     * full-row update) so it cannot clobber a concurrent generation write.
+     */
+    @Query("UPDATE recurring_rules SET lastReminderEpochDay = :epochDay WHERE id = :id")
+    suspend fun updateLastReminder(id: Long, epochDay: Long)
 }

@@ -131,12 +131,19 @@ private fun DashboardContent(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
-        item { DashboardHeader(uiState.date, Modifier.padding(horizontal = 4.dp, vertical = 4.dp)) }
+        item {
+            DashboardHeader(
+                band = uiState.greetingBand,
+                roll = uiState.greetingRoll,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+            )
+        }
         item {
             BalanceCard(
                 totalBalance = uiState.totalBalance,
                 currency = uiState.primaryCurrency,
                 accounts = uiState.accounts,
+                date = uiState.date,
                 onManageAccounts = onManageAccounts,
             )
         }

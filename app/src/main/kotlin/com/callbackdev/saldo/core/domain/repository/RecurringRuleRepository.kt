@@ -2,6 +2,7 @@ package com.callbackdev.saldo.core.domain.repository
 
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 
 /** Read/write access to recurring rules. The generation engine lives in Phase 6. */
 interface RecurringRuleRepository {
@@ -17,4 +18,7 @@ interface RecurringRuleRepository {
     suspend fun upsert(rule: RecurringRule): Long
 
     suspend fun delete(rule: RecurringRule)
+
+    /** Records that a pre-renewal reminder was posted for the occurrence on [date]. */
+    suspend fun updateLastReminderDate(ruleId: Long, date: LocalDate)
 }

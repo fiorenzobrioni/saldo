@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.feature.recurring
 
 import android.text.format.DateFormat
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -61,6 +62,7 @@ import java.util.Currency
 @Composable
 internal fun NameField(
     name: String,
+    @StringRes placeholderRes: Int,
     showError: Boolean,
     onNameChanged: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -69,7 +71,7 @@ internal fun NameField(
         value = name,
         onValueChange = onNameChanged,
         label = { Text(stringResource(R.string.subscription_editor_name)) },
-        placeholder = { Text(stringResource(R.string.subscription_editor_name_hint)) },
+        placeholder = { Text(stringResource(placeholderRes)) },
         singleLine = true,
         isError = showError,
         supportingText = if (showError) {

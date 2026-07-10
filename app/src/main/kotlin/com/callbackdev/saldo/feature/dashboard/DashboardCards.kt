@@ -35,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,28 +56,42 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Currency
 
-/** Screen title with a compact localized date, e.g. "Saldo" / "mar 8 lug". */
+/**
+ * A warm, time-of-day greeting as the screen's title. The [band] and [roll] are
+ * fixed once per app-open in the ViewModel, so the message is stable across
+ * recomposition and rotation and only changes on a fresh open. Kept to a single
+ * line; the current date now lives in the balance card.
+ */
 @Composable
-internal fun DashboardHeader(date: LocalDate, modifier: Modifier = Modifier) {
-    val locale = LocalConfiguration.current.locales[0]
-    val shortDate = remember(date, locale) {
-        date.format(DateTimeFormatter.ofPattern("EEE d MMM", locale))
-    }
-    Row(
+internal fun DashboardHeader(band: GreetingBand, roll: Float, modifier: Modifier = Modifier) {
+    val greetings = stringArrayResource(band.greetingsArrayRes())
+    val greeting = greetings.getOrElse((roll * greetings.size).toInt()) { greetings.firstOrNull().orEmpty() }
+    Text(
+        text = greeting,
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.SemiBold,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
         modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = shortDate,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    )
+}
+
+@androidx.annotation.ArrayRes
+private fun GreetingBand.greetingsArrayRes(): Int = when (this) {
+    GreetingBand.NIGHT -> R.array.dashboard_greetings_night
+    GreetingBand.MORNING -> R.array.dashboard_greetings_morning
+    GreetingBand.AFTERNOON -> R.array.dashboard_greetings_afternoon
+    GreetingBand.EVENING -> R.array.dashboard_greetings_evening
+}
+
+/** Full localized weekday date, e.g. "Venerdi 10 luglio" / "Friday, 10 July". */
+@Composable
+private fun fullWeekdayDate(date: LocalDate): String {
+    val locale = LocalConfiguration.current.locales[0]
+    return remember(date, locale) {
+        val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM")
+        date.format(DateTimeFormatter.ofPattern(pattern, locale))
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
     }
 }
 
@@ -86,6 +101,7 @@ internal fun BalanceCard(
     totalBalance: BigDecimal,
     currency: Currency,
     accounts: List<AccountWithBalance>,
+    date: LocalDate,
     onManageAccounts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -104,11 +120,20 @@ internal fun BalanceCard(
                 bottom = 8.dp,
             ),
         ) {
-            Text(
-                text = stringResource(R.string.dashboard_balance_total),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.dashboard_balance_total),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = fullWeekdayDate(date),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 text = MoneyFormatter.format(totalBalance, currency),
