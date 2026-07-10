@@ -5,30 +5,37 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 
 /**
- * App theme based on Material 3 dynamic color.
- *
- * minSdk is 33, so dynamic color is always available and no static fallback
- * palette is needed (ADR 9 in PLANNING.md).
+ * App theme: the brand palette by default (a stable identity across devices
+ * and store screenshots), with Material 3 dynamic color as an opt-in from
+ * Settings. minSdk is 33, so when [dynamicColor] is on no availability check
+ * is needed (revised ADR 9 in PLANNING.md).
  */
 @Composable
 fun SaldoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
-    val colorScheme = if (darkTheme) {
-        dynamicDarkColorScheme(context)
-    } else {
-        dynamicLightColorScheme(context)
+    val colorScheme = when {
+        dynamicColor && darkTheme -> dynamicDarkColorScheme(context)
+        dynamicColor -> dynamicLightColorScheme(context)
+        darkTheme -> BrandDarkColorScheme
+        else -> BrandLightColorScheme
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = SaldoTypography,
         shapes = SaldoShapes,
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(
+            LocalMoneyColors provides moneyColors(colorScheme),
+            content = content,
+        )
+    }
 }

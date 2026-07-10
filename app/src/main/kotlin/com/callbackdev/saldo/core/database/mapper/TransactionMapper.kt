@@ -2,10 +2,14 @@ package com.callbackdev.saldo.core.database.mapper
 
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
 import com.callbackdev.saldo.core.database.relation.CategoryTotalRow
+import com.callbackdev.saldo.core.database.relation.DashboardTotalsRow
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
+import com.callbackdev.saldo.core.domain.model.DashboardTotals
+import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.Currency
 
@@ -32,6 +36,7 @@ fun TransactionEntity.toDomain(): Transaction {
         isRefund = isRefund,
         recurringRuleId = recurringRuleId,
         isPending = isPending,
+        recurringOccurrenceDate = recurringOccurrenceEpochDay?.let(LocalDate::ofEpochDay),
     )
 }
 
@@ -55,10 +60,25 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     isRefund = isRefund,
     recurringRuleId = recurringRuleId,
     isPending = isPending,
+    recurringOccurrenceEpochDay = recurringOccurrenceDate?.toEpochDay(),
 )
 
 fun CategoryTotalRow.toDomain(currency: Currency): CategoryTotal = CategoryTotal(
     categoryId = categoryId,
     total = MoneyMapper.toAmount(totalMinor, currency),
     count = count,
+)
+
+fun DashboardTotalsRow.toDomain(currency: Currency): DashboardTotals = DashboardTotals(
+    today = PeriodTotals(
+        spend = MoneyMapper.toAmount(todaySpendMinor ?: 0L, currency),
+        income = MoneyMapper.toAmount(todayIncomeMinor ?: 0L, currency),
+    ),
+    month = PeriodTotals(
+        spend = MoneyMapper.toAmount(monthSpendMinor ?: 0L, currency),
+        income = MoneyMapper.toAmount(monthIncomeMinor ?: 0L, currency),
+    ),
+    // Expense sums are negative; the to-date figures are positive magnitudes.
+    monthToDateSpend = MoneyMapper.toAmount(monthToDateSpendMinor ?: 0L, currency).negate(),
+    previousMonthToDateSpend = MoneyMapper.toAmount(previousToDateSpendMinor ?: 0L, currency).negate(),
 )

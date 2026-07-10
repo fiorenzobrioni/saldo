@@ -7,6 +7,9 @@ import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.domain.model.DashboardTotals
+import com.callbackdev.saldo.core.domain.model.DashboardWindows
+import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -17,11 +20,13 @@ import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -39,10 +44,10 @@ class DashboardViewModelTest {
     private val eur: Currency = Currency.getInstance("EUR")
     private val usd: Currency = Currency.getInstance("USD")
     private val offset: ZoneOffset = ZoneOffset.ofHours(2)
+    private val zone: ZoneId = ZoneId.of("Europe/Rome")
 
     // Fixed "now" = 8 July 2026, so today/month windows are deterministic.
-    private val clock: Clock =
-        Clock.fixed(Instant.parse("2026-07-08T10:00:00Z"), ZoneId.of("Europe/Rome"))
+    private val clock: Clock = Clock.fixed(Instant.parse("2026-07-08T10:00:00Z"), zone)
 
     private val accountRepository = mockk<AccountRepository>()
     private val transactionRepository = mockk<TransactionRepository>()
@@ -84,12 +89,14 @@ class DashboardViewModelTest {
 
     private fun viewModel(
         accounts: List<AccountWithBalance> = emptyList(),
-        transactions: List<Transaction> = emptyList(),
+        totals: DashboardTotals = DashboardTotals(),
+        recent: List<Transaction> = emptyList(),
         categories: List<Category> = emptyList(),
         rules: List<RecurringRule> = emptyList(),
     ): DashboardViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
-        every { transactionRepository.observeTransactions() } returns flowOf(transactions)
+        every { transactionRepository.observeDashboardTotals(any(), any()) } returns flowOf(totals)
+        every { transactionRepository.observeRecentTransactions(any()) } returns flowOf(recent)
         every { transactionRepository.observePendingTransactions() } returns flowOf(emptyList<Transaction>())
         every { categoryRepository.observeCategories() } returns flowOf(categories)
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
@@ -131,19 +138,63 @@ class DashboardViewModelTest {
     }
 
     @Test
-    fun `today and month flows and the month-over-month comparison are computed`() = runTest {
-        val transactions = listOf(
-            tx(1L, TransactionType.EXPENSE, "-18.90", LocalDate.of(2026, 7, 8)),
-            tx(2L, TransactionType.INCOME, "5.00", LocalDate.of(2026, 7, 8)),
-            tx(3L, TransactionType.EXPENSE, "-100.00", LocalDate.of(2026, 7, 1)),
-            tx(4L, TransactionType.EXPENSE, "-50.00", LocalDate.of(2026, 6, 5)),
-            tx(5L, TransactionType.EXPENSE, "-30.00", LocalDate.of(2026, 6, 20)),
-            // Transfers never count as spend/income.
-            tx(6L, TransactionType.TRANSFER, "-200.00", LocalDate.of(2026, 7, 8)),
+    fun `aggregate windows are derived from the clock and passed to the query`() = runTest {
+        val windows = slot<DashboardWindows>()
+        every { accountRepository.observeAccountsWithBalance() } returns flowOf(
+            listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+        )
+        every {
+            transactionRepository.observeDashboardTotals(capture(windows), eur)
+        } returns flowOf(DashboardTotals())
+        every { transactionRepository.observeRecentTransactions(any()) } returns flowOf(emptyList())
+        every { transactionRepository.observePendingTransactions() } returns flowOf(emptyList())
+        every { categoryRepository.observeCategories() } returns flowOf(emptyList())
+        every { recurringRuleRepository.observeRules() } returns flowOf(emptyList())
+        val viewModel = DashboardViewModel(
+            accountRepository,
+            transactionRepository,
+            categoryRepository,
+            recurringRuleRepository,
+            clock,
+        )
+
+        viewModel.uiState.test {
+            awaitLoaded()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val today = LocalDate.of(2026, 7, 8)
+        assertEquals(today.atStartOfDay(zone).toInstant(), windows.captured.todayStart)
+        assertEquals(today.plusDays(1).atStartOfDay(zone).toInstant(), windows.captured.todayEnd)
+        assertEquals(
+            LocalDate.of(2026, 7, 1).atStartOfDay(zone).toInstant(),
+            windows.captured.monthStart,
+        )
+        assertEquals(
+            LocalDate.of(2026, 8, 1).atStartOfDay(zone).toInstant(),
+            windows.captured.monthEnd,
+        )
+        assertEquals(
+            LocalDate.of(2026, 6, 1).atStartOfDay(zone).toInstant(),
+            windows.captured.previousStart,
+        )
+        assertEquals(
+            LocalDate.of(2026, 6, 9).atStartOfDay(zone).toInstant(),
+            windows.captured.previousToDateEnd,
+        )
+    }
+
+    @Test
+    fun `today and month totals and the month-over-month comparison come from the aggregates`() = runTest {
+        val totals = DashboardTotals(
+            today = PeriodTotals(spend = BigDecimal("-18.90"), income = BigDecimal("5.00")),
+            month = PeriodTotals(spend = BigDecimal("-118.90"), income = BigDecimal("5.00")),
+            monthToDateSpend = BigDecimal("118.90"),
+            previousMonthToDateSpend = BigDecimal("50.00"),
         )
         val viewModel = viewModel(
             accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("0.00"))),
-            transactions = transactions,
+            totals = totals,
         )
 
         viewModel.uiState.test {
@@ -155,19 +206,42 @@ class DashboardViewModelTest {
             assertEquals(BigDecimal("5.00"), state.month.income)
             // 118.90 spent so far this month vs 50.00 by the 8th last month.
             assertEquals(BigDecimal("68.90"), state.monthVsPreviousToDate)
+            assertEquals(BigDecimal("50.00"), state.previousMonthSpendToDate)
+            assertTrue(state.spentMoreThanLastMonth)
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `recent movements are capped at seven and resolved against account and category`() = runTest {
+    fun `no last-month baseline yields no comparison and no spent-more flag`() = runTest {
+        val totals = DashboardTotals(
+            month = PeriodTotals(spend = BigDecimal("-118.90"), income = BigDecimal.ZERO),
+            monthToDateSpend = BigDecimal("118.90"),
+            previousMonthToDateSpend = BigDecimal.ZERO,
+        )
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("0.00"))),
+            totals = totals,
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertNull(state.monthVsPreviousToDate)
+            assertNull(state.previousMonthSpendToDate)
+            assertFalse(state.spentMoreThanLastMonth)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `recent movements are resolved against account and category`() = runTest {
         val category = Category(id = 9L, name = "Food", type = CategoryType.EXPENSE, color = 0x1, icon = "restaurant")
-        val transactions = (1..8L).map { index ->
+        val recent = (1..7L).map { index ->
             tx(index, TransactionType.EXPENSE, "-1.00", LocalDate.of(2026, 7, 8), categoryId = 9L)
         }
         val viewModel = viewModel(
             accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("0.00"))),
-            transactions = transactions,
+            recent = recent,
             categories = listOf(category),
         )
 

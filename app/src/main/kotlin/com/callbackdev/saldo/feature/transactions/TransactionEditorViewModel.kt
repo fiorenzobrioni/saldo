@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.transactions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.money.MoneyInput
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
@@ -116,7 +117,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
     /** The persisted transaction being edited; null in create mode. */
     private var existing: Transaction? = null
 
-    /** Guards against a double-tap on save creating two movements. */
+    /** Guards against a double-tap on save creating two movements; reset on failure. */
     private var isSaving = false
 
     init {
@@ -256,18 +257,25 @@ class TransactionEditorViewModel @AssistedInject constructor(
         }
         isSaving = true
         viewModelScope.launch {
-            val id = transactionRepository.upsert(transaction)
-            tagRepository.setTagsForTransaction(id, form.value.selectedTagIds.toList())
-            userPreferences.setLastUsedAccountId(transaction.accountId)
-            _events.send(TransactionEditorEvent.Saved)
+            val result = suspendRunCatching {
+                val id = transactionRepository.upsert(transaction)
+                tagRepository.setTagsForTransaction(id, form.value.selectedTagIds.toList())
+                userPreferences.setLastUsedAccountId(transaction.accountId)
+            }
+            isSaving = false
+            _events.send(
+                if (result.isSuccess) TransactionEditorEvent.Saved else TransactionEditorEvent.WriteFailed,
+            )
         }
     }
 
     fun delete() {
         val transaction = existing ?: return
         viewModelScope.launch {
-            transactionRepository.delete(transaction)
-            _events.send(TransactionEditorEvent.Deleted)
+            val result = suspendRunCatching { transactionRepository.delete(transaction) }
+            _events.send(
+                if (result.isSuccess) TransactionEditorEvent.Deleted else TransactionEditorEvent.WriteFailed,
+            )
         }
     }
 
@@ -408,6 +416,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
             isExcludedFromStats = if (hasCategory) current.isExcludedFromStats else false,
             isRefund = current.type == TransactionType.INCOME && current.isRefund,
             recurringRuleId = base?.recurringRuleId,
+            recurringOccurrenceDate = base?.recurringOccurrenceDate,
         )
     }
 

@@ -8,12 +8,19 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.callbackdev.saldo.core.common.di.ApplicationScope
+import com.callbackdev.saldo.core.common.prefs.ThemeMode
+import com.callbackdev.saldo.core.common.prefs.ThemePreferences
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.designsystem.theme.SaldoTheme
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
 import com.callbackdev.saldo.navigation.SaldoApp
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,6 +29,13 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var generateRecurringMovements: GenerateRecurringMovementsUseCase
+
+    @Inject
+    @ApplicationScope
+    lateinit var applicationScope: CoroutineScope
+
+    @Inject
+    lateinit var userPreferences: UserPreferencesRepository
 
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* best effort */ }
@@ -32,10 +46,20 @@ class MainActivity : ComponentActivity() {
         requestNotificationPermissionIfNeeded()
         // Catch-up generation on launch, covering days the device was off
         // (PLANNING ADR 4). Idempotent, so running it every launch is safe; the
-        // periodic WorkManager job covers days the app is not opened.
-        lifecycleScope.launch { runCatching { generateRecurringMovements() } }
+        // periodic WorkManager job covers days the app is not opened. Launched in
+        // the application scope so a configuration change cannot cancel it mid-run.
+        applicationScope.launch { runCatching { generateRecurringMovements() } }
         setContent {
-            SaldoTheme {
+            val themePreferences by userPreferences.themePreferences
+                .collectAsStateWithLifecycle(initialValue = ThemePreferences())
+            SaldoTheme(
+                darkTheme = when (themePreferences.mode) {
+                    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+                    ThemeMode.LIGHT -> false
+                    ThemeMode.DARK -> true
+                },
+                dynamicColor = themePreferences.useDynamicColor,
+            ) {
                 SaldoApp()
             }
         }

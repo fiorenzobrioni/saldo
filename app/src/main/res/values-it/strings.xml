@@ -313,4 +313,16 @@
     <string name="seed_category_gifts_received">Regali ricevuti</string>
     <string name="seed_category_refunds">Rimborsi</string>
     <string name="seed_category_other_income">Altro</string>
+
+    <!-- Shared editor feedback -->
+    <string name="editor_write_failed">Operazione non riuscita. Riprova.</string>
+
+    <!-- Settings: appearance -->
+    <string name="settings_section_appearance">Aspetto</string>
+    <string name="settings_section_management">Gestione</string>
+    <string name="settings_theme_system">Sistema</string>
+    <string name="settings_theme_light">Chiaro</string>
+    <string name="settings_theme_dark">Scuro</string>
+    <string name="settings_dynamic_color">Colori dinamici</string>
+    <string name="settings_dynamic_color_hint">Usa i colori dello sfondo (Material You)</string>
 </resources>

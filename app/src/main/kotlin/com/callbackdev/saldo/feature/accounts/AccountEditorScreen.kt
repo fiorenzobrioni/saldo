@@ -32,6 +32,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -73,6 +75,8 @@ fun AccountEditorScreen(
         ),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val writeFailedMessage = stringResource(R.string.editor_write_failed)
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -80,12 +84,15 @@ fun AccountEditorScreen(
                 AccountEditorEvent.Saved,
                 AccountEditorEvent.AccountMissing,
                 -> onNavigateBack()
+
+                AccountEditorEvent.WriteFailed -> snackbarHostState.showSnackbar(writeFailedMessage)
             }
         }
     }
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -331,7 +338,7 @@ private fun InitialBalanceField(
         value = input,
         onValueChange = onChanged,
         label = { Text(stringResource(R.string.account_editor_initial_balance)) },
-        placeholder = { Text("0") },
+        placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
         suffix = { Text(currency.symbol) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),

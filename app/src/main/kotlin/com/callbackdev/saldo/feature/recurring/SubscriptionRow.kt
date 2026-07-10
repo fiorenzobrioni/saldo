@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import java.time.LocalDate
@@ -88,7 +89,7 @@ internal fun SubscriptionRowContent(
         Column(horizontalAlignment = Alignment.End) {
             Text(
                 text = MoneyFormatter.format(item.monthlyEquivalent, rule.currency),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
             )
             if (rule.frequency != RecurrenceFrequency.MONTHLY) {

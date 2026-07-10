@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -36,6 +38,8 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
+import com.callbackdev.saldo.core.designsystem.theme.moneyColors
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.TransactionType
 
@@ -52,9 +56,11 @@ internal fun SwipeableTransactionRow(
     modifier: Modifier = Modifier,
 ) {
     val currentOnDelete by rememberUpdatedState(onDelete)
+    val haptics = LocalHapticFeedback.current
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
             if (value == SwipeToDismissBoxValue.EndToStart) {
+                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 currentOnDelete()
                 true
             } else {
@@ -146,7 +152,7 @@ internal fun TransactionRowContent(
         }
         Text(
             text = itemAmountText(item),
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMedium.tabularNumbers(),
             color = itemAmountColor(item),
         )
     }
@@ -238,9 +244,7 @@ private fun itemAmountText(item: TransactionListItem): String {
 
 @Composable
 private fun itemAmountColor(item: TransactionListItem): Color = when (item.transaction.type) {
-    TransactionType.INCOME -> MaterialTheme.colorScheme.tertiary
-    TransactionType.TRANSFER, TransactionType.ADJUSTMENT ->
-        MaterialTheme.colorScheme.onSurfaceVariant
-
-    TransactionType.EXPENSE -> MaterialTheme.colorScheme.onSurface
+    TransactionType.INCOME -> MaterialTheme.moneyColors.income
+    TransactionType.TRANSFER, TransactionType.ADJUSTMENT -> MaterialTheme.moneyColors.neutral
+    TransactionType.EXPENSE -> MaterialTheme.moneyColors.expense
 }

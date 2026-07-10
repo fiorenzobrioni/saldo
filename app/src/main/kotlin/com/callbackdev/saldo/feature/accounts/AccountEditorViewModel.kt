@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.accounts
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.money.MoneyInput
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
@@ -53,6 +54,9 @@ sealed interface AccountEditorEvent {
 
     /** The account to edit no longer exists: leave the screen. */
     data object AccountMissing : AccountEditorEvent
+
+    /** A write failed: stay on the screen and let the user retry. */
+    data object WriteFailed : AccountEditorEvent
 }
 
 @HiltViewModel(assistedFactory = AccountEditorViewModel.Factory::class)
@@ -94,6 +98,9 @@ class AccountEditorViewModel @AssistedInject constructor(
 
     /** The persisted account being edited; null in create mode. */
     private var existing: Account? = null
+
+    /** Guards against a double-tap on save creating two accounts; reset on failure. */
+    private var isSaving = false
 
     /** True once the user picks an icon: type changes stop updating it. */
     private var userPickedIcon = false
@@ -187,7 +194,7 @@ class AccountEditorViewModel @AssistedInject constructor(
 
     fun save() {
         val state = _uiState.value
-        if (state.isLoading) return
+        if (state.isLoading || isSaving) return
         if (!state.isNameValid) {
             _uiState.update { it.copy(showValidation = true) }
             return
@@ -207,9 +214,13 @@ class AccountEditorViewModel @AssistedInject constructor(
             sortOrder = base?.sortOrder ?: 0,
             createdAt = base?.createdAt ?: clock.instant(),
         )
+        isSaving = true
         viewModelScope.launch {
-            accountRepository.upsert(account)
-            _events.send(AccountEditorEvent.Saved)
+            val result = suspendRunCatching { accountRepository.upsert(account) }
+            isSaving = false
+            _events.send(
+                if (result.isSuccess) AccountEditorEvent.Saved else AccountEditorEvent.WriteFailed,
+            )
         }
     }
 

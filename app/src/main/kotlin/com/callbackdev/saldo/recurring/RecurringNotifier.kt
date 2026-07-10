@@ -13,8 +13,10 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.GeneratedMovement
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -30,6 +32,7 @@ import javax.inject.Singleton
 @Singleton
 class RecurringNotifier @Inject constructor(
     @param:ApplicationContext private val context: Context,
+    private val transactionRepository: TransactionRepository,
 ) {
 
     fun createChannels() {
@@ -46,9 +49,15 @@ class RecurringNotifier @Inject constructor(
         )
     }
 
-    fun notify(generated: List<GeneratedMovement>) {
+    suspend fun notify(generated: List<GeneratedMovement>) {
         val autoCount = generated.count { !it.isPending }
-        val pendingCount = generated.count { it.isPending }
+        // The single confirm notification (fixed id, replaced on repost) reports
+        // every movement still awaiting confirmation, not just this batch.
+        val pendingCount = if (generated.any { it.isPending }) {
+            transactionRepository.observePendingTransactions().first().size
+        } else {
+            0
+        }
         if (autoCount > 0) {
             post(
                 id = ID_ACTIVITY,

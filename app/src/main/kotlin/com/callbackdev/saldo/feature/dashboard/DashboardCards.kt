@@ -43,8 +43,11 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
+import com.callbackdev.saldo.core.designsystem.theme.moneyColors
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import com.callbackdev.saldo.feature.transactions.TransactionRowContent
 import java.math.BigDecimal
@@ -109,10 +112,10 @@ internal fun BalanceCard(
             Spacer(Modifier.height(4.dp))
             Text(
                 text = MoneyFormatter.format(totalBalance, currency),
-                style = MaterialTheme.typography.displaySmall,
+                style = MaterialTheme.typography.displaySmall.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
                 color = if (totalBalance.signum() < 0) {
-                    MaterialTheme.colorScheme.error
+                    MaterialTheme.moneyColors.negative
                 } else {
                     MaterialTheme.colorScheme.onSurface
                 },
@@ -187,9 +190,9 @@ private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = M
         )
         Text(
             text = MoneyFormatter.format(item.balance, account.currency),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.tabularNumbers(),
             color = if (item.balance.signum() < 0) {
-                MaterialTheme.colorScheme.error
+                MaterialTheme.moneyColors.negative
             } else {
                 MaterialTheme.colorScheme.onSurface
             },
@@ -201,8 +204,8 @@ private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = M
 @Composable
 internal fun PeriodCardsRow(
     date: LocalDate,
-    today: PeriodFlow,
-    month: PeriodFlow,
+    today: PeriodTotals,
+    month: PeriodTotals,
     currency: Currency,
     modifier: Modifier = Modifier,
 ) {
@@ -239,7 +242,7 @@ internal fun PeriodCardsRow(
 @Composable
 private fun PeriodCompactCard(
     title: String,
-    flow: PeriodFlow,
+    flow: PeriodTotals,
     currency: Currency,
     modifier: Modifier = Modifier,
 ) {
@@ -260,7 +263,7 @@ private fun PeriodCompactCard(
             Spacer(Modifier.height(6.dp))
             Text(
                 text = MoneyFormatter.formatSigned(flow.net, currency),
-                style = MaterialTheme.typography.headlineSmall,
+                style = MaterialTheme.typography.headlineSmall.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
                 color = netColor(flow.net),
                 maxLines = 1,
@@ -528,7 +531,7 @@ internal fun RecentMovementsCard(
 
 @Composable
 private fun netColor(value: BigDecimal): Color = when {
-    value.signum() > 0 -> MaterialTheme.colorScheme.tertiary
+    value.signum() > 0 -> MaterialTheme.moneyColors.income
     else -> MaterialTheme.colorScheme.onSurface
 }
 

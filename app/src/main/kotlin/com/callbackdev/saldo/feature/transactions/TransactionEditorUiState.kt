@@ -89,4 +89,7 @@ sealed interface TransactionEditorEvent {
 
     /** The transaction to edit no longer exists: leave the screen. */
     data object TransactionMissing : TransactionEditorEvent
+
+    /** A write failed: stay on the screen and let the user retry. */
+    data object WriteFailed : TransactionEditorEvent
 }

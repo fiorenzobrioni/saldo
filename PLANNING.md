@@ -32,6 +32,7 @@
 | 12 | Domain layer pragmatico: Use Case solo dove c'è logica di dominio reale | Ricorrenze, rettifiche, statistiche, rimborsi, backup sì; per il CRUD banale il ViewModel usa direttamente il Repository. Evita boilerplate passacarte (per Google il domain layer è opzionale) |
 | 13 | Backup manuale su file (SAF) accanto al backup Drive, stesso formato JSON | Backup completo possibile senza account Google (coerente coi principi) e portabilità totale dei dati; un solo code path di export/restore, nessun permesso di storage richiesto |
 | 14 | targetSdk/compileSdk fissati esplicitamente (attualmente 36), mai "ultimo stabile" implicito | Build riproducibili e niente ricerca della versione corrente a ogni intervento; l'aggiornamento è una chore deliberata e testata. Nota: Google Play richiede comunque un targetSdk recente (policy annuale), quindi la chore va pianificata quando esce una nuova release stabile di Android |
+| 15 | Palette brand statica di default, dynamic color opt-in da Impostazioni | Identità visiva riconoscibile su Play Store e screenshot coerenti tra device; Material You resta disponibile come scelta esplicita dell'utente. Rivede la parte "solo dynamic color" dell'ADR 9 (min SDK 33 resta invariato) |
 
 ---
 
@@ -121,6 +122,19 @@
 - [x] Collegamento card dashboard
 - [x] Test approfonditi del motore: mesi corti, anni bisestili, catch-up dopo N giorni, idempotenza (DST: evitato generando i movimenti a mezzogiorno; il motore lavora su `LocalDate`)
 
+## Fase 6.5 - Design system e omogeneità (dalla review di luglio 2026)
+
+> Fase intermedia nata dalla review completa dell'app (bug, refactor, omogeneità UI). Fatta prima della Fase 7 così statistiche e schermate future nascono direttamente sui componenti condivisi.
+
+- [x] Componenti condivisi `EmptyState` e `LoadingState` in `core/designsystem/component`, adottati da tutte le schermate (prima: 5 copie hand-rolled, una divergente)
+- [x] Tipografia: headline/title a peso SemiBold in `SaldoTypography`; numeri tabulari (`tabularNumbers()`) su tutti gli importi
+- [x] `MoneyColors`: ruoli semantici unici per colorare il denaro (income/expense/neutral/negative) al posto di 3 regole divergenti tra dashboard, conti e registro
+- [x] Palette brand statica di default (seed teal, tertiary verde così le entrate leggono verde) + dynamic color opt-in e tema chiaro/scuro/sistema in Impostazioni, persistiti in DataStore (ADR 15)
+- [x] Avatar squircle (`AvatarShape`) uniformi: categorie ed empty state usavano `CircleShape`
+- [x] Haptics: tastierino importi, conferma swipe-delete, speed-dial FAB, presa/rilascio drag reorder
+- [x] Refactor dashboard: aggregati calcolati in SQL (query unica multi-finestra `observeDashboardTotals` + `LIMIT` sui movimenti recenti) invece di caricare l'intero registro in memoria; chiude anche il punto performance parcheggiato in Fase 9
+- [x] Error handling uniforme negli editor: guardia anti doppio-tap, `suspendRunCatching`, evento `WriteFailed` con snackbar
+
 ## Fase 7 - Ricerca, filtri e statistiche
 
 - [ ] Filtri combinabili (data con preset, categorie, account, tipo, importo, tag) come chip
@@ -149,7 +163,7 @@
 
 ## Fase 9 - Impostazioni, i18n, rifinitura
 
-- [ ] Impostazioni: valuta principale, account di default, tema, primo giorno settimana, backup
+- [ ] Impostazioni: valuta principale, account di default, primo giorno settimana, backup (tema: già fatto in Fase 6.5)
 - [ ] Onboarding minimale (valuta, primo account, saldo iniziale)
 - [ ] Revisione completa stringhe IT + EN
 - [ ] Pass di accessibilità: TalkBack, font scaling 200%, contrasto, touch target, non solo colore per spese/entrate
@@ -214,9 +228,25 @@
 
 - Chore da pianificare: migrazione ad AGP 9.x + Gradle 9.1+ e compileSdk/targetSdk 37, da fare quando Android 17 (API 37) diventa stabile: a luglio 2026 è ancora in Beta (verificato su developer.android.com/about/versions/17), quindi il valore fissato 36 (ADR 14) è anche l'ultimo stabile disponibile. Vincoli attuali: Hilt 2.59+ richiede AGP 9; androidx core 1.19, lifecycle 2.11 e Compose BOM 2026.06 richiedono compileSdk 37 (AGP 9.1+). Fino ad allora restano fissati: AGP 8.13.2, Hilt 2.58, compileSdk/targetSdk 36, core-ktx 1.18.0, lifecycle 2.10.0, BOM 2026.02.01, activity-compose 1.12.4.
 - Nota ambiente Claude Code web: il download delle distribuzioni Gradle è bloccato dal proxy (il redirect finale punta a un asset GitHub fuori dallo scope di rete della sessione); i build locali usano il Gradle preinstallato in `/opt/gradle`. AGP e le librerie si scaricano normalmente da Google Maven/Maven Central; `sdkmanager` funziona (dl.google.com), incluso `platforms;android-37.0` quando servirà.
+- Idee "wow" dalla review completa di luglio 2026 (tutte compatibili con VISION: offline-first, privacy-first, niente open banking). Non implementarle senza deciderlo esplicitamente:
+  - "Spendibile oggi" (safe-to-spend): un numero in dashboard = budget del mese - speso - ricorrenze in arrivo. Si aggancia al budget v1.5 e alla Fase 6. Trasforma il tracker da passivo a proattivo.
+  - Radar abbonamenti: la vista Abbonamenti ha già totale mensile, proiezione annua e prossimo addebito; il pezzo mancante a più alto valore è la notifica di pre-rinnovo configurabile ("Netflix si rinnova tra 3 giorni"): oggi le notifiche partono solo dopo la generazione dell'addebito.
+  - Rilevamento automatico ricorrenze: euristica on-device che nota spese simili ripetute a cadenza regolare e propone di creare la regola. "Intelligenza senza cloud", coerente col posizionamento privacy.
+  - Recap mensile condivisibile (stile Wrapped): report generato sul device, esportabile come immagine, zero dati che escono.
+  - Quick-add ovunque: widget home (già in v1.5), app shortcut statici, Quick Settings tile: spesa registrata in 2 tap senza aprire l'app.
+  - Quick entry testuale: parser offline di "12,50 pizza" → importo + categoria suggerita.
 
 # Bug conosciuti
 
 > Bug noti da risolvere. Spuntare quando fixati (con riferimento al commit).
 
-- [ ] 
+Trovati dalla review completa di luglio 2026:
+
+- [x] Generazione ricorrenze non atomica: un'interruzione (rotazione, morte del processo) o l'esecuzione concorrente di worker e catch-up poteva duplicare i movimenti, perché gli insert e l'avanzamento di `lastGeneratedDate` erano scritture separate senza transazione e il catch-up girava nel `lifecycleScope`. Fix: transazione unica per regola, mutex, catch-up su application scope, unique index (recurringRuleId, recurringOccurrenceEpochDay) come backstop con migration 3→4 (commit 74c805e)
+- [x] Editor: `isSaving` mai resettato e scritture repository senza gestione errori; un salvataggio fallito bloccava l'editor movimento per sempre e gli altri editor erano esposti al doppio tap (commit 74c805e)
+- [x] Seed categorie non crash-safe: insert asincrona fuori dalla transazione di creazione del DB; se il processo moriva nel mezzo il DB restava senza categorie predefinite (commit 74c805e)
+- [x] `spentMoreThanLastMonth` calcolato anche senza baseline del mese precedente (commit 74c805e)
+- [x] Conteggio abbonamenti su tutte le valute ma totale mensile solo nella valuta principale: "N abbonamenti - X/mese" incoerente (commit 74c805e)
+- [x] Cambio cadenza di una regola ricorrente manteneva il vecchio `lastGeneratedDate`, disallineato con la nuova schedule (commit 74c805e)
+- [x] Notifica di conferma con il conteggio del solo batch appena generato invece dei pending totali in attesa (commit 74c805e)
+- [ ] Riordino categorie: il `sortOrder` globale accoppia i tab; riordinare Spese può rimescolare l'ordine relativo delle categorie "entrambi" nel tab Entrate. Da decidere: accettare (documentato) o passare a un sortOrder per tipo.

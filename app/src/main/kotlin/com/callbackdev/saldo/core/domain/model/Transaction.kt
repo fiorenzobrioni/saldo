@@ -2,6 +2,7 @@ package com.callbackdev.saldo.core.domain.model
 
 import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.Currency
 
@@ -47,4 +48,11 @@ data class Transaction(
      * amount). Pending movements do not affect balances or statistics until confirmed.
      */
     val isPending: Boolean = false,
+    /**
+     * For generated recurring movements, the schedule occurrence this movement
+     * materializes; null for manual movements. Identifies the occurrence even if
+     * the user later edits the movement's date, and backs the unique constraint
+     * that prevents double generation.
+     */
+    val recurringOccurrenceDate: LocalDate? = null,
 )

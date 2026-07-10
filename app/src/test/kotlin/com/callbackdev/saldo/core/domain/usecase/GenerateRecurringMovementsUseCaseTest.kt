@@ -7,11 +7,14 @@ import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.repository.TransactionRunner
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -35,19 +38,51 @@ class GenerateRecurringMovementsUseCaseTest {
     private val generatedMovements = mutableListOf<Transaction>()
     private val updatedRules = mutableListOf<RecurringRule>()
 
-    private fun useCase(rules: List<RecurringRule>): GenerateRecurringMovementsUseCase {
+    /** Pass-through runner that records whether writes happen inside a transaction. */
+    private class RecordingTransactionRunner : TransactionRunner {
+        var inTransaction = false
+            private set
+
+        override suspend fun <T> inTransaction(block: suspend () -> T): T {
+            inTransaction = true
+            return try {
+                block()
+            } finally {
+                inTransaction = false
+            }
+        }
+    }
+
+    private val transactionRunner = RecordingTransactionRunner()
+
+    private fun useCase(
+        rules: List<RecurringRule>,
+        alreadyGenerated: Set<LocalDate> = emptySet(),
+    ): GenerateRecurringMovementsUseCase {
         generatedMovements.clear()
         updatedRules.clear()
         coEvery { recurringRuleRepository.getRules() } returns rules
-        coEvery { transactionRepository.upsert(any()) } answers {
-            generatedMovements.add(firstArg())
-            generatedMovements.size.toLong()
+        coEvery { transactionRepository.insertIfAbsent(any()) } answers {
+            check(transactionRunner.inTransaction) { "movement inserted outside a transaction" }
+            val movement = firstArg<Transaction>()
+            if (movement.recurringOccurrenceDate in alreadyGenerated) {
+                -1L
+            } else {
+                generatedMovements.add(movement)
+                generatedMovements.size.toLong()
+            }
         }
         coEvery { recurringRuleRepository.upsert(any()) } answers {
+            check(transactionRunner.inTransaction) { "watermark advanced outside a transaction" }
             updatedRules.add(firstArg())
             firstArg<RecurringRule>().id
         }
-        return GenerateRecurringMovementsUseCase(recurringRuleRepository, transactionRepository, clock)
+        return GenerateRecurringMovementsUseCase(
+            recurringRuleRepository,
+            transactionRepository,
+            transactionRunner,
+            clock,
+        )
     }
 
     private fun rule(
@@ -198,6 +233,82 @@ class GenerateRecurringMovementsUseCaseTest {
         val result = useCase(today)
 
         assertEquals(0, result.size)
+    }
+
+    @Test
+    fun `stamps each generated movement with its occurrence date`() = runTest {
+        val useCase = useCase(listOf(rule(startDate = LocalDate.of(2026, 5, 7))))
+
+        useCase(today)
+
+        assertEquals(
+            listOf(LocalDate.of(2026, 5, 7), LocalDate.of(2026, 6, 7), LocalDate.of(2026, 7, 7)),
+            generatedMovements.map { it.recurringOccurrenceDate },
+        )
+    }
+
+    @Test
+    fun `skips occurrences already persisted and still advances the watermark`() = runTest {
+        // Simulates a stale watermark (interrupted previous run): the first two
+        // occurrences already exist in the database, so the unique-index backstop
+        // rejects them and only the third is created and notified.
+        val useCase = useCase(
+            rules = listOf(rule(startDate = LocalDate.of(2026, 5, 7))),
+            alreadyGenerated = setOf(LocalDate.of(2026, 5, 7), LocalDate.of(2026, 6, 7)),
+        )
+
+        val result = useCase(today)
+
+        assertEquals(listOf(LocalDate.of(2026, 7, 7)), result.map { it.date })
+        assertEquals(listOf(LocalDate.of(2026, 7, 7)), generatedMovements.map { it.localDate() })
+        assertEquals(LocalDate.of(2026, 7, 7), updatedRules.single().lastGeneratedDate)
+    }
+
+    @Test
+    fun `advances the watermark even when every occurrence was already persisted`() = runTest {
+        val useCase = useCase(
+            rules = listOf(rule(startDate = LocalDate.of(2026, 6, 7))),
+            alreadyGenerated = setOf(LocalDate.of(2026, 6, 7), LocalDate.of(2026, 7, 7)),
+        )
+
+        val result = useCase(today)
+
+        assertTrue(result.isEmpty())
+        assertTrue(generatedMovements.isEmpty())
+        assertEquals(LocalDate.of(2026, 7, 7), updatedRules.single().lastGeneratedDate)
+    }
+
+    @Test
+    fun `concurrent runs are serialized and generate once`() = runTest {
+        val startDate = LocalDate.of(2026, 5, 7)
+        var watermark: LocalDate? = null
+        coEvery { recurringRuleRepository.getRules() } answers {
+            listOf(rule(startDate = startDate, lastGenerated = watermark))
+        }
+        coEvery { recurringRuleRepository.upsert(any()) } answers {
+            watermark = firstArg<RecurringRule>().lastGeneratedDate
+            firstArg<RecurringRule>().id
+        }
+        generatedMovements.clear()
+        coEvery { transactionRepository.insertIfAbsent(any()) } answers {
+            generatedMovements.add(firstArg())
+            generatedMovements.size.toLong()
+        }
+        val useCase = GenerateRecurringMovementsUseCase(
+            recurringRuleRepository,
+            transactionRepository,
+            transactionRunner,
+            clock,
+        )
+
+        val first = async { useCase(today) }
+        val second = async { useCase(today) }
+        val results = listOf(first.await(), second.await())
+
+        // One run does all the work, the other reads the advanced watermark and is a no-op.
+        assertEquals(3, generatedMovements.size)
+        assertEquals(3, results.sumOf { it.size })
+        assertFalse(results.all { it.isNotEmpty() })
     }
 
     @Test

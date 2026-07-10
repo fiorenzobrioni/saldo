@@ -31,6 +31,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - 🔍 **Ricerca e filtri combinabili** con totale della vista filtrata
 - 📈 **Statistiche** - spese per categoria, trend mensile, entrate vs uscite, andamento saldo
 - 🌍 **Multi-valuta** - ogni movimento conserva importo e valuta originali
+- 🎨 **Tema personalizzabile** - chiaro/scuro/sistema, palette dell'app o colori dinamici Material You
 - ☁️ **Backup opzionale** - automatico su Google Drive (App Data Folder, privato) oppure manuale su file, portabile ovunque - più **export CSV**
 - 🇮🇹 🇬🇧 Italiano e inglese
 
@@ -47,7 +48,7 @@ In arrivo (v1.5 / v2.0): budget, PIN e biometria, widget, import CSV, export Goo
 
 ## Stack tecnico
 
-- **Kotlin** 100%, **Jetpack Compose** + Material 3 (Material You, dynamic color)
+- **Kotlin** 100%, **Jetpack Compose** + Material 3 (palette brand di default, Material You/dynamic color attivabile dalle impostazioni)
 - **Navigation 3** (`androidx.navigation3`)
 - **Room** (persistenza), **DataStore** (impostazioni), **Coroutines + Flow**
 - **MVVM + Use Cases + Repository**, **Hilt** (DI), **KSP**

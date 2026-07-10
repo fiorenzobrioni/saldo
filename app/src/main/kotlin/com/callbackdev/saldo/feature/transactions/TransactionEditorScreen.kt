@@ -33,6 +33,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -87,6 +89,9 @@ fun TransactionEditorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val writeFailedMessage = stringResource(R.string.editor_write_failed)
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
@@ -94,6 +99,9 @@ fun TransactionEditorScreen(
                 TransactionEditorEvent.Deleted,
                 TransactionEditorEvent.TransactionMissing,
                 -> onNavigateBack()
+
+                TransactionEditorEvent.WriteFailed ->
+                    snackbarHostState.showSnackbar(writeFailedMessage)
             }
         }
     }
@@ -113,6 +121,7 @@ fun TransactionEditorScreen(
 
     Scaffold(
         modifier = modifier,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(editorTitleRes(uiState))) },

@@ -53,6 +53,7 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
         Index("timestampEpochMilli"),
         Index("type"),
         Index("currency"),
+        Index("recurringRuleId", "recurringOccurrenceEpochDay", unique = true),
     ],
 )
 data class TransactionEntity(
@@ -83,4 +84,13 @@ data class TransactionEntity(
      */
     @ColumnInfo(name = "isPending", defaultValue = "0")
     val isPending: Boolean = false,
+    /**
+     * For generated recurring movements, the occurrence's local date as an epoch
+     * day; null for manual movements. The unique index on
+     * (recurringRuleId, recurringOccurrenceEpochDay) is the database-level
+     * backstop against generating the same occurrence twice. Added in schema
+     * version 4.
+     */
+    @ColumnInfo(name = "recurringOccurrenceEpochDay")
+    val recurringOccurrenceEpochDay: Long? = null,
 )

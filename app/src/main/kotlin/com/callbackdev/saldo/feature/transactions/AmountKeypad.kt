@@ -21,6 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
@@ -149,12 +151,24 @@ private fun KeyBox(
     onLongClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
+    val haptics = LocalHapticFeedback.current
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .height(KeyHeight)
             .clip(MaterialTheme.shapes.medium)
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+            .combinedClickable(
+                onClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                    onClick()
+                },
+                onLongClick = onLongClick?.let { action ->
+                    {
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        action()
+                    }
+                },
+            ),
     ) {
         content()
     }

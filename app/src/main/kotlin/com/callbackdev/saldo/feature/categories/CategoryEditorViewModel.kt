@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.categories
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
@@ -68,6 +69,9 @@ sealed interface CategoryEditorEvent {
 
     /** The category to edit no longer exists: leave the screen. */
     data object CategoryMissing : CategoryEditorEvent
+
+    /** A write failed: stay on the screen and let the user retry. */
+    data object WriteFailed : CategoryEditorEvent
 }
 
 @HiltViewModel(assistedFactory = CategoryEditorViewModel.Factory::class)
@@ -94,6 +98,9 @@ class CategoryEditorViewModel @AssistedInject constructor(
 
     private val _events = Channel<CategoryEditorEvent>(Channel.BUFFERED)
     val events: Flow<CategoryEditorEvent> = _events.receiveAsFlow()
+
+    /** Guards against a double-tap on save creating two categories; reset on failure. */
+    private var isSaving = false
 
     /** The persisted category being edited; null in create mode. */
     private var existing: Category? = null
@@ -141,24 +148,30 @@ class CategoryEditorViewModel @AssistedInject constructor(
 
     fun save() {
         val state = _uiState.value
-        if (state.isLoading) return
+        if (state.isLoading || isSaving) return
         if (!state.isNameValid) {
             _uiState.update { it.copy(showValidation = true) }
             return
         }
         val base = existing
+        isSaving = true
         viewModelScope.launch {
-            val category = Category(
-                id = base?.id ?: 0L,
-                name = state.name.trim(),
-                type = state.type,
-                color = state.color,
-                icon = state.icon,
-                sortOrder = base?.sortOrder ?: categoryRepository.nextSortOrder(),
-                isDefault = base?.isDefault ?: false,
+            val result = suspendRunCatching {
+                val category = Category(
+                    id = base?.id ?: 0L,
+                    name = state.name.trim(),
+                    type = state.type,
+                    color = state.color,
+                    icon = state.icon,
+                    sortOrder = base?.sortOrder ?: categoryRepository.nextSortOrder(),
+                    isDefault = base?.isDefault ?: false,
+                )
+                categoryRepository.upsert(category)
+            }
+            isSaving = false
+            _events.send(
+                if (result.isSuccess) CategoryEditorEvent.Saved else CategoryEditorEvent.WriteFailed,
             )
-            categoryRepository.upsert(category)
-            _events.send(CategoryEditorEvent.Saved)
         }
     }
 
@@ -198,15 +211,19 @@ class CategoryEditorViewModel @AssistedInject constructor(
         val dialog = _uiState.value.deleteDialog ?: return
         _uiState.update { it.copy(deleteDialog = null) }
         viewModelScope.launch {
-            when (dialog) {
-                is CategoryDeleteDialog.Reassign ->
-                    categoryRepository.deleteWithReassignment(category, dialog.selectedTargetId)
+            val result = suspendRunCatching {
+                when (dialog) {
+                    is CategoryDeleteDialog.Reassign ->
+                        categoryRepository.deleteWithReassignment(category, dialog.selectedTargetId)
 
-                is CategoryDeleteDialog.Confirm,
-                is CategoryDeleteDialog.ConfirmUncategorize,
-                -> categoryRepository.delete(category)
+                    is CategoryDeleteDialog.Confirm,
+                    is CategoryDeleteDialog.ConfirmUncategorize,
+                    -> categoryRepository.delete(category)
+                }
             }
-            _events.send(CategoryEditorEvent.Deleted)
+            _events.send(
+                if (result.isSuccess) CategoryEditorEvent.Deleted else CategoryEditorEvent.WriteFailed,
+            )
         }
     }
 

@@ -76,8 +76,8 @@ class SubscriptionsViewModel @Inject constructor(
             .eachCount()
             .maxByOrNull { it.value }?.key
             ?: SubscriptionsUiState.fallbackCurrency
-        val monthlyTotal = items
-            .filter { it.rule.currency == primary }
+        val primaryItems = items.filter { it.rule.currency == primary }
+        val monthlyTotal = primaryItems
             .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.monthlyEquivalent) }
 
         return SubscriptionsUiState(
@@ -85,7 +85,8 @@ class SubscriptionsViewModel @Inject constructor(
             items = items,
             monthlyTotal = monthlyTotal,
             annualProjection = monthlyTotal.multiply(BigDecimal(MONTHS_PER_YEAR)),
-            activeCount = items.size,
+            // Same scope as monthlyTotal, so "N subscriptions - X/month" is coherent.
+            activeCount = primaryItems.size,
             currency = primary,
             sort = sortOrder,
             today = today,
