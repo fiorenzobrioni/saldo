@@ -24,6 +24,13 @@ interface AccountRepository {
      */
     fun observeTotalBalance(currency: Currency): Flow<BigDecimal>
 
+    /**
+     * Sum of the initial balances of the accounts included in the total, not
+     * archived and denominated in [currency]; the starting point of the
+     * balance-over-time statistic.
+     */
+    fun observeInitialBalanceTotal(currency: Currency): Flow<BigDecimal>
+
     suspend fun getAccount(id: Long): Account?
 
     /** Inserts a new account (id == 0) or updates an existing one. Returns its id. */

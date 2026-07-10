@@ -1,15 +1,22 @@
 package com.callbackdev.saldo.core.database.mapper
 
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
+import com.callbackdev.saldo.core.database.relation.AccountTotalRow
 import com.callbackdev.saldo.core.database.relation.CategoryTotalRow
 import com.callbackdev.saldo.core.database.relation.DashboardTotalsRow
+import com.callbackdev.saldo.core.database.relation.MonthlyNetRow
+import com.callbackdev.saldo.core.database.relation.MonthlyTotalRow
+import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
+import com.callbackdev.saldo.core.domain.model.MonthlyNet
+import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import java.time.Instant
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneOffset
 import java.util.Currency
 
@@ -81,4 +88,21 @@ fun DashboardTotalsRow.toDomain(currency: Currency): DashboardTotals = Dashboard
     // Expense sums are negative; the to-date figures are positive magnitudes.
     monthToDateSpend = MoneyMapper.toAmount(monthToDateSpendMinor ?: 0L, currency).negate(),
     previousMonthToDateSpend = MoneyMapper.toAmount(previousToDateSpendMinor ?: 0L, currency).negate(),
+)
+
+fun MonthlyTotalRow.toDomain(currency: Currency): MonthlyTotal = MonthlyTotal(
+    month = YearMonth.parse(month),
+    expense = MoneyMapper.toAmount(expenseMinor, currency),
+    income = MoneyMapper.toAmount(incomeMinor, currency),
+)
+
+fun AccountTotalRow.toDomain(currency: Currency): AccountTotal = AccountTotal(
+    accountId = accountId,
+    total = MoneyMapper.toAmount(totalMinor, currency),
+    count = count,
+)
+
+fun MonthlyNetRow.toDomain(currency: Currency): MonthlyNet = MonthlyNet(
+    month = YearMonth.parse(month),
+    net = MoneyMapper.toAmount(netMinor, currency),
 )

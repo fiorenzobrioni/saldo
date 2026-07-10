@@ -7,6 +7,7 @@ import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.fallbackCurrency
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
@@ -77,7 +78,7 @@ class RecurrencesViewModel @Inject constructor(
                 .groupingBy { it.rule.currency }
                 .eachCount()
                 .maxByOrNull { it.value }?.key
-                ?: RecurrencesUiState.fallbackCurrency
+                ?: fallbackCurrency
             val primaryItems = items.filter { it.rule.currency == primary }
             val monthlyTotal = primaryItems
                 .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.monthlyEquivalent) }

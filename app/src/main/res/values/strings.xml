@@ -193,6 +193,20 @@
         <item quantity="other">%1$d transactions</item>
     </plurals>
 
+    <!-- Statistics (Phase 7) -->
+    <string name="stats_empty_title">Nothing to chart yet</string>
+    <string name="stats_empty_body">Statistics appear with your first recorded expenses.</string>
+    <string name="stats_period_month">Month</string>
+    <string name="stats_period_year">Year</string>
+    <string name="stats_period_custom">Custom</string>
+    <string name="stats_previous_period">Previous period</string>
+    <string name="stats_next_period">Next period</string>
+    <string name="stats_categories_title">Expenses by category</string>
+    <string name="stats_accounts_title">Expenses by account</string>
+    <string name="stats_total_spent_label">Total spent in the period</string>
+    <string name="stats_no_data_period">No data for this period.</string>
+    <string name="stats_percent" translatable="false">%1$d%%</string>
+
     <!-- Transaction editor (Phase 3) -->
     <string name="transaction_editor_title_new">New transaction</string>
     <string name="transaction_editor_title_new_expense">New expense</string>

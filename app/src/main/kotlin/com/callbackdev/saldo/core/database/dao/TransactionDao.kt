@@ -7,8 +7,11 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
+import com.callbackdev.saldo.core.database.relation.AccountTotalRow
 import com.callbackdev.saldo.core.database.relation.CategoryTotalRow
 import com.callbackdev.saldo.core.database.relation.DashboardTotalsRow
+import com.callbackdev.saldo.core.database.relation.MonthlyNetRow
+import com.callbackdev.saldo.core.database.relation.MonthlyTotalRow
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -85,6 +88,103 @@ interface TransactionDao {
         endMillis: Long,
         currency: String,
     ): Flow<List<CategoryTotalRow>>
+
+    /**
+     * Per-month expense and income totals in `[startMillis, endMillis)` for the
+     * statistics trend charts, restricted to [currency]. Months are the
+     * movement's own local month (per-row offset, ADR 7). Refunds (INCOME with
+     * isRefund = 1) count as negative spend, not income, mirroring how
+     * [observeCategoryTotals] nets them against the category; transfers,
+     * adjustments, excluded-from-stats and pending movements never count.
+     */
+    @Query(
+        """
+        SELECT
+            strftime('%Y-%m', (timestampEpochMilli / 1000 + zoneOffsetSeconds), 'unixepoch')
+                AS month,
+            SUM(
+                CASE WHEN type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1)
+                THEN amountMinor ELSE 0 END
+            ) AS expenseMinor,
+            SUM(
+                CASE WHEN type = 'INCOME' AND isRefund = 0
+                THEN amountMinor ELSE 0 END
+            ) AS incomeMinor
+        FROM transactions
+        WHERE type IN ('EXPENSE', 'INCOME')
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        GROUP BY month
+        ORDER BY month
+        """,
+    )
+    fun observeMonthlyTotals(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): Flow<List<MonthlyTotalRow>>
+
+    /**
+     * Per-account signed spend totals in `[startMillis, endMillis)`, restricted
+     * to [currency]. Same statistics rules as [observeMonthlyTotals]: refunds
+     * net the spend, transfers/adjustments/excluded/pending never count.
+     */
+    @Query(
+        """
+        SELECT accountId AS accountId, SUM(amountMinor) AS totalMinor, COUNT(*) AS count
+        FROM transactions
+        WHERE (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        GROUP BY accountId
+        """,
+    )
+    fun observeAccountSpendTotals(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): Flow<List<AccountTotalRow>>
+
+    /**
+     * Net effect per local month on the balance of the accounts included in the
+     * total (non-archived, denominated in [currency]), across the whole ledger.
+     * Every type counts, exactly like [AccountDao.observeTotalBalance]: the
+     * first leg covers expenses, incomes, adjustments and transfers out via the
+     * signed amount; the second adds the incoming leg of transfers. Balance is
+     * a cash figure, so excluded-from-stats movements still count; pending ones
+     * never do. Feeds the balance-over-time statistic together with the initial
+     * balances.
+     */
+    @Query(
+        """
+        SELECT month, SUM(deltaMinor) AS netMinor FROM (
+            SELECT
+                strftime('%Y-%m', (t.timestampEpochMilli / 1000 + t.zoneOffsetSeconds), 'unixepoch')
+                    AS month,
+                t.amountMinor AS deltaMinor
+            FROM transactions t
+            INNER JOIN accounts a ON a.id = t.accountId
+            WHERE t.isPending = 0
+                AND a.isIncludedInTotal = 1 AND a.isArchived = 0 AND a.currency = :currency
+            UNION ALL
+            SELECT
+                strftime('%Y-%m', (t.timestampEpochMilli / 1000 + t.zoneOffsetSeconds), 'unixepoch')
+                    AS month,
+                t.transferAmountMinor AS deltaMinor
+            FROM transactions t
+            INNER JOIN accounts a ON a.id = t.transferAccountId
+            WHERE t.type = 'TRANSFER' AND t.isPending = 0
+                AND a.isIncludedInTotal = 1 AND a.isArchived = 0 AND a.currency = :currency
+        )
+        GROUP BY month
+        ORDER BY month
+        """,
+    )
+    fun observeMonthlyNetChanges(currency: String): Flow<List<MonthlyNetRow>>
 
     /** The latest confirmed movements, capped in SQL so the dashboard never loads the full ledger. */
     @Query(
