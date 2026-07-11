@@ -13,6 +13,8 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.feature.transactions.filter.DatePreset
+import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -223,9 +225,36 @@ class TransactionsViewModelTest {
             viewModel.clearFilters()
             state = awaitItem()
             assertEquals(2, state.filteredCount)
-            assertFalse(state.filters.isActive)
+            // Clearing goes back to the default view (current month), not to "all".
+            assertEquals(TransactionFilters.DEFAULT, state.filters)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `the default view shows only the current month and the ALL preset lifts it`() = runTest {
+        val thisMonth = transaction(id = 1L, timestamp = Instant.parse("2026-07-08T08:00:00Z"))
+        val older = transaction(id = 2L, timestamp = Instant.parse("2026-05-02T08:00:00Z"))
+        val viewModel = viewModel(transactions = listOf(thisMonth, older))
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+            assertEquals(DatePreset.THIS_MONTH, state.filters.datePreset)
+            assertEquals(listOf(1L), state.days.flatMap { day -> day.items.map { it.id } })
+
+            viewModel.setDatePreset(DatePreset.ALL)
+            state = awaitItem()
+            assertEquals(2, state.filteredCount)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `the filter badge ignores the default month preset and ALL`() {
+        assertEquals(0, TransactionFilters.DEFAULT.activeCount)
+        assertEquals(0, TransactionFilters.NONE.activeCount)
+        assertEquals(1, TransactionFilters(datePreset = DatePreset.LAST_MONTH).activeCount)
     }
 
     @Test

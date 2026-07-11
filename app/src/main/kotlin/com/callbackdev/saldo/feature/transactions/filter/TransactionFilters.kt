@@ -40,10 +40,14 @@ data class TransactionFilters(
     /** True when the visible list is restricted in any way (filters or search). */
     val isActive: Boolean get() = hasActiveFilters || query.isNotBlank()
 
-    /** Number of active filter groups, for the badge on the filter button. */
+    /**
+     * Number of active filter groups, for the badge on the filter button. The
+     * date term skips [DatePreset.THIS_MONTH] besides [DatePreset.ALL]: the
+     * month is the default view, and the badge signals what the user changed.
+     */
     val activeCount: Int
         get() = listOf(
-            datePreset != DatePreset.ALL,
+            datePreset != DatePreset.ALL && datePreset != DatePreset.THIS_MONTH,
             types.isNotEmpty(),
             categoryIds.isNotEmpty(),
             accountIds.isNotEmpty(),
@@ -52,6 +56,10 @@ data class TransactionFilters(
         ).count { it }
 
     companion object {
+        /** No restriction at all; what explicit construction sites mean by "everything". */
         val NONE = TransactionFilters()
+
+        /** The initial view of the movements list: the current month (matches Stats). */
+        val DEFAULT = TransactionFilters(datePreset = DatePreset.THIS_MONTH)
     }
 }

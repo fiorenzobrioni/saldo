@@ -34,23 +34,25 @@ import java.util.Locale
 import javax.inject.Inject
 import kotlin.random.Random
 
-/** The soonest upcoming subscription charge, for the dashboard card preview. */
-data class NextSubscription(
+/** The soonest upcoming recurring charge or credit, for the dashboard card preview. */
+data class NextRecurringEvent(
     val name: String,
-    /** Positive charge magnitude in [currency]. */
+    /** Signed amount in [currency]: negative for expenses, positive for incomes. */
     val amount: BigDecimal,
     val currency: Currency,
     val date: LocalDate,
 )
 
-/** The subscriptions summary shown on the dashboard card. */
-data class SubscriptionsSummary(
-    val monthlyTotal: BigDecimal = BigDecimal.ZERO,
-    val activeCount: Int = 0,
-    val next: NextSubscription? = null,
-) {
-    val hasSubscriptions: Boolean get() = activeCount > 0
-}
+/** The recurring-transactions summary shown on the dashboard card. */
+data class RecurringSummary(
+    /** Positive monthly-equivalent total of active recurring expenses, in the primary currency. */
+    val monthlyExpenses: BigDecimal = BigDecimal.ZERO,
+    /** Positive monthly-equivalent total of active recurring incomes, in the primary currency. */
+    val monthlyIncomes: BigDecimal = BigDecimal.ZERO,
+    val next: NextRecurringEvent? = null,
+    /** Whether any recurring rule (either type, any currency) is active. */
+    val hasRules: Boolean = false,
+)
 
 /** Time-of-day band that selects the dashboard greeting. */
 enum class GreetingBand {
@@ -101,7 +103,7 @@ data class DashboardUiState(
     val previousMonthSpendToDate: BigDecimal? = null,
     /** Whether more has been spent so far this month than by this day last month. */
     val spentMoreThanLastMonth: Boolean = false,
-    val subscriptions: SubscriptionsSummary = SubscriptionsSummary(),
+    val recurring: RecurringSummary = RecurringSummary(),
     /** Number of recurring movements awaiting confirmation. */
     val pendingCount: Int = 0,
     val recent: List<TransactionListItem> = emptyList(),
@@ -213,7 +215,7 @@ class DashboardViewModel @Inject constructor(
             monthVsPreviousToDate = comparison,
             previousMonthSpendToDate = previousReference,
             spentMoreThanLastMonth = spentMore,
-            subscriptions = subscriptionsSummary(sources.rules, primary, today),
+            recurring = recurringSummary(sources.rules, primary, today),
             pendingCount = sources.pendingCount,
             recent = recent,
             date = today,
@@ -222,33 +224,44 @@ class DashboardViewModel @Inject constructor(
         )
     }
 
-    /** Active recurring expenses: normalized monthly total, count, and next charge. */
-    private fun subscriptionsSummary(
+    /**
+     * Active recurring rules of both types: normalized monthly totals per type
+     * and the next upcoming charge or credit across all of them.
+     */
+    private fun recurringSummary(
         rules: List<RecurringRule>,
         primary: Currency,
         today: LocalDate,
-    ): SubscriptionsSummary {
+    ): RecurringSummary {
         val active = rules.filter {
-            it.type == TransactionType.EXPENSE && (it.endDate == null || it.endDate >= today)
+            (it.type == TransactionType.EXPENSE || it.type == TransactionType.INCOME) &&
+                (it.endDate == null || it.endDate >= today)
         }
-        if (active.isEmpty()) return SubscriptionsSummary()
+        if (active.isEmpty()) return RecurringSummary()
 
+        // Totals are scoped to the primary currency, so the two figures stay coherent.
         val primaryRules = active.filter { it.currency == primary }
-        val monthlyTotal = primaryRules
+        fun monthlyTotal(type: TransactionType): BigDecimal = primaryRules
+            .filter { it.type == type }
             .fold(BigDecimal.ZERO) { acc, rule ->
                 acc.add(RecurrenceCalculator.monthlyEquivalent(rule) ?: BigDecimal.ZERO)
             }
         val next = active
             .mapNotNull { rule ->
                 val amount = rule.amount ?: return@mapNotNull null
+                val signed = if (rule.type == TransactionType.EXPENSE) amount.negate() else amount
                 val floor = rule.lastGeneratedDate?.plusDays(1)?.takeIf { it > today } ?: today
                 RecurrenceCalculator.nextOccurrence(rule, floor)?.let { date ->
-                    NextSubscription(rule.name, amount, rule.currency, date)
+                    NextRecurringEvent(rule.name, signed, rule.currency, date)
                 }
             }
             .minByOrNull { it.date }
-        // The count shares the monthlyTotal's currency scope, so the card reads coherently.
-        return SubscriptionsSummary(monthlyTotal, primaryRules.size, next)
+        return RecurringSummary(
+            monthlyExpenses = monthlyTotal(TransactionType.EXPENSE),
+            monthlyIncomes = monthlyTotal(TransactionType.INCOME),
+            next = next,
+            hasRules = true,
+        )
     }
 
     private companion object {

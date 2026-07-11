@@ -20,8 +20,8 @@ android {
         applicationId = "com.callbackdev.saldo"
         minSdk = 33
         targetSdk = 36
-        versionCode = 22
-        versionName = "0.7.1"
+        versionCode = 23
+        versionName = "0.7.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -58,6 +58,8 @@ android {
 
     buildFeatures {
         compose = true
+        // BuildConfig.VERSION_NAME feeds the version shown in Settings and About.
+        buildConfig = true
     }
 
     // Exposes the exported Room schemas to MigrationTestHelper (instrumented tests).

@@ -255,7 +255,7 @@ class DashboardViewModelTest {
     }
 
     @Test
-    fun `subscriptions summary totals active recurring expenses and picks the next charge`() = runTest {
+    fun `recurring summary totals active expenses and picks the next charge with a negative sign`() = runTest {
         val rules = listOf(
             RecurringRule(
                 id = 1L, name = "Netflix", type = TransactionType.EXPENSE, currency = eur, accountId = 1L,
@@ -275,11 +275,68 @@ class DashboardViewModelTest {
 
         viewModel.uiState.test {
             val state = awaitLoaded()
-            assertEquals(2, state.subscriptions.activeCount)
+            assertTrue(state.recurring.hasRules)
             // 12.99 + 96.00/6 = 28.99
-            assertEquals(BigDecimal("28.99"), state.subscriptions.monthlyTotal)
-            assertEquals("Netflix", state.subscriptions.next?.name)
-            assertEquals(LocalDate.of(2026, 7, 12), state.subscriptions.next?.date)
+            assertEquals(BigDecimal("28.99"), state.recurring.monthlyExpenses)
+            assertEquals(BigDecimal.ZERO, state.recurring.monthlyIncomes)
+            assertEquals("Netflix", state.recurring.next?.name)
+            assertEquals(BigDecimal("-12.99"), state.recurring.next?.amount)
+            assertEquals(LocalDate.of(2026, 7, 12), state.recurring.next?.date)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `recurring summary totals both types and picks the earliest event across them`() = runTest {
+        val rules = listOf(
+            RecurringRule(
+                id = 1L, name = "Netflix", type = TransactionType.EXPENSE, currency = eur, accountId = 1L,
+                frequency = com.callbackdev.saldo.core.domain.model.RecurrenceFrequency.MONTHLY,
+                startDate = LocalDate.of(2026, 7, 12), amount = BigDecimal("12.99"), dayOfReference = 12,
+            ),
+            RecurringRule(
+                id = 2L, name = "Salary", type = TransactionType.INCOME, currency = eur, accountId = 1L,
+                frequency = com.callbackdev.saldo.core.domain.model.RecurrenceFrequency.MONTHLY,
+                startDate = LocalDate.of(2026, 7, 10), amount = BigDecimal("2000.00"), dayOfReference = 10,
+            ),
+        )
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("0.00"))),
+            rules = rules,
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(BigDecimal("12.99"), state.recurring.monthlyExpenses)
+            assertEquals(BigDecimal("2000.00"), state.recurring.monthlyIncomes)
+            // The salary on the 10th comes before the Netflix charge on the 12th.
+            assertEquals("Salary", state.recurring.next?.name)
+            assertEquals(BigDecimal("2000.00"), state.recurring.next?.amount)
+            assertEquals(LocalDate.of(2026, 7, 10), state.recurring.next?.date)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `recurring rules past their end date are excluded from the summary`() = runTest {
+        val rules = listOf(
+            RecurringRule(
+                id = 1L, name = "Old gym", type = TransactionType.EXPENSE, currency = eur, accountId = 1L,
+                frequency = com.callbackdev.saldo.core.domain.model.RecurrenceFrequency.MONTHLY,
+                startDate = LocalDate.of(2025, 1, 5), amount = BigDecimal("30.00"), dayOfReference = 5,
+                endDate = LocalDate.of(2026, 6, 30),
+            ),
+        )
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("0.00"))),
+            rules = rules,
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertFalse(state.recurring.hasRules)
+            assertEquals(BigDecimal.ZERO, state.recurring.monthlyExpenses)
+            assertNull(state.recurring.next)
             cancelAndIgnoreRemainingEvents()
         }
     }

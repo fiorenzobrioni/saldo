@@ -55,7 +55,7 @@ data class TransactionsUiState(
     /** True when the ledger has at least one movement, before any filtering. */
     val hasAnyTransactions: Boolean = false,
     val today: LocalDate = LocalDate.ofEpochDay(0),
-    val filters: TransactionFilters = TransactionFilters.NONE,
+    val filters: TransactionFilters = TransactionFilters.DEFAULT,
     /** The filtered ledger, grouped by day. */
     val days: List<TransactionDayGroup> = emptyList(),
     /** Per-currency totals of the filtered view, plus the movement count. */

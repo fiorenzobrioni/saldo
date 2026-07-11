@@ -50,7 +50,7 @@ fun DashboardScreen(
     onNavigateToNewTransaction: (TransactionType) -> Unit,
     onNavigateToEditTransaction: (Long) -> Unit,
     onSeeAllTransactions: () -> Unit,
-    onNavigateToSubscriptions: () -> Unit,
+    onNavigateToRecurrences: () -> Unit,
     onNavigateToPending: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
@@ -91,7 +91,7 @@ fun DashboardScreen(
                     onManageAccounts = onNavigateToAccounts,
                     onSeeAllTransactions = onSeeAllTransactions,
                     onTransactionClick = onNavigateToEditTransaction,
-                    onSubscriptionsClick = onNavigateToSubscriptions,
+                    onRecurringClick = onNavigateToRecurrences,
                     onPendingClick = onNavigateToPending,
                 )
             }
@@ -122,7 +122,7 @@ private fun DashboardContent(
     onManageAccounts: () -> Unit,
     onSeeAllTransactions: () -> Unit,
     onTransactionClick: (Long) -> Unit,
-    onSubscriptionsClick: () -> Unit,
+    onRecurringClick: () -> Unit,
     onPendingClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -168,10 +168,10 @@ private fun DashboardContent(
             item { PendingConfirmationCard(count = uiState.pendingCount, onClick = onPendingClick) }
         }
         item {
-            SubscriptionsCard(
-                summary = uiState.subscriptions,
+            RecurringCard(
+                summary = uiState.recurring,
                 currency = uiState.primaryCurrency,
-                onClick = onSubscriptionsClick,
+                onClick = onRecurringClick,
             )
         }
         item { RecentHeader(onSeeAll = onSeeAllTransactions) }

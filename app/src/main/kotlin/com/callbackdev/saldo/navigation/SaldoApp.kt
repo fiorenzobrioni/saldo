@@ -29,6 +29,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.callbackdev.saldo.feature.about.AboutScreen
 import com.callbackdev.saldo.feature.accounts.AccountEditorScreen
 import com.callbackdev.saldo.feature.accounts.AccountsScreen
 import com.callbackdev.saldo.feature.categories.CategoriesScreen
@@ -102,7 +103,7 @@ fun SaldoApp() {
                             backStack.add(TransactionEditorRoute(id))
                         },
                         onSeeAllTransactions = { backStack.switchTopLevelTab(TransactionsRoute) },
-                        onNavigateToSubscriptions = { backStack.add(RecurrencesRoute) },
+                        onNavigateToRecurrences = { backStack.add(RecurrencesRoute) },
                         onNavigateToPending = { backStack.add(PendingMovementsRoute) },
                     )
                 }
@@ -125,8 +126,10 @@ fun SaldoApp() {
                 entry<SettingsRoute> {
                     SettingsScreen(
                         modifier = topLevelModifier,
+                        onNavigateToAccounts = { backStack.add(AccountsRoute) },
                         onNavigateToCategories = { backStack.add(CategoriesRoute) },
                         onNavigateToRecurrences = { backStack.add(RecurrencesRoute) },
+                        onNavigateToAbout = { backStack.add(AboutRoute) },
                     )
                 }
                 entry<AccountsRoute> {
@@ -193,6 +196,9 @@ fun SaldoApp() {
                             backStack.add(TransactionEditorRoute(id))
                         },
                     )
+                }
+                entry<AboutRoute> {
+                    AboutScreen(onNavigateBack = { backStack.removeLastOrNull() })
                 }
             },
         )
