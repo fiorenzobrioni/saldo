@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -46,6 +47,7 @@ fun SettingsScreen(
     onNavigateToAccounts: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToRecurrences: () -> Unit,
+    onNavigateToBackup: () -> Unit,
     onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
@@ -119,6 +121,14 @@ fun SettingsScreen(
                 hint = stringResource(R.string.settings_categories_hint),
                 icon = Icons.Outlined.Category,
                 onClick = onNavigateToCategories,
+            )
+
+            SettingsSectionHeader(stringResource(R.string.settings_section_data))
+            SettingsEntry(
+                title = stringResource(R.string.settings_backup),
+                hint = stringResource(R.string.settings_backup_hint),
+                icon = Icons.Outlined.SettingsBackupRestore,
+                onClick = onNavigateToBackup,
             )
 
             SettingsSectionHeader(stringResource(R.string.settings_section_about))

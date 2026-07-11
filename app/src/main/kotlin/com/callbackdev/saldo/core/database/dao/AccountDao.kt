@@ -11,10 +11,15 @@ import com.callbackdev.saldo.core.database.relation.AccountWithBalanceRow
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@Suppress("TooManyFunctions") // A data-access interface naturally has many queries.
 interface AccountDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(account: AccountEntity): Long
+
+    /** Bulk insert with explicit ids, used by backup restore. */
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(accounts: List<AccountEntity>): List<Long>
 
     @Update
     suspend fun update(account: AccountEntity)
@@ -30,6 +35,14 @@ interface AccountDao {
 
     @Query("SELECT * FROM accounts WHERE id = :id")
     suspend fun getById(id: Long): AccountEntity?
+
+    /** One-shot dump of every account, for backup export. */
+    @Query("SELECT * FROM accounts ORDER BY id ASC")
+    suspend fun getAll(): List<AccountEntity>
+
+    /** Empties the table; only backup restore calls this, inside its transaction. */
+    @Query("DELETE FROM accounts")
+    suspend fun deleteAll()
 
     /**
      * Every account with its balance = `initialBalance + Σ movements`.

@@ -39,6 +39,13 @@ data class RenewalReminderPreferences(
 }
 
 /**
+ * The CSV column separator offered by the movements export. [SEMICOLON] pairs
+ * with comma decimals (what Excel expects in an Italian locale), [COMMA] with
+ * dot decimals (the international CSV convention).
+ */
+enum class CsvSeparator(val symbol: Char) { SEMICOLON(';'), COMMA(',') }
+
+/**
  * Small UI preferences persisted with DataStore. These are convenience hints
  * (not user data): losing them never loses money information.
  */
@@ -94,6 +101,25 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+    /** Instant of the last successful backup export, epoch millis; null if never. */
+    val lastBackupAtEpochMilli: Flow<Long?> =
+        dataStore.data.map { preferences -> preferences[LAST_BACKUP_AT_EPOCH_MILLI] }
+
+    suspend fun setLastBackupAt(epochMilli: Long) {
+        dataStore.edit { preferences -> preferences[LAST_BACKUP_AT_EPOCH_MILLI] = epochMilli }
+    }
+
+    /** Column separator of the CSV export; semicolon by default (Excel friendly). */
+    val csvSeparator: Flow<CsvSeparator> = dataStore.data.map { preferences ->
+        preferences[CSV_SEPARATOR]
+            ?.let { stored -> CsvSeparator.entries.firstOrNull { it.name == stored } }
+            ?: CsvSeparator.SEMICOLON
+    }
+
+    suspend fun setCsvSeparator(separator: CsvSeparator) {
+        dataStore.edit { preferences -> preferences[CSV_SEPARATOR] = separator.name }
+    }
+
     /** Snaps a stored or requested lead time to the closest offered option. */
     private fun Int.coerceToAllowedLeadDays(): Int =
         RenewalReminderPreferences.allowedLeadDays.minByOrNull { kotlin.math.abs(it - this) }
@@ -105,5 +131,7 @@ class UserPreferencesRepository @Inject constructor(
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         val RENEWAL_REMINDER_ENABLED = booleanPreferencesKey("renewal_reminder_enabled")
         val RENEWAL_REMINDER_LEAD_DAYS = intPreferencesKey("renewal_reminder_lead_days")
+        val LAST_BACKUP_AT_EPOCH_MILLI = longPreferencesKey("last_backup_at_epoch_milli")
+        val CSV_SEPARATOR = stringPreferencesKey("csv_separator")
     }
 }

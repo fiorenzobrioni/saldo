@@ -27,6 +27,15 @@ annotation class ApplicationScope
 @Retention(AnnotationRetention.BINARY)
 annotation class DefaultDispatcher
 
+/**
+ * Marks the blocking-I/O [CoroutineDispatcher] ([Dispatchers.IO] in the app),
+ * used for stream reads/writes (backup files, CSV export), injected so tests
+ * can substitute a deterministic dispatcher.
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class IoDispatcher
+
 @Module
 @InstallIn(SingletonComponent::class)
 object CoroutinesModule {
@@ -40,4 +49,8 @@ object CoroutinesModule {
     @Provides
     @DefaultDispatcher
     fun provideDefaultDispatcher(): CoroutineDispatcher = Dispatchers.Default
+
+    @Provides
+    @IoDispatcher
+    fun provideIoDispatcher(): CoroutineDispatcher = Dispatchers.IO
 }

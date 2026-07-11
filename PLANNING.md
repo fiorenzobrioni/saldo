@@ -34,6 +34,7 @@
 | 14 | targetSdk/compileSdk fissati esplicitamente (attualmente 36), mai "ultimo stabile" implicito | Build riproducibili e niente ricerca della versione corrente a ogni intervento; l'aggiornamento è una chore deliberata e testata. Nota: Google Play richiede comunque un targetSdk recente (policy annuale), quindi la chore va pianificata quando esce una nuova release stabile di Android |
 | 15 | Palette brand statica di default, dynamic color opt-in da Impostazioni | Identità visiva riconoscibile su Play Store e screenshot coerenti tra device; Material You resta disponibile come scelta esplicita dell'utente. Rivede la parte "solo dynamic color" dell'ADR 9 (min SDK 33 resta invariato) |
 | 16 | Importi inseriti con la tastiera di sistema (`OutlinedTextField` + `KeyboardType.Decimal`) in tutti gli editor; rimosso il tastierino custom | Coerenza tra tutti i campi importo (prima solo l'editor movimenti aveva un tastierino, gli altri la tastiera di sistema), accessibilità nativa (TalkBack, Switch Access, incolla, tastiera hardware) e meno codice da mantenere. Le regole di dominio restano garantite da `MoneyInput`/`MoneyMapper`, con cap cifre intere spostato in `MoneyInput.sanitize` così ogni campo è protetto dall'overflow. Decade l'haptic del tastierino (subentrano feedback/suoni tasto secondo le impostazioni di sistema) |
+| 17 | Backup cloud (Google Sign-In + Drive App Data + backup automatico) fuori dal percorso v1.0: il backup della release è quello manuale locale su file (ADR 13); la parte cloud è una fase dedicata da valutare a fine roadmap | Nessun account Google nel percorso critico, coerente con offline/privacy-first; il formato JSON versionato (ADR 5) resta l'unico code path di export/restore, quindi l'eventuale fase cloud lo riusa senza migrazioni. Decisione di prodotto di luglio 2026 |
 
 ---
 
@@ -154,22 +155,20 @@
 - [x] Drill-down: tap su grafico → lista filtrata (route dedicata pushata sopra le statistiche; righe di anello/account navigano al tap, le colonne mostrano il marker con bottone "Vedi i movimenti di <mese>" per evitare navigazioni accidentali durante lo scrub)
 - [x] Verifica esclusione TRANSFER/ADJUSTMENT e trattamento rimborsi (rimborso = spesa negativa nelle query; coperta da `TransactionDaoStatsTest` strumentato - da eseguire su device, nessun emulatore in CI - e dai test JVM di StatsViewModel e del motore filtri)
 
-## Fase 8 - Backup, export, import
+## Fase 8 - Backup, export, import (locale)
 
-- [ ] Formato export JSON versionato (schema `version: 1`) di tutti i dati
-- [ ] Google Sign-In via Credential Manager, scope `drive.appdata`
-- [ ] Upload backup su App Data Folder + rotazione (ultimi 5)
-- [ ] Backup automatico WorkManager (periodico, solo Wi-Fi, configurabile)
-- [ ] Restore guidato: al primo avvio e da impostazioni
-- [ ] **Backup manuale su file**: export via SAF (`ACTION_CREATE_DOCUMENT`), stesso formato JSON del backup Drive, nome `saldo-backup-YYYY-MM-DD.json`, avvertenza in UI "file non cifrato"
-- [ ] Export CSV (separatore `;`/`,` configurabile, rispetta i filtri attivi, condivisione via Share Sheet)
-- [ ] Restore da file di backup manuale (JSON, via SAF `ACTION_OPEN_DOCUMENT`)
-- [ ] Test: round-trip export→import senza perdita dati
+> Ridefinita a luglio 2026 (ADR 17): questa fase copre solo il backup locale su file. La parte cloud (Google Sign-In, upload su Drive App Data con rotazione, backup automatico WorkManager, restore guidato al primo avvio) è spostata nella "Fase cloud" in fondo alla roadmap, da valutare a fasi concluse. Il restore guidato al primo avvio rientra nell'onboarding di Fase 9.
+
+- [x] Formato export JSON versionato (schema `version: 1`) di tutti i dati (`core/domain/backup`: marker `saldo-backup`, campi primitivi stabili, `ignoreUnknownKeys`, errori tipizzati per file estraneo/versione futura/file corrotto)
+- [x] **Backup manuale su file**: export via SAF (`ACTION_CREATE_DOCUMENT`), nome `saldo-backup-YYYY-MM-DD.json`, avvertenza in UI "file non cifrato"; schermata dedicata in Impostazioni > Dati con data dell'ultimo backup persistita
+- [x] Restore da file di backup manuale (JSON, via SAF `ACTION_OPEN_DOCUMENT`), guidato da Impostazioni: anteprima del contenuto (data, versione app, conteggi per tabella) e conferma esplicita; sostituzione atomica in transazione (rollback su errore, id preservati) + catch-up ricorrenze subito dopo il ripristino
+- [x] Export CSV (separatore `;`/`,` configurabile e persistito, con convenzione decimali abbinata; rispetta i filtri attivi del registro; condivisione via Share Sheet con FileProvider)
+- [x] Test: round-trip export→import senza perdita dati (codec JSON, mapper entity↔schema campo per campo, use case con repository fake; builder CSV: escaping, separatori, BOM, trasferimenti multi-valuta)
 
 ## Fase 9 - Impostazioni, i18n, rifinitura
 
-- [ ] Impostazioni: valuta principale, account di default, primo giorno settimana, backup (tema: già fatto in Fase 6.5)
-- [ ] Onboarding minimale (valuta, primo account, saldo iniziale)
+- [ ] Impostazioni: valuta principale, account di default, primo giorno settimana (tema: già fatto in Fase 6.5; backup: già fatto in Fase 8)
+- [ ] Onboarding minimale (valuta, primo account, saldo iniziale, proposta di ripristino da backup)
 - [ ] Revisione completa stringhe IT + EN
 - [ ] Pass di accessibilità: TalkBack, font scaling 200%, contrasto, touch target, non solo colore per spese/entrate
 - [ ] Empty state e stati di errore su tutte le schermate
@@ -206,6 +205,15 @@
 - [ ] Commissioni sui trasferimenti
 - [ ] Analisi avanzate (anno su anno, pattern di spesa)
 - [ ] Valutare: sottocategorie, periodo budget personalizzato
+
+# Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
+
+> Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.
+
+- [ ] Google Sign-In via Credential Manager, scope `drive.appdata`
+- [ ] Upload backup su App Data Folder + rotazione (ultimi 5)
+- [ ] Backup automatico WorkManager (periodico, solo Wi-Fi, configurabile)
+- [ ] Restore guidato dal backup Drive (primo avvio e da impostazioni)
 
 ---
 

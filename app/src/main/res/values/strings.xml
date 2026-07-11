@@ -449,41 +449,86 @@
     <!-- Settings: management entries and About -->
     <string name="settings_accounts">Accounts</string>
     <string name="settings_accounts_hint">Bank accounts, cards and cash</string>
+    <string name="settings_section_data">Data</string>
+    <string name="settings_backup">Backup</string>
+    <string name="settings_backup_hint">Export and restore your data</string>
     <string name="settings_section_about">About</string>
     <string name="settings_about">About Saldo</string>
     <string name="settings_about_hint">Version %1$s</string>
 
+    <!-- Backup and restore (Phase 8) -->
+    <string name="backup_title">Backup</string>
+    <string name="backup_hero_title">Your data stays yours</string>
+    <string name="backup_hero_body">Saldo works entirely offline. A backup is a single JSON file saved where you choose: no account, no cloud.</string>
+    <string name="backup_export_title">Export backup</string>
+    <string name="backup_export_body">Saves accounts, transactions, categories, recurring rules and tags to a file.</string>
+    <string name="backup_last_backup">Last backup: %1$s</string>
+    <string name="backup_last_backup_never">No backup yet</string>
+    <string name="backup_export_action">Export backup</string>
+    <string name="backup_unencrypted_warning">The file is not encrypted: it contains your data in plain text. Keep it somewhere safe.</string>
+    <string name="backup_restore_title">Restore</string>
+    <string name="backup_restore_body">Imports a Saldo backup file, replacing the data currently in the app.</string>
+    <string name="backup_restore_action">Restore from backup</string>
+    <string name="backup_restore_dialog_title">Restore this backup?</string>
+    <string name="backup_restore_dialog_metadata">Backup from %1$s</string>
+    <string name="backup_restore_dialog_metadata_versioned">Backup from %1$s (Saldo %2$s)</string>
+    <string name="backup_restore_dialog_counts">Accounts: %1$d\nTransactions: %2$d\nCategories: %3$d\nRecurring rules: %4$d\nTags: %5$d</string>
+    <string name="backup_restore_dialog_warning">All current data will be replaced. This cannot be undone.</string>
+    <string name="backup_restore_confirm">Restore</string>
+    <string name="backup_snackbar_exported">Backup saved (%1$d transactions)</string>
+    <string name="backup_snackbar_export_failed">Could not save the backup. Please try again.</string>
+    <string name="backup_snackbar_restored">Data restored (%1$d transactions)</string>
+    <string name="backup_snackbar_restore_failed">Could not restore the backup. Your current data is unchanged.</string>
+    <string name="backup_error_not_a_backup">This file is not a Saldo backup.</string>
+    <string name="backup_error_unsupported_version">This backup comes from a newer version of Saldo. Update the app to restore it.</string>
+    <string name="backup_error_corrupted">The backup file is damaged and cannot be read.</string>
+    <string name="backup_csv_hint">To export transactions as CSV, use the share icon in the Transactions screen.</string>
+
+    <!-- CSV export (Phase 8) -->
+    <string name="csv_export_title">Export CSV</string>
+    <plurals name="csv_export_body">
+        <item quantity="one">Exports the %1$d transaction in the current view, with active filters applied.</item>
+        <item quantity="other">Exports the %1$d transactions in the current view, with active filters applied.</item>
+    </plurals>
+    <string name="csv_separator">Separator</string>
+    <string name="csv_separator_semicolon">Semicolon (;)</string>
+    <string name="csv_separator_comma">Comma (,)</string>
+    <string name="csv_separator_hint_semicolon">Decimals use a comma - suited to Excel in Italian.</string>
+    <string name="csv_separator_hint_comma">Decimals use a dot - the international CSV convention.</string>
+    <string name="csv_export_action">Export and share</string>
+    <string name="csv_share_title">Share CSV export</string>
+    <string name="csv_export_failed">Could not create the CSV file. Please try again.</string>
+    <string name="csv_header_date">Date</string>
+    <string name="csv_header_type">Type</string>
+    <string name="csv_header_category">Category</string>
+    <string name="csv_header_description">Description</string>
+    <string name="csv_header_account">Account</string>
+    <string name="csv_header_to_account">To account</string>
+    <string name="csv_header_amount">Amount</string>
+    <string name="csv_header_currency">Currency</string>
+    <string name="csv_header_received_amount">Amount received</string>
+    <string name="csv_header_received_currency">Currency received</string>
+    <string name="csv_header_tags">Tags</string>
+    <string name="csv_header_note">Note</string>
+
     <!-- About screen -->
     <string name="about_title">About</string>
     <string name="about_version">Version %1$s</string>
-    <string name="about_tagline">Offline-first, privacy-first expense tracking.</string>
+    <string name="about_tagline">Understand where your money goes, clearly and instantly.</string>
     <string name="about_author">Developed by Callback Dev</string>
     <string name="about_license_title">License</string>
     <string name="about_license_body">Saldo is free software, released under the GNU GPL-3.0 license.</string>
     <string name="about_libraries_title">Open source libraries</string>
-    <!-- The two arrays below are parallel: names[i] is described by roles[i]. -->
+    <!-- The two arrays below are parallel: names[i] is described by roles[i].
+         Only non-Google libraries are itemized; Google's stack is credited as
+         a whole by about_libraries_footer. -->
     <string-array name="about_library_names" translatable="false">
-        <item>Jetpack Compose &amp; Material 3</item>
-        <item>Navigation 3</item>
-        <item>Room</item>
-        <item>Hilt</item>
-        <item>Kotlin Coroutines &amp; Flow</item>
-        <item>kotlinx.serialization</item>
-        <item>DataStore Preferences</item>
-        <item>WorkManager</item>
+        <item>Kotlin &amp; kotlinx</item>
         <item>Vico</item>
-        <item>Material Icons Extended</item>
     </string-array>
     <string-array name="about_library_roles">
-        <item>UI toolkit and design system</item>
-        <item>In-app navigation</item>
-        <item>Local database</item>
-        <item>Dependency injection</item>
-        <item>Asynchronous and reactive code</item>
-        <item>JSON serialization</item>
-        <item>Settings storage</item>
-        <item>Background tasks</item>
+        <item>Language, coroutines and JSON serialization (JetBrains)</item>
         <item>Charts</item>
-        <item>Icon set</item>
     </string-array>
+    <string name="about_libraries_footer">Plus Google\'s Android Jetpack and Material Design libraries.</string>
 </resources>

@@ -32,10 +32,10 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - 📈 **Statistiche** - spese per categoria, trend mensile, entrate vs uscite, andamento saldo
 - 🌍 **Multi-valuta** - ogni movimento conserva importo e valuta originali
 - 🎨 **Tema personalizzabile** - chiaro/scuro/sistema, palette dell'app o colori dinamici Material You
-- ☁️ **Backup opzionale** - automatico su Google Drive (App Data Folder, privato) oppure manuale su file, portabile ovunque - più **export CSV**
+- 💾 **Backup e ripristino su file** - export JSON versionato dove vuoi tu (nessun account richiesto), ripristino guidato con anteprima del contenuto - più **export CSV** dei movimenti filtrati, condivisibile
 - 🇮🇹 🇬🇧 Italiano e inglese
 
-In arrivo (v1.5 / v2.0): budget, PIN e biometria, widget, import CSV, export Google Sheets/Excel/PDF, obiettivi di risparmio, conversione valuta, cifratura backup. Roadmap completa in [PLANNING.md](./PLANNING.md).
+In arrivo (v1.5 / v2.0): budget, PIN e biometria, widget, import CSV, export Google Sheets/Excel/PDF, obiettivi di risparmio, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
 
 ## Principi
 
@@ -96,6 +96,7 @@ app/src/main/kotlin/com/callbackdev/saldo/
 │   ├── transactions/    # movimenti: lista per giorno, ricerca e filtri, editor (da Fase 3)
 │   ├── recurring/       # movimenti ricorrenti: hub uscite/entrate, editor, motore (da Fase 6)
 │   ├── stats/           # statistiche: grafici Vico, periodo, drill-down (da Fase 7)
+│   ├── backup/          # backup su file: export e ripristino guidato (da Fase 8)
 │   ├── settings/        # impostazioni
 │   └── about/           # schermata informazioni: versione, licenza, librerie
 └── navigation/          # route NavKey, scaffold, bottom bar

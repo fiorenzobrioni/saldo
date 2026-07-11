@@ -458,28 +458,80 @@
     <!-- Settings: voci di gestione e Informazioni -->
     <string name="settings_accounts">Account</string>
     <string name="settings_accounts_hint">Conti, carte e contanti</string>
+    <string name="settings_section_data">Dati</string>
+    <string name="settings_backup">Backup</string>
+    <string name="settings_backup_hint">Esporta e ripristina i tuoi dati</string>
     <string name="settings_section_about">Informazioni</string>
     <string name="settings_about">Informazioni su Saldo</string>
     <string name="settings_about_hint">Versione %1$s</string>
 
+    <!-- Backup e ripristino (Fase 8) -->
+    <string name="backup_title">Backup</string>
+    <string name="backup_hero_title">I tuoi dati restano tuoi</string>
+    <string name="backup_hero_body">Saldo funziona completamente offline. Il backup è un singolo file JSON salvato dove scegli tu: nessun account, nessun cloud.</string>
+    <string name="backup_export_title">Esporta backup</string>
+    <string name="backup_export_body">Salva account, movimenti, categorie, ricorrenze e tag in un file.</string>
+    <string name="backup_last_backup">Ultimo backup: %1$s</string>
+    <string name="backup_last_backup_never">Nessun backup finora</string>
+    <string name="backup_export_action">Esporta backup</string>
+    <string name="backup_unencrypted_warning">Il file non è cifrato: contiene i tuoi dati in chiaro. Conservalo in un luogo sicuro.</string>
+    <string name="backup_restore_title">Ripristino</string>
+    <string name="backup_restore_body">Importa un file di backup di Saldo, sostituendo i dati attualmente nell\'app.</string>
+    <string name="backup_restore_action">Ripristina da backup</string>
+    <string name="backup_restore_dialog_title">Ripristinare questo backup?</string>
+    <string name="backup_restore_dialog_metadata">Backup del %1$s</string>
+    <string name="backup_restore_dialog_metadata_versioned">Backup del %1$s (Saldo %2$s)</string>
+    <string name="backup_restore_dialog_counts">Account: %1$d\nMovimenti: %2$d\nCategorie: %3$d\nRicorrenze: %4$d\nTag: %5$d</string>
+    <string name="backup_restore_dialog_warning">Tutti i dati attuali verranno sostituiti. L\'operazione non si può annullare.</string>
+    <string name="backup_restore_confirm">Ripristina</string>
+    <string name="backup_snackbar_exported">Backup salvato (%1$d movimenti)</string>
+    <string name="backup_snackbar_export_failed">Salvataggio del backup non riuscito. Riprova.</string>
+    <string name="backup_snackbar_restored">Dati ripristinati (%1$d movimenti)</string>
+    <string name="backup_snackbar_restore_failed">Ripristino non riuscito. I dati attuali non sono stati toccati.</string>
+    <string name="backup_error_not_a_backup">Questo file non è un backup di Saldo.</string>
+    <string name="backup_error_unsupported_version">Questo backup viene da una versione più recente di Saldo. Aggiorna l\'app per ripristinarlo.</string>
+    <string name="backup_error_corrupted">Il file di backup è danneggiato e non può essere letto.</string>
+    <string name="backup_csv_hint">Per esportare i movimenti in CSV usa l\'icona di condivisione nella schermata Movimenti.</string>
+
+    <!-- Export CSV (Fase 8) -->
+    <string name="csv_export_title">Esporta CSV</string>
+    <plurals name="csv_export_body">
+        <item quantity="one">Esporta %1$d movimento della vista corrente, con i filtri attivi applicati.</item>
+        <item quantity="many">Esporta i %1$d movimenti della vista corrente, con i filtri attivi applicati.</item>
+        <item quantity="other">Esporta i %1$d movimenti della vista corrente, con i filtri attivi applicati.</item>
+    </plurals>
+    <string name="csv_separator">Separatore</string>
+    <string name="csv_separator_semicolon">Punto e virgola (;)</string>
+    <string name="csv_separator_comma">Virgola (,)</string>
+    <string name="csv_separator_hint_semicolon">I decimali usano la virgola - adatto a Excel in italiano.</string>
+    <string name="csv_separator_hint_comma">I decimali usano il punto - la convenzione CSV internazionale.</string>
+    <string name="csv_export_action">Esporta e condividi</string>
+    <string name="csv_share_title">Condividi l\'export CSV</string>
+    <string name="csv_export_failed">Creazione del file CSV non riuscita. Riprova.</string>
+    <string name="csv_header_date">Data</string>
+    <string name="csv_header_type">Tipo</string>
+    <string name="csv_header_category">Categoria</string>
+    <string name="csv_header_description">Descrizione</string>
+    <string name="csv_header_account">Account</string>
+    <string name="csv_header_to_account">Verso account</string>
+    <string name="csv_header_amount">Importo</string>
+    <string name="csv_header_currency">Valuta</string>
+    <string name="csv_header_received_amount">Importo ricevuto</string>
+    <string name="csv_header_received_currency">Valuta ricevuta</string>
+    <string name="csv_header_tags">Tag</string>
+    <string name="csv_header_note">Nota</string>
+
     <!-- Schermata Informazioni -->
     <string name="about_title">Informazioni</string>
     <string name="about_version">Versione %1$s</string>
-    <string name="about_tagline">Monitoraggio delle spese offline-first e privacy-first.</string>
+    <string name="about_tagline">Capire dove vanno i soldi, in modo chiaro e immediato.</string>
     <string name="about_author">Sviluppata da Callback Dev</string>
     <string name="about_license_title">Licenza</string>
     <string name="about_license_body">Saldo è software libero, rilasciato con licenza GNU GPL-3.0.</string>
     <string name="about_libraries_title">Librerie open source</string>
     <string-array name="about_library_roles">
-        <item>Toolkit UI e design system</item>
-        <item>Navigazione in-app</item>
-        <item>Database locale</item>
-        <item>Dependency injection</item>
-        <item>Codice asincrono e reattivo</item>
-        <item>Serializzazione JSON</item>
-        <item>Salvataggio delle impostazioni</item>
-        <item>Attività in background</item>
+        <item>Linguaggio, coroutine e serializzazione JSON (JetBrains)</item>
         <item>Grafici</item>
-        <item>Set di icone</item>
     </string-array>
+    <string name="about_libraries_footer">Oltre alle librerie Android Jetpack e Material Design di Google.</string>
 </resources>

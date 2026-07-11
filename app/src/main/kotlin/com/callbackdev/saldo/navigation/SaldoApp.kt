@@ -31,6 +31,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.callbackdev.saldo.feature.about.AboutScreen
 import com.callbackdev.saldo.feature.accounts.AccountEditorScreen
+import com.callbackdev.saldo.feature.backup.BackupScreen
 import com.callbackdev.saldo.feature.accounts.AccountsScreen
 import com.callbackdev.saldo.feature.categories.CategoriesScreen
 import com.callbackdev.saldo.feature.categories.CategoryEditorScreen
@@ -129,6 +130,7 @@ fun SaldoApp() {
                         onNavigateToAccounts = { backStack.add(AccountsRoute) },
                         onNavigateToCategories = { backStack.add(CategoriesRoute) },
                         onNavigateToRecurrences = { backStack.add(RecurrencesRoute) },
+                        onNavigateToBackup = { backStack.add(BackupRoute) },
                         onNavigateToAbout = { backStack.add(AboutRoute) },
                     )
                 }
@@ -196,6 +198,9 @@ fun SaldoApp() {
                             backStack.add(TransactionEditorRoute(id))
                         },
                     )
+                }
+                entry<BackupRoute> {
+                    BackupScreen(onNavigateBack = { backStack.removeLastOrNull() })
                 }
                 entry<AboutRoute> {
                     AboutScreen(onNavigateBack = { backStack.removeLastOrNull() })

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paths exposed by the FileProvider: only the CSV export cache directory. -->
+<paths>
+    <cache-path name="exports" path="exports/" />
+</paths>

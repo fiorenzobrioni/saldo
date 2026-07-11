@@ -1,6 +1,8 @@
 package com.callbackdev.saldo.feature.transactions
 
 import app.cash.turbine.test
+import com.callbackdev.saldo.core.common.prefs.CsvSeparator
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
@@ -13,6 +15,7 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.feature.transactions.export.TransactionsCsvExporter
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
 import com.callbackdev.saldo.testing.MainDispatcherExtension
@@ -53,6 +56,10 @@ class TransactionsViewModelTest {
     private val accountRepository = mockk<AccountRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
     private val tagRepository = mockk<TagRepository>(relaxUnitFun = true)
+    private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true) {
+        every { csvSeparator } returns flowOf(CsvSeparator.SEMICOLON)
+    }
+    private val csvExporter = mockk<TransactionsCsvExporter>()
 
     private val checking = Account(
         id = 1L,
@@ -109,6 +116,8 @@ class TransactionsViewModelTest {
             accountRepository = accountRepository,
             categoryRepository = categoryRepository,
             tagRepository = tagRepository,
+            userPreferences = userPreferences,
+            csvExporter = csvExporter,
             clock = clock,
             defaultDispatcher = UnconfinedTestDispatcher(),
         )

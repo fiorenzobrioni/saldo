@@ -16,11 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -184,7 +183,13 @@ private fun RecurrencesContent(
             AnnualProjectionCard(
                 annual = section.annualProjection,
                 currency = section.currency,
-                icon = if (isIncome) Icons.AutoMirrored.Outlined.TrendingUp else Icons.Outlined.EventRepeat,
+                // The trending pair mirrors the tabs: down for expenses, up for
+                // incomes (same visual language as the dashboard comparison).
+                icon = if (isIncome) {
+                    Icons.AutoMirrored.Outlined.TrendingUp
+                } else {
+                    Icons.AutoMirrored.Outlined.TrendingDown
+                },
             )
         }
         item {
@@ -412,7 +417,11 @@ private fun RecurrencesEmptyState(
 ) {
     val isIncome = type == TransactionType.INCOME
     EmptyState(
-        icon = if (isIncome) Icons.AutoMirrored.Outlined.TrendingUp else Icons.Outlined.Subscriptions,
+        icon = if (isIncome) {
+            Icons.AutoMirrored.Outlined.TrendingUp
+        } else {
+            Icons.AutoMirrored.Outlined.TrendingDown
+        },
         title = stringResource(
             if (isIncome) R.string.incomes_empty_title else R.string.subscriptions_empty_title,
         ),

@@ -14,6 +14,43 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-11 - About: tagline in linguaggio utente e lista librerie ridotta
+
+**Fatto:**
+- **Tagline**: "Monitoraggio delle spese offline-first e privacy-first." era gergo da addetti ai lavori; sostituita con la frase di prodotto già usata come headline in README/VISION: "Capire dove vanno i soldi, in modo chiaro e immediato." (EN: "Understand where your money goes, clearly and instantly.").
+- **Librerie open source**: da 10 voci a 2. Restano itemizzate solo le non-Google (Kotlin & kotlinx di JetBrains: linguaggio, coroutine, serializzazione JSON; Vico: grafici); lo stack Google è accreditato in blocco da una riga di chiusura ("Oltre alle librerie Android Jetpack e Material Design di Google."). Una pagina About è un credito, non un inventario; nessuna licenza Apache-2.0 richiede l'elenco puntuale.
+- Versione a 0.8.1 (versionCode 25).
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint detekt` verdi; nessun test toccato (modifiche solo a stringhe e layout della card). Resa della card librerie da confermare su device.
+
+**Prossimo:** Fase 9 (impostazioni, i18n, rifinitura).
+
+---
+
+## 2026-07-11 - Fase 8 completata (parte locale): backup su file, restore guidato, export CSV
+
+**Fatto:**
+- **Ridefinizione della fase (decisione di prodotto)**: la Fase 8 copre solo il backup locale; Google Sign-In, upload su Drive App Data con rotazione, backup automatico WorkManager e restore al primo avvio sono spostati in una "Fase cloud" in fondo alla roadmap, da valutare a fasi concluse (nuovo ADR 17). Il restore proposto al primo avvio passa all'onboarding di Fase 9.
+- **Formato backup JSON versionato** (`core/domain/backup`): documento con marker `format: "saldo-backup"`, `version: 1`, istante di export e versione app; payload con tutte le tabelle (account, categorie, tag, ricorrenze, movimenti, assegnazioni tag). Schema di soli tipi primitivi (importi in unità minori, date epoch, enum come nomi), separato sia dalle entity Room sia dai modelli di dominio: rinominare una colonna non può cambiare il file. Decodifica con `ignoreUnknownKeys` (un campo aggiunto in futuro non rompe i vecchi APK) ed errori tipizzati: file estraneo, versione più recente, file corrotto, ognuno con il suo messaggio in UI. Encoding pretty-printed: il backup è ispezionabile con un editor di testo, coerente con privacy-first.
+- **Snapshot e restore atomici** (`RoomBackupRepository` + DAO `getAll`/`insertAll`/`deleteAll`): lettura e sostituzione dell'intero database in una singola transazione; ordine delle tabelle rispettoso delle foreign key, id preservati (i riferimenti incrociati del file restano validi), rollback su qualsiasi errore, quindi un file malformato non tocca i dati correnti.
+- **Use case**: `ExportBackupUseCase` (snapshot -> documento + riepilogo conteggi) e `ImportBackupUseCase` in due passi, `inspect` (validazione e riepilogo senza scritture) e `restore`.
+- **Schermata Backup** (`feature/backup`, Impostazioni > nuova sezione "Dati"): hero card privacy ("I tuoi dati restano tuoi"), export via SAF `ACTION_CREATE_DOCUMENT` con nome proposto `saldo-backup-YYYY-MM-DD.json` e data dell'ultimo backup persistita in DataStore, avvertenza "file non cifrato" come da piano; ripristino guidato via `ACTION_OPEN_DOCUMENT` con dialog di conferma che mostra data, versione app e conteggi per tabella prima della sostituzione (avviso di irreversibilità in colore error). Dopo il ripristino parte subito il catch-up delle ricorrenze, così un backup vecchio di giorni non aspetta il prossimo avvio. Scritture su `Dispatchers.IO` (nuovo qualifier `@IoDispatcher`), stream SAF aperto in modalità "wt" (troncare un documento riscritto, mai lasciare code del contenuto precedente).
+- **Export CSV dal registro** (`feature/transactions/export`): icona di condivisione nella top bar dei Movimenti apre uno sheet con conteggio dei movimenti della vista corrente (filtri e ricerca applicati), scelta del separatore `;`/`,` persistita e bottone "Esporta e condividi". Convenzione decimali abbinata al separatore (`;` -> virgola, per Excel in italiano; `,` -> punto), BOM UTF-8, escaping RFC 4180, colonne per entrambe le gambe dei trasferimenti multi-valuta e tag riuniti in un campo. File scritto in `cache/exports/` ed esposto via FileProvider al Share Sheet: nessun permesso di storage.
+- **Icone hub Ricorrenze**: il tab Uscite usava ancora `Subscriptions` (empty state) ed `EventRepeat` (card proiezione annua); ora la coppia è `TrendingDown` (Uscite) / `TrendingUp` (Entrate) in entrambi i punti, lo stesso linguaggio visivo del confronto mese della dashboard.
+- Versione a 0.8.0 (versionCode 24).
+
+**Decisioni:**
+- Enum salvati nel file come stringhe con `valueOf` esplicito al restore: un nome sconosciuto fallisce dentro la transazione (rollback) invece di indovinare.
+- Le preferenze (tema, promemoria, separatore CSV) restano fuori dal backup: sono comodità di device, non dati; perderle non perde informazione monetaria.
+- CSV pensato per i fogli di calcolo, non per il re-import (quello è il JSON): header localizzati e date ISO del giorno locale del movimento (ADR 7).
+- Validazione del restore in due passi (inspect -> conferma -> restore): l'utente vede cosa sta per sostituire i suoi dati prima di qualsiasi scrittura.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint detekt` verdi (Gradle di sistema, wrapper bloccato dal proxy come da nota). 226 unit test JVM (0 falliti), 34 nuovi: `BackupCodecTest` (round-trip, chiavi sconosciute, default per campi mancanti, file estraneo/array/versione futura/corrotto, riepilogo), `BackupMapperTest` (identità entity->schema->entity campo per campo, enum sconosciuto che fallisce), `BackupRoundTripTest` (export->import senza perdita con il codec reale in mezzo, timbro clock/versione, inspect in sola lettura), `TransactionCsvBuilderTest` (separatori/decimali, BOM, quoting, trasferimento multi-valuta, tag, giorno locale). Da verificare su device: flusso SAF completo di export/restore e resa della schermata Backup in chiaro/scuro.
+
+**Prossimo:** Fase 9 (impostazioni, i18n, rifinitura).
+
+---
+
 ## 2026-07-11 - Rifiniture dashboard, movimenti ricorrenti, filtro mese e schermata Informazioni
 
 **Fatto:**
