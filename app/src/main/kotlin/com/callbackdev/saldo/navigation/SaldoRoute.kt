@@ -76,6 +76,10 @@ data class RecurringRuleEditorRoute(
 @Serializable
 data object PendingMovementsRoute : NavKey
 
+/** About screen (version, license, credits), reached from Settings. */
+@Serializable
+data object AboutRoute : NavKey
+
 /**
  * Statistics drill-down: the movements of a local-date window (`[start, end)`
  * as epoch days), optionally narrowed to one category or account. Pushed on

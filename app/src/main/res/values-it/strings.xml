@@ -21,36 +21,36 @@
     <string name="dashboard_balance_total">Saldo totale</string>
     <!-- Saluti mostrati nell'header della dashboard; uno scelto a caso a ogni apertura. -->
     <string-array name="dashboard_greetings_night">
-        <item>Ancora in piedi? Uno sguardo ai conti.</item>
-        <item>Notte fonda? Un\'occhiata veloce e a letto.</item>
+        <item>Un\'occhiata e poi a letto.</item>
+        <item>Notte fonda? Occhiata veloce.</item>
         <item>I risparmi non dormono mai.</item>
-        <item>Un momento di calma per i conti.</item>
-        <item>Un ultimo controllo prima di dormire?</item>
+        <item>Un momento per i conti.</item>
+        <item>Un ultimo controllo?</item>
         <item>Buonanotte.</item>
     </string-array>
     <string-array name="dashboard_greetings_morning">
         <item>Buongiorno!</item>
-        <item>Buongiorno! Come vanno i conti?</item>
-        <item>Nuovo giorno, conti in ordine.</item>
+        <item>Come vanno i conti?</item>
+        <item>Nuovo giorno, conti a posto.</item>
         <item>Caffè e conti?</item>
         <item>Buona giornata!</item>
-        <item>Buongiorno! Teniamo d\'occhio le spese.</item>
+        <item>Teniamo d\'occhio le spese.</item>
     </string-array>
     <string-array name="dashboard_greetings_afternoon">
         <item>Buon pomeriggio!</item>
         <item>Come procede la giornata?</item>
         <item>Tutto sotto controllo?</item>
-        <item>Un controllo veloce di metà giornata.</item>
-        <item>Anche le piccole spese contano.</item>
-        <item>Buon pomeriggio! Conti in ordine?</item>
+        <item>Controllo di metà giornata.</item>
+        <item>Le piccole spese contano.</item>
+        <item>Conti in ordine?</item>
     </string-array>
     <string-array name="dashboard_greetings_evening">
         <item>Buonasera!</item>
         <item>Com\'è andata oggi?</item>
         <item>Tempo di fare il punto.</item>
-        <item>Buonasera! Registra le ultime spese.</item>
-        <item>Fine giornata: tutto a posto?</item>
-        <item>Un minuto ai conti, poi relax.</item>
+        <item>Registra le ultime spese?</item>
+        <item>Fine giornata: tutto ok?</item>
+        <item>Un minuto ai conti.</item>
     </string-array>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d conto</item>
@@ -70,15 +70,11 @@
     <string name="dashboard_month_less">%1$s in meno rispetto a questo punto del mese scorso</string>
     <string name="dashboard_month_same">Come a questo punto del mese scorso</string>
     <string name="dashboard_month_comparison">A questo punto del mese scorso avevi speso %1$s</string>
-    <string name="dashboard_subscriptions_title">Abbonamenti</string>
-    <string name="dashboard_subscriptions_summary">%1$s · %2$s</string>
-    <plurals name="dashboard_subscriptions_active">
-        <item quantity="one">%1$d attivo</item>
-        <item quantity="many">%1$d attivi</item>
-        <item quantity="other">%1$d attivi</item>
-    </plurals>
-    <string name="dashboard_subscriptions_next">Prossimo: %1$s %2$s · %3$s</string>
-    <string name="dashboard_subscriptions_empty">Nessun abbonamento · tocca per aggiungerne</string>
+    <string name="dashboard_recurring_title">Movimenti ricorrenti</string>
+    <string name="dashboard_recurring_expenses_label">Uscite / mese</string>
+    <string name="dashboard_recurring_incomes_label">Entrate / mese</string>
+    <string name="dashboard_recurring_next">Prossimo: %1$s %2$s · %3$s</string>
+    <string name="dashboard_recurring_empty">Nessun movimento ricorrente · tocca per aggiungere</string>
     <string name="dashboard_recent_title">Ultimi movimenti</string>
     <string name="dashboard_recent_see_all">Vedi tutti</string>
     <string name="dashboard_recent_empty">Ancora nessun movimento</string>
@@ -287,9 +283,9 @@
     <string name="category_reassign_target">Sposta in</string>
     <string name="category_reassign_confirm">Riassegna ed elimina</string>
 
-    <!-- Abbonamenti / ricorrenze (Fase 6) -->
-    <string name="settings_recurrences">Ricorrenze</string>
-    <string name="settings_recurrences_hint">Abbonamenti ed entrate ricorrenti</string>
+    <!-- Movimenti ricorrenti (Fase 6). Chiavi mantenute dal naming originale: subscriptions_* = uscite ricorrenti. -->
+    <string name="settings_recurrences">Movimenti ricorrenti</string>
+    <string name="settings_recurrences_hint">Uscite ed entrate ricorrenti</string>
     <string name="recurrence_daily">Giornaliero</string>
     <string name="recurrence_weekly">Settimanale</string>
     <string name="recurrence_monthly">Mensile</string>
@@ -297,15 +293,15 @@
     <string name="recurrence_quarterly">Trimestrale</string>
     <string name="recurrence_semiannual">Semestrale</string>
     <string name="recurrence_annual">Annuale</string>
-    <string name="recurrences_title">Ricorrenze</string>
-    <string name="recurrences_tab_subscriptions">Abbonamenti</string>
+    <string name="recurrences_title">Movimenti ricorrenti</string>
+    <string name="recurrences_tab_subscriptions">Uscite</string>
     <string name="recurrences_tab_incomes">Entrate</string>
-    <string name="subscriptions_new">Nuovo abbonamento</string>
+    <string name="subscriptions_new">Nuova uscita ricorrente</string>
     <string name="subscriptions_this_month">Questo mese</string>
     <plurals name="subscriptions_active_count">
-        <item quantity="one">%1$d abbonamento attivo</item>
-        <item quantity="many">%1$d abbonamenti attivi</item>
-        <item quantity="other">%1$d abbonamenti attivi</item>
+        <item quantity="one">%1$d uscita ricorrente attiva</item>
+        <item quantity="many">%1$d uscite ricorrenti attive</item>
+        <item quantity="other">%1$d uscite ricorrenti attive</item>
     </plurals>
     <string name="subscriptions_annual_projection">Di questo passo, in un anno</string>
     <string name="subscriptions_sort">Ordina</string>
@@ -317,7 +313,7 @@
     <string name="subscriptions_charge_today">Oggi</string>
     <string name="subscriptions_charge_tomorrow">Domani</string>
     <string name="subscriptions_prorated_note">I costi non mensili sono ripartiti sul mese per il totale.</string>
-    <string name="subscriptions_empty_title">Nessun abbonamento</string>
+    <string name="subscriptions_empty_title">Nessuna uscita ricorrente</string>
     <string name="subscriptions_empty_body">Aggiungi le tue spese ricorrenti per vedere quanto costano ogni mese e in un anno.</string>
     <string name="incomes_new">Nuova entrata ricorrente</string>
     <plurals name="incomes_active_count">
@@ -331,9 +327,9 @@
     <string name="incomes_prorated_note">Gli importi non mensili sono ripartiti sul mese per il totale.</string>
     <string name="incomes_empty_title">Nessuna entrata ricorrente</string>
     <string name="incomes_empty_body">Aggiungi stipendio, affitti attivi o altre entrate regolari per vederle a colpo d\'occhio.</string>
-    <string name="subscription_editor_title_new">Nuovo abbonamento</string>
-    <string name="subscription_editor_title_edit">Modifica abbonamento</string>
-    <string name="subscription_editor_save">Salva abbonamento</string>
+    <string name="subscription_editor_title_new">Nuova uscita ricorrente</string>
+    <string name="subscription_editor_title_edit">Modifica uscita ricorrente</string>
+    <string name="subscription_editor_save">Salva uscita ricorrente</string>
     <string name="subscription_editor_name">Nome</string>
     <string name="subscription_editor_name_hint">Netflix, Spotify, assicurazione auto…</string>
     <string name="subscription_editor_name_error">Inserisci un nome</string>
@@ -353,13 +349,13 @@
     <string name="subscription_editor_first_charge">Primo addebito</string>
     <string name="subscription_editor_end_date">Data di fine</string>
     <string name="subscription_editor_has_end_date">Con scadenza</string>
-    <string name="subscription_editor_has_end_date_hint">L\'abbonamento termina a una data scelta</string>
+    <string name="subscription_editor_has_end_date_hint">La ricorrenza termina a una data scelta</string>
     <string name="subscription_editor_section_color">Colore</string>
     <string name="subscription_editor_section_icon">Icona</string>
     <string name="subscription_editor_color_option">Colore %1$d</string>
     <string name="subscription_editor_icon_option">Icona %1$d</string>
-    <string name="subscription_editor_delete">Elimina abbonamento</string>
-    <string name="subscription_delete_title">Eliminare l\'abbonamento?</string>
+    <string name="subscription_editor_delete">Elimina uscita ricorrente</string>
+    <string name="subscription_delete_title">Eliminare l\'uscita ricorrente?</string>
     <string name="subscription_delete_body">La regola verrà rimossa e non genererà più movimenti. I movimenti già registrati restano.</string>
     <string name="income_editor_title_new">Nuova entrata ricorrente</string>
     <string name="income_editor_title_edit">Modifica entrata ricorrente</string>
@@ -383,7 +379,7 @@
     </plurals>
     <string name="dashboard_pending_subtitle">Tocca per confermare o saltare</string>
     <string name="notif_channel_activity_name">Movimenti ricorrenti</string>
-    <string name="notif_channel_confirm_name">Conferme abbonamenti</string>
+    <string name="notif_channel_confirm_name">Conferme movimenti ricorrenti</string>
     <plurals name="notif_activity_title">
         <item quantity="one">%1$d movimento ricorrente registrato</item>
         <item quantity="many">%1$d movimenti ricorrenti registrati</item>
@@ -447,7 +443,7 @@
     <string name="settings_section_notifications">Notifiche</string>
     <string name="settings_section_management">Gestione</string>
     <string name="settings_renewal_reminder">Promemoria rinnovi</string>
-    <string name="settings_renewal_reminder_hint">Avvisa prima del rinnovo degli abbonamenti e degli accrediti ricorrenti</string>
+    <string name="settings_renewal_reminder_hint">Avvisa prima delle uscite e delle entrate ricorrenti</string>
     <plurals name="settings_lead_days_option">
         <item quantity="one">%1$d giorno</item>
         <item quantity="many">%1$d giorni</item>
@@ -458,4 +454,32 @@
     <string name="settings_theme_dark">Scuro</string>
     <string name="settings_dynamic_color">Colori dinamici</string>
     <string name="settings_dynamic_color_hint">Usa i colori dello sfondo (Material You)</string>
+
+    <!-- Settings: voci di gestione e Informazioni -->
+    <string name="settings_accounts">Account</string>
+    <string name="settings_accounts_hint">Conti, carte e contanti</string>
+    <string name="settings_section_about">Informazioni</string>
+    <string name="settings_about">Informazioni su Saldo</string>
+    <string name="settings_about_hint">Versione %1$s</string>
+
+    <!-- Schermata Informazioni -->
+    <string name="about_title">Informazioni</string>
+    <string name="about_version">Versione %1$s</string>
+    <string name="about_tagline">Monitoraggio delle spese offline-first e privacy-first.</string>
+    <string name="about_author">Sviluppata da Callback Dev</string>
+    <string name="about_license_title">Licenza</string>
+    <string name="about_license_body">Saldo è software libero, rilasciato con licenza GNU GPL-3.0.</string>
+    <string name="about_libraries_title">Librerie open source</string>
+    <string-array name="about_library_roles">
+        <item>Toolkit UI e design system</item>
+        <item>Navigazione in-app</item>
+        <item>Database locale</item>
+        <item>Dependency injection</item>
+        <item>Codice asincrono e reattivo</item>
+        <item>Serializzazione JSON</item>
+        <item>Salvataggio delle impostazioni</item>
+        <item>Attività in background</item>
+        <item>Grafici</item>
+        <item>Set di icone</item>
+    </string-array>
 </resources>

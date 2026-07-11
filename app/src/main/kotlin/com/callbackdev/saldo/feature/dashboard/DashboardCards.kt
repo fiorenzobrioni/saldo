@@ -18,8 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.NotificationsActive
-import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -37,6 +37,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -59,8 +61,9 @@ import java.util.Currency
 /**
  * A warm, time-of-day greeting as the screen's title. The [band] and [roll] are
  * fixed once per app-open in the ViewModel, so the message is stable across
- * recomposition and rotation and only changes on a fresh open. Kept to a single
- * line; the current date now lives in the balance card.
+ * recomposition and rotation and only changes on a fresh open. Messages are
+ * written to fit one line at the default font scale; a second line is allowed
+ * so larger accessibility font sizes never truncate the text.
  */
 @Composable
 internal fun DashboardHeader(band: GreetingBand, roll: Float, modifier: Modifier = Modifier) {
@@ -70,7 +73,7 @@ internal fun DashboardHeader(band: GreetingBand, roll: Float, modifier: Modifier
         text = greeting,
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.SemiBold,
-        maxLines = 1,
+        maxLines = 2,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier.fillMaxWidth(),
     )
@@ -99,7 +102,12 @@ private fun fullWeekdayDate(date: LocalDate): String {
     }
 }
 
-/** Hero card: the total balance with the per-account breakdown always in view. */
+/**
+ * Hero card: the total balance with the per-account breakdown always in view.
+ * The whole card is tappable and opens account management; the chevron next to
+ * the date is the visual affordance, [R.string.dashboard_manage_accounts] the
+ * spoken one.
+ */
 @Composable
 internal fun BalanceCard(
     totalBalance: BigDecimal,
@@ -109,8 +117,12 @@ internal fun BalanceCard(
     onManageAccounts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val manageAccountsLabel = stringResource(R.string.dashboard_manage_accounts)
     Card(
-        modifier = modifier.fillMaxWidth(),
+        onClick = onManageAccounts,
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics { onClick(label = manageAccountsLabel, action = null) },
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -118,10 +130,8 @@ internal fun BalanceCard(
     ) {
         Column(
             modifier = Modifier.padding(
-                start = SaldoDimens.cardPaddingLarge,
-                end = SaldoDimens.cardPaddingLarge,
-                top = SaldoDimens.cardPaddingLarge,
-                bottom = 8.dp,
+                horizontal = SaldoDimens.cardPaddingLarge,
+                vertical = SaldoDimens.cardPaddingVertical,
             ),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -137,6 +147,13 @@ internal fun BalanceCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
+                Spacer(Modifier.size(4.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp),
+                )
             }
             Spacer(Modifier.height(4.dp))
             Text(
@@ -150,35 +167,8 @@ internal fun BalanceCard(
                 },
             )
             if (accounts.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(10.dp))
                 accounts.forEach { item -> AccountBreakdownRow(item = item) }
-                Spacer(Modifier.height(6.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                Surface(
-                    onClick = onManageAccounts,
-                    color = Color.Transparent,
-                    shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.dashboard_manage_accounts),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
             }
         }
     }
@@ -282,14 +272,19 @@ private fun PeriodCompactCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
     ) {
-        Column(modifier = Modifier.padding(SaldoDimens.cardPadding)) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = SaldoDimens.cardPadding,
+                vertical = SaldoDimens.cardPaddingVertical,
+            ),
+        ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
                 text = MoneyFormatter.formatSigned(flow.net, currency),
                 style = MaterialTheme.typography.headlineSmall.tabularNumbers(),
@@ -298,7 +293,7 @@ private fun PeriodCompactCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(10.dp))
             StatLine(
                 label = stringResource(R.string.dashboard_stat_expenses),
                 value = MoneyFormatter.formatSigned(flow.spend, currency),
@@ -383,7 +378,10 @@ internal fun PendingConfirmationCard(
         ),
     ) {
         Row(
-            modifier = Modifier.padding(SaldoDimens.cardPadding),
+            modifier = Modifier.padding(
+                horizontal = SaldoDimens.cardPadding,
+                vertical = SaldoDimens.cardPaddingVertical,
+            ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -425,10 +423,13 @@ internal fun PendingConfirmationCard(
     }
 }
 
-/** Dashboard card for subscriptions: monthly total, active count and the next charge. */
+/**
+ * Dashboard card for recurring transactions: monthly expense and income totals
+ * side by side, plus the next upcoming charge or credit across both types.
+ */
 @Composable
-internal fun SubscriptionsCard(
-    summary: SubscriptionsSummary,
+internal fun RecurringCard(
+    summary: RecurringSummary,
     currency: Currency,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -441,82 +442,120 @@ internal fun SubscriptionsCard(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),
     ) {
-        Row(
-            modifier = Modifier.padding(SaldoDimens.cardPadding),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier.padding(
+                horizontal = SaldoDimens.cardPadding,
+                vertical = SaldoDimens.cardPaddingVertical,
+            ),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(AvatarShape)
-                    .background(MaterialTheme.colorScheme.secondaryContainer),
-                contentAlignment = Alignment.Center,
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    imageVector = Icons.Outlined.Subscriptions,
+                    imageVector = Icons.Outlined.EventRepeat,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(22.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp),
+                )
+                Text(
+                    text = stringResource(R.string.dashboard_recurring_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp),
+                )
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 16.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.dashboard_subscriptions_title),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                if (summary.hasSubscriptions) {
-                    Text(
-                        text = stringResource(
-                            R.string.dashboard_subscriptions_summary,
-                            MoneyFormatter.format(summary.monthlyTotal, currency),
-                            pluralStringResource(
-                                R.plurals.dashboard_subscriptions_active,
-                                summary.activeCount,
-                                summary.activeCount,
-                            ),
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+            if (summary.hasRules) {
+                Spacer(Modifier.height(10.dp))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    RecurringMetric(
+                        label = stringResource(R.string.dashboard_recurring_expenses_label),
+                        value = MoneyFormatter.formatSigned(summary.monthlyExpenses.negate(), currency),
+                        color = if (summary.monthlyExpenses.signum() > 0) {
+                            MaterialTheme.moneyColors.negative
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        modifier = Modifier.weight(1f),
                     )
-                    summary.next?.let { next ->
-                        val locale = LocalConfiguration.current.locales[0]
-                        val dateText = remember(next.date, locale) {
-                            val pattern =
-                                android.text.format.DateFormat.getBestDateTimePattern(locale, "dMMM")
-                            next.date.format(DateTimeFormatter.ofPattern(pattern, locale))
-                        }
-                        Text(
-                            text = stringResource(
-                                R.string.dashboard_subscriptions_next,
-                                next.name,
-                                MoneyFormatter.format(next.amount, next.currency),
-                                dateText,
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                } else {
-                    Text(
-                        text = stringResource(R.string.dashboard_subscriptions_empty),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    RecurringMetric(
+                        label = stringResource(R.string.dashboard_recurring_incomes_label),
+                        value = MoneyFormatter.formatSigned(summary.monthlyIncomes, currency),
+                        color = if (summary.monthlyIncomes.signum() > 0) {
+                            MaterialTheme.moneyColors.income
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        modifier = Modifier.weight(1f),
                     )
                 }
+                summary.next?.let { next ->
+                    Spacer(Modifier.height(8.dp))
+                    NextRecurringEventLine(next = next)
+                }
+            } else {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.dashboard_recurring_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
+}
+
+@Composable
+private fun RecurringMetric(
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium.tabularNumbers(),
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
+private fun NextRecurringEventLine(next: NextRecurringEvent, modifier: Modifier = Modifier) {
+    val locale = LocalConfiguration.current.locales[0]
+    val dateText = remember(next.date, locale) {
+        val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "dMMM")
+        next.date.format(DateTimeFormatter.ofPattern(pattern, locale))
+    }
+    Text(
+        text = stringResource(
+            R.string.dashboard_recurring_next,
+            next.name,
+            MoneyFormatter.formatSigned(next.amount, next.currency),
+            dateText,
+        ),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier,
+    )
 }
 
 /** Recent movements as a single grouped card with flat, tappable rows. */

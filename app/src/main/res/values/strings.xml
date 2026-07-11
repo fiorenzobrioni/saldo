@@ -23,20 +23,20 @@
     <string name="dashboard_balance_total">Total balance</string>
     <!-- Time-of-day greetings shown in the dashboard header; one is picked at random per app open. -->
     <string-array name="dashboard_greetings_night">
-        <item>Still up? A quick look at the numbers.</item>
+        <item>Still up? A quick look.</item>
         <item>Night owl? Welcome back.</item>
         <item>Savings never sleep.</item>
-        <item>A quiet moment for your accounts.</item>
+        <item>A calm look at the books.</item>
         <item>One last check before bed?</item>
         <item>Good night.</item>
     </string-array>
     <string-array name="dashboard_greetings_morning">
         <item>Good morning!</item>
-        <item>Good morning! How are the accounts?</item>
+        <item>How are the accounts?</item>
         <item>New day, accounts in order.</item>
         <item>Coffee and accounts?</item>
         <item>Have a great day!</item>
-        <item>Morning! Let\'s track your day.</item>
+        <item>Morning! Let\'s track today.</item>
     </string-array>
     <string-array name="dashboard_greetings_afternoon">
         <item>Good afternoon!</item>
@@ -44,15 +44,15 @@
         <item>Everything under control?</item>
         <item>A quick midday check-in.</item>
         <item>Small expenses count too.</item>
-        <item>Good afternoon! Accounts in order?</item>
+        <item>Afternoon! All in order?</item>
     </string-array>
     <string-array name="dashboard_greetings_evening">
         <item>Good evening!</item>
         <item>How did today go?</item>
         <item>Time to take stock.</item>
-        <item>Good evening! Log the last expenses.</item>
+        <item>Any expenses to log?</item>
         <item>End of the day: all set?</item>
-        <item>One minute for the accounts, then relax.</item>
+        <item>A minute for the numbers.</item>
     </string-array>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d account</item>
@@ -71,14 +71,11 @@
     <string name="dashboard_month_less">%1$s less than by this day last month</string>
     <string name="dashboard_month_same">Same as by this day last month</string>
     <string name="dashboard_month_comparison">By this point last month you had spent %1$s</string>
-    <string name="dashboard_subscriptions_title">Subscriptions</string>
-    <string name="dashboard_subscriptions_summary">%1$s · %2$s</string>
-    <plurals name="dashboard_subscriptions_active">
-        <item quantity="one">%1$d active</item>
-        <item quantity="other">%1$d active</item>
-    </plurals>
-    <string name="dashboard_subscriptions_next">Next: %1$s %2$s · %3$s</string>
-    <string name="dashboard_subscriptions_empty">No subscriptions yet · tap to add one</string>
+    <string name="dashboard_recurring_title">Recurring transactions</string>
+    <string name="dashboard_recurring_expenses_label">Expenses / month</string>
+    <string name="dashboard_recurring_incomes_label">Income / month</string>
+    <string name="dashboard_recurring_next">Next: %1$s %2$s · %3$s</string>
+    <string name="dashboard_recurring_empty">No recurring transactions yet · tap to add one</string>
     <string name="dashboard_recent_title">Recent movements</string>
     <string name="dashboard_recent_see_all">See all</string>
     <string name="dashboard_recent_empty">No movements yet</string>
@@ -285,9 +282,9 @@
     <string name="category_reassign_target">Move to</string>
     <string name="category_reassign_confirm">Reassign and delete</string>
 
-    <!-- Subscriptions / recurrences (Phase 6) -->
-    <string name="settings_recurrences">Recurring</string>
-    <string name="settings_recurrences_hint">Subscriptions and recurring income</string>
+    <!-- Recurring transactions (Phase 6). Keys kept from the original naming: subscriptions_* = recurring expenses. -->
+    <string name="settings_recurrences">Recurring transactions</string>
+    <string name="settings_recurrences_hint">Recurring expenses and income</string>
     <string name="recurrence_daily">Daily</string>
     <string name="recurrence_weekly">Weekly</string>
     <string name="recurrence_monthly">Monthly</string>
@@ -295,14 +292,14 @@
     <string name="recurrence_quarterly">Quarterly</string>
     <string name="recurrence_semiannual">Semi-annual</string>
     <string name="recurrence_annual">Yearly</string>
-    <string name="recurrences_title">Recurring</string>
-    <string name="recurrences_tab_subscriptions">Subscriptions</string>
+    <string name="recurrences_title">Recurring transactions</string>
+    <string name="recurrences_tab_subscriptions">Expenses</string>
     <string name="recurrences_tab_incomes">Income</string>
-    <string name="subscriptions_new">New subscription</string>
+    <string name="subscriptions_new">New recurring expense</string>
     <string name="subscriptions_this_month">This month</string>
     <plurals name="subscriptions_active_count">
-        <item quantity="one">%1$d active subscription</item>
-        <item quantity="other">%1$d active subscriptions</item>
+        <item quantity="one">%1$d active recurring expense</item>
+        <item quantity="other">%1$d active recurring expenses</item>
     </plurals>
     <string name="subscriptions_annual_projection">At this rate, over a year</string>
     <string name="subscriptions_sort">Sort</string>
@@ -314,7 +311,7 @@
     <string name="subscriptions_charge_today">Today</string>
     <string name="subscriptions_charge_tomorrow">Tomorrow</string>
     <string name="subscriptions_prorated_note">Non-monthly costs are spread over the month for the total.</string>
-    <string name="subscriptions_empty_title">No subscriptions yet</string>
+    <string name="subscriptions_empty_title">No recurring expenses yet</string>
     <string name="subscriptions_empty_body">Add your recurring expenses to see how much they cost each month and over a year.</string>
     <string name="incomes_new">New recurring income</string>
     <plurals name="incomes_active_count">
@@ -327,9 +324,9 @@
     <string name="incomes_prorated_note">Non-monthly amounts are spread over the month for the total.</string>
     <string name="incomes_empty_title">No recurring income yet</string>
     <string name="incomes_empty_body">Add your salary, rent received or other regular income to see it at a glance.</string>
-    <string name="subscription_editor_title_new">New subscription</string>
-    <string name="subscription_editor_title_edit">Edit subscription</string>
-    <string name="subscription_editor_save">Save subscription</string>
+    <string name="subscription_editor_title_new">New recurring expense</string>
+    <string name="subscription_editor_title_edit">Edit recurring expense</string>
+    <string name="subscription_editor_save">Save recurring expense</string>
     <string name="subscription_editor_name">Name</string>
     <string name="subscription_editor_name_hint">Netflix, Spotify, car insurance…</string>
     <string name="subscription_editor_name_error">Enter a name</string>
@@ -349,13 +346,13 @@
     <string name="subscription_editor_first_charge">First charge</string>
     <string name="subscription_editor_end_date">End date</string>
     <string name="subscription_editor_has_end_date">Has an end date</string>
-    <string name="subscription_editor_has_end_date_hint">The subscription stops on a chosen date</string>
+    <string name="subscription_editor_has_end_date_hint">The recurrence stops on a chosen date</string>
     <string name="subscription_editor_section_color">Color</string>
     <string name="subscription_editor_section_icon">Icon</string>
     <string name="subscription_editor_color_option">Color %1$d</string>
     <string name="subscription_editor_icon_option">Icon %1$d</string>
-    <string name="subscription_editor_delete">Delete subscription</string>
-    <string name="subscription_delete_title">Delete subscription?</string>
+    <string name="subscription_editor_delete">Delete recurring expense</string>
+    <string name="subscription_delete_title">Delete recurring expense?</string>
     <string name="subscription_delete_body">The rule will be removed and no new movements will be generated. Movements already recorded are kept.</string>
     <string name="income_editor_title_new">New recurring income</string>
     <string name="income_editor_title_edit">Edit recurring income</string>
@@ -378,7 +375,7 @@
     </plurals>
     <string name="dashboard_pending_subtitle">Tap to confirm or skip</string>
     <string name="notif_channel_activity_name">Recurring movements</string>
-    <string name="notif_channel_confirm_name">Subscription confirmations</string>
+    <string name="notif_channel_confirm_name">Recurring charge confirmations</string>
     <plurals name="notif_activity_title">
         <item quantity="one">%1$d recurring movement recorded</item>
         <item quantity="other">%1$d recurring movements recorded</item>
@@ -438,7 +435,7 @@
     <string name="settings_section_notifications">Notifications</string>
     <string name="settings_section_management">Management</string>
     <string name="settings_renewal_reminder">Upcoming charge reminder</string>
-    <string name="settings_renewal_reminder_hint">Get notified before subscriptions renew and recurring income arrives</string>
+    <string name="settings_renewal_reminder_hint">Get notified before recurring expenses and income are due</string>
     <plurals name="settings_lead_days_option">
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>
@@ -448,4 +445,45 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_dynamic_color">Dynamic colors</string>
     <string name="settings_dynamic_color_hint">Use colors from your wallpaper (Material You)</string>
+
+    <!-- Settings: management entries and About -->
+    <string name="settings_accounts">Accounts</string>
+    <string name="settings_accounts_hint">Bank accounts, cards and cash</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_about">About Saldo</string>
+    <string name="settings_about_hint">Version %1$s</string>
+
+    <!-- About screen -->
+    <string name="about_title">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_tagline">Offline-first, privacy-first expense tracking.</string>
+    <string name="about_author">Developed by Callback Dev</string>
+    <string name="about_license_title">License</string>
+    <string name="about_license_body">Saldo is free software, released under the GNU GPL-3.0 license.</string>
+    <string name="about_libraries_title">Open source libraries</string>
+    <!-- The two arrays below are parallel: names[i] is described by roles[i]. -->
+    <string-array name="about_library_names" translatable="false">
+        <item>Jetpack Compose &amp; Material 3</item>
+        <item>Navigation 3</item>
+        <item>Room</item>
+        <item>Hilt</item>
+        <item>Kotlin Coroutines &amp; Flow</item>
+        <item>kotlinx.serialization</item>
+        <item>DataStore Preferences</item>
+        <item>WorkManager</item>
+        <item>Vico</item>
+        <item>Material Icons Extended</item>
+    </string-array>
+    <string-array name="about_library_roles">
+        <item>UI toolkit and design system</item>
+        <item>In-app navigation</item>
+        <item>Local database</item>
+        <item>Dependency injection</item>
+        <item>Asynchronous and reactive code</item>
+        <item>JSON serialization</item>
+        <item>Settings storage</item>
+        <item>Background tasks</item>
+        <item>Charts</item>
+        <item>Icon set</item>
+    </string-array>
 </resources>

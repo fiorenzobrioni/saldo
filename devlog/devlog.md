@@ -14,6 +14,31 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-11 - Rifiniture dashboard, movimenti ricorrenti, filtro mese e schermata Informazioni
+
+**Fatto:**
+- **Saluti dashboard**: varianti accorciate (max ~28 caratteri, IT+EN) perché stiano su una riga a font scale normale; `maxLines` da 1 a 2 come rete di sicurezza per il font scaling (prima i messaggi lunghi venivano troncati con ellipsis).
+- **Padding card dashboard**: verticale ridotto a 12dp (`SaldoDimens.cardPaddingVertical`) su card saldo, Oggi/mese, pending e ricorrenti; spacer interni delle card periodo ritoccati (6->4, 12->10). Card Ultimi movimenti invariata.
+- **Card saldo cliccabile**: rimossi divider e riga "Gestisci account"; l'intera card apre la gestione account, con chevron accanto alla data come affordance e label semantica (`onClick(label = ...)`) per TalkBack. La stringa `dashboard_manage_accounts` resta come label.
+- **Card "Movimenti ricorrenti"** al posto della card Abbonamenti: due metriche affiancate Uscite/mese e Entrate/mese (equivalente mensile normalizzato, valuta principale, importi firmati e colorati - non solo colore) + prossimo evento (addebito o accredito) tra entrambi i tipi. `RecurringSummary`/`NextRecurringEvent` nel ViewModel sostituiscono `SubscriptionsSummary`/`NextSubscription` (prima solo EXPENSE).
+- **Rinomina**: "Ricorrenze" -> "Movimenti ricorrenti" (EN "Recurring transactions") in titolo schermata, voce impostazioni e card dashboard; tab "Abbonamenti" -> "Uscite" (EN "Expenses"); adeguate le stringhe di editor, empty state, plurali e canale notifiche conferme. Chiavi `subscriptions_*` mantenute (cambiati solo i valori, commento in strings.xml); categoria seed "Abbonamenti" intatta (è una categoria).
+- **Movimenti**: filtro data di default "Questo mese" (`TransactionFilters.DEFAULT`), allineato al default delle statistiche; "Tutto" resta selezionabile; `clearFilters` resetta al default; il badge dei filtri ignora sia ALL sia THIS_MONTH (segnala solo ciò che l'utente ha cambiato).
+- **Impostazioni**: voce "Account" in testa alla sezione Gestione (prima raggiungibile solo da Dashboard/Movimenti), colonna resa scrollabile, nuova sezione "Informazioni" con la versione nell'hint.
+- **Schermata Informazioni** (`feature/about`, `AboutRoute`): logo ricavato dal launcher icon (foreground scalato 108/72 dentro un cerchio col colore di background dell'icona), nome, versione via `BuildConfig.VERSION_NAME` (`buildConfig = true`), tagline, Callback Dev, licenza GPL-3.0 e lista statica delle librerie open source (nessuna nuova dipendenza).
+- Versione a 0.7.2 (versionCode 23).
+
+**Decisioni:**
+- Card saldo cliccabile intera invece del link testuale: meno cromo visivo, area di tocco ampia, la card è già "la card degli account". Sicura senza stato disabled: è composta solo quando esistono account.
+- `TransactionFilters.NONE` resta "nessuna restrizione" e il default della data class resta ALL: i costruttori espliciti (drill-down statistiche, sheet filtri) non ereditano il vincolo del mese; il nuovo default vive solo in `DEFAULT`.
+- La barra dei totali filtrati ora compare anche all'apertura (mostra il totale del mese corrente): intenzionale, è informativa e coerente con la vista ristretta.
+- I saluti restano una feature: il problema era il troncamento, non l'idea; feature mantenuta con copy più corto.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verdi (Gradle di sistema in `/opt/gradle`, wrapper bloccato dal proxy come da nota in PLANNING). Test nuovi/aggiornati: `DashboardViewModelTest` (summary ricorrenti con segno, misto uscite+entrate, esclusione endDate), `TransactionsViewModelTest` (default mese con preset ALL che lo toglie, clear al default, badge a 0 su DEFAULT/NONE). Da verificare su device: resa dei nuovi padding e della card ricorrenti, schermata Informazioni in chiaro/scuro.
+
+**Prossimo:** Fase 8 (backup, export, import).
+
+---
+
 ## 2026-07-11 - Rifinitura statistiche dal feedback su device
 
 **Fatto:**

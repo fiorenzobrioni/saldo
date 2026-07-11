@@ -39,7 +39,7 @@ class TransactionsViewModel @Inject constructor(
     @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
-    private val filters = MutableStateFlow(TransactionFilters.NONE)
+    private val filters = MutableStateFlow(TransactionFilters.DEFAULT)
 
     /** Tags and their assignments, pre-combined to stay within combine's arity. */
     private data class TagData(
@@ -131,9 +131,9 @@ class TransactionsViewModel @Inject constructor(
         filters.value = newFilters
     }
 
-    /** Back to the unfiltered ledger, search included. */
+    /** Back to the default view (current month), search included. */
     fun clearFilters() {
-        filters.value = TransactionFilters.NONE
+        filters.value = TransactionFilters.DEFAULT
     }
 
     /** Deletes a movement, capturing its tags first so undo can restore them. */

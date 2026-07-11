@@ -15,6 +15,9 @@ object SaldoDimens {
     /** Inner padding of standard cards. */
     val cardPadding = 14.dp
 
+    /** Vertical inner padding of dashboard cards, tighter than the horizontal one. */
+    val cardPaddingVertical = 12.dp
+
     /** Horizontal inner padding of a row inside a grouped card. */
     val rowPaddingHorizontal = 16.dp
 

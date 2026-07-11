@@ -5,10 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.EventRepeat
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -31,6 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.callbackdev.saldo.BuildConfig
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
@@ -38,8 +43,10 @@ import com.callbackdev.saldo.core.common.prefs.ThemeMode
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    onNavigateToAccounts: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToRecurrences: () -> Unit,
+    onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -55,7 +62,8 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState()),
         ) {
             SettingsSectionHeader(stringResource(R.string.settings_section_appearance))
             ThemeModeSelector(
@@ -95,6 +103,12 @@ fun SettingsScreen(
 
             SettingsSectionHeader(stringResource(R.string.settings_section_management))
             SettingsEntry(
+                title = stringResource(R.string.settings_accounts),
+                hint = stringResource(R.string.settings_accounts_hint),
+                icon = Icons.Outlined.AccountBalanceWallet,
+                onClick = onNavigateToAccounts,
+            )
+            SettingsEntry(
                 title = stringResource(R.string.settings_recurrences),
                 hint = stringResource(R.string.settings_recurrences_hint),
                 icon = Icons.Outlined.EventRepeat,
@@ -105,6 +119,14 @@ fun SettingsScreen(
                 hint = stringResource(R.string.settings_categories_hint),
                 icon = Icons.Outlined.Category,
                 onClick = onNavigateToCategories,
+            )
+
+            SettingsSectionHeader(stringResource(R.string.settings_section_about))
+            SettingsEntry(
+                title = stringResource(R.string.settings_about),
+                hint = stringResource(R.string.settings_about_hint, BuildConfig.VERSION_NAME),
+                icon = Icons.Outlined.Info,
+                onClick = onNavigateToAbout,
             )
         }
     }
