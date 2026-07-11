@@ -76,6 +76,10 @@ data class RecurringRuleEditorRoute(
 @Serializable
 data object PendingMovementsRoute : NavKey
 
+/** Manual file backup and guided restore, reached from Settings. */
+@Serializable
+data object BackupRoute : NavKey
+
 /** About screen (version, license, credits), reached from Settings. */
 @Serializable
 data object AboutRoute : NavKey

@@ -1,11 +1,13 @@
 package com.callbackdev.saldo.core.database.di
 
 import com.callbackdev.saldo.core.database.repository.RoomAccountRepository
+import com.callbackdev.saldo.core.database.repository.RoomBackupRepository
 import com.callbackdev.saldo.core.database.repository.RoomCategoryRepository
 import com.callbackdev.saldo.core.database.repository.RoomRecurringRuleRepository
 import com.callbackdev.saldo.core.database.repository.RoomTagRepository
 import com.callbackdev.saldo.core.database.repository.RoomTransactionRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
+import com.callbackdev.saldo.core.domain.repository.BackupRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
@@ -39,4 +41,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindRecurringRuleRepository(impl: RoomRecurringRuleRepository): RecurringRuleRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBackupRepository(impl: RoomBackupRepository): BackupRepository
 }

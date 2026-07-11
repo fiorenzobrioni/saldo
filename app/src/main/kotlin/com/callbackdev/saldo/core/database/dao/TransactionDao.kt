@@ -29,6 +29,18 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIgnoringConflicts(transaction: TransactionEntity): Long
 
+    /** Bulk insert with explicit ids, used by backup restore. */
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(transactions: List<TransactionEntity>): List<Long>
+
+    /** One-shot dump of the whole ledger, pending movements included, for backup export. */
+    @Query("SELECT * FROM transactions ORDER BY id ASC")
+    suspend fun getAll(): List<TransactionEntity>
+
+    /** Empties the table; only backup restore calls this, inside its transaction. */
+    @Query("DELETE FROM transactions")
+    suspend fun deleteAll()
+
     @Update
     suspend fun update(transaction: TransactionEntity)
 

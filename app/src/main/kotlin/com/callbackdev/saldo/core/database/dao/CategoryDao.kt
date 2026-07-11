@@ -45,6 +45,14 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE id = :id")
     suspend fun getById(id: Long): CategoryEntity?
 
+    /** One-shot dump of every category, for backup export. */
+    @Query("SELECT * FROM categories ORDER BY id ASC")
+    suspend fun getAll(): List<CategoryEntity>
+
+    /** Empties the table; only backup restore calls this, inside its transaction. */
+    @Query("DELETE FROM categories")
+    suspend fun deleteAll()
+
     @Query("SELECT COUNT(*) FROM categories")
     suspend fun count(): Int
 

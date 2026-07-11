@@ -12,10 +12,15 @@ import com.callbackdev.saldo.core.database.entity.TransactionTagCrossRef
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@Suppress("TooManyFunctions") // A data-access interface naturally has many queries.
 interface TagDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(tag: TagEntity): Long
+
+    /** Bulk insert with explicit ids, used by backup restore. */
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(tags: List<TagEntity>): List<Long>
 
     @Update
     suspend fun update(tag: TagEntity)
@@ -40,8 +45,28 @@ interface TagDao {
     @Query("SELECT * FROM transaction_tag_cross_ref")
     fun observeAllCrossRefs(): Flow<List<TransactionTagCrossRef>>
 
+    /** One-shot dump of every tag, for backup export. */
+    @Query("SELECT * FROM tags ORDER BY id ASC")
+    suspend fun getAll(): List<TagEntity>
+
+    /** One-shot dump of every movement-tag assignment, for backup export. */
+    @Query("SELECT * FROM transaction_tag_cross_ref")
+    suspend fun getAllCrossRefs(): List<TransactionTagCrossRef>
+
+    /** Empties the tags table; only backup restore calls this, inside its transaction. */
+    @Query("DELETE FROM tags")
+    suspend fun deleteAll()
+
+    /** Empties the assignments table; only backup restore calls this, inside its transaction. */
+    @Query("DELETE FROM transaction_tag_cross_ref")
+    suspend fun deleteAllCrossRefs()
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertCrossRef(crossRef: TransactionTagCrossRef)
+
+    /** Bulk insert of assignments, used by backup restore. */
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertCrossRefs(crossRefs: List<TransactionTagCrossRef>)
 
     @Query("DELETE FROM transaction_tag_cross_ref WHERE transactionId = :transactionId")
     suspend fun clearCrossRefs(transactionId: Long)

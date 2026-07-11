@@ -2,12 +2,16 @@ package com.callbackdev.saldo.feature.transactions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.di.DefaultDispatcher
+import com.callbackdev.saldo.core.common.prefs.CsvSeparator
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.feature.transactions.export.TransactionsCsvExporter
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilterEngine
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
@@ -30,11 +34,14 @@ import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
+@Suppress("LongParameterList") // Hilt wiring: one dependency per concern.
 class TransactionsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
+    private val userPreferences: UserPreferencesRepository,
+    private val csvExporter: TransactionsCsvExporter,
     private val clock: Clock,
     @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -104,6 +111,43 @@ class TransactionsViewModel @Inject constructor(
 
     private val _events = Channel<TransactionsEvent>(Channel.BUFFERED)
     val events: Flow<TransactionsEvent> = _events.receiveAsFlow()
+
+    /** Column separator of the CSV export, persisted across launches. */
+    val csvSeparator: StateFlow<CsvSeparator> = userPreferences.csvSeparator
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = CsvSeparator.SEMICOLON,
+        )
+
+    fun setCsvSeparator(separator: CsvSeparator) {
+        viewModelScope.launch { userPreferences.setCsvSeparator(separator) }
+    }
+
+    /**
+     * Exports the current view (active filters and search applied) as a CSV
+     * file and emits its shareable uri; the screen hands it to the Share Sheet.
+     */
+    fun exportCsv() {
+        viewModelScope.launch {
+            val items = uiState.value.days.flatMap { it.items }
+            if (items.isEmpty()) return@launch
+            val result = suspendRunCatching {
+                val tagsById = tagRepository.observeTags().first().associateBy { it.id }
+                val tagNames = tagRepository.observeTagAssignments().first()
+                    .mapValues { (_, ids) -> ids.mapNotNull { tagsById[it]?.name }.sorted() }
+                csvExporter.export(
+                    fileName = "saldo-export-${LocalDate.now(clock)}.csv",
+                    items = items,
+                    tagNames = tagNames,
+                    separator = csvSeparator.value,
+                )
+            }
+            result
+                .onSuccess { uri -> _events.send(TransactionsEvent.CsvExported(uri)) }
+                .onFailure { _events.send(TransactionsEvent.CsvExportFailed) }
+        }
+    }
 
     /** Replaces the search text, leaving the other filters untouched. */
     fun setQuery(query: String) {

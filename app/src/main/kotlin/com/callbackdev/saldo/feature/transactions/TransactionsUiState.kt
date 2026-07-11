@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.transactions
 
+import android.net.Uri
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
@@ -80,6 +81,11 @@ sealed interface TransactionsEvent {
         val transaction: Transaction,
         val tagIds: List<Long>,
     ) : TransactionsEvent
+
+    /** The CSV export is ready to be handed to the system Share Sheet. */
+    data class CsvExported(val uri: Uri) : TransactionsEvent
+
+    data object CsvExportFailed : TransactionsEvent
 }
 
 /** The calendar day of a movement in the timezone it was recorded in (ADR 7). */

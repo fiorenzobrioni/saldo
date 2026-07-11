@@ -1,5 +1,8 @@
 package com.callbackdev.saldo.feature.transactions
 
+import android.content.Context
+import android.content.Intent
+import android.content.res.Resources
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Column
@@ -15,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,6 +44,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -51,6 +56,7 @@ import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
+import com.callbackdev.saldo.feature.transactions.export.CsvExportSheet
 import java.time.LocalDate
 
 /**
@@ -68,26 +74,18 @@ fun TransactionsScreen(
     viewModel: TransactionsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val csvSeparator by viewModel.csvSeparator.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
+    val context = LocalContext.current
     var isSearching by rememberSaveable { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var showRangePicker by remember { mutableStateOf(false) }
+    var showExportSheet by remember { mutableStateOf(false) }
 
-    LaunchedEffect(viewModel, resources) {
+    LaunchedEffect(viewModel, resources, context) {
         viewModel.events.collect { event ->
-            when (event) {
-                is TransactionsEvent.TransactionDeleted -> {
-                    val result = snackbarHostState.showSnackbar(
-                        message = resources.getString(R.string.transactions_snackbar_deleted),
-                        actionLabel = resources.getString(R.string.action_undo),
-                        duration = SnackbarDuration.Short,
-                    )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        viewModel.undoDelete(event)
-                    }
-                }
-            }
+            handleTransactionsEvent(event, viewModel, snackbarHostState, resources, context)
         }
     }
 
@@ -121,6 +119,12 @@ fun TransactionsScreen(
                                 activeCount = uiState.filters.activeCount,
                                 onClick = { showFilterSheet = true },
                             )
+                            IconButton(onClick = { showExportSheet = true }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.IosShare,
+                                    contentDescription = stringResource(R.string.csv_export_title),
+                                )
+                            }
                         }
                     },
                 )
@@ -196,6 +200,19 @@ fun TransactionsScreen(
         )
     }
 
+    if (showExportSheet) {
+        CsvExportSheet(
+            count = uiState.filteredCount,
+            separator = csvSeparator,
+            onSeparatorSelected = viewModel::setCsvSeparator,
+            onExport = {
+                showExportSheet = false
+                viewModel.exportCsv()
+            },
+            onDismiss = { showExportSheet = false },
+        )
+    }
+
     if (showRangePicker) {
         FilterDateRangePickerDialog(
             initialStart = uiState.filters.customStart,
@@ -206,6 +223,50 @@ fun TransactionsScreen(
             },
             onDismiss = { showRangePicker = false },
         )
+    }
+}
+
+/**
+ * One-shot event reactions: undoable delete snackbar, CSV hand-off to the
+ * system Share Sheet, export failure notice. Extracted so the screen function
+ * stays a readable layout.
+ */
+private suspend fun handleTransactionsEvent(
+    event: TransactionsEvent,
+    viewModel: TransactionsViewModel,
+    snackbarHostState: SnackbarHostState,
+    resources: Resources,
+    context: Context,
+) {
+    when (event) {
+        is TransactionsEvent.TransactionDeleted -> {
+            val result = snackbarHostState.showSnackbar(
+                message = resources.getString(R.string.transactions_snackbar_deleted),
+                actionLabel = resources.getString(R.string.action_undo),
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.undoDelete(event)
+            }
+        }
+
+        is TransactionsEvent.CsvExported -> {
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = "text/csv"
+                putExtra(Intent.EXTRA_STREAM, event.uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(
+                Intent.createChooser(send, resources.getString(R.string.csv_share_title)),
+            )
+        }
+
+        TransactionsEvent.CsvExportFailed -> {
+            snackbarHostState.showSnackbar(
+                message = resources.getString(R.string.csv_export_failed),
+                duration = SnackbarDuration.Short,
+            )
+        }
     }
 }
 

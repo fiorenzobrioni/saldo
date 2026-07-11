@@ -15,6 +15,14 @@ interface RecurringRuleDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(rule: RecurringRuleEntity): Long
 
+    /** Bulk insert with explicit ids, used by backup restore. */
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertAll(rules: List<RecurringRuleEntity>): List<Long>
+
+    /** Empties the table; only backup restore calls this, inside its transaction. */
+    @Query("DELETE FROM recurring_rules")
+    suspend fun deleteAll()
+
     @Update
     suspend fun update(rule: RecurringRuleEntity)
 
