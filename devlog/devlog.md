@@ -14,6 +14,24 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-11 - Icona app ridisegnata in stile Google
+
+**Fatto:**
+- Ridisegno dell'icona adattiva (`ic_launcher_foreground.xml`, `ic_launcher_monochrome.xml`, `ic_launcher_background`).
+- **Sfondo**: da teal `#00696B` a bianco `#FFFFFF`, per la resa "in stile Google" (glifo colorato su fondo bianco).
+- **Colori più saturi e vivaci**: portafoglio blu `#1A73E8`, carte gialla `#FFC400` e rossa `#EA4335`.
+- **Disegno**: le due carte non sbucano più verticali dall'alto ma sono orizzontali e sbucano a destra da dietro il corpo del portafoglio (gialla in alto, rossa in basso, con leggero ventaglio di ±6°). Il portafoglio mantiene lo stesso stile (corpo bifold arrotondato con riga di cucitura a pillola), ora blu con la riga bianca `#FFFFFF`.
+- Il monochrome (temi Android 13+) resta allineato alla nuova silhouette.
+- Versione a 0.8.2 (versionCode 26).
+
+**Decisioni:** colori scelti dalla palette Google (blu/giallo/rosso) ma con toni più saturi come richiesto; artwork racchiuso in un gruppo con scala 0.86 e leggera correzione verticale per margine dal bordo maskable e centratura ottica.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verdi; anteprima renderizzata (full e mascherata a cerchio) per controllo visivo. Nessun test toccato (modifiche solo a risorse drawable/colori).
+
+**Prossimo:** Fase 9 (impostazioni, i18n, rifinitura).
+
+---
+
 ## 2026-07-11 - About: tagline in linguaggio utente e lista librerie ridotta
 
 **Fatto:**
