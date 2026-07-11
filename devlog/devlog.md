@@ -14,6 +14,48 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-11 - Icona app: iterazioni e design definitivo (portafoglio bicolore)
+
+**Fatto:**
+- Serie di iterazioni sul disegno dell'icona partendo dalla versione 0.8.2 (carte orizzontali che sbucano a destra), valutate su render di anteprima (full, mascherata a cerchio, 72px) prima di toccare gli XML:
+  - 0.8.3 (versionCode 27): carte a ventaglio che sbucano dal bordo superiore, gialla a sinistra e rossa a destra (±15°), più piccole del portafoglio.
+  - 0.8.4 (versionCode 28): carte orizzontali con perno di rotazione sull'angolo alto a sinistra (gialla dietro a -18°, rossa davanti a -8°), centrate orizzontalmente sul portafoglio.
+  - 0.8.5 (versionCode 29): carte più grandi e più basse, riga bianca spostata al 70% dell'altezza, inclinazione della gialla ridotta a -14° per pareggiare la sporgenza a destra.
+  - 0.8.6 (versionCode 30): rossa abbassata di 4px per un ventaglio più scalato, gialla invariata.
+- **Design definitivo** (0.8.7, versionCode 31), su carta bianca dopo che le varianti con carte ruotate continuavano a produrre squilibri ottici:
+  - Geometria allineata agli assi, niente rotazioni: le due carte sbucano dritte dal bordo superiore ad altezze sfalsate (gialla `#FBBC04` dietro a sinistra, rossa `#EA4335` davanti a destra).
+  - Portafoglio bicolore: corpo blu `#1A73E8` + taschino frontale blu scuro `#1557B0` con cucitura dritta, al posto della riga bianca a pillola.
+  - Bottone di chiusura verde `#34A853` con punto bianco sulla cucitura, a destra: completa la palette Google a quattro colori.
+  - Raggi coerenti (10 corpo, 4 carte), wrapper con scala 0.84 e nudge verticale -3 per centratura ottica nel frame.
+- Monochrome (temi Android 13+) riallineato alla silhouette a ogni iterazione, con taschino e bottone resi tramite `fillAlpha`.
+- Aperta la PR #13 per la review; build di verifica delegata al workflow GitHub.
+
+**Decisioni:** lo stile Google flat privilegia forme allineate agli assi; le carte inclinate rendevano la composizione sensibile a ogni ritocco (una carta sembrava sempre più grande o fuori asse). Il taschino bicolore comunica "portafoglio" meglio della riga bianca, che a colpo d'occhio faceva sembrare il corpo una carta di credito.
+
+**Verifica:** per questa serie di modifiche la compilazione locale è stata saltata su richiesta (build via workflow GitHub sulla PR). Controllo visivo su render generati da script Python/cairosvg che replica le trasformazioni dei vector drawable (full, mascherata a cerchio, 72px).
+
+**Prossimo:** merge della PR #13, poi Fase 9 (impostazioni, i18n, rifinitura).
+
+---
+
+## 2026-07-11 - Icona app ridisegnata in stile Google
+
+**Fatto:**
+- Ridisegno dell'icona adattiva (`ic_launcher_foreground.xml`, `ic_launcher_monochrome.xml`, `ic_launcher_background`).
+- **Sfondo**: da teal `#00696B` a bianco `#FFFFFF`, per la resa "in stile Google" (glifo colorato su fondo bianco).
+- **Colori più saturi e vivaci**: portafoglio blu `#1A73E8`, carte gialla `#FFC400` e rossa `#EA4335`.
+- **Disegno**: le due carte non sbucano più verticali dall'alto ma sono orizzontali e sbucano a destra da dietro il corpo del portafoglio (gialla in alto, rossa in basso, con leggero ventaglio di ±6°). Il portafoglio mantiene lo stesso stile (corpo bifold arrotondato con riga di cucitura a pillola), ora blu con la riga bianca `#FFFFFF`.
+- Il monochrome (temi Android 13+) resta allineato alla nuova silhouette.
+- Versione a 0.8.2 (versionCode 26).
+
+**Decisioni:** colori scelti dalla palette Google (blu/giallo/rosso) ma con toni più saturi come richiesto; artwork racchiuso in un gruppo con scala 0.86 e leggera correzione verticale per margine dal bordo maskable e centratura ottica.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verdi; anteprima renderizzata (full e mascherata a cerchio) per controllo visivo. Nessun test toccato (modifiche solo a risorse drawable/colori).
+
+**Prossimo:** Fase 9 (impostazioni, i18n, rifinitura).
+
+---
+
 ## 2026-07-11 - About: tagline in linguaggio utente e lista librerie ridotta
 
 **Fatto:**
