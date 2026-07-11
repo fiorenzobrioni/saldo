@@ -3,8 +3,8 @@
     Themed/monochrome variant (Android 13+ "themed icons"): same silhouette as
     ic_launcher_foreground, single white fill with alpha for layering since
     the system applies its own tint at runtime. Kept in sync with the foreground:
-    same scale/upward-nudge wrapper, the two horizontal cards peeking to the
-    right, and the wallet stitch pill.
+    same scale/downward-nudge wrapper, the two cards fanned out from the wallet
+    top, and the wallet stitch pill.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -15,37 +15,37 @@
     <group
         android:pivotX="54"
         android:pivotY="54"
-        android:scaleX="0.86"
-        android:scaleY="0.86"
-        android:translateY="-1">
+        android:scaleX="0.82"
+        android:scaleY="0.82"
+        android:translateY="2">
 
         <group
-            android:pivotX="63"
-            android:pivotY="49"
-            android:rotation="-6">
+            android:pivotX="52"
+            android:pivotY="60"
+            android:rotation="-15">
             <path
                 android:fillColor="#FFFFFF"
                 android:fillAlpha="0.55"
-                android:pathData="M44,38 H82 A4,4 0 0 1 86,42 V56 A4,4 0 0 1 82,60 H44 A4,4 0 0 1 40,56 V42 A4,4 0 0 1 44,38 Z" />
+                android:pathData="M34,30 H58 A4,4 0 0 1 62,34 V52 A4,4 0 0 1 58,56 H34 A4,4 0 0 1 30,52 V34 A4,4 0 0 1 34,30 Z" />
         </group>
 
         <group
-            android:pivotX="63"
-            android:pivotY="65"
-            android:rotation="6">
+            android:pivotX="56"
+            android:pivotY="60"
+            android:rotation="15">
             <path
                 android:fillColor="#FFFFFF"
                 android:fillAlpha="0.55"
-                android:pathData="M44,54 H82 A4,4 0 0 1 86,58 V72 A4,4 0 0 1 82,76 H44 A4,4 0 0 1 40,72 V58 A4,4 0 0 1 44,54 Z" />
+                android:pathData="M50,30 H74 A4,4 0 0 1 78,34 V52 A4,4 0 0 1 74,56 H50 A4,4 0 0 1 46,52 V34 A4,4 0 0 1 50,30 Z" />
         </group>
 
         <path
             android:fillColor="#FFFFFF"
-            android:pathData="M30,40 H60 A8,8 0 0 1 68,48 V68 A8,8 0 0 1 60,76 H30 A8,8 0 0 1 22,68 V48 A8,8 0 0 1 30,40 Z" />
+            android:pathData="M34,54 H74 A8,8 0 0 1 82,62 V78 A8,8 0 0 1 74,86 H34 A8,8 0 0 1 26,78 V62 A8,8 0 0 1 34,54 Z" />
 
         <path
             android:fillColor="#FFFFFF"
             android:fillAlpha="0.35"
-            android:pathData="M29,56 H61 A2,2 0 0 1 63,58 V58 A2,2 0 0 1 61,60 H29 A2,2 0 0 1 27,58 V58 A2,2 0 0 1 29,56 Z" />
+            android:pathData="M33,68 H75 A2,2 0 0 1 77,70 V70 A2,2 0 0 1 75,72 H33 A2,2 0 0 1 31,70 V70 A2,2 0 0 1 33,68 Z" />
     </group>
 </vector>
