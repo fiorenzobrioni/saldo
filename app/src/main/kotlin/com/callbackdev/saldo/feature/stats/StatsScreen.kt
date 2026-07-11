@@ -5,8 +5,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -37,9 +39,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
+import com.callbackdev.saldo.core.designsystem.theme.moneyColors
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.feature.transactions.FilterDateRangePickerDialog
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -96,8 +101,21 @@ fun StatsScreen(
                         slices = uiState.slices,
                         total = uiState.periodSpendTotal,
                         currency = uiState.currency,
+                        chart = {
+                            CategoryDonut(
+                                slices = uiState.slices,
+                                centerAmount = MoneyFormatter.format(
+                                    uiState.periodSpendTotal,
+                                    uiState.currency,
+                                ),
+                                centerLabel = stringResource(R.string.stats_total_spent_label),
+                            )
+                        },
                     )
                 }
+                item { ExpenseTrendCard(uiState) }
+                item { IncomeExpenseCard(uiState) }
+                item { BalanceHistoryCard(uiState) }
                 item {
                     AccountSpendsCard(
                         spends = uiState.accountSpends,
@@ -119,6 +137,97 @@ fun StatsScreen(
             },
             onDismiss = { showRangePicker = false },
         )
+    }
+}
+
+/** Column chart of the last 12 months' spend. */
+@Composable
+private fun ExpenseTrendCard(uiState: StatsUiState, modifier: Modifier = Modifier) {
+    StatsCard(title = stringResource(R.string.stats_trend_title), modifier = modifier) {
+        if (uiState.isTrendEmpty) {
+            NoPeriodData()
+        } else {
+            MonthlyBarsChart(
+                series = listOf(
+                    BarSeries(
+                        valuesMinor = uiState.monthlyTotals.map {
+                            MoneyMapper.toMinorUnits(it.expense, uiState.currency)
+                        },
+                        color = MaterialTheme.colorScheme.primary,
+                    ),
+                ),
+                monthLabels = monthLabels(uiState),
+                currency = uiState.currency,
+            )
+        }
+    }
+}
+
+/** Grouped columns comparing monthly income and expenses, with a legend. */
+@Composable
+private fun IncomeExpenseCard(uiState: StatsUiState, modifier: Modifier = Modifier) {
+    StatsCard(title = stringResource(R.string.stats_income_expense_title), modifier = modifier) {
+        if (uiState.isTrendEmpty) {
+            NoPeriodData()
+            return@StatsCard
+        }
+        val incomeColor = MaterialTheme.moneyColors.income
+        val expenseColor = MaterialTheme.moneyColors.expense
+        MonthlyBarsChart(
+            series = listOf(
+                BarSeries(
+                    valuesMinor = uiState.monthlyTotals.map {
+                        MoneyMapper.toMinorUnits(it.income, uiState.currency)
+                    },
+                    color = incomeColor,
+                ),
+                BarSeries(
+                    valuesMinor = uiState.monthlyTotals.map {
+                        MoneyMapper.toMinorUnits(it.expense, uiState.currency)
+                    },
+                    color = expenseColor,
+                ),
+            ),
+            monthLabels = monthLabels(uiState),
+            currency = uiState.currency,
+        )
+        Spacer(Modifier.height(8.dp))
+        ChartLegend(
+            entries = listOf(
+                incomeColor to stringResource(R.string.dashboard_stat_incomes),
+                expenseColor to stringResource(R.string.dashboard_stat_expenses),
+            ),
+        )
+    }
+}
+
+/** Line chart of the end-of-month total balance over the last 12 months. */
+@Composable
+private fun BalanceHistoryCard(uiState: StatsUiState, modifier: Modifier = Modifier) {
+    StatsCard(title = stringResource(R.string.stats_balance_title), modifier = modifier) {
+        if (uiState.balanceHistory.isEmpty()) {
+            NoPeriodData()
+        } else {
+            val locale = LocalConfiguration.current.locales[0]
+            BalanceLineChart(
+                valuesMinor = uiState.balanceHistory.map {
+                    MoneyMapper.toMinorUnits(it.balance, uiState.currency)
+                },
+                monthLabels = remember(uiState.balanceHistory, locale) {
+                    uiState.balanceHistory.map { monthInitial(it.month, locale) }
+                },
+                currency = uiState.currency,
+            )
+        }
+    }
+}
+
+/** Localized single-letter month labels for the 12-month x axes. */
+@Composable
+private fun monthLabels(uiState: StatsUiState): List<String> {
+    val locale = LocalConfiguration.current.locales[0]
+    return remember(uiState.monthlyTotals, locale) {
+        uiState.monthlyTotals.map { monthInitial(it.month, locale) }
     }
 }
 

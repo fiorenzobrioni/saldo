@@ -72,13 +72,17 @@ internal fun NoPeriodData(modifier: Modifier = Modifier) {
     )
 }
 
-/** Category shares of the period's spend: avatar, name, amount, percent, bar. */
+/**
+ * Category shares of the period's spend: the donut (when provided) or an
+ * inline total, then one row per category with avatar, amount, percent, bar.
+ */
 @Composable
 internal fun CategorySharesCard(
     slices: List<CategorySlice>,
     total: BigDecimal,
     currency: Currency,
     modifier: Modifier = Modifier,
+    chart: (@Composable () -> Unit)? = null,
     onSliceClick: ((CategorySlice) -> Unit)? = null,
 ) {
     StatsCard(
@@ -89,15 +93,19 @@ internal fun CategorySharesCard(
             NoPeriodData()
             return@StatsCard
         }
-        Text(
-            text = MoneyFormatter.format(total, currency),
-            style = MaterialTheme.typography.headlineSmall.tabularNumbers(),
-        )
-        Text(
-            text = stringResource(R.string.stats_total_spent_label),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (chart != null) {
+            chart()
+        } else {
+            Text(
+                text = MoneyFormatter.format(total, currency),
+                style = MaterialTheme.typography.headlineSmall.tabularNumbers(),
+            )
+            Text(
+                text = stringResource(R.string.stats_total_spent_label),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         Spacer(Modifier.height(12.dp))
         slices.forEach { slice ->
             ShareRow(

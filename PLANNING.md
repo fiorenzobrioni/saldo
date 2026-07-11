@@ -143,12 +143,12 @@
 - [x] Filtri combinabili (data con preset, categorie, account, tipo, importo, tag) come chip
 - [x] Ricerca full-text su descrizione (e nota; in-memory con normalizzazione Unicode, insensibile ad accenti e maiuscole)
 - [x] Totale della vista filtrata sempre visibile
-- [ ] Statistiche (Vico):
-  - [ ] anello spese per categoria + lista percentuali (mese/anno/custom)
-  - [ ] barre trend spese 12 mesi
-  - [ ] entrate vs uscite mensili
-  - [ ] andamento saldo nel tempo
-  - [ ] spese per account
+- [x] Statistiche (Vico 3.2.3; il donut usa il pie chart di Vico, sperimentale nella 3.x, con totale al centro come overlay Compose):
+  - [x] anello spese per categoria + lista percentuali (mese/anno/custom)
+  - [x] barre trend spese 12 mesi
+  - [x] entrate vs uscite mensili
+  - [x] andamento saldo nel tempo (saldi di fine mese: somma saldi iniziali + net mensile cumulato, entrambe le gambe dei trasferimenti, solo account inclusi nel totale)
+  - [x] spese per account (lista con barre proporzionali: più leggibile di colonne con 2-5 account)
 - [ ] Drill-down: tap su grafico → lista filtrata
 - [ ] Verifica esclusione TRANSFER/ADJUSTMENT e trattamento rimborsi
 

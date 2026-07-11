@@ -203,6 +203,9 @@
     <string name="stats_next_period">Next period</string>
     <string name="stats_categories_title">Expenses by category</string>
     <string name="stats_accounts_title">Expenses by account</string>
+    <string name="stats_trend_title">Expenses, last 12 months</string>
+    <string name="stats_income_expense_title">Income vs expenses</string>
+    <string name="stats_balance_title">Balance over time</string>
     <string name="stats_total_spent_label">Total spent in the period</string>
     <string name="stats_no_data_period">No data for this period.</string>
     <string name="stats_percent" translatable="false">%1$d%%</string>

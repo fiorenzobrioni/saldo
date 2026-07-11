@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.stats
 
+import androidx.compose.ui.graphics.Color
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.MonthlyBalance
@@ -44,6 +45,12 @@ data class MonthlyPoint(
     val income: BigDecimal,
 )
 
+/** One column series of the bar charts: minor-unit values (one per month) and its color. */
+internal data class BarSeries(
+    val valuesMinor: List<Long>,
+    val color: Color,
+)
+
 /** Immutable UI state of the statistics screen. */
 data class StatsUiState(
     val isLoading: Boolean = true,
@@ -65,6 +72,10 @@ data class StatsUiState(
 ) {
     /** The whole screen's first-run empty state. */
     val isEmpty: Boolean get() = !isLoading && !hasData
+
+    /** True when the last 12 months hold nothing for the trend charts. */
+    val isTrendEmpty: Boolean
+        get() = monthlyTotals.all { it.expense.signum() == 0 && it.income.signum() == 0 }
 
     private companion object {
         const val EPOCH_YEAR = 1970

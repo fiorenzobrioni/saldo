@@ -20,8 +20,8 @@ android {
         applicationId = "com.callbackdev.saldo"
         minSdk = 33
         targetSdk = 36
-        versionCode = 19
-        versionName = "0.6.10"
+        versionCode = 20
+        versionName = "0.6.11"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -125,6 +125,9 @@ dependencies {
     // Kotlinx
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
+
+    // Charts
+    implementation(libs.vico.compose.m3)
 
     // Debug
     debugImplementation(libs.androidx.compose.ui.tooling)
