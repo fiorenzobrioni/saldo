@@ -2,17 +2,18 @@
 <!--
     Flat wallet glyph, Google-style: bold multi-color artwork on a white
     background (see @color/ic_launcher_background). A blue bifold wallet body
-    with a white stitch line, and two horizontal cards - slightly smaller than
-    the wallet - that emerge from behind its top edge. Each card is pinned at
-    its top-left corner and rotated out, the back yellow card at a slightly
-    higher angle than the front red one, so both fan up and read as two cards.
-    The cards are horizontally centred over the wallet. Vivid, saturated colors
-    for a premium, non-generic launcher icon; placeholder until final branding.
+    with a white stitch line sitting in the upper part of the face, and two
+    horizontal cards - almost as big as the wallet - that emerge from behind its
+    top edge. Each card is pinned at its top-left corner and rotated out, the
+    back yellow card at a slightly higher angle than the front red one, so both
+    fan up and read as two cards of the same size. The cards are horizontally
+    centred over the wallet. Vivid, saturated colors for a premium, non-generic
+    launcher icon; placeholder until final branding.
 
     The whole artwork is wrapped in one group that scales it down and nudges it
-    slightly up, so it keeps a comfortable margin from the maskable edge and
-    reads as centred. Cards are drawn first (behind), then the solid wallet body
-    on top, then the white stitch pill.
+    up, so it keeps a comfortable margin from the maskable edge and reads as
+    centred in the frame. Cards are drawn first (behind), then the solid wallet
+    body on top, then the white stitch pill.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -25,24 +26,24 @@
         android:pivotY="54"
         android:scaleX="0.82"
         android:scaleY="0.82"
-        android:translateY="-2">
+        android:translateY="-5">
 
         <group
             android:pivotX="30"
-            android:pivotY="44"
-            android:rotation="-18">
+            android:pivotY="46"
+            android:rotation="-14">
             <path
                 android:fillColor="#FFC400"
-                android:pathData="M34,44 H70 A4,4 0 0 1 74,48 V66 A4,4 0 0 1 70,70 H34 A4,4 0 0 1 30,66 V48 A4,4 0 0 1 34,44 Z" />
+                android:pathData="M34,46 H73 A4,4 0 0 1 77,50 V70 A4,4 0 0 1 73,74 H34 A4,4 0 0 1 30,70 V50 A4,4 0 0 1 34,46 Z" />
         </group>
 
         <group
             android:pivotX="30"
-            android:pivotY="44"
+            android:pivotY="46"
             android:rotation="-8">
             <path
                 android:fillColor="#EA4335"
-                android:pathData="M34,44 H70 A4,4 0 0 1 74,48 V66 A4,4 0 0 1 70,70 H34 A4,4 0 0 1 30,66 V48 A4,4 0 0 1 34,44 Z" />
+                android:pathData="M34,46 H73 A4,4 0 0 1 77,50 V70 A4,4 0 0 1 73,74 H34 A4,4 0 0 1 30,70 V50 A4,4 0 0 1 34,46 Z" />
         </group>
 
         <path
@@ -51,6 +52,6 @@
 
         <path
             android:fillColor="#FFFFFF"
-            android:pathData="M33,68 H75 A2,2 0 0 1 77,70 V70 A2,2 0 0 1 75,72 H33 A2,2 0 0 1 31,70 V70 A2,2 0 0 1 33,68 Z" />
+            android:pathData="M33,60 H75 A2,2 0 0 1 77,62 V62 A2,2 0 0 1 75,64 H33 A2,2 0 0 1 31,62 V62 A2,2 0 0 1 33,60 Z" />
     </group>
 </vector>
