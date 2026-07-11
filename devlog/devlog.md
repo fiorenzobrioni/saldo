@@ -14,6 +14,21 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-11 - Rifinitura statistiche dal feedback su device
+
+**Fatto:**
+- I grafici a colonne e linea aprono sul mese corrente (`rememberVicoScrollState(initialScroll = Scroll.Absolute.End)`): prima partivano da 12 mesi fa e serviva trascinare.
+- Titoli "Entrate e uscite, ultimi 12 mesi" e "Saldo, ultimi 12 mesi": i tre grafici trend ignorano il selettore periodo by design (finestra fissa), ma senza etichetta non si capiva a che periodo si riferissero (il trend spese la aveva già).
+- "Spese per account" spostata subito sotto "Spese per categoria": le due card pilotate dal selettore periodo stanno insieme, prima dei grafici a finestra fissa.
+- Icona del tab Statistiche da `BarChart` a `Insights` (la stessa famiglia dell'empty state della schermata).
+- Versione a 0.7.1 (versionCode 22).
+
+**Verifica:** `assembleDebug testDebugUnitTest lint detekt` verdi; nessun test toccato (modifiche solo UI/risorse). Resa dello scroll iniziale da confermare sul device.
+
+**Prossimo:** Fase 8 (backup, export, import).
+
+---
+
 ## 2026-07-11 - Fase 7 completata: ricerca, filtri e statistiche (+ review saluti e fix data)
 
 **Fatto:**

@@ -122,9 +122,8 @@ fun StatsScreen(
                         },
                     )
                 }
-                item { ExpenseTrendCard(uiState, onNavigateToFiltered) }
-                item { IncomeExpenseCard(uiState, onNavigateToFiltered) }
-                item { BalanceHistoryCard(uiState) }
+                // Right under the donut, so the two period-driven cards sit together
+                // before the fixed 12-month charts.
                 item {
                     AccountSpendsCard(
                         spends = uiState.accountSpends,
@@ -136,6 +135,9 @@ fun StatsScreen(
                         },
                     )
                 }
+                item { ExpenseTrendCard(uiState, onNavigateToFiltered) }
+                item { IncomeExpenseCard(uiState, onNavigateToFiltered) }
+                item { BalanceHistoryCard(uiState) }
             }
         }
     }

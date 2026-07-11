@@ -205,8 +205,8 @@
     <string name="stats_categories_title">Spese per categoria</string>
     <string name="stats_accounts_title">Spese per account</string>
     <string name="stats_trend_title">Spese, ultimi 12 mesi</string>
-    <string name="stats_income_expense_title">Entrate e uscite</string>
-    <string name="stats_balance_title">Andamento del saldo</string>
+    <string name="stats_income_expense_title">Entrate e uscite, ultimi 12 mesi</string>
+    <string name="stats_balance_title">Saldo, ultimi 12 mesi</string>
     <string name="stats_total_spent_label">Totale speso nel periodo</string>
     <string name="stats_no_data_period">Nessun dato per questo periodo.</string>
     <string name="stats_view_movements">Vedi i movimenti di %1$s</string>

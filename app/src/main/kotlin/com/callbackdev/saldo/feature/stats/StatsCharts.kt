@@ -26,6 +26,8 @@ import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.Scroll
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoScrollState
 import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
@@ -117,6 +119,8 @@ internal fun MonthlyBarsChart(
                 },
             ),
             modelProducer = modelProducer,
+            // The series ends on the current month: open there, not 12 months back.
+            scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End),
             modifier = modifier
                 .fillMaxWidth()
                 .height(CHART_HEIGHT),
@@ -179,6 +183,8 @@ internal fun BalanceLineChart(
                 marker = moneyMarker(currency),
             ),
             modelProducer = modelProducer,
+            // The series ends on the current month: open there, not 12 months back.
+            scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End),
             modifier = modifier
                 .fillMaxWidth()
                 .height(CHART_HEIGHT),
