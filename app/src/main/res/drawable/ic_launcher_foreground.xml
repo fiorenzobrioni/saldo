@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Flat wallet glyph, Google-style: bold multi-color artwork on a white
-    background (see @color/ic_launcher_background). A blue bifold wallet body
-    with a white stitch line sitting in the upper part of the face, and two
-    horizontal cards - almost as big as the wallet - that emerge from behind its
-    top edge. Each card is pinned at its top-left corner and rotated out, the
-    back yellow card at a slightly higher angle than the front red one, so both
-    fan up and read as two cards of the same size. The cards are horizontally
-    centred over the wallet. Vivid, saturated colors for a premium, non-generic
-    launcher icon; placeholder until final branding.
+    background (see @color/ic_launcher_background). A two-tone blue bifold
+    wallet (lighter body, darker front pocket with a straight seam), two cards
+    peeking straight up from behind the top edge at staggered heights (yellow
+    behind-left, red front-right), and a green clasp button with a white dot
+    sitting on the pocket seam. Uses the four Google brand colors, axis-aligned
+    geometry and consistent corner radii for a premium flat look; placeholder
+    until final branding.
 
     The whole artwork is wrapped in one group that scales it down and nudges it
     up, so it keeps a comfortable margin from the maskable edge and reads as
-    centred in the frame. Cards are drawn first (behind), then the solid wallet
-    body on top, then the white stitch pill.
+    centred in the frame. Draw order: cards (behind), wallet body, pocket band,
+    clasp button, clasp dot.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -24,34 +23,32 @@
     <group
         android:pivotX="54"
         android:pivotY="54"
-        android:scaleX="0.82"
-        android:scaleY="0.82"
-        android:translateY="-5">
+        android:scaleX="0.84"
+        android:scaleY="0.84"
+        android:translateY="-3">
 
-        <group
-            android:pivotX="30"
-            android:pivotY="46"
-            android:rotation="-14">
-            <path
-                android:fillColor="#FFC400"
-                android:pathData="M34,46 H73 A4,4 0 0 1 77,50 V70 A4,4 0 0 1 73,74 H34 A4,4 0 0 1 30,70 V50 A4,4 0 0 1 34,46 Z" />
-        </group>
+        <path
+            android:fillColor="#FBBC04"
+            android:pathData="M34,30 H62 A4,4 0 0 1 66,34 V52 A4,4 0 0 1 62,56 H34 A4,4 0 0 1 30,52 V34 A4,4 0 0 1 34,30 Z" />
 
-        <group
-            android:pivotX="30"
-            android:pivotY="50"
-            android:rotation="-8">
-            <path
-                android:fillColor="#EA4335"
-                android:pathData="M34,50 H73 A4,4 0 0 1 77,54 V74 A4,4 0 0 1 73,78 H34 A4,4 0 0 1 30,74 V54 A4,4 0 0 1 34,50 Z" />
-        </group>
+        <path
+            android:fillColor="#EA4335"
+            android:pathData="M48,37 H74 A4,4 0 0 1 78,41 V56 A4,4 0 0 1 74,60 H48 A4,4 0 0 1 44,56 V41 A4,4 0 0 1 48,37 Z" />
 
         <path
             android:fillColor="#1A73E8"
-            android:pathData="M34,52 H74 A8,8 0 0 1 82,60 V78 A8,8 0 0 1 74,86 H34 A8,8 0 0 1 26,78 V60 A8,8 0 0 1 34,52 Z" />
+            android:pathData="M34,48 H74 A10,10 0 0 1 84,58 V74 A10,10 0 0 1 74,84 H34 A10,10 0 0 1 24,74 V58 A10,10 0 0 1 34,48 Z" />
+
+        <path
+            android:fillColor="#1557B0"
+            android:pathData="M24,64 H84 V74 A10,10 0 0 1 74,84 H34 A10,10 0 0 1 24,74 Z" />
+
+        <path
+            android:fillColor="#34A853"
+            android:pathData="M74,64 m-6.5,0 a6.5,6.5 0 1 0 13,0 a6.5,6.5 0 1 0 -13,0 Z" />
 
         <path
             android:fillColor="#FFFFFF"
-            android:pathData="M33,60 H75 A2,2 0 0 1 77,62 V62 A2,2 0 0 1 75,64 H33 A2,2 0 0 1 31,62 V62 A2,2 0 0 1 33,60 Z" />
+            android:pathData="M74,64 m-2.4,0 a2.4,2.4 0 1 0 4.8,0 a2.4,2.4 0 1 0 -4.8,0 Z" />
     </group>
 </vector>
