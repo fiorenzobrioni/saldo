@@ -43,7 +43,7 @@
         <item>How\'s the day going?</item>
         <item>Everything under control?</item>
         <item>A quick midday check-in.</item>
-        <item>You\'re doing great.</item>
+        <item>Small expenses count too.</item>
         <item>Good afternoon! Accounts in order?</item>
     </string-array>
     <string-array name="dashboard_greetings_evening">
@@ -52,7 +52,7 @@
         <item>Time to take stock.</item>
         <item>Good evening! Log the last expenses.</item>
         <item>End of the day: all set?</item>
-        <item>Relax, we\'ve got the accounts.</item>
+        <item>One minute for the accounts, then relax.</item>
     </string-array>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d account</item>
@@ -161,6 +161,55 @@
     <string name="transaction_refund_label">Refund</string>
     <string name="transaction_delete_title">Delete transaction?</string>
     <string name="transaction_delete_body">The transaction will be permanently deleted.</string>
+
+    <!-- Search and filters (Phase 7) -->
+    <string name="transactions_search">Search transactions</string>
+    <string name="transactions_search_hint">Search transactions</string>
+    <string name="transactions_search_close">Close search</string>
+    <string name="transactions_search_clear">Clear search</string>
+    <string name="transactions_filters">Filters</string>
+    <string name="filter_date_all">All</string>
+    <string name="filter_date_this_month">This month</string>
+    <string name="filter_date_last_month">Last month</string>
+    <string name="filter_date_last_90_days">Last 90 days</string>
+    <string name="filter_date_this_year">This year</string>
+    <string name="filter_date_custom">Custom</string>
+    <string name="filter_section_type">Type</string>
+    <string name="filter_section_amount">Amount</string>
+    <string name="filter_amount_min">Minimum</string>
+    <string name="filter_amount_max">Maximum</string>
+    <string name="filter_amount_between">%1$s–%2$s</string>
+    <string name="filter_amount_at_least">≥ %1$s</string>
+    <string name="filter_amount_at_most">≤ %1$s</string>
+    <string name="filter_remove">Remove filter %1$s</string>
+    <string name="filter_reset">Reset</string>
+    <string name="filter_apply">Apply</string>
+    <string name="filter_clear_all">Clear filters</string>
+    <string name="filter_no_results_title">No results</string>
+    <string name="filter_no_results_body">No transaction matches the active filters.</string>
+    <string name="filter_total_net">Net %1$s</string>
+    <plurals name="filter_result_count">
+        <item quantity="one">%1$d transaction</item>
+        <item quantity="other">%1$d transactions</item>
+    </plurals>
+
+    <!-- Statistics (Phase 7) -->
+    <string name="stats_empty_title">Nothing to chart yet</string>
+    <string name="stats_empty_body">Statistics appear with your first recorded expenses.</string>
+    <string name="stats_period_month">Month</string>
+    <string name="stats_period_year">Year</string>
+    <string name="stats_period_custom">Custom</string>
+    <string name="stats_previous_period">Previous period</string>
+    <string name="stats_next_period">Next period</string>
+    <string name="stats_categories_title">Expenses by category</string>
+    <string name="stats_accounts_title">Expenses by account</string>
+    <string name="stats_trend_title">Expenses, last 12 months</string>
+    <string name="stats_income_expense_title">Income vs expenses, last 12 months</string>
+    <string name="stats_balance_title">Balance, last 12 months</string>
+    <string name="stats_total_spent_label">Total spent in the period</string>
+    <string name="stats_no_data_period">No data for this period.</string>
+    <string name="stats_view_movements">View transactions for %1$s</string>
+    <string name="stats_percent" translatable="false">%1$d%%</string>
 
     <!-- Transaction editor (Phase 3) -->
     <string name="transaction_editor_title_new">New transaction</string>

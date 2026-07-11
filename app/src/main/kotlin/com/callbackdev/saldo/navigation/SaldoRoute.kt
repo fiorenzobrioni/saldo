@@ -75,3 +75,16 @@ data class RecurringRuleEditorRoute(
 /** Confirmation of pending recurring movements (confirm mode / variable amount). */
 @Serializable
 data object PendingMovementsRoute : NavKey
+
+/**
+ * Statistics drill-down: the movements of a local-date window (`[start, end)`
+ * as epoch days), optionally narrowed to one category or account. Pushed on
+ * top of the Stats tab so back returns to the charts.
+ */
+@Serializable
+data class FilteredTransactionsRoute(
+    val startEpochDay: Long,
+    val endEpochDayExclusive: Long,
+    val categoryId: Long? = null,
+    val accountId: Long? = null,
+) : NavKey

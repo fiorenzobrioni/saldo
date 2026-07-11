@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.fallbackCurrency
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Currency
@@ -54,7 +55,7 @@ data class RecurrenceSection(
     /** The monthly total projected over a year (monthlyTotal * 12). */
     val annualProjection: BigDecimal = BigDecimal.ZERO,
     val activeCount: Int = 0,
-    val currency: Currency = RecurrencesUiState.fallbackCurrency,
+    val currency: Currency = fallbackCurrency,
 ) {
     val isEmpty: Boolean get() = items.isEmpty()
 }
@@ -70,10 +71,4 @@ data class RecurrencesUiState(
     /** The section backing the tab showing rules of [type]. */
     fun section(type: TransactionType): RecurrenceSection =
         if (type == TransactionType.INCOME) incomes else expenses
-
-    companion object {
-        val fallbackCurrency: Currency =
-            runCatching { Currency.getInstance(java.util.Locale.getDefault()) }.getOrNull()
-                ?: Currency.getInstance("EUR")
-    }
 }

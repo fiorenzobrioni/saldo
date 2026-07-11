@@ -3,9 +3,12 @@ package com.callbackdev.saldo.core.database.repository
 import com.callbackdev.saldo.core.database.dao.TransactionDao
 import com.callbackdev.saldo.core.database.mapper.toDomain
 import com.callbackdev.saldo.core.database.mapper.toEntity
+import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
+import com.callbackdev.saldo.core.domain.model.MonthlyNet
+import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
@@ -45,6 +48,32 @@ class RoomTransactionRepository @Inject constructor(
             end.toEpochMilli(),
             currency.currencyCode,
         ).map { rows -> rows.map { it.toDomain(currency) } }
+
+    override fun observeMonthlyTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<MonthlyTotal>> =
+        transactionDao.observeMonthlyTotals(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { rows -> rows.map { it.toDomain(currency) } }
+
+    override fun observeAccountSpendTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<AccountTotal>> =
+        transactionDao.observeAccountSpendTotals(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { rows -> rows.map { it.toDomain(currency) } }
+
+    override fun observeMonthlyNetChanges(currency: Currency): Flow<List<MonthlyNet>> =
+        transactionDao.observeMonthlyNetChanges(currency.currencyCode)
+            .map { rows -> rows.map { it.toDomain(currency) } }
 
     override fun observeRecentTransactions(limit: Int): Flow<List<Transaction>> =
         transactionDao.observeRecent(limit).map { rows -> rows.map { it.toDomain() } }

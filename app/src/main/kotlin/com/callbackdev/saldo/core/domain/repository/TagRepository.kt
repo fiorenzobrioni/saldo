@@ -12,6 +12,9 @@ interface TagRepository {
     /** Tags currently attached to [transactionId]. */
     fun observeTagsForTransaction(transactionId: Long): Flow<List<Tag>>
 
+    /** Every assignment at once, as transaction id to tag ids. */
+    fun observeTagAssignments(): Flow<Map<Long, Set<Long>>>
+
     /** Inserts a new tag (id == 0) or updates an existing one. Returns its id. */
     suspend fun upsert(tag: Tag): Long
 

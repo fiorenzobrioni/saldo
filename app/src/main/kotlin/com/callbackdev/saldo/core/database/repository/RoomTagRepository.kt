@@ -19,6 +19,11 @@ class RoomTagRepository @Inject constructor(
     override fun observeTagsForTransaction(transactionId: Long): Flow<List<Tag>> =
         tagDao.observeForTransaction(transactionId).map { rows -> rows.map { it.toDomain() } }
 
+    override fun observeTagAssignments(): Flow<Map<Long, Set<Long>>> =
+        tagDao.observeAllCrossRefs().map { refs ->
+            refs.groupBy({ it.transactionId }, { it.tagId }).mapValues { (_, ids) -> ids.toSet() }
+        }
+
     override suspend fun upsert(tag: Tag): Long {
         val entity = tag.toEntity()
         return if (entity.id == 0L) {

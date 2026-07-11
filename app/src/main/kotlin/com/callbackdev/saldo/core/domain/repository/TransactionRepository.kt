@@ -1,8 +1,11 @@
 package com.callbackdev.saldo.core.domain.repository
 
+import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
+import com.callbackdev.saldo.core.domain.model.MonthlyNet
+import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.domain.model.Transaction
 import kotlinx.coroutines.flow.Flow
 import java.time.Instant
@@ -34,6 +37,35 @@ interface TransactionRepository {
         end: Instant,
         currency: Currency,
     ): Flow<List<CategoryTotal>>
+
+    /**
+     * Per-month expense/income totals in `[start, end)` (the movement's own
+     * local month, ADR 7), restricted to [currency]. Statistics rules: refunds
+     * net the spend instead of counting as income; transfers, adjustments,
+     * excluded-from-stats and pending movements never count.
+     */
+    fun observeMonthlyTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<MonthlyTotal>>
+
+    /**
+     * Per-account signed spend totals in `[start, end)`, restricted to
+     * [currency], with the same statistics rules as [observeMonthlyTotals].
+     */
+    fun observeAccountSpendTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<AccountTotal>>
+
+    /**
+     * Net effect per local month on the balance of the accounts included in
+     * the total (every type, transfer legs included; cash figure, so
+     * excluded-from-stats movements still count), across the whole ledger.
+     */
+    fun observeMonthlyNetChanges(currency: Currency): Flow<List<MonthlyNet>>
 
     /** The latest confirmed movements, capped in SQL. */
     fun observeRecentTransactions(limit: Int): Flow<List<Transaction>>

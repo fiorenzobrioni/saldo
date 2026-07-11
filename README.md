@@ -93,9 +93,9 @@ app/src/main/kotlin/com/callbackdev/saldo/
 │   ├── accounts/        # account: lista, editor, rettifica saldo (da Fase 2)
 │   ├── categories/      # categorie: tab spese/entrate, editor, riordino drag (da Fase 4)
 │   ├── dashboard/       # schermata "Oggi": saldo, oggi/mese, ultimi movimenti, FAB (da Fase 5)
-│   ├── transactions/    # movimenti: editor con tastierino, lista per giorno (da Fase 3)
+│   ├── transactions/    # movimenti: lista per giorno, ricerca e filtri, editor (da Fase 3)
 │   ├── recurring/       # ricorrenze: hub abbonamenti/entrate, editor, motore (da Fase 6)
-│   ├── stats/           # statistiche
+│   ├── stats/           # statistiche: grafici Vico, periodo, drill-down (da Fase 7)
 │   └── settings/        # impostazioni
 └── navigation/          # route NavKey, scaffold, bottom bar
 ```

@@ -1,8 +1,7 @@
 package com.callbackdev.saldo.feature.transactions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,18 +10,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -34,10 +34,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -53,7 +55,8 @@ import java.time.LocalDate
 
 /**
  * Movement ledger: all movements grouped by day (per-movement offset, ADR 7)
- * with daily net totals, swipe-to-delete with undo, and tap-to-edit.
+ * with daily net totals, swipe-to-delete with undo, tap-to-edit, plus search
+ * and combinable filters with an always-visible filtered total (Phase 7).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,6 +70,9 @@ fun TransactionsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
+    var isSearching by rememberSaveable { mutableStateOf(false) }
+    var showFilterSheet by remember { mutableStateOf(false) }
+    var showRangePicker by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModel, resources) {
         viewModel.events.collect { event ->
@@ -85,12 +91,40 @@ fun TransactionsScreen(
         }
     }
 
+    val closeSearch = {
+        viewModel.setQuery("")
+        isSearching = false
+    }
+    BackHandler(enabled = isSearching, onBack = closeSearch)
+
     Scaffold(
         modifier = modifier,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.nav_transactions)) },
-            )
+            if (isSearching) {
+                SearchTopBar(
+                    query = uiState.filters.query,
+                    onQueryChange = viewModel::setQuery,
+                    onClose = closeSearch,
+                )
+            } else {
+                TopAppBar(
+                    title = { Text(stringResource(R.string.nav_transactions)) },
+                    actions = {
+                        if (uiState.hasAnyTransactions) {
+                            IconButton(onClick = { isSearching = true }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Search,
+                                    contentDescription = stringResource(R.string.transactions_search),
+                                )
+                            }
+                            FilterButton(
+                                activeCount = uiState.filters.activeCount,
+                                onClick = { showFilterSheet = true },
+                            )
+                        }
+                    },
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
@@ -113,14 +147,65 @@ fun TransactionsScreen(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             )
 
-            else -> TransactionsList(
-                days = uiState.days,
-                today = uiState.today,
-                onItemClick = { onNavigateToEditTransaction(it.id) },
-                onItemDelete = viewModel::delete,
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-            )
+            else -> Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                TransactionsFilterBar(
+                    filters = uiState.filters,
+                    categories = uiState.filterCategories,
+                    accounts = uiState.filterAccounts,
+                    tags = uiState.filterTags,
+                    onSetPreset = viewModel::setDatePreset,
+                    onRequestCustomRange = { showRangePicker = true },
+                    onFiltersChange = viewModel::applyFilters,
+                )
+                if (uiState.filters.isActive) {
+                    Spacer(Modifier.height(4.dp))
+                    FilteredTotalsBar(
+                        totals = uiState.filteredTotals,
+                        count = uiState.filteredCount,
+                    )
+                }
+                if (uiState.isNoResults) {
+                    NoResultsState(
+                        onClearFilters = {
+                            viewModel.clearFilters()
+                            isSearching = false
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
+                    TransactionsList(
+                        days = uiState.days,
+                        today = uiState.today,
+                        onItemClick = { onNavigateToEditTransaction(it.id) },
+                        onItemDelete = viewModel::delete,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
         }
+    }
+
+    if (showFilterSheet) {
+        TransactionFilterSheet(
+            filters = uiState.filters,
+            categories = uiState.filterCategories,
+            accounts = uiState.filterAccounts,
+            tags = uiState.filterTags,
+            onApply = viewModel::applyFilters,
+            onDismiss = { showFilterSheet = false },
+        )
+    }
+
+    if (showRangePicker) {
+        FilterDateRangePickerDialog(
+            initialStart = uiState.filters.customStart,
+            initialEnd = uiState.filters.customEnd,
+            onConfirm = { start, end ->
+                viewModel.setCustomRange(start, end)
+                showRangePicker = false
+            },
+            onDismiss = { showRangePicker = false },
+        )
     }
 }
 

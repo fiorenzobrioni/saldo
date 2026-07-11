@@ -38,7 +38,8 @@ fun chipDayLabel(date: LocalDate, today: LocalDate): String {
 
 /**
  * Human day label: "Today", "Yesterday", then a localized weekday + date
- * (with the year only when it differs from the current one).
+ * (with the year only when it differs from the current one). The locale's
+ * own casing is kept: lowercase in Italian, capitalized in English.
  */
 @Composable
 fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
@@ -49,6 +50,5 @@ fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
         val skeleton = if (date.year == today.year) "EEEEdMMMM" else "EEEEdMMMMy"
         val pattern = DateFormat.getBestDateTimePattern(locale, skeleton)
         date.format(DateTimeFormatter.ofPattern(pattern, locale))
-            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
     }
 }

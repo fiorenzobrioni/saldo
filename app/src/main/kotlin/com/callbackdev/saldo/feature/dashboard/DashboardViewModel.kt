@@ -10,6 +10,8 @@ import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.fallbackCurrency
+import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
@@ -107,13 +109,7 @@ data class DashboardUiState(
     /** Greeting band and a stable [0,1) roll, both fixed once per app-open. */
     val greetingBand: GreetingBand = GreetingBand.MORNING,
     val greetingRoll: Float = 0f,
-) {
-    companion object {
-        val fallbackCurrency: Currency =
-            runCatching { Currency.getInstance(Locale.getDefault()) }.getOrNull()
-                ?: Currency.getInstance("EUR")
-    }
-}
+)
 
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
@@ -149,7 +145,7 @@ class DashboardViewModel @Inject constructor(
     val uiState: StateFlow<DashboardUiState> = accountRepository.observeAccountsWithBalance()
         .flatMapLatest { accounts ->
             val today = LocalDate.now(clock)
-            val primary = primaryCurrency(accounts)
+            val primary = accounts.primaryCurrency()
             combine(
                 transactionRepository.observeDashboardTotals(
                     windows = DashboardWindows.around(today, clock.zone),
@@ -177,17 +173,6 @@ class DashboardViewModel @Inject constructor(
                 greetingRoll = greetingRoll,
             ),
         )
-
-    /**
-     * The primary currency is the one shared by most accounts that count in the
-     * total; multi-currency conversion is a later feature (VISION).
-     */
-    private fun primaryCurrency(accounts: List<AccountWithBalance>): Currency = accounts
-        .filter { !it.account.isArchived && it.account.isIncludedInTotal }
-        .groupingBy { it.account.currency }
-        .eachCount()
-        .maxByOrNull { it.value }?.key
-        ?: DashboardUiState.fallbackCurrency
 
     private fun buildState(
         accounts: List<AccountWithBalance>,

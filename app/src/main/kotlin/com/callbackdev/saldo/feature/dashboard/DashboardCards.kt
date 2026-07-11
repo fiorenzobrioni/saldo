@@ -84,14 +84,18 @@ private fun GreetingBand.greetingsArrayRes(): Int = when (this) {
     GreetingBand.EVENING -> R.array.dashboard_greetings_evening
 }
 
-/** Full localized weekday date, e.g. "Venerdi 10 luglio" / "Friday, 10 July". */
+/**
+ * Full localized weekday date in the locale's own casing: Italian dates are
+ * lowercase ("venerdì 10 luglio"), English weekday/month names are proper
+ * nouns ("Friday, July 10"). CLDR data already gets this right, so the
+ * formatted string is used as is.
+ */
 @Composable
 private fun fullWeekdayDate(date: LocalDate): String {
     val locale = LocalConfiguration.current.locales[0]
     return remember(date, locale) {
         val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM")
         date.format(DateTimeFormatter.ofPattern(pattern, locale))
-            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
     }
 }
 

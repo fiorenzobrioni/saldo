@@ -98,4 +98,17 @@ interface AccountDao {
         """,
     )
     fun observeTotalBalance(currency: String): Flow<Long>
+
+    /**
+     * Sum of the initial balances of the accounts included in the total,
+     * non-archived and denominated in [currency]. The starting point of the
+     * balance-over-time statistic.
+     */
+    @Query(
+        """
+        SELECT COALESCE(SUM(initialBalanceMinor), 0) FROM accounts
+        WHERE isIncludedInTotal = 1 AND isArchived = 0 AND currency = :currency
+        """,
+    )
+    fun observeInitialBalanceTotal(currency: String): Flow<Long>
 }

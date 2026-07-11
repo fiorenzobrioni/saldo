@@ -35,6 +35,10 @@ class RoomAccountRepository @Inject constructor(
         accountDao.observeTotalBalance(currency.currencyCode)
             .map { MoneyMapper.toAmount(it, currency) }
 
+    override fun observeInitialBalanceTotal(currency: Currency): Flow<BigDecimal> =
+        accountDao.observeInitialBalanceTotal(currency.currencyCode)
+            .map { MoneyMapper.toAmount(it, currency) }
+
     override suspend fun getAccount(id: Long): Account? = accountDao.getById(id)?.toDomain()
 
     override suspend fun upsert(account: Account): Long {

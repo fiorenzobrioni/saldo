@@ -140,17 +140,19 @@
 
 ## Fase 7 - Ricerca, filtri e statistiche
 
-- [ ] Filtri combinabili (data con preset, categorie, account, tipo, importo, tag) come chip
-- [ ] Ricerca full-text su descrizione
-- [ ] Totale della vista filtrata sempre visibile
-- [ ] Statistiche (Vico):
-  - [ ] anello spese per categoria + lista percentuali (mese/anno/custom)
-  - [ ] barre trend spese 12 mesi
-  - [ ] entrate vs uscite mensili
-  - [ ] andamento saldo nel tempo
-  - [ ] spese per account
-- [ ] Drill-down: tap su grafico → lista filtrata
-- [ ] Verifica esclusione TRANSFER/ADJUSTMENT e trattamento rimborsi
+> Completata a luglio 2026 in quattro incrementi: motore filtri + ricerca nel registro, data layer statistiche + selettore periodo, grafici Vico, drill-down. I test strumentati delle nuove query aggregate (`TransactionDaoStatsTest`) sono scritti ma da eseguire su device.
+
+- [x] Filtri combinabili (data con preset, categorie, account, tipo, importo, tag) come chip
+- [x] Ricerca full-text su descrizione (e nota; in-memory con normalizzazione Unicode, insensibile ad accenti e maiuscole)
+- [x] Totale della vista filtrata sempre visibile
+- [x] Statistiche (Vico 3.2.3; il donut usa il pie chart di Vico, sperimentale nella 3.x, con totale al centro come overlay Compose):
+  - [x] anello spese per categoria + lista percentuali (mese/anno/custom)
+  - [x] barre trend spese 12 mesi
+  - [x] entrate vs uscite mensili
+  - [x] andamento saldo nel tempo (saldi di fine mese: somma saldi iniziali + net mensile cumulato, entrambe le gambe dei trasferimenti, solo account inclusi nel totale)
+  - [x] spese per account (lista con barre proporzionali: più leggibile di colonne con 2-5 account)
+- [x] Drill-down: tap su grafico → lista filtrata (route dedicata pushata sopra le statistiche; righe di anello/account navigano al tap, le colonne mostrano il marker con bottone "Vedi i movimenti di <mese>" per evitare navigazioni accidentali durante lo scrub)
+- [x] Verifica esclusione TRANSFER/ADJUSTMENT e trattamento rimborsi (rimborso = spesa negativa nelle query; coperta da `TransactionDaoStatsTest` strumentato - da eseguire su device, nessun emulatore in CI - e dai test JVM di StatsViewModel e del motore filtri)
 
 ## Fase 8 - Backup, export, import
 
