@@ -524,21 +524,14 @@
     <!-- Schermata Informazioni -->
     <string name="about_title">Informazioni</string>
     <string name="about_version">Versione %1$s</string>
-    <string name="about_tagline">Monitoraggio delle spese offline-first e privacy-first.</string>
+    <string name="about_tagline">Capire dove vanno i soldi, in modo chiaro e immediato.</string>
     <string name="about_author">Sviluppata da Callback Dev</string>
     <string name="about_license_title">Licenza</string>
     <string name="about_license_body">Saldo è software libero, rilasciato con licenza GNU GPL-3.0.</string>
     <string name="about_libraries_title">Librerie open source</string>
     <string-array name="about_library_roles">
-        <item>Toolkit UI e design system</item>
-        <item>Navigazione in-app</item>
-        <item>Database locale</item>
-        <item>Dependency injection</item>
-        <item>Codice asincrono e reattivo</item>
-        <item>Serializzazione JSON</item>
-        <item>Salvataggio delle impostazioni</item>
-        <item>Attività in background</item>
+        <item>Linguaggio, coroutine e serializzazione JSON (JetBrains)</item>
         <item>Grafici</item>
-        <item>Set di icone</item>
     </string-array>
+    <string name="about_libraries_footer">Oltre alle librerie Android Jetpack e Material Design di Google.</string>
 </resources>

@@ -158,6 +158,11 @@ private fun LicenseCard(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Only non-Google libraries are itemized (an About page is a credit, not an
+ * inventory); Google's Jetpack/Material stack is acknowledged by the footer
+ * line as a whole.
+ */
 @Composable
 private fun LibrariesCard(modifier: Modifier = Modifier) {
     val names = stringArrayResource(R.array.about_library_names)
@@ -174,6 +179,12 @@ private fun LibrariesCard(modifier: Modifier = Modifier) {
             }
             LibraryRow(name = name, role = roles.getOrElse(index) { "" })
         }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.about_libraries_footer),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

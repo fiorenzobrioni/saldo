@@ -14,6 +14,19 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-11 - About: tagline in linguaggio utente e lista librerie ridotta
+
+**Fatto:**
+- **Tagline**: "Monitoraggio delle spese offline-first e privacy-first." era gergo da addetti ai lavori; sostituita con la frase di prodotto già usata come headline in README/VISION: "Capire dove vanno i soldi, in modo chiaro e immediato." (EN: "Understand where your money goes, clearly and instantly.").
+- **Librerie open source**: da 10 voci a 2. Restano itemizzate solo le non-Google (Kotlin & kotlinx di JetBrains: linguaggio, coroutine, serializzazione JSON; Vico: grafici); lo stack Google è accreditato in blocco da una riga di chiusura ("Oltre alle librerie Android Jetpack e Material Design di Google."). Una pagina About è un credito, non un inventario; nessuna licenza Apache-2.0 richiede l'elenco puntuale.
+- Versione a 0.8.1 (versionCode 25).
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint detekt` verdi; nessun test toccato (modifiche solo a stringhe e layout della card). Resa della card librerie da confermare su device.
+
+**Prossimo:** Fase 9 (impostazioni, i18n, rifinitura).
+
+---
+
 ## 2026-07-11 - Fase 8 completata (parte locale): backup su file, restore guidato, export CSV
 
 **Fatto:**
