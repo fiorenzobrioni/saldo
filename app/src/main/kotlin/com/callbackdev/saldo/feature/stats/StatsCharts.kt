@@ -37,6 +37,8 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarker
+import com.patrykandpatrick.vico.compose.cartesian.marker.CartesianMarkerVisibilityListener
 import com.patrykandpatrick.vico.compose.cartesian.marker.ColumnCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.compose.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.compose.cartesian.marker.LineCartesianLayerMarkerTarget
@@ -67,13 +69,18 @@ import java.util.Locale
  * floating point.
  */
 
-/** Grouped monthly columns (one or two series) with month initials on the x axis. */
+/**
+ * Grouped monthly columns (one or two series) with month initials on the x
+ * axis. [onSelectedIndexChange] reports the x index under the tap marker
+ * (null when it hides), so the card can offer a drill-down for that month.
+ */
 @Composable
 internal fun MonthlyBarsChart(
     series: List<BarSeries>,
     monthLabels: List<String>,
     currency: Currency,
     modifier: Modifier = Modifier,
+    onSelectedIndexChange: ((Int?) -> Unit)? = null,
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
     LaunchedEffect(series) {
@@ -105,12 +112,32 @@ internal fun MonthlyBarsChart(
                     guideline = null,
                 ),
                 marker = moneyMarker(currency),
+                markerVisibilityListener = onSelectedIndexChange?.let { callback ->
+                    remember(callback) { markerIndexListener(callback) }
+                },
             ),
             modelProducer = modelProducer,
             modifier = modifier
                 .fillMaxWidth()
                 .height(CHART_HEIGHT),
         )
+    }
+}
+
+/** Adapts marker visibility events to a plain "selected x index" callback. */
+private fun markerIndexListener(
+    onSelectedIndexChange: (Int?) -> Unit,
+): CartesianMarkerVisibilityListener = object : CartesianMarkerVisibilityListener {
+    override fun onShown(marker: CartesianMarker, targets: List<CartesianMarker.Target>) {
+        onSelectedIndexChange(targets.firstOrNull()?.x?.toInt())
+    }
+
+    override fun onUpdated(marker: CartesianMarker, targets: List<CartesianMarker.Target>) {
+        onSelectedIndexChange(targets.firstOrNull()?.x?.toInt())
+    }
+
+    override fun onHidden(marker: CartesianMarker) {
+        onSelectedIndexChange(null)
     }
 }
 
@@ -283,32 +310,3 @@ private const val KILO_FRACTION_DIGITS = 1
 private const val KILO = 1000L
 private val ONE_THOUSAND = BigDecimal(KILO)
 
-/** Accessible mini-legend: colored dot plus label per series (never color-only). */
-@Composable
-internal fun ChartLegend(
-    entries: List<Pair<Color, String>>,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier,
-    ) {
-        entries.forEach { (color, label) ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(LEGEND_DOT)
-                        .clip(CircleShape)
-                        .background(color),
-                )
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(start = 6.dp),
-                )
-            }
-        }
-    }
-}
-
-private val LEGEND_DOT = 10.dp

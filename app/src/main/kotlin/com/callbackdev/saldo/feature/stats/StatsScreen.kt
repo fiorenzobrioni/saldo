@@ -24,6 +24,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,7 +47,9 @@ import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.feature.transactions.FilterDateRangePickerDialog
+import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 
 /**
@@ -58,6 +61,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatsScreen(
+    onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: StatsViewModel = hiltViewModel(),
 ) {
@@ -111,15 +115,25 @@ fun StatsScreen(
                                 centerLabel = stringResource(R.string.stats_total_spent_label),
                             )
                         },
+                        onSliceClick = { slice ->
+                            onNavigateToFiltered(
+                                periodRoute(uiState.period, categoryId = slice.category.id),
+                            )
+                        },
                     )
                 }
-                item { ExpenseTrendCard(uiState) }
-                item { IncomeExpenseCard(uiState) }
+                item { ExpenseTrendCard(uiState, onNavigateToFiltered) }
+                item { IncomeExpenseCard(uiState, onNavigateToFiltered) }
                 item { BalanceHistoryCard(uiState) }
                 item {
                     AccountSpendsCard(
                         spends = uiState.accountSpends,
                         currency = uiState.currency,
+                        onAccountClick = { spend ->
+                            onNavigateToFiltered(
+                                periodRoute(uiState.period, accountId = spend.account.id),
+                            )
+                        },
                     )
                 }
             }
@@ -140,32 +154,46 @@ fun StatsScreen(
     }
 }
 
-/** Column chart of the last 12 months' spend. */
+/** Column chart of the last 12 months' spend, with a per-month drill-down. */
 @Composable
-private fun ExpenseTrendCard(uiState: StatsUiState, modifier: Modifier = Modifier) {
+private fun ExpenseTrendCard(
+    uiState: StatsUiState,
+    onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     StatsCard(title = stringResource(R.string.stats_trend_title), modifier = modifier) {
         if (uiState.isTrendEmpty) {
             NoPeriodData()
-        } else {
-            MonthlyBarsChart(
-                series = listOf(
-                    BarSeries(
-                        valuesMinor = uiState.monthlyTotals.map {
-                            MoneyMapper.toMinorUnits(it.expense, uiState.currency)
-                        },
-                        color = MaterialTheme.colorScheme.primary,
-                    ),
-                ),
-                monthLabels = monthLabels(uiState),
-                currency = uiState.currency,
-            )
+            return@StatsCard
         }
+        var selectedIndex by remember { mutableStateOf<Int?>(null) }
+        MonthlyBarsChart(
+            series = listOf(
+                BarSeries(
+                    valuesMinor = uiState.monthlyTotals.map {
+                        MoneyMapper.toMinorUnits(it.expense, uiState.currency)
+                    },
+                    color = MaterialTheme.colorScheme.primary,
+                ),
+            ),
+            monthLabels = monthLabels(uiState),
+            currency = uiState.currency,
+            onSelectedIndexChange = { selectedIndex = it },
+        )
+        MonthDrillDownButton(
+            month = selectedIndex?.let { uiState.monthlyTotals.getOrNull(it)?.month },
+            onNavigateToFiltered = onNavigateToFiltered,
+        )
     }
 }
 
 /** Grouped columns comparing monthly income and expenses, with a legend. */
 @Composable
-private fun IncomeExpenseCard(uiState: StatsUiState, modifier: Modifier = Modifier) {
+private fun IncomeExpenseCard(
+    uiState: StatsUiState,
+    onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     StatsCard(title = stringResource(R.string.stats_income_expense_title), modifier = modifier) {
         if (uiState.isTrendEmpty) {
             NoPeriodData()
@@ -173,6 +201,7 @@ private fun IncomeExpenseCard(uiState: StatsUiState, modifier: Modifier = Modifi
         }
         val incomeColor = MaterialTheme.moneyColors.income
         val expenseColor = MaterialTheme.moneyColors.expense
+        var selectedIndex by remember { mutableStateOf<Int?>(null) }
         MonthlyBarsChart(
             series = listOf(
                 BarSeries(
@@ -190,6 +219,7 @@ private fun IncomeExpenseCard(uiState: StatsUiState, modifier: Modifier = Modifi
             ),
             monthLabels = monthLabels(uiState),
             currency = uiState.currency,
+            onSelectedIndexChange = { selectedIndex = it },
         )
         Spacer(Modifier.height(8.dp))
         ChartLegend(
@@ -198,7 +228,58 @@ private fun IncomeExpenseCard(uiState: StatsUiState, modifier: Modifier = Modifi
                 expenseColor to stringResource(R.string.dashboard_stat_expenses),
             ),
         )
+        MonthDrillDownButton(
+            month = selectedIndex?.let { uiState.monthlyTotals.getOrNull(it)?.month },
+            onNavigateToFiltered = onNavigateToFiltered,
+        )
     }
+}
+
+/**
+ * "View transactions for <month>" under a column chart, visible while the tap
+ * marker is on a month. An explicit button rather than navigating on tap, so
+ * scrubbing the chart never leaves the screen by accident.
+ */
+@Composable
+private fun MonthDrillDownButton(
+    month: YearMonth?,
+    onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (month == null) return
+    val locale = LocalConfiguration.current.locales[0]
+    val label = remember(month, locale) {
+        val pattern = DateFormat.getBestDateTimePattern(locale, "yMMMM")
+        month.atDay(1).format(DateTimeFormatter.ofPattern(pattern, locale))
+    }
+    TextButton(
+        onClick = {
+            onNavigateToFiltered(
+                FilteredTransactionsRoute(
+                    startEpochDay = month.atDay(1).toEpochDay(),
+                    endEpochDayExclusive = month.plusMonths(1).atDay(1).toEpochDay(),
+                ),
+            )
+        },
+        modifier = modifier,
+    ) {
+        Text(stringResource(R.string.stats_view_movements, label))
+    }
+}
+
+/** The route covering the selected period, optionally narrowed to one entity. */
+private fun periodRoute(
+    period: StatsPeriod,
+    categoryId: Long? = null,
+    accountId: Long? = null,
+): FilteredTransactionsRoute {
+    val range = period.dateRange()
+    return FilteredTransactionsRoute(
+        startEpochDay = range.start.toEpochDay(),
+        endEpochDayExclusive = range.endInclusive.plusDays(1).toEpochDay(),
+        categoryId = categoryId,
+        accountId = accountId,
+    )
 }
 
 /** Line chart of the end-of-month total balance over the last 12 months. */

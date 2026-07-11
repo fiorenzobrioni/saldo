@@ -38,6 +38,7 @@ import com.callbackdev.saldo.feature.recurring.PendingMovementsScreen
 import com.callbackdev.saldo.feature.recurring.RecurringRuleEditorScreen
 import com.callbackdev.saldo.feature.recurring.RecurrencesScreen
 import com.callbackdev.saldo.feature.settings.SettingsScreen
+import com.callbackdev.saldo.feature.stats.FilteredTransactionsScreen
 import com.callbackdev.saldo.feature.stats.StatsScreen
 import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
@@ -115,7 +116,12 @@ fun SaldoApp() {
                         onNavigateToAccounts = { backStack.add(AccountsRoute) },
                     )
                 }
-                entry<StatsRoute> { StatsScreen(modifier = topLevelModifier) }
+                entry<StatsRoute> {
+                    StatsScreen(
+                        modifier = topLevelModifier,
+                        onNavigateToFiltered = { route -> backStack.add(route) },
+                    )
+                }
                 entry<SettingsRoute> {
                     SettingsScreen(
                         modifier = topLevelModifier,
@@ -178,6 +184,15 @@ fun SaldoApp() {
                 }
                 entry<PendingMovementsRoute> {
                     PendingMovementsScreen(onNavigateBack = { backStack.removeLastOrNull() })
+                }
+                entry<FilteredTransactionsRoute> { route ->
+                    FilteredTransactionsScreen(
+                        route = route,
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onNavigateToTransaction = { id ->
+                            backStack.add(TransactionEditorRoute(id))
+                        },
+                    )
                 }
             },
         )

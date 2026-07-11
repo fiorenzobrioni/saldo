@@ -140,6 +140,8 @@
 
 ## Fase 7 - Ricerca, filtri e statistiche
 
+> Completata a luglio 2026 in quattro incrementi: motore filtri + ricerca nel registro, data layer statistiche + selettore periodo, grafici Vico, drill-down. I test strumentati delle nuove query aggregate (`TransactionDaoStatsTest`) sono scritti ma da eseguire su device.
+
 - [x] Filtri combinabili (data con preset, categorie, account, tipo, importo, tag) come chip
 - [x] Ricerca full-text su descrizione (e nota; in-memory con normalizzazione Unicode, insensibile ad accenti e maiuscole)
 - [x] Totale della vista filtrata sempre visibile
@@ -149,8 +151,8 @@
   - [x] entrate vs uscite mensili
   - [x] andamento saldo nel tempo (saldi di fine mese: somma saldi iniziali + net mensile cumulato, entrambe le gambe dei trasferimenti, solo account inclusi nel totale)
   - [x] spese per account (lista con barre proporzionali: più leggibile di colonne con 2-5 account)
-- [ ] Drill-down: tap su grafico → lista filtrata
-- [ ] Verifica esclusione TRANSFER/ADJUSTMENT e trattamento rimborsi
+- [x] Drill-down: tap su grafico → lista filtrata (route dedicata pushata sopra le statistiche; righe di anello/account navigano al tap, le colonne mostrano il marker con bottone "Vedi i movimenti di <mese>" per evitare navigazioni accidentali durante lo scrub)
+- [x] Verifica esclusione TRANSFER/ADJUSTMENT e trattamento rimborsi (rimborso = spesa negativa nelle query; coperta da `TransactionDaoStatsTest` strumentato - da eseguire su device, nessun emulatore in CI - e dai test JVM di StatsViewModel e del motore filtri)
 
 ## Fase 8 - Backup, export, import
 

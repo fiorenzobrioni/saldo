@@ -14,6 +14,33 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-11 - Fase 7 completata: ricerca, filtri e statistiche (+ review saluti e fix data)
+
+**Fatto:**
+- **Fix data in minuscolo (IT)**: rimosso il titlecase esplicito dalla data della card saldo (`fullWeekdayDate`) e dagli header giorno del registro (`dayLabel`): il CLDR rende già "venerdì 10 luglio" in italiano e "Friday, July 10" in inglese. Il titolo della card mese ("Luglio") resta maiuscolo: è un titolo, non una data in linea.
+- **Review saluti dashboard**: neutralizzate le forme flesse al maschile ("Ancora sveglio?" -> "Ancora in piedi?", "Nottambulo? Bentornato." -> "Notte fonda? Un'occhiata veloce e a letto.", "Benvenuto in Saldo" -> "Ti diamo il benvenuto in Saldo") e sostituite due frasi che promettevano cose non vere ("Stai andando alla grande." -> "Anche le piccole spese contano.", "Rilassati, ai conti pensiamo noi." -> "Un minuto ai conti, poi relax."), IT+EN allineate.
+- **Ricerca e filtri nel registro** (`feature/transactions/filter/`): motore in-memory puro (`TransactionFilterEngine`) con ricerca accent/case-insensitive via `java.text.Normalizer` su descrizione e nota, filtri combinabili (preset data + range custom, tipi, categorie, account con entrambe le gambe dei trasferimenti, tag, importo min/max su magnitudine). UI: ricerca in-app-bar, chip preset data, chip attivi rimuovibili, sheet filtri completo con badge, barra del totale filtrato sempre visibile (netto + spese/entrate per valuta), empty state dei risultati. Nuova query `TagDao.observeAllCrossRefs` per il filtro tag.
+- **Statistiche**: nuove query aggregate in SQL (totali mensili con rimborsi come spesa negativa, spese per account, net mensile del saldo con `UNION ALL` delle due gambe dei trasferimenti sugli account inclusi, somma saldi iniziali) raggruppate sul mese locale del movimento (ADR 7); `ObserveBalanceHistoryUseCase` cumula saldi di fine mese con invariante "ultimo punto == saldo dashboard". Schermata con selettore periodo (mese/anno/custom + chevron), donut per categoria con totale al centro e lista percentuali con barre, trend spese 12 mesi, entrate vs uscite con legenda, andamento saldo, spese per account con barre proporzionali.
+- **Grafici con Vico 3.2.3** (`vico-compose-m3` collegato): serie in unità minori (il Double posiziona solo i pixel), label assi/marker riconvertite via `MoneyMapper`/`MoneyFormatter`, tema `ProvideVicoTheme(rememberM3VicoTheme())`.
+- **Drill-down**: `FilteredTransactionsRoute` pushata sopra le statistiche (il back torna ai grafici); righe di anello e account navigano al tap, sulle colonne il marker mostra i valori e un bottone "Vedi i movimenti di <mese>". La lista riusa motore filtri, raggruppamento giorni e righe del registro, in sola lettura con tap verso l'editor.
+- Dedup: `primaryCurrency`/`fallbackCurrency` estratti in `core/domain/model/PrimaryCurrency.kt` (prima 2 copie + 2 fallback duplicati); raggruppamento giorni estratto in `TransactionGrouping.kt`.
+- Versioni per step: 0.6.8 (fix+saluti), 0.6.9 (filtri), 0.6.10 (data layer stats), 0.6.11 (grafici), **0.7.0** (drill-down e chiusura fase, versionCode 21).
+
+**Decisioni:**
+- Filtri/ricerca in-memory nel ViewModel invece di FTS o `@RawQuery`: il registro è già caricato per intero, la normalizzazione Unicode batte il case-folding ASCII di `LIKE`, zero migration, tutto testabile in JVM. Il punto paging resta in Fase 9.
+- Rimborsi nelle statistiche = spesa negativa (mai entrata), coerente con il SUM firmato di `observeCategoryTotals`; un mese nettato sopra zero viene clampato a zero nei grafici (caso testato).
+- Andamento saldo come figura di cassa: include `isExcludedFromStats`, esclude i pending, solo account inclusi nel totale e non archiviati (stessa semantica del totale dashboard: archiviare riscrive la storia retroattivamente, documentato nel KDoc dell'use case).
+- Donut con il pie chart di Vico (nuovo nella 3.x, dichiarato sperimentale): niente tap sulle fette via API, quindi drill-down sulle righe della lista e totale al centro come overlay Compose. Fallback Canvas non necessario.
+- Drill-down dalle colonne con bottone esplicito invece della navigazione sul tap: lo scrub del marker non deve far lasciare la schermata.
+
+**Problemi:** i docs di Vico (scritti per la 3.0.x) non rispecchiano la 3.2.3: non esiste il package `core.*` (tutto vive sotto `compose.*`) e `columnModel`/`lineModel` convivono con i vecchi `columnSeries`/`lineSeries`. Risolto validando ogni firma con `javap` sui jar pubblicati prima di scrivere i wrapper; lo spike iniziale con gli import dei docs non compilava.
+
+**Verifica:** `assembleDebug testDebugUnitTest lint detekt compileDebugAndroidTestKotlin` verdi a ogni step; 192 unit test JVM (0 falliti), nuovi: `TransactionFilterEngineTest`, filtri in `TransactionsViewModelTest`, `ObserveBalanceHistoryUseCaseTest`, `StatsPeriodTest`, `StatsViewModelTest`, `FilteredTransactionsViewModelTest`. I test strumentati delle query (`TransactionDaoStatsTest`) sono scritti ma vanno eseguiti su device (nessun emulatore in sessione), insieme alla verifica visiva di grafici, ricerca e drill-down.
+
+**Prossimo:** Fase 8 (backup, export, import).
+
+---
+
 ## 2026-07-10 - Tastiera di sistema per gli importi, header dashboard, fix sfarfallio
 
 **Fatto:**

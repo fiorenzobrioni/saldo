@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.stats
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -281,3 +282,33 @@ private fun ShareBar(
 private val AVATAR_SIZE = 40.dp
 private val AVATAR_ICON_SIZE = 20.dp
 private val BAR_HEIGHT = 6.dp
+
+/** Accessible mini-legend: colored dot plus label per series (never color-only). */
+@Composable
+internal fun ChartLegend(
+    entries: List<Pair<Color, String>>,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = modifier,
+    ) {
+        entries.forEach { (color, label) ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(LEGEND_DOT)
+                        .clip(CircleShape)
+                        .background(color),
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(start = 6.dp),
+                )
+            }
+        }
+    }
+}
+
+private val LEGEND_DOT = 10.dp

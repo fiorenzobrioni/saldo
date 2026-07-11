@@ -208,6 +208,7 @@
     <string name="stats_balance_title">Balance over time</string>
     <string name="stats_total_spent_label">Total spent in the period</string>
     <string name="stats_no_data_period">No data for this period.</string>
+    <string name="stats_view_movements">View transactions for %1$s</string>
     <string name="stats_percent" translatable="false">%1$d%%</string>
 
     <!-- Transaction editor (Phase 3) -->

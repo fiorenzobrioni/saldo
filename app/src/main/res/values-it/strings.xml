@@ -209,6 +209,7 @@
     <string name="stats_balance_title">Andamento del saldo</string>
     <string name="stats_total_spent_label">Totale speso nel periodo</string>
     <string name="stats_no_data_period">Nessun dato per questo periodo.</string>
+    <string name="stats_view_movements">Vedi i movimenti di %1$s</string>
 
     <!-- Editor movimento (Fase 3) -->
     <string name="transaction_editor_title_new">Nuovo movimento</string>
