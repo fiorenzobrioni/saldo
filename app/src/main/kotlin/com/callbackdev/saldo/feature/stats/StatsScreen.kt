@@ -238,9 +238,10 @@ private fun IncomeExpenseCard(
 }
 
 /**
- * "View transactions for <month>" under a column chart, visible while the tap
- * marker is on a month. An explicit button rather than navigating on tap, so
- * scrubbing the chart never leaves the screen by accident.
+ * "View transactions for <month>" under a column chart, visible from the
+ * first tap on a month onward: the selection outlives the transient tap
+ * marker, which hides on touch-up. An explicit button rather than navigating
+ * on tap, so scrubbing the chart never leaves the screen by accident.
  */
 @Composable
 private fun MonthDrillDownButton(

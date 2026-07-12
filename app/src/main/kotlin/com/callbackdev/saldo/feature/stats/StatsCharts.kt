@@ -73,8 +73,9 @@ import java.util.Locale
 
 /**
  * Grouped monthly columns (one or two series) with month initials on the x
- * axis. [onSelectedIndexChange] reports the x index under the tap marker
- * (null when it hides), so the card can offer a drill-down for that month.
+ * axis. [onSelectedIndexChange] reports the x index under the tap marker,
+ * so the card can offer a drill-down for that month; the last index survives
+ * the marker hiding on touch-up, keeping the drill-down actionable.
  */
 @Composable
 internal fun MonthlyBarsChart(
@@ -128,7 +129,12 @@ internal fun MonthlyBarsChart(
     }
 }
 
-/** Adapts marker visibility events to a plain "selected x index" callback. */
+/**
+ * Adapts marker visibility events to a plain "selected x index" callback.
+ * The selection is deliberately retained on hide: Vico hides the marker as
+ * soon as the finger lifts, and clearing there would dismiss the drill-down
+ * button before it could ever be tapped.
+ */
 private fun markerIndexListener(
     onSelectedIndexChange: (Int?) -> Unit,
 ): CartesianMarkerVisibilityListener = object : CartesianMarkerVisibilityListener {
@@ -141,7 +147,7 @@ private fun markerIndexListener(
     }
 
     override fun onHidden(marker: CartesianMarker) {
-        onSelectedIndexChange(null)
+        // Keep the last selection: the month stays selected after touch-up.
     }
 }
 
