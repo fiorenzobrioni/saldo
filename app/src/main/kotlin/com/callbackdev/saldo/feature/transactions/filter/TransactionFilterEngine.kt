@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.transactions.filter
 
 import com.callbackdev.saldo.core.domain.model.Transaction
 import java.text.Normalizer
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
@@ -15,6 +16,7 @@ object TransactionFilterEngine {
 
     private val DIACRITICS = Regex("\\p{Mn}+")
     private const val LAST_90_DAYS_LENGTH = 90L
+    private const val DAYS_PER_WEEK = 7L
 
     /** Lowercases and strips diacritics, so "perche" matches "PERCHÉ". */
     fun normalize(text: String): String =
@@ -25,11 +27,20 @@ object TransactionFilterEngine {
     /**
      * The inclusive local-date range selected by [filters], or null when the
      * date is unrestricted. A custom range missing both bounds is unrestricted;
-     * a single missing bound is open on that side.
+     * a single missing bound is open on that side. [firstDayOfWeek] anchors
+     * the [DatePreset.THIS_WEEK] window (a Settings preference).
      */
-    fun dateRange(filters: TransactionFilters, today: LocalDate): ClosedRange<LocalDate>? =
+    fun dateRange(
+        filters: TransactionFilters,
+        today: LocalDate,
+        firstDayOfWeek: DayOfWeek,
+    ): ClosedRange<LocalDate>? =
         when (filters.datePreset) {
             DatePreset.ALL -> null
+            DatePreset.THIS_WEEK -> {
+                val start = today.with(TemporalAdjusters.previousOrSame(firstDayOfWeek))
+                start..start.plusDays(DAYS_PER_WEEK - 1)
+            }
             DatePreset.THIS_MONTH ->
                 today.withDayOfMonth(1)..today.with(TemporalAdjusters.lastDayOfMonth())
             DatePreset.LAST_MONTH -> {
@@ -51,13 +62,15 @@ object TransactionFilterEngine {
      * [tagIds] are the tags attached to it. Tag and account filters match on
      * "any of"; the account filter also matches a transfer's destination.
      */
+    @Suppress("LongParameterList") // Pure function: every argument is one input of the match.
     fun matches(
         transaction: Transaction,
         localDate: LocalDate,
         tagIds: Set<Long>,
         filters: TransactionFilters,
         today: LocalDate,
-    ): Boolean = matchesDate(localDate, filters, today) &&
+        firstDayOfWeek: DayOfWeek,
+    ): Boolean = matchesDate(localDate, filters, today, firstDayOfWeek) &&
         matchesType(transaction, filters) &&
         matchesCategory(transaction, filters) &&
         matchesAccount(transaction, filters) &&
@@ -69,8 +82,9 @@ object TransactionFilterEngine {
         localDate: LocalDate,
         filters: TransactionFilters,
         today: LocalDate,
+        firstDayOfWeek: DayOfWeek,
     ): Boolean {
-        val range = dateRange(filters, today) ?: return true
+        val range = dateRange(filters, today, firstDayOfWeek) ?: return true
         return localDate in range
     }
 

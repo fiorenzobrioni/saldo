@@ -13,6 +13,7 @@ import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
@@ -50,6 +51,7 @@ class DashboardViewModelTest {
     private val clock: Clock = Clock.fixed(Instant.parse("2026-07-08T10:00:00Z"), zone)
 
     private val accountRepository = mockk<AccountRepository>()
+    private val userPreferences = mockk<UserPreferencesRepository>()
     private val transactionRepository = mockk<TransactionRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
     private val recurringRuleRepository = mockk<RecurringRuleRepository>()
@@ -93,8 +95,10 @@ class DashboardViewModelTest {
         recent: List<Transaction> = emptyList(),
         categories: List<Category> = emptyList(),
         rules: List<RecurringRule> = emptyList(),
+        currencyOverride: Currency? = null,
     ): DashboardViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
+        every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
         every { transactionRepository.observeDashboardTotals(any(), any()) } returns flowOf(totals)
         every { transactionRepository.observeRecentTransactions(any()) } returns flowOf(recent)
         every { transactionRepository.observePendingTransactions() } returns flowOf(emptyList<Transaction>())
@@ -102,6 +106,7 @@ class DashboardViewModelTest {
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
         return DashboardViewModel(
             accountRepository,
+            userPreferences,
             transactionRepository,
             categoryRepository,
             recurringRuleRepository,
@@ -138,11 +143,30 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `explicit currency override wins over the account plurality`() = runTest {
+        val accounts = listOf(
+            AccountWithBalance(account(1L, eur), BigDecimal("100.00")),
+            AccountWithBalance(account(2L, eur), BigDecimal("20.00")),
+            AccountWithBalance(account(3L, usd), BigDecimal("50.00")),
+        )
+        val viewModel = viewModel(accounts = accounts, currencyOverride = usd)
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(usd, state.primaryCurrency)
+            // The total is scoped to the chosen currency, not the majority one.
+            assertEquals(BigDecimal("50.00"), state.totalBalance)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `aggregate windows are derived from the clock and passed to the query`() = runTest {
         val windows = slot<DashboardWindows>()
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(
             listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
         )
+        every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
         every {
             transactionRepository.observeDashboardTotals(capture(windows), eur)
         } returns flowOf(DashboardTotals())
@@ -152,6 +176,7 @@ class DashboardViewModelTest {
         every { recurringRuleRepository.observeRules() } returns flowOf(emptyList())
         val viewModel = DashboardViewModel(
             accountRepository,
+            userPreferences,
             transactionRepository,
             categoryRepository,
             recurringRuleRepository,

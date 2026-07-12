@@ -9,10 +9,14 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -81,20 +85,34 @@ class PendingMovementsViewModel @Inject constructor(
         initialValue = PendingMovementsUiState(today = LocalDate.now(clock)),
     )
 
+    private val _events = Channel<PendingMovementsEvent>(Channel.BUFFERED)
+    val events: Flow<PendingMovementsEvent> = _events.receiveAsFlow()
+
     /** Confirms [transaction] with [magnitude], applying the sign and clearing the pending flag. */
     fun confirm(transaction: Transaction, magnitude: BigDecimal) {
         val signed = if (transaction.type == TransactionType.EXPENSE) magnitude.negate() else magnitude
         viewModelScope.launch {
-            transactionRepository.upsert(transaction.copy(amount = signed, isPending = false))
+            suspendRunCatching {
+                transactionRepository.upsert(transaction.copy(amount = signed, isPending = false))
+            }.onFailure { _events.send(PendingMovementsEvent.WriteFailed) }
         }
     }
 
     /** Discards a pending movement the user does not want recorded. */
     fun skip(transaction: Transaction) {
-        viewModelScope.launch { transactionRepository.delete(transaction) }
+        viewModelScope.launch {
+            suspendRunCatching { transactionRepository.delete(transaction) }
+                .onFailure { _events.send(PendingMovementsEvent.WriteFailed) }
+        }
     }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
     }
+}
+
+/** One-shot outcomes surfaced as snackbars. */
+sealed interface PendingMovementsEvent {
+    /** A write failed: the movement is still pending, let the user retry. */
+    data object WriteFailed : PendingMovementsEvent
 }

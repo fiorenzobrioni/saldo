@@ -167,15 +167,16 @@
 
 ## Fase 9 - Impostazioni, i18n, rifinitura
 
-- [ ] Impostazioni: valuta principale, account di default, primo giorno settimana (tema: già fatto in Fase 6.5; backup: già fatto in Fase 8)
-- [ ] Onboarding minimale (valuta, primo account, saldo iniziale, proposta di ripristino da backup)
-- [ ] Revisione completa stringhe IT + EN
-- [ ] Pass di accessibilità: TalkBack, font scaling 200%, contrasto, touch target, non solo colore per spese/entrate
-- [ ] Empty state e stati di errore su tutte le schermate
-- [ ] Performance: baseline profile, lista movimenti fluida con migliaia di record (paging se necessario)
+- [x] Impostazioni: valuta principale (override esplicito della regola a maggioranza, sezione "Preferenze"), account di default (preselezione editor: default esplicito -> ultimo usato -> primo attivo), primo giorno settimana (Lun/Sab/Dom, consumato dal nuovo preset "Questa settimana" nei filtri del registro) (tema: già fatto in Fase 6.5; backup: già fatto in Fase 8)
+- [x] Onboarding al primo avvio (5 pagine: benvenuto, privacy, valuta, primo conto con saldo iniziale, notifiche contestuali; proposta di ripristino da backup nella pagina conto). Gate in `MainViewModel`: le installazioni esistenti (flag assente ma DB con conti) non lo vedono mai. Il permesso notifiche non è più chiesto a freddo all'avvio: solo in onboarding o attivando il radar rinnovi
+- [x] Revisione completa stringhe IT + EN (IT: entità uniformata su "conto/conti" al posto del misto account/conto; EN: uniformata su "transaction" al posto del misto movement/transaction; parità chiavi verificata, nessuna stringa hardcoded)
+- [x] Pass di accessibilità: contentDescription verificate su tutti gli interattivi a sola icona; riassunti TalkBack sui 4 grafici Vico (canvas muto); CTA editor/onboarding a `heightIn(min)` per il font scaling; spese/entrate distinte da segno esplicito (`formatSigned`) oltre che dal colore; righe cliccabili con merge semantico automatico. Verifica manuale TalkBack/200% su device: pending (nessun emulatore in questo ambiente)
+- [x] Empty state e stati di errore su tutte le schermate (audit: empty/loading già coperti ovunque; aggiunta gestione errori di scrittura con snackbar a conti (archivia/elimina/rettifica), registro (elimina/undo), da confermare (conferma/salta) e riordino categorie, che prima potevano crashare su un errore Room)
+- [x] Performance: registro appiattito in item lazy per riga (prima un item monolitico per giorno) con key e contentType stabili su header/righe/spaziatori, così con migliaia di record compongono e riciclano solo le righe visibili; l'aspetto a card raggruppata è preservato con forme a segmento. Paging3 non introdotto: il motore filtri e la ricerca full-text sono in-memory per design (un solo code path), da rivalutare solo se una misurazione su device con migliaia di record mostrasse problemi. Baseline profile spostato in Fase 10 (richiede modulo macrobenchmark e run su device, non disponibile in questo ambiente)
 
 ## Fase 10 - Release v1.0
 
+- [ ] Baseline profile (spostato dalla Fase 9: richiede modulo macrobenchmark e generazione su device/emulatore)
 - [ ] QA manuale end-to-end (checklist dei flussi principali)
 - [ ] Test su device reali: API 33 e ultimo Android stabile, tablet/schermi grandi (almeno layout non rotto)
 - [ ] Icona app, screenshot, scheda Play Store
@@ -265,3 +266,4 @@ Trovati dalla review completa di luglio 2026:
 - [x] Tema scuro forzato dall'app con sistema in chiaro: `enableEdgeToEdge()` senza argomenti segue solo il uiMode di sistema, quindi le icone della status bar restavano scure su sfondo scuro (barra illeggibile, "tutta nera"). Fix: `enableEdgeToEdge` riapplicata in `setContent` con `SystemBarStyle` agganciato al tema risolto in-app (commit 15eb056)
 - [x] Sfarfallio bianco nelle transizioni di navigazione con tema scuro forzato: durante il fade delle transizioni Nav3 si intravedeva la finestra Android chiara sotto Compose (stessa causa del bug status bar). Fix: `SaldoTheme` avvolge il contenuto in un `Surface` a tutto schermo con `colorScheme.background`, backdrop opaco a tema sempre presente (commit 6dc7675)
 - [x] Saluti della dashboard troncati: header a riga singola (`maxLines = 1`) con varianti più lunghe dello spazio disponibile, testo tagliato con ellipsis. Fix: varianti accorciate (IT+EN) e `maxLines = 2` come margine per il font scaling (v0.7.2)
+- [x] Statistiche, grafici "Spese" e "Entrate e uscite": il bottone "Vedi i movimenti di <mese>" compariva solo mentre il dito restava sul grafico e spariva al rilascio, rendendolo impremibile. Causa: il listener del marker Vico azzerava la selezione in `onHidden`, che scatta al touch-up. Fix: la selezione resta dopo il rilascio, il bottone rimane visibile e cliccabile (v0.8.8)

@@ -8,6 +8,7 @@ import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
@@ -36,6 +37,7 @@ class RecurrencesViewModel @Inject constructor(
     recurringRuleRepository: RecurringRuleRepository,
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
+    userPreferences: UserPreferencesRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -46,8 +48,9 @@ class RecurrencesViewModel @Inject constructor(
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
         sort,
-    ) { rules, accounts, categories, sortOrder ->
-        buildState(rules, accounts, categories, sortOrder)
+        userPreferences.primaryCurrencyOverride,
+    ) { rules, accounts, categories, sortOrder, currencyOverride ->
+        buildState(rules, accounts, categories, sortOrder, currencyOverride)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -63,6 +66,7 @@ class RecurrencesViewModel @Inject constructor(
         accounts: List<AccountWithBalance>,
         categories: List<Category>,
         sortOrder: SubscriptionSort,
+        currencyOverride: Currency?,
     ): RecurrencesUiState {
         val today = LocalDate.now(clock)
         val accountById = accounts.associate { it.account.id to it.account }
@@ -74,10 +78,13 @@ class RecurrencesViewModel @Inject constructor(
                 .map { rule -> rule.toItem(today, accountById[rule.accountId], categoryById[rule.categoryId]) }
                 .sortedWith(sortOrder.comparator())
 
-            val primary = items
-                .groupingBy { it.rule.currency }
-                .eachCount()
-                .maxByOrNull { it.value }?.key
+            // The explicit Settings choice keeps section totals consistent
+            // with dashboard and stats; otherwise the section's own majority.
+            val primary = currencyOverride
+                ?: items
+                    .groupingBy { it.rule.currency }
+                    .eachCount()
+                    .maxByOrNull { it.value }?.key
                 ?: fallbackCurrency
             val primaryItems = items.filter { it.rule.currency == primary }
             val monthlyTotal = primaryItems

@@ -10,6 +10,7 @@ import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
 import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -42,6 +43,7 @@ class StatsViewModelTest {
     )
 
     private val accountRepository = mockk<AccountRepository>()
+    private val userPreferences = mockk<UserPreferencesRepository>()
     private val transactionRepository = mockk<TransactionRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
     private val balanceHistory = mockk<ObserveBalanceHistoryUseCase>()
@@ -74,20 +76,24 @@ class StatsViewModelTest {
         accountTotals: List<AccountTotal> = emptyList(),
         monthlyTotals: List<MonthlyTotal> = emptyList(),
         accounts: List<Account> = listOf(checking),
+        currencyOverride: Currency? = null,
+        expectedCurrency: Currency = eur,
     ): StatsViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
-        every { transactionRepository.observeCategoryTotals(any(), any(), eur) } returns
+        every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
+        every { transactionRepository.observeCategoryTotals(any(), any(), expectedCurrency) } returns
             flowOf(categoryTotals)
-        every { transactionRepository.observeAccountSpendTotals(any(), any(), eur) } returns
+        every { transactionRepository.observeAccountSpendTotals(any(), any(), expectedCurrency) } returns
             flowOf(accountTotals)
-        every { transactionRepository.observeMonthlyTotals(any(), any(), eur) } returns
+        every { transactionRepository.observeMonthlyTotals(any(), any(), expectedCurrency) } returns
             flowOf(monthlyTotals)
-        every { balanceHistory(eur, any()) } returns flowOf(emptyList())
+        every { balanceHistory(expectedCurrency, any()) } returns flowOf(emptyList())
         every { categoryRepository.observeCategories() } returns
             flowOf(listOf(groceries, transport))
         return StatsViewModel(
             accountRepository = accountRepository,
+            userPreferences = userPreferences,
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             observeBalanceHistory = balanceHistory,
@@ -99,6 +105,20 @@ class StatsViewModelTest {
         var state = awaitItem()
         while (state.isLoading) state = awaitItem()
         return state
+    }
+
+    @Test
+    fun `explicit currency override drives every stats query`() = runTest {
+        val usd = Currency.getInstance("USD")
+        val viewModel = viewModel(currencyOverride = usd, expectedCurrency = usd)
+
+        viewModel.uiState.test {
+            val state = loaded()
+            // The mocks above only answer for USD: reaching a loaded state
+            // proves every query ran with the override, not the plurality.
+            assertEquals(usd, state.currency)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test

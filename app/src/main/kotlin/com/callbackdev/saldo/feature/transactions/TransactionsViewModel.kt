@@ -60,13 +60,20 @@ class TransactionsViewModel @Inject constructor(
         ::TagData,
     )
 
+    /** Filters plus the week-start setting, pre-combined to stay within combine's arity. */
+    private val filterInputs = combine(
+        filters,
+        userPreferences.firstDayOfWeek,
+        ::Pair,
+    )
+
     val uiState: StateFlow<TransactionsUiState> = combine(
         transactionRepository.observeTransactions(),
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
         tagData,
-        filters,
-    ) { transactions, accounts, categories, tags, activeFilters ->
+        filterInputs,
+    ) { transactions, accounts, categories, tags, (activeFilters, firstDayOfWeek) ->
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
         val today = LocalDate.now(clock)
@@ -78,6 +85,7 @@ class TransactionsViewModel @Inject constructor(
                     tagIds = tags.assignments[transaction.id].orEmpty(),
                     filters = activeFilters,
                     today = today,
+                    firstDayOfWeek = firstDayOfWeek,
                 )
             }
             .map { transaction ->
@@ -183,19 +191,27 @@ class TransactionsViewModel @Inject constructor(
     /** Deletes a movement, capturing its tags first so undo can restore them. */
     fun delete(item: TransactionListItem) {
         viewModelScope.launch {
-            val tagIds = tagRepository.observeTagsForTransaction(item.id).first().map { it.id }
-            transactionRepository.delete(item.transaction)
-            _events.send(TransactionsEvent.TransactionDeleted(item.transaction, tagIds))
+            suspendRunCatching {
+                val tagIds = tagRepository.observeTagsForTransaction(item.id).first().map { it.id }
+                transactionRepository.delete(item.transaction)
+                tagIds
+            }
+                .onSuccess { tagIds ->
+                    _events.send(TransactionsEvent.TransactionDeleted(item.transaction, tagIds))
+                }
+                .onFailure { _events.send(TransactionsEvent.WriteFailed) }
         }
     }
 
     /** Re-inserts a deleted movement (new id) and re-attaches its tags. */
     fun undoDelete(event: TransactionsEvent.TransactionDeleted) {
         viewModelScope.launch {
-            val newId = transactionRepository.upsert(event.transaction.copy(id = 0L))
-            if (event.tagIds.isNotEmpty()) {
-                tagRepository.setTagsForTransaction(newId, event.tagIds)
-            }
+            suspendRunCatching {
+                val newId = transactionRepository.upsert(event.transaction.copy(id = 0L))
+                if (event.tagIds.isNotEmpty()) {
+                    tagRepository.setTagsForTransaction(newId, event.tagIds)
+                }
+            }.onFailure { _events.send(TransactionsEvent.WriteFailed) }
         }
     }
 

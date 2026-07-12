@@ -9,6 +9,10 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.DayOfWeek
+import java.time.temporal.WeekFields
+import java.util.Currency
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -46,9 +50,23 @@ data class RenewalReminderPreferences(
 enum class CsvSeparator(val symbol: Char) { SEMICOLON(';'), COMMA(',') }
 
 /**
+ * The week starts offered in Settings, consumed by the "This week" date
+ * preset. The default comes from the locale, snapped to an offered option
+ * (some locales start on Friday, which is not offered).
+ */
+object FirstDayOfWeek {
+    val options: List<DayOfWeek> = listOf(DayOfWeek.MONDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
+
+    fun localeDefault(): DayOfWeek = coerce(WeekFields.of(Locale.getDefault()).firstDayOfWeek)
+
+    fun coerce(day: DayOfWeek): DayOfWeek = if (day in options) day else DayOfWeek.MONDAY
+}
+
+/**
  * Small UI preferences persisted with DataStore. These are convenience hints
  * (not user data): losing them never loses money information.
  */
+@Suppress("TooManyFunctions") // Flat settings registry: one Flow + setter pair per preference.
 @Singleton
 class UserPreferencesRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,
@@ -56,14 +74,53 @@ class UserPreferencesRepository @Inject constructor(
 
     /**
      * The account last used to record a movement. The editor preselects it so
-     * the typical expense stays within the 3-tap budget; Phase 9 will add an
-     * explicit default-account setting on top.
+     * the typical expense stays within the 3-tap budget; an explicit
+     * [defaultAccountId], when set, takes precedence.
      */
     val lastUsedAccountId: Flow<Long?> =
         dataStore.data.map { preferences -> preferences[LAST_USED_ACCOUNT_ID] }
 
     suspend fun setLastUsedAccountId(accountId: Long) {
         dataStore.edit { preferences -> preferences[LAST_USED_ACCOUNT_ID] = accountId }
+    }
+
+    /**
+     * The account the editor preselects for new movements; null means
+     * automatic (the last used one). A stale id (archived or deleted
+     * account) is skipped by the reader.
+     */
+    val defaultAccountId: Flow<Long?> =
+        dataStore.data.map { preferences -> preferences[DEFAULT_ACCOUNT_ID] }
+
+    suspend fun setDefaultAccountId(accountId: Long?) {
+        dataStore.edit { preferences ->
+            if (accountId == null) {
+                preferences.remove(DEFAULT_ACCOUNT_ID)
+            } else {
+                preferences[DEFAULT_ACCOUNT_ID] = accountId
+            }
+        }
+    }
+
+    /**
+     * The user-chosen primary currency; null means automatic (the currency
+     * shared by most accounts included in the total). Stored as an ISO 4217
+     * code; an invalid stored code reads back as automatic.
+     */
+    val primaryCurrencyOverride: Flow<Currency?> = dataStore.data.map { preferences ->
+        preferences[PRIMARY_CURRENCY_CODE]?.let { code ->
+            runCatching { Currency.getInstance(code) }.getOrNull()
+        }
+    }
+
+    suspend fun setPrimaryCurrencyOverride(currency: Currency?) {
+        dataStore.edit { preferences ->
+            if (currency == null) {
+                preferences.remove(PRIMARY_CURRENCY_CODE)
+            } else {
+                preferences[PRIMARY_CURRENCY_CODE] = currency.currencyCode
+            }
+        }
     }
 
     val themePreferences: Flow<ThemePreferences> = dataStore.data.map { preferences ->
@@ -101,6 +158,32 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+    /**
+     * Whether the first-launch onboarding has been completed. Null means the
+     * key was never written: a fresh install, or an install that predates the
+     * flag (told apart by whether any account exists).
+     */
+    val onboardingCompleted: Flow<Boolean?> =
+        dataStore.data.map { preferences -> preferences[ONBOARDING_COMPLETED] }
+
+    suspend fun setOnboardingCompleted() {
+        dataStore.edit { preferences -> preferences[ONBOARDING_COMPLETED] = true }
+    }
+
+    /** First day of the week for the "This week" filter; defaults from the locale. */
+    val firstDayOfWeek: Flow<DayOfWeek> = dataStore.data.map { preferences ->
+        preferences[FIRST_DAY_OF_WEEK]
+            ?.let { stored -> DayOfWeek.entries.firstOrNull { it.name == stored } }
+            ?.let(FirstDayOfWeek::coerce)
+            ?: FirstDayOfWeek.localeDefault()
+    }
+
+    suspend fun setFirstDayOfWeek(day: DayOfWeek) {
+        dataStore.edit { preferences ->
+            preferences[FIRST_DAY_OF_WEEK] = FirstDayOfWeek.coerce(day).name
+        }
+    }
+
     /** Instant of the last successful backup export, epoch millis; null if never. */
     val lastBackupAtEpochMilli: Flow<Long?> =
         dataStore.data.map { preferences -> preferences[LAST_BACKUP_AT_EPOCH_MILLI] }
@@ -127,10 +210,14 @@ class UserPreferencesRepository @Inject constructor(
 
     private companion object {
         val LAST_USED_ACCOUNT_ID = longPreferencesKey("last_used_account_id")
+        val DEFAULT_ACCOUNT_ID = longPreferencesKey("default_account_id")
+        val PRIMARY_CURRENCY_CODE = stringPreferencesKey("primary_currency_code")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         val RENEWAL_REMINDER_ENABLED = booleanPreferencesKey("renewal_reminder_enabled")
         val RENEWAL_REMINDER_LEAD_DAYS = intPreferencesKey("renewal_reminder_lead_days")
+        val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        val FIRST_DAY_OF_WEEK = stringPreferencesKey("first_day_of_week")
         val LAST_BACKUP_AT_EPOCH_MILLI = longPreferencesKey("last_backup_at_epoch_milli")
         val CSV_SEPARATOR = stringPreferencesKey("csv_separator")
     }

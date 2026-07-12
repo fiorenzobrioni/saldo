@@ -109,6 +109,10 @@ fun AccountsScreen(
                 AccountsEvent.AccountDeleted -> snackbarHostState.showSnackbar(
                     resources.getString(R.string.accounts_snackbar_deleted),
                 )
+
+                AccountsEvent.WriteFailed -> snackbarHostState.showSnackbar(
+                    resources.getString(R.string.editor_write_failed),
+                )
             }
         }
     }

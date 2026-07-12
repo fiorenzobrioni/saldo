@@ -4,8 +4,12 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import java.math.BigDecimal
 import java.time.LocalDate
 
-/** Quick date ranges offered as chips; [CUSTOM] uses the explicit bounds. */
-enum class DatePreset { ALL, THIS_MONTH, LAST_MONTH, LAST_90_DAYS, THIS_YEAR, CUSTOM }
+/**
+ * Quick date ranges offered as chips (declaration order = chip order);
+ * [THIS_WEEK] honors the first-day-of-week setting, [CUSTOM] uses the
+ * explicit bounds.
+ */
+enum class DatePreset { ALL, THIS_WEEK, THIS_MONTH, LAST_MONTH, LAST_90_DAYS, THIS_YEAR, CUSTOM }
 
 /**
  * The combinable filters of the movements list. Empty sets and null bounds

@@ -1,19 +1,16 @@
 package com.callbackdev.saldo
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.core.common.di.ApplicationScope
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
@@ -21,6 +18,7 @@ import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.designsystem.theme.SaldoTheme
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
+import com.callbackdev.saldo.feature.onboarding.OnboardingScreen
 import com.callbackdev.saldo.navigation.SaldoApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -40,13 +38,11 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var userPreferences: UserPreferencesRepository
 
-    private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* best effort */ }
+    private val mainViewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        requestNotificationPermissionIfNeeded()
         // Catch-up generation on launch, covering days the device was off
         // (PLANNING ADR 4). Idempotent, so running it every launch is safe; the
         // periodic WorkManager job covers days the app is not opened. Launched in
@@ -75,18 +71,22 @@ class MainActivity : ComponentActivity() {
                 darkTheme = darkTheme,
                 dynamicColor = themePreferences.useDynamicColor,
             ) {
-                SaldoApp()
+                // First-launch gate: onboarding lives above the Nav3 back stack,
+                // so the app's navigation is untouched. LOADING renders nothing:
+                // SaldoTheme's full-screen Surface is the themed backdrop, and
+                // the decision (one DataStore read) resolves within a frame or
+                // two, faster than any splash could fade.
+                val gate by mainViewModel.gate.collectAsStateWithLifecycle()
+                Crossfade(targetState = gate, label = "launch-gate") { current ->
+                    when (current) {
+                        LaunchGate.LOADING -> Unit
+                        LaunchGate.ONBOARDING -> OnboardingScreen(
+                            onFinished = mainViewModel::completeOnboarding,
+                        )
+                        LaunchGate.APP -> SaldoApp()
+                    }
+                }
             }
-        }
-    }
-
-    /** Asks for POST_NOTIFICATIONS once (Android 13+) so recurring notifications can show. */
-    private fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-        val granted = ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-        if (!granted) {
-            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 }

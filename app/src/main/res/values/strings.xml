@@ -76,13 +76,13 @@
     <string name="dashboard_recurring_incomes_label">Income / month</string>
     <string name="dashboard_recurring_next">Next: %1$s %2$s · %3$s</string>
     <string name="dashboard_recurring_empty">No recurring transactions yet · tap to add one</string>
-    <string name="dashboard_recent_title">Recent movements</string>
+    <string name="dashboard_recent_title">Recent transactions</string>
     <string name="dashboard_recent_see_all">See all</string>
-    <string name="dashboard_recent_empty">No movements yet</string>
+    <string name="dashboard_recent_empty">No transactions yet</string>
     <string name="dashboard_empty_title">Welcome to Saldo</string>
     <string name="dashboard_empty_body">Create your first account to start tracking your money.</string>
     <string name="dashboard_empty_cta">Create your first account</string>
-    <string name="dashboard_fab_add">Add movement</string>
+    <string name="dashboard_fab_add">Add transaction</string>
     <string name="dashboard_fab_expense">Expense</string>
     <string name="dashboard_fab_income">Income</string>
     <string name="dashboard_fab_transfer">Transfer</string>
@@ -116,11 +116,11 @@
     <string name="accounts_adjust_no_change">The balance is already correct</string>
     <string name="accounts_adjust_confirm">Adjust</string>
     <string name="accounts_delete_title">Delete account?</string>
-    <string name="accounts_delete_body">"%1$s" has no movements and will be permanently deleted.</string>
+    <string name="accounts_delete_body">"%1$s" has no transactions and will be permanently deleted.</string>
     <string name="accounts_cannot_delete_title">Cannot delete</string>
     <plurals name="accounts_cannot_delete_body">
-        <item quantity="one">"%1$s" has %2$d movement. Deleting it would lose your history: archive it instead.</item>
-        <item quantity="other">"%1$s" has %2$d movements. Deleting it would lose your history: archive it instead.</item>
+        <item quantity="one">"%1$s" has %2$d transaction. Deleting it would lose your history: archive it instead.</item>
+        <item quantity="other">"%1$s" has %2$d transactions. Deleting it would lose your history: archive it instead.</item>
     </plurals>
     <string name="account_editor_title_new">New account</string>
     <string name="account_editor_title_edit">Edit account</string>
@@ -129,7 +129,7 @@
     <string name="account_editor_name_error">Enter a name</string>
     <string name="account_editor_section_type">Type</string>
     <string name="account_editor_currency">Currency</string>
-    <string name="account_editor_currency_locked">Cannot be changed: the account already has movements</string>
+    <string name="account_editor_currency_locked">Cannot be changed: the account already has transactions</string>
     <string name="account_editor_initial_balance">Initial balance</string>
     <string name="account_editor_initial_balance_hint">The current balance is computed from here</string>
     <string name="account_editor_section_color">Color</string>
@@ -166,6 +166,7 @@
     <string name="transactions_search_clear">Clear search</string>
     <string name="transactions_filters">Filters</string>
     <string name="filter_date_all">All</string>
+    <string name="filter_date_this_week">This week</string>
     <string name="filter_date_this_month">This month</string>
     <string name="filter_date_last_month">Last month</string>
     <string name="filter_date_last_90_days">Last 90 days</string>
@@ -206,6 +207,11 @@
     <string name="stats_total_spent_label">Total spent in the period</string>
     <string name="stats_no_data_period">No data for this period.</string>
     <string name="stats_view_movements">View transactions for %1$s</string>
+    <!-- Chart summaries for screen readers (the charts draw on a silent canvas). -->
+    <string name="stats_chart_ring_a11y">Donut chart of expenses by category. The details are in the list below.</string>
+    <string name="stats_chart_trend_a11y">Bar chart of the last 12 months\' expenses. Tap a column to select a month.</string>
+    <string name="stats_chart_income_expense_a11y">Bar chart of monthly income and expenses over the last 12 months. Tap a column to select a month.</string>
+    <string name="stats_chart_balance_a11y">Line chart of the total balance over the last 12 months.</string>
     <string name="stats_percent" translatable="false">%1$d%%</string>
 
     <!-- Transaction editor (Phase 3) -->
@@ -353,7 +359,7 @@
     <string name="subscription_editor_icon_option">Icon %1$d</string>
     <string name="subscription_editor_delete">Delete recurring expense</string>
     <string name="subscription_delete_title">Delete recurring expense?</string>
-    <string name="subscription_delete_body">The rule will be removed and no new movements will be generated. Movements already recorded are kept.</string>
+    <string name="subscription_delete_body">The rule will be removed and no new transactions will be generated. Transactions already recorded are kept.</string>
     <string name="income_editor_title_new">New recurring income</string>
     <string name="income_editor_title_edit">Edit recurring income</string>
     <string name="income_editor_save">Save income</string>
@@ -374,13 +380,13 @@
         <item quantity="other">%1$d charges to confirm</item>
     </plurals>
     <string name="dashboard_pending_subtitle">Tap to confirm or skip</string>
-    <string name="notif_channel_activity_name">Recurring movements</string>
+    <string name="notif_channel_activity_name">Recurring transactions</string>
     <string name="notif_channel_confirm_name">Recurring charge confirmations</string>
     <plurals name="notif_activity_title">
-        <item quantity="one">%1$d recurring movement recorded</item>
-        <item quantity="other">%1$d recurring movements recorded</item>
+        <item quantity="one">%1$d recurring transaction recorded</item>
+        <item quantity="other">%1$d recurring transactions recorded</item>
     </plurals>
-    <string name="notif_activity_body">Tap to review your movements.</string>
+    <string name="notif_activity_body">Tap to review your transactions.</string>
     <plurals name="notif_confirm_title">
         <item quantity="one">%1$d charge to confirm</item>
         <item quantity="other">%1$d charges to confirm</item>
@@ -429,6 +435,15 @@
     <!-- Shared editor feedback -->
     <string name="editor_write_failed">Something went wrong. Please try again.</string>
     <string name="editor_amount_placeholder" translatable="false">0</string>
+
+    <!-- Settings: preferences (Phase 9) -->
+    <string name="settings_section_preferences">Preferences</string>
+    <string name="settings_primary_currency">Main currency</string>
+    <string name="settings_primary_currency_auto">Automatic (based on your accounts)</string>
+    <string name="settings_default_account">Default account</string>
+    <string name="settings_default_account_auto">Automatic (last used)</string>
+    <string name="settings_first_day_of_week">First day of the week</string>
+    <string name="settings_first_day_of_week_hint">Used by the This week filter</string>
 
     <!-- Settings: appearance and notifications -->
     <string name="settings_section_appearance">Appearance</string>
@@ -531,4 +546,34 @@
         <item>Charts</item>
     </string-array>
     <string name="about_libraries_footer">Plus Google\'s Android Jetpack and Material Design libraries.</string>
+
+    <!-- Onboarding (Phase 9) -->
+    <string name="onboarding_welcome_title">Hi! I\'m Saldo</string>
+    <string name="onboarding_welcome_body">Your money, finally clear. Expenses, income and subscriptions under control in a few taps — no bank logins, no sign-up, no fuss.</string>
+    <string name="onboarding_welcome_cta">Let\'s get started</string>
+    <string name="onboarding_privacy_title">Your data stays with you</string>
+    <string name="onboarding_privacy_body">Everything lives on your phone and nowhere else. No cloud, no tracking — Saldo works even in airplane mode. Want a copy? You can export a backup whenever you like.</string>
+    <string name="onboarding_privacy_cta">Sounds good</string>
+    <string name="onboarding_currency_title">Pick your currency</string>
+    <string name="onboarding_currency_body">The one you use every day. You can change it anytime in Settings — promise.</string>
+    <string name="onboarding_currency_cta">Continue</string>
+    <string name="onboarding_account_title">Where does your money live?</string>
+    <string name="onboarding_account_body">Create your first account: your bank account, your wallet, wherever you keep it. Tell us what\'s in it right now and we\'ll take it from here.</string>
+    <string name="onboarding_account_name_label">Account name</string>
+    <string name="onboarding_account_default_name">Checking account</string>
+    <string name="onboarding_account_balance_label">What\'s in it today</string>
+    <string name="onboarding_account_balance_hint">Even zero is perfectly fine</string>
+    <string name="onboarding_account_cta">Create my account</string>
+    <string name="onboarding_account_skip">I\'ll do it later</string>
+    <string name="onboarding_account_restore">I already have a Saldo backup</string>
+    <string name="onboarding_restore_title">Welcome back!</string>
+    <string name="onboarding_restore_body">We found a backup from %1$s. Want to bring everything back just the way it was?</string>
+    <string name="onboarding_restore_confirm">Restore everything</string>
+    <string name="onboarding_restore_cancel">Not this file</string>
+    <string name="onboarding_restore_done">All set — everything is back where it was.</string>
+    <string name="onboarding_notifications_title">A nudge at the right time</string>
+    <string name="onboarding_notifications_body">Saldo can remind you before a subscription renews and when a recurring transaction is waiting for your OK. Only useful stuff — no spam, ever.</string>
+    <string name="onboarding_notifications_cta">Turn on notifications</string>
+    <string name="onboarding_notifications_skip">Maybe later</string>
+    <string name="onboarding_step_of">Step %1$d of %2$d</string>
 </resources>

@@ -59,7 +59,7 @@
     </plurals>
     <string name="dashboard_accounts_expand">Mostra i conti</string>
     <string name="dashboard_accounts_collapse">Nascondi i conti</string>
-    <string name="dashboard_manage_accounts">Gestisci account</string>
+    <string name="dashboard_manage_accounts">Gestisci conti</string>
     <string name="dashboard_today">Oggi</string>
     <string name="dashboard_month">Questo mese</string>
     <string name="dashboard_stat_expenses">Spese</string>
@@ -79,19 +79,19 @@
     <string name="dashboard_recent_see_all">Vedi tutti</string>
     <string name="dashboard_recent_empty">Ancora nessun movimento</string>
     <string name="dashboard_empty_title">Ti diamo il benvenuto in Saldo</string>
-    <string name="dashboard_empty_body">Crea il primo account per iniziare a tracciare i tuoi soldi.</string>
-    <string name="dashboard_empty_cta">Crea il primo account</string>
+    <string name="dashboard_empty_body">Crea il tuo primo conto per iniziare a tracciare i tuoi soldi.</string>
+    <string name="dashboard_empty_cta">Crea il primo conto</string>
     <string name="dashboard_fab_add">Aggiungi movimento</string>
     <string name="dashboard_fab_expense">Spesa</string>
     <string name="dashboard_fab_income">Entrata</string>
     <string name="dashboard_fab_transfer">Trasferimento</string>
 
     <!-- Account (Fase 2) -->
-    <string name="accounts_title">Account</string>
-    <string name="accounts_new">Nuovo account</string>
-    <string name="accounts_create_first">Crea il primo account</string>
-    <string name="accounts_empty_title">Nessun account</string>
-    <string name="accounts_empty_body">Crea il primo account per iniziare a tracciare i tuoi soldi: un conto, una carta o i contanti.</string>
+    <string name="accounts_title">Conti</string>
+    <string name="accounts_new">Nuovo conto</string>
+    <string name="accounts_create_first">Crea il primo conto</string>
+    <string name="accounts_empty_title">Nessun conto</string>
+    <string name="accounts_empty_body">Crea il primo conto per iniziare a tracciare i tuoi soldi: banca, carta o contanti.</string>
     <string name="accounts_archived_header">Archiviati (%1$d)</string>
     <string name="accounts_archived_label">Archiviato</string>
     <string name="accounts_excluded_from_total">Escluso dal totale</string>
@@ -106,7 +106,7 @@
     <string name="account_action_unarchive">Ripristina</string>
     <string name="account_action_delete">Elimina</string>
     <string name="accounts_snackbar_archived">"%1$s" archiviato</string>
-    <string name="accounts_snackbar_deleted">Account eliminato</string>
+    <string name="accounts_snackbar_deleted">Conto eliminato</string>
     <string name="accounts_snackbar_adjusted">Rettifica di %1$s registrata</string>
     <string name="accounts_adjust_title">Rettifica saldo</string>
     <string name="accounts_adjust_current">Saldo attuale: %1$s</string>
@@ -114,7 +114,7 @@
     <string name="accounts_adjust_preview">Verrà registrata una rettifica di %1$s</string>
     <string name="accounts_adjust_no_change">Il saldo è già corretto</string>
     <string name="accounts_adjust_confirm">Rettifica</string>
-    <string name="accounts_delete_title">Eliminare l\'account?</string>
+    <string name="accounts_delete_title">Eliminare il conto?</string>
     <string name="accounts_delete_body">"%1$s" non ha movimenti e verrà eliminato definitivamente.</string>
     <string name="accounts_cannot_delete_title">Impossibile eliminare</string>
     <plurals name="accounts_cannot_delete_body">
@@ -122,14 +122,14 @@
         <item quantity="many">"%1$s" ha %2$d movimenti. Eliminandolo perderesti lo storico: archivialo invece.</item>
         <item quantity="other">"%1$s" ha %2$d movimenti. Eliminandolo perderesti lo storico: archivialo invece.</item>
     </plurals>
-    <string name="account_editor_title_new">Nuovo account</string>
-    <string name="account_editor_title_edit">Modifica account</string>
-    <string name="account_editor_save">Salva account</string>
+    <string name="account_editor_title_new">Nuovo conto</string>
+    <string name="account_editor_title_edit">Modifica conto</string>
+    <string name="account_editor_save">Salva conto</string>
     <string name="account_editor_name">Nome</string>
     <string name="account_editor_name_error">Inserisci un nome</string>
     <string name="account_editor_section_type">Tipo</string>
     <string name="account_editor_currency">Valuta</string>
-    <string name="account_editor_currency_locked">Non modificabile: l\'account ha già dei movimenti</string>
+    <string name="account_editor_currency_locked">Non modificabile: il conto ha già dei movimenti</string>
     <string name="account_editor_initial_balance">Saldo iniziale</string>
     <string name="account_editor_initial_balance_hint">Il saldo corrente è calcolato a partire da qui</string>
     <string name="account_editor_section_color">Colore</string>
@@ -137,15 +137,15 @@
     <string name="account_editor_color_option">Colore %1$d</string>
     <string name="account_editor_icon_option">Icona %1$d</string>
     <string name="account_editor_include_in_total">Includi nel saldo totale</string>
-    <string name="account_editor_include_in_total_hint">Se disattivato, l\'account è tracciato ma non conta nel totale</string>
+    <string name="account_editor_include_in_total_hint">Se disattivato, il conto è tracciato ma non conta nel totale</string>
 
     <!-- Movimenti (Fase 3) -->
     <string name="transactions_new">Nuovo movimento</string>
     <string name="transactions_empty_title">Ancora nessun movimento</string>
     <string name="transactions_empty_body">Registra la tua prima spesa o entrata: bastano tre tocchi.</string>
-    <string name="transactions_empty_no_accounts_body">Per registrare i movimenti serve prima un account.</string>
+    <string name="transactions_empty_no_accounts_body">Per registrare i movimenti serve prima un conto.</string>
     <string name="transactions_add_first">Aggiungi movimento</string>
-    <string name="transactions_create_account">Crea un account</string>
+    <string name="transactions_create_account">Crea un conto</string>
     <string name="transactions_snackbar_deleted">Movimento eliminato</string>
     <string name="date_today">Oggi</string>
     <string name="date_yesterday">Ieri</string>
@@ -165,6 +165,7 @@
     <string name="transactions_search_clear">Cancella la ricerca</string>
     <string name="transactions_filters">Filtri</string>
     <string name="filter_date_all">Tutto</string>
+    <string name="filter_date_this_week">Questa settimana</string>
     <string name="filter_date_this_month">Questo mese</string>
     <string name="filter_date_last_month">Mese scorso</string>
     <string name="filter_date_last_90_days">Ultimi 90 giorni</string>
@@ -199,13 +200,18 @@
     <string name="stats_previous_period">Periodo precedente</string>
     <string name="stats_next_period">Periodo successivo</string>
     <string name="stats_categories_title">Spese per categoria</string>
-    <string name="stats_accounts_title">Spese per account</string>
+    <string name="stats_accounts_title">Spese per conto</string>
     <string name="stats_trend_title">Spese, ultimi 12 mesi</string>
     <string name="stats_income_expense_title">Entrate e uscite, ultimi 12 mesi</string>
     <string name="stats_balance_title">Saldo, ultimi 12 mesi</string>
     <string name="stats_total_spent_label">Totale speso nel periodo</string>
     <string name="stats_no_data_period">Nessun dato per questo periodo.</string>
     <string name="stats_view_movements">Vedi i movimenti di %1$s</string>
+    <!-- Riassunti dei grafici per gli screen reader (i grafici disegnano su un canvas muto). -->
+    <string name="stats_chart_ring_a11y">Grafico ad anello delle spese per categoria. I dettagli sono nell\'elenco qui sotto.</string>
+    <string name="stats_chart_trend_a11y">Grafico a barre delle spese degli ultimi 12 mesi. Tocca una colonna per selezionare un mese.</string>
+    <string name="stats_chart_income_expense_a11y">Grafico a barre di entrate e uscite mensili degli ultimi 12 mesi. Tocca una colonna per selezionare un mese.</string>
+    <string name="stats_chart_balance_a11y">Grafico dell\'andamento del saldo totale negli ultimi 12 mesi.</string>
 
     <!-- Editor movimento (Fase 3) -->
     <string name="transaction_editor_title_new">Nuovo movimento</string>
@@ -221,9 +227,9 @@
     <string name="transaction_editor_save_adjustment">Salva rettifica</string>
     <string name="transaction_editor_categories_all">Tutte</string>
     <string name="transaction_editor_description_hint">Aggiungi descrizione…</string>
-    <string name="transaction_editor_account">Account</string>
-    <string name="transaction_editor_from_account">Account di partenza</string>
-    <string name="transaction_editor_to_account">Account di arrivo</string>
+    <string name="transaction_editor_account">Conto</string>
+    <string name="transaction_editor_from_account">Conto di partenza</string>
+    <string name="transaction_editor_to_account">Conto di arrivo</string>
     <string name="transaction_editor_amount">Importo</string>
     <string name="transaction_editor_sent_amount">In uscita (%1$s)</string>
     <string name="transaction_editor_received_amount">In entrata (%1$s)</string>
@@ -341,8 +347,8 @@
     <string name="subscription_editor_section_mode">Registrazione</string>
     <string name="subscription_editor_mode_automatic">Automatica</string>
     <string name="subscription_editor_mode_confirm">Con conferma</string>
-    <string name="subscription_editor_account">Account</string>
-    <string name="subscription_editor_account_error">Scegli un account</string>
+    <string name="subscription_editor_account">Conto</string>
+    <string name="subscription_editor_account_error">Scegli un conto</string>
     <string name="subscription_editor_category">Categoria</string>
     <string name="subscription_editor_category_none">Nessuna</string>
     <string name="subscription_editor_frequency">Frequenza</string>
@@ -438,6 +444,15 @@
     <!-- Shared editor feedback -->
     <string name="editor_write_failed">Operazione non riuscita. Riprova.</string>
 
+    <!-- Settings: preferences (Phase 9) -->
+    <string name="settings_section_preferences">Preferenze</string>
+    <string name="settings_primary_currency">Valuta principale</string>
+    <string name="settings_primary_currency_auto">Automatica (in base ai tuoi conti)</string>
+    <string name="settings_default_account">Conto predefinito</string>
+    <string name="settings_default_account_auto">Automatico (ultimo usato)</string>
+    <string name="settings_first_day_of_week">Primo giorno della settimana</string>
+    <string name="settings_first_day_of_week_hint">Usato dal filtro Questa settimana</string>
+
     <!-- Settings: appearance -->
     <string name="settings_section_appearance">Aspetto</string>
     <string name="settings_section_notifications">Notifiche</string>
@@ -456,7 +471,7 @@
     <string name="settings_dynamic_color_hint">Usa i colori dello sfondo (Material You)</string>
 
     <!-- Settings: voci di gestione e Informazioni -->
-    <string name="settings_accounts">Account</string>
+    <string name="settings_accounts">Conti</string>
     <string name="settings_accounts_hint">Conti, carte e contanti</string>
     <string name="settings_section_data">Dati</string>
     <string name="settings_backup">Backup</string>
@@ -470,7 +485,7 @@
     <string name="backup_hero_title">I tuoi dati restano tuoi</string>
     <string name="backup_hero_body">Saldo funziona completamente offline. Il backup è un singolo file JSON salvato dove scegli tu: nessun account, nessun cloud.</string>
     <string name="backup_export_title">Esporta backup</string>
-    <string name="backup_export_body">Salva account, movimenti, categorie, ricorrenze e tag in un file.</string>
+    <string name="backup_export_body">Salva conti, movimenti, categorie, ricorrenze e tag in un file.</string>
     <string name="backup_last_backup">Ultimo backup: %1$s</string>
     <string name="backup_last_backup_never">Nessun backup finora</string>
     <string name="backup_export_action">Esporta backup</string>
@@ -481,7 +496,7 @@
     <string name="backup_restore_dialog_title">Ripristinare questo backup?</string>
     <string name="backup_restore_dialog_metadata">Backup del %1$s</string>
     <string name="backup_restore_dialog_metadata_versioned">Backup del %1$s (Saldo %2$s)</string>
-    <string name="backup_restore_dialog_counts">Account: %1$d\nMovimenti: %2$d\nCategorie: %3$d\nRicorrenze: %4$d\nTag: %5$d</string>
+    <string name="backup_restore_dialog_counts">Conti: %1$d\nMovimenti: %2$d\nCategorie: %3$d\nRicorrenze: %4$d\nTag: %5$d</string>
     <string name="backup_restore_dialog_warning">Tutti i dati attuali verranno sostituiti. L\'operazione non si può annullare.</string>
     <string name="backup_restore_confirm">Ripristina</string>
     <string name="backup_snackbar_exported">Backup salvato (%1$d movimenti)</string>
@@ -512,8 +527,8 @@
     <string name="csv_header_type">Tipo</string>
     <string name="csv_header_category">Categoria</string>
     <string name="csv_header_description">Descrizione</string>
-    <string name="csv_header_account">Account</string>
-    <string name="csv_header_to_account">Verso account</string>
+    <string name="csv_header_account">Conto</string>
+    <string name="csv_header_to_account">Verso conto</string>
     <string name="csv_header_amount">Importo</string>
     <string name="csv_header_currency">Valuta</string>
     <string name="csv_header_received_amount">Importo ricevuto</string>
@@ -534,4 +549,34 @@
         <item>Grafici</item>
     </string-array>
     <string name="about_libraries_footer">Oltre alle librerie Android Jetpack e Material Design di Google.</string>
+
+    <!-- Onboarding (Phase 9) -->
+    <string name="onboarding_welcome_title">Ciao! Sono Saldo</string>
+    <string name="onboarding_welcome_body">I tuoi soldi, finalmente chiari. Spese, entrate e abbonamenti sotto controllo in pochi tocchi — senza collegare la banca, senza registrazione, senza pensieri.</string>
+    <string name="onboarding_welcome_cta">Iniziamo</string>
+    <string name="onboarding_privacy_title">I tuoi dati restano con te</string>
+    <string name="onboarding_privacy_body">Tutto vive sul tuo telefono e da nessun\'altra parte. Niente cloud, niente tracciamenti: Saldo funziona anche in modalità aereo. Vuoi una copia? Puoi esportare un backup quando vuoi.</string>
+    <string name="onboarding_privacy_cta">Mi piace</string>
+    <string name="onboarding_currency_title">Scegli la tua valuta</string>
+    <string name="onboarding_currency_body">Quella che usi tutti i giorni. Potrai cambiarla quando vuoi dalle Impostazioni, promesso.</string>
+    <string name="onboarding_currency_cta">Continua</string>
+    <string name="onboarding_account_title">Dove vivono i tuoi soldi?</string>
+    <string name="onboarding_account_body">Crea il tuo primo conto: il conto in banca, il portafoglio, dove li tieni tu. Scrivi quanto c\'è adesso, al resto pensiamo noi.</string>
+    <string name="onboarding_account_name_label">Nome del conto</string>
+    <string name="onboarding_account_default_name">Conto corrente</string>
+    <string name="onboarding_account_balance_label">Quanto c\'è oggi</string>
+    <string name="onboarding_account_balance_hint">Va benissimo anche zero</string>
+    <string name="onboarding_account_cta">Crea il mio conto</string>
+    <string name="onboarding_account_skip">Lo faccio dopo</string>
+    <string name="onboarding_account_restore">Ho già un backup di Saldo</string>
+    <string name="onboarding_restore_title">Che bello rivederti!</string>
+    <string name="onboarding_restore_body">Abbiamo trovato un backup del %1$s. Vuoi riportare tutto com\'era?</string>
+    <string name="onboarding_restore_confirm">Ripristina tutto</string>
+    <string name="onboarding_restore_cancel">Non questo file</string>
+    <string name="onboarding_restore_done">Fatto: è tutto di nuovo al suo posto.</string>
+    <string name="onboarding_notifications_title">Un promemoria al momento giusto</string>
+    <string name="onboarding_notifications_body">Saldo può avvisarti prima che un abbonamento si rinnovi e quando un movimento ricorrente aspetta il tuo OK. Solo cose utili — niente spam, mai.</string>
+    <string name="onboarding_notifications_cta">Attiva le notifiche</string>
+    <string name="onboarding_notifications_skip">Magari dopo</string>
+    <string name="onboarding_step_of">Passo %1$d di %2$d</string>
 </resources>

@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.accounts
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.money.MoneyInput
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
@@ -61,15 +62,17 @@ class AccountsViewModel @Inject constructor(
     fun archive(account: Account) {
         closeModals()
         viewModelScope.launch {
-            accountRepository.upsert(account.copy(isArchived = true))
-            _events.send(AccountsEvent.AccountArchived(account))
+            suspendRunCatching { accountRepository.upsert(account.copy(isArchived = true)) }
+                .onSuccess { _events.send(AccountsEvent.AccountArchived(account)) }
+                .onFailure { _events.send(AccountsEvent.WriteFailed) }
         }
     }
 
     fun unarchive(account: Account) {
         closeModals()
         viewModelScope.launch {
-            accountRepository.upsert(account.copy(isArchived = false))
+            suspendRunCatching { accountRepository.upsert(account.copy(isArchived = false)) }
+                .onFailure { _events.send(AccountsEvent.WriteFailed) }
         }
     }
 
@@ -93,8 +96,9 @@ class AccountsViewModel @Inject constructor(
         val current = dialog.value as? AccountsDialog.ConfirmDelete ?: return
         dialog.value = null
         viewModelScope.launch {
-            accountRepository.delete(current.account)
-            _events.send(AccountsEvent.AccountDeleted)
+            suspendRunCatching { accountRepository.delete(current.account) }
+                .onSuccess { _events.send(AccountsEvent.AccountDeleted) }
+                .onFailure { _events.send(AccountsEvent.WriteFailed) }
         }
     }
 
@@ -121,12 +125,15 @@ class AccountsViewModel @Inject constructor(
         val realBalance = MoneyInput.parse(current.input) ?: return
         dialog.value = null
         viewModelScope.launch {
-            val result = adjustBalance(current.account.id, realBalance)
-            if (result is AdjustBalanceUseCase.Result.Adjusted) {
-                _events.send(
-                    AccountsEvent.BalanceAdjusted(result.delta, current.account.currency),
-                )
-            }
+            suspendRunCatching { adjustBalance(current.account.id, realBalance) }
+                .onSuccess { result ->
+                    if (result is AdjustBalanceUseCase.Result.Adjusted) {
+                        _events.send(
+                            AccountsEvent.BalanceAdjusted(result.delta, current.account.currency),
+                        )
+                    }
+                }
+                .onFailure { _events.send(AccountsEvent.WriteFailed) }
         }
     }
 

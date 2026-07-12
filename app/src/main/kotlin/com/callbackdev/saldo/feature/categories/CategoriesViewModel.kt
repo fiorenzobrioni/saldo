@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.categories
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
@@ -65,7 +66,11 @@ class CategoriesViewModel @Inject constructor(
         val newOrder = all.map { category ->
             if (category.type.usableForTab(type)) byId.getValue(next.next()) else category
         }
-        viewModelScope.launch { categoryRepository.reorder(newOrder) }
+        viewModelScope.launch {
+            // No user-facing error: on failure the list simply snaps back to
+            // the persisted order at the next emission.
+            suspendRunCatching { categoryRepository.reorder(newOrder) }
+        }
     }
 
     private companion object {

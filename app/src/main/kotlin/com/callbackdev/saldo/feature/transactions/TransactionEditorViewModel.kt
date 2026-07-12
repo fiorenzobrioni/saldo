@@ -300,14 +300,21 @@ class TransactionEditorViewModel @AssistedInject constructor(
         )
     }
 
-    /** Preselects the last used account (Phase 9 adds an explicit default setting). */
+    /**
+     * Preselects the account for a new movement: the explicit Settings
+     * default when it points to an active account, otherwise the last used
+     * one, otherwise the first active. An archived or deleted default is
+     * silently skipped.
+     */
     private fun preselectDefaultAccount() {
         viewModelScope.launch {
+            val defaultId = userPreferences.defaultAccountId.first()
             val lastUsedId = userPreferences.lastUsedAccountId.first()
             val active = accountRepository.observeAccountsWithBalance().first()
                 .map { it.account }
                 .filter { !it.isArchived }
-            val default = active.firstOrNull { it.id == lastUsedId }
+            val default = active.firstOrNull { it.id == defaultId }
+                ?: active.firstOrNull { it.id == lastUsedId }
                 ?: active.firstOrNull()
                 ?: return@launch
             form.update { if (it.accountId == null) it.copy(accountId = default.id) else it }

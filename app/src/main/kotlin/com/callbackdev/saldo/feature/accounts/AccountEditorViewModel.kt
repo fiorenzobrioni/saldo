@@ -7,6 +7,8 @@ import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.money.MoneyInput
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
+import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
+import com.callbackdev.saldo.core.domain.model.fallbackCurrency
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -27,7 +29,6 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
 import java.util.Currency
-import java.util.Locale
 
 /** Immutable UI state of the account editor form. */
 data class AccountEditorUiState(
@@ -73,20 +74,13 @@ class AccountEditorViewModel @AssistedInject constructor(
     }
 
     /** Currencies offered in the picker: locale currency first, then common ones. */
-    val currencies: List<Currency> = buildList {
-        val default = defaultCurrency()
-        add(default)
-        COMMON_CURRENCY_CODES.forEach { code ->
-            val currency = Currency.getInstance(code)
-            if (currency != default) add(currency)
-        }
-    }
+    val currencies: List<Currency> = CurrencyCatalog.supportedCurrencies
 
     private val _uiState = MutableStateFlow(
         AccountEditorUiState(
             isLoading = route.accountId != null,
             isNew = route.accountId == null,
-            currency = defaultCurrency(),
+            currency = fallbackCurrency,
             color = AccountVisuals.colors.first(),
             icon = AccountVisuals.defaultIconFor(AccountType.CHECKING),
         ),
@@ -224,19 +218,4 @@ class AccountEditorViewModel @AssistedInject constructor(
         }
     }
 
-    private fun defaultCurrency(): Currency =
-        runCatching { Currency.getInstance(Locale.getDefault()) }.getOrNull()
-            ?: Currency.getInstance(FALLBACK_CURRENCY_CODE)
-
-    private companion object {
-        const val FALLBACK_CURRENCY_CODE = "EUR"
-
-        val COMMON_CURRENCY_CODES = listOf(
-            "EUR", "USD", "GBP", "CHF", "JPY", "CAD", "AUD", "NZD",
-            "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "RON", "BGN",
-            "TRY", "UAH", "CNY", "HKD", "SGD", "KRW", "INR", "AED",
-            "ILS", "THB", "MYR", "IDR", "PHP", "VND", "BRL", "MXN",
-            "ARS", "CLP", "COP", "ZAR",
-        )
-    }
 }

@@ -47,4 +47,7 @@ sealed interface AccountsEvent {
     data class BalanceAdjusted(val delta: BigDecimal, val currency: Currency) : AccountsEvent
 
     data object AccountDeleted : AccountsEvent
+
+    /** A write failed: nothing changed, let the user retry. */
+    data object WriteFailed : AccountsEvent
 }
