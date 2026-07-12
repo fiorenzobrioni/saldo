@@ -54,6 +54,7 @@ import com.callbackdev.saldo.BuildConfig
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
+import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
 import java.util.Currency
 
@@ -71,7 +72,10 @@ fun SettingsScreen(
     val themePreferences by viewModel.themePreferences.collectAsStateWithLifecycle()
     val renewalReminder by viewModel.renewalReminderPreferences.collectAsStateWithLifecycle()
     val primaryCurrency by viewModel.primaryCurrencyOverride.collectAsStateWithLifecycle()
+    val activeAccounts by viewModel.activeAccounts.collectAsStateWithLifecycle()
+    val defaultAccountId by viewModel.defaultAccountId.collectAsStateWithLifecycle()
     var showCurrencyDialog by rememberSaveable { mutableStateOf(false) }
+    var showDefaultAccountDialog by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier,
@@ -92,6 +96,13 @@ fun SettingsScreen(
                     ?: stringResource(R.string.settings_primary_currency_auto),
                 icon = Icons.Outlined.Payments,
                 onClick = { showCurrencyDialog = true },
+            )
+            SettingsEntry(
+                title = stringResource(R.string.settings_default_account),
+                hint = activeAccounts.firstOrNull { it.id == defaultAccountId }?.name
+                    ?: stringResource(R.string.settings_default_account_auto),
+                icon = Icons.Outlined.AccountBalanceWallet,
+                onClick = { showDefaultAccountDialog = true },
             )
 
             SettingsSectionHeader(stringResource(R.string.settings_section_appearance))
@@ -178,6 +189,61 @@ fun SettingsScreen(
             onDismiss = { showCurrencyDialog = false },
         )
     }
+
+    if (showDefaultAccountDialog) {
+        DefaultAccountDialog(
+            accounts = activeAccounts,
+            selectedId = defaultAccountId,
+            onSelected = { accountId ->
+                viewModel.onDefaultAccountSelected(accountId)
+                showDefaultAccountDialog = false
+            },
+            onDismiss = { showDefaultAccountDialog = false },
+        )
+    }
+}
+
+/**
+ * Radio-list picker for the editor's preselected account: "Automatic" (the
+ * last used one) first, then the active accounts.
+ */
+@Composable
+private fun DefaultAccountDialog(
+    accounts: List<Account>,
+    selectedId: Long?,
+    onSelected: (Long?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // A stale stored id (archived/deleted account) shows as "Automatic",
+    // matching what the editor actually does with it.
+    val selectedIsActive = accounts.any { it.id == selectedId }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings_default_account)) },
+        text = {
+            LazyColumn {
+                item(key = "auto") {
+                    RadioRow(
+                        label = stringResource(R.string.settings_default_account_auto),
+                        isSelected = !selectedIsActive,
+                        onClick = { onSelected(null) },
+                    )
+                }
+                items(accounts, key = { it.id }) { account ->
+                    RadioRow(
+                        label = account.name,
+                        isSelected = account.id == selectedId,
+                        onClick = { onSelected(account.id) },
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+    )
 }
 
 /** "EUR - Euro" in the current locale, for the currency rows and hints. */
@@ -203,14 +269,14 @@ private fun PrimaryCurrencyDialog(
         text = {
             LazyColumn {
                 item(key = "auto") {
-                    CurrencyRow(
+                    RadioRow(
                         label = stringResource(R.string.settings_primary_currency_auto),
                         isSelected = selected == null,
                         onClick = { onSelected(null) },
                     )
                 }
                 items(CurrencyCatalog.supportedCurrencies, key = { it.currencyCode }) { currency ->
-                    CurrencyRow(
+                    RadioRow(
                         label = currency.label(),
                         isSelected = currency == selected,
                         onClick = { onSelected(currency) },
@@ -227,7 +293,7 @@ private fun PrimaryCurrencyDialog(
 }
 
 @Composable
-private fun CurrencyRow(
+private fun RadioRow(
     label: String,
     isSelected: Boolean,
     onClick: () -> Unit,

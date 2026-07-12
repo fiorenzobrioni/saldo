@@ -100,12 +100,14 @@ class TransactionEditorViewModelTest {
         categories: List<Category> = listOf(groceries, salary),
         tags: List<Tag> = emptyList(),
         lastUsedAccountId: Long? = null,
+        defaultAccountId: Long? = null,
     ): TransactionEditorViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
         every { categoryRepository.observeCategories() } returns flowOf(categories)
         every { tagRepository.observeTags() } returns flowOf(tags)
         every { userPreferences.lastUsedAccountId } returns flowOf(lastUsedAccountId)
+        every { userPreferences.defaultAccountId } returns flowOf(defaultAccountId)
         coEvery { transactionRepository.upsert(any()) } returns SAVED_ID
         coEvery { tagRepository.upsert(any()) } returns NEW_TAG_ID
         return TransactionEditorViewModel(
@@ -152,6 +154,27 @@ class TransactionEditorViewModelTest {
             listOf(checking.id, cash.id),
             viewModel.uiState.value.accounts.map { it.account.id },
         )
+    }
+
+    @Test
+    fun `the explicit default account wins over the last used one`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 2L, defaultAccountId = 3L)
+        collectState(viewModel)
+
+        assertEquals(dollars, viewModel.uiState.value.account)
+    }
+
+    @Test
+    fun `an archived default account falls back to the last used one`() = runTest {
+        val archived = account(id = 9L, archived = true)
+        val viewModel = viewModel(
+            accounts = listOf(archived, checking, cash),
+            lastUsedAccountId = 2L,
+            defaultAccountId = 9L,
+        )
+        collectState(viewModel)
+
+        assertEquals(cash, viewModel.uiState.value.account)
     }
 
     @Test

@@ -57,14 +57,32 @@ class UserPreferencesRepository @Inject constructor(
 
     /**
      * The account last used to record a movement. The editor preselects it so
-     * the typical expense stays within the 3-tap budget; Phase 9 will add an
-     * explicit default-account setting on top.
+     * the typical expense stays within the 3-tap budget; an explicit
+     * [defaultAccountId], when set, takes precedence.
      */
     val lastUsedAccountId: Flow<Long?> =
         dataStore.data.map { preferences -> preferences[LAST_USED_ACCOUNT_ID] }
 
     suspend fun setLastUsedAccountId(accountId: Long) {
         dataStore.edit { preferences -> preferences[LAST_USED_ACCOUNT_ID] = accountId }
+    }
+
+    /**
+     * The account the editor preselects for new movements; null means
+     * automatic (the last used one). A stale id (archived or deleted
+     * account) is skipped by the reader.
+     */
+    val defaultAccountId: Flow<Long?> =
+        dataStore.data.map { preferences -> preferences[DEFAULT_ACCOUNT_ID] }
+
+    suspend fun setDefaultAccountId(accountId: Long?) {
+        dataStore.edit { preferences ->
+            if (accountId == null) {
+                preferences.remove(DEFAULT_ACCOUNT_ID)
+            } else {
+                preferences[DEFAULT_ACCOUNT_ID] = accountId
+            }
+        }
     }
 
     /**
@@ -149,6 +167,7 @@ class UserPreferencesRepository @Inject constructor(
 
     private companion object {
         val LAST_USED_ACCOUNT_ID = longPreferencesKey("last_used_account_id")
+        val DEFAULT_ACCOUNT_ID = longPreferencesKey("default_account_id")
         val PRIMARY_CURRENCY_CODE = stringPreferencesKey("primary_currency_code")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")

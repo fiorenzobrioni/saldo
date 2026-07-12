@@ -434,6 +434,8 @@
     <string name="settings_section_preferences">Preferences</string>
     <string name="settings_primary_currency">Main currency</string>
     <string name="settings_primary_currency_auto">Automatic (based on your accounts)</string>
+    <string name="settings_default_account">Default account</string>
+    <string name="settings_default_account_auto">Automatic (last used)</string>
 
     <!-- Settings: appearance and notifications -->
     <string name="settings_section_appearance">Appearance</string>
