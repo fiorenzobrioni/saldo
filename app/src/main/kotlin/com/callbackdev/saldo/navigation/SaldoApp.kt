@@ -33,6 +33,8 @@ import com.callbackdev.saldo.feature.about.AboutScreen
 import com.callbackdev.saldo.feature.accounts.AccountEditorScreen
 import com.callbackdev.saldo.feature.backup.BackupScreen
 import com.callbackdev.saldo.feature.accounts.AccountsScreen
+import com.callbackdev.saldo.feature.budgets.BudgetEditorScreen
+import com.callbackdev.saldo.feature.budgets.BudgetsScreen
 import com.callbackdev.saldo.feature.categories.CategoriesScreen
 import com.callbackdev.saldo.feature.categories.CategoryEditorScreen
 import com.callbackdev.saldo.feature.dashboard.DashboardScreen
@@ -130,6 +132,7 @@ fun SaldoApp() {
                         onNavigateToAccounts = { backStack.add(AccountsRoute) },
                         onNavigateToCategories = { backStack.add(CategoriesRoute) },
                         onNavigateToRecurrences = { backStack.add(RecurrencesRoute) },
+                        onNavigateToBudgets = { backStack.add(BudgetsRoute) },
                         onNavigateToBackup = { backStack.add(BackupRoute) },
                         onNavigateToAbout = { backStack.add(AboutRoute) },
                     )
@@ -189,6 +192,18 @@ fun SaldoApp() {
                 }
                 entry<PendingMovementsRoute> {
                     PendingMovementsScreen(onNavigateBack = { backStack.removeLastOrNull() })
+                }
+                entry<BudgetsRoute> {
+                    BudgetsScreen(
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onNavigateToEditor = { id -> backStack.add(BudgetEditorRoute(id)) },
+                    )
+                }
+                entry<BudgetEditorRoute> { route ->
+                    BudgetEditorScreen(
+                        route = route,
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                    )
                 }
                 entry<FilteredTransactionsRoute> { route ->
                     FilteredTransactionsScreen(

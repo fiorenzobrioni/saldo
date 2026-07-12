@@ -576,4 +576,34 @@
     <string name="onboarding_notifications_cta">Turn on notifications</string>
     <string name="onboarding_notifications_skip">Maybe later</string>
     <string name="onboarding_step_of">Step %1$d of %2$d</string>
+
+    <!-- Budgets -->
+    <string name="budgets_title">Budgets</string>
+    <string name="budgets_add">New budget</string>
+    <string name="budgets_overall_title">Monthly budget</string>
+    <string name="budgets_overall_cta_title">Set a monthly budget</string>
+    <string name="budgets_overall_cta_body">One cap for the whole month\'s spending. It also unlocks the Safe to spend figure on the Dashboard.</string>
+    <string name="budgets_remaining">%1$s left</string>
+    <string name="budgets_overspent_by">Over by %1$s</string>
+    <string name="budgets_spent_of">Spent %1$s of %2$s</string>
+    <string name="budgets_section_categories">Category budgets</string>
+    <string name="budgets_over_a11y">Budget exceeded</string>
+    <string name="budgets_empty_title">No budgets yet</string>
+    <string name="budgets_empty_body">Set a monthly cap for all spending or for single categories: Saldo tracks the progress and warns you at 80% and 100%.</string>
+    <string name="budgets_empty_cta">Create a budget</string>
+    <string name="budgets_editor_title_new">New budget</string>
+    <string name="budgets_editor_title_edit">Edit budget</string>
+    <string name="budgets_editor_save">Save budget</string>
+    <string name="budgets_editor_section_scope">What it caps</string>
+    <string name="budgets_editor_scope_overall">Whole month</string>
+    <string name="budgets_editor_scope_locked">The scope of an existing budget cannot change: delete it and create a new one instead.</string>
+    <string name="budgets_editor_no_scopes">The monthly budget and every expense category already have one. Edit them from the list.</string>
+    <string name="budgets_editor_amount">Monthly limit</string>
+    <string name="budgets_editor_amount_hint">Budgets use the primary currency.</string>
+    <string name="budgets_editor_amount_error">Enter an amount greater than zero.</string>
+    <string name="budgets_editor_delete">Delete budget</string>
+    <string name="budgets_delete_dialog_title">Delete this budget?</string>
+    <string name="budgets_delete_dialog_body">Your transactions are not affected; only the cap and its alerts go away.</string>
+    <string name="settings_budgets">Budgets</string>
+    <string name="settings_budgets_hint">Monthly caps and alerts</string>
 </resources>

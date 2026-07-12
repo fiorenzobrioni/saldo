@@ -37,7 +37,7 @@ fun SaldoTheme(
         shapes = SaldoShapes,
     ) {
         CompositionLocalProvider(
-            LocalMoneyColors provides moneyColors(colorScheme),
+            LocalMoneyColors provides moneyColors(colorScheme, darkTheme),
         ) {
             // An opaque themed backdrop behind everything: without it, the light
             // window background shows through the Nav 3 fade transitions when the

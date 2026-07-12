@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -73,6 +74,7 @@ fun SettingsScreen(
     onNavigateToAccounts: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToRecurrences: () -> Unit,
+    onNavigateToBudgets: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
@@ -190,6 +192,12 @@ fun SettingsScreen(
                 hint = stringResource(R.string.settings_recurrences_hint),
                 icon = Icons.Outlined.EventRepeat,
                 onClick = onNavigateToRecurrences,
+            )
+            SettingsEntry(
+                title = stringResource(R.string.settings_budgets),
+                hint = stringResource(R.string.settings_budgets_hint),
+                icon = Icons.Outlined.Savings,
+                onClick = onNavigateToBudgets,
             )
             SettingsEntry(
                 title = stringResource(R.string.settings_categories),

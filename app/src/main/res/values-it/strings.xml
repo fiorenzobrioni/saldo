@@ -579,4 +579,34 @@
     <string name="onboarding_notifications_cta">Attiva le notifiche</string>
     <string name="onboarding_notifications_skip">Magari dopo</string>
     <string name="onboarding_step_of">Passo %1$d di %2$d</string>
+
+    <!-- Budgets -->
+    <string name="budgets_title">Budget</string>
+    <string name="budgets_add">Nuovo budget</string>
+    <string name="budgets_overall_title">Budget mensile</string>
+    <string name="budgets_overall_cta_title">Imposta un budget mensile</string>
+    <string name="budgets_overall_cta_body">Un unico tetto per tutte le spese del mese. Sblocca anche lo Spendibile oggi in Dashboard.</string>
+    <string name="budgets_remaining">Ancora %1$s</string>
+    <string name="budgets_overspent_by">Superato di %1$s</string>
+    <string name="budgets_spent_of">Spesi %1$s di %2$s</string>
+    <string name="budgets_section_categories">Budget per categoria</string>
+    <string name="budgets_over_a11y">Budget superato</string>
+    <string name="budgets_empty_title">Nessun budget</string>
+    <string name="budgets_empty_body">Imposta un tetto mensile per tutte le spese o per singole categorie: Saldo segue i progressi e ti avvisa all\'80% e al 100%.</string>
+    <string name="budgets_empty_cta">Crea un budget</string>
+    <string name="budgets_editor_title_new">Nuovo budget</string>
+    <string name="budgets_editor_title_edit">Modifica budget</string>
+    <string name="budgets_editor_save">Salva budget</string>
+    <string name="budgets_editor_section_scope">Cosa limita</string>
+    <string name="budgets_editor_scope_overall">Tutto il mese</string>
+    <string name="budgets_editor_scope_locked">L\'ambito di un budget esistente non si può cambiare: eliminalo e creane uno nuovo.</string>
+    <string name="budgets_editor_no_scopes">Il budget mensile e tutte le categorie di spesa ne hanno già uno. Modificali dalla lista.</string>
+    <string name="budgets_editor_amount">Limite mensile</string>
+    <string name="budgets_editor_amount_hint">I budget usano la valuta principale.</string>
+    <string name="budgets_editor_amount_error">Inserisci un importo maggiore di zero.</string>
+    <string name="budgets_editor_delete">Elimina budget</string>
+    <string name="budgets_delete_dialog_title">Eliminare questo budget?</string>
+    <string name="budgets_delete_dialog_body">I movimenti non vengono toccati; spariscono solo il tetto e i suoi avvisi.</string>
+    <string name="settings_budgets">Budget</string>
+    <string name="settings_budgets_hint">Tetti mensili e avvisi</string>
 </resources>
