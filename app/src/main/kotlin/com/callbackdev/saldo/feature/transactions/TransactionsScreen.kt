@@ -267,6 +267,13 @@ private suspend fun handleTransactionsEvent(
                 duration = SnackbarDuration.Short,
             )
         }
+
+        TransactionsEvent.WriteFailed -> {
+            snackbarHostState.showSnackbar(
+                message = resources.getString(R.string.editor_write_failed),
+                duration = SnackbarDuration.Short,
+            )
+        }
     }
 }
 

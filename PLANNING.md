@@ -167,11 +167,11 @@
 
 ## Fase 9 - Impostazioni, i18n, rifinitura
 
-- [ ] Impostazioni: valuta principale, account di default, primo giorno settimana (tema: già fatto in Fase 6.5; backup: già fatto in Fase 8)
-- [ ] Onboarding minimale (valuta, primo account, saldo iniziale, proposta di ripristino da backup)
-- [ ] Revisione completa stringhe IT + EN
+- [x] Impostazioni: valuta principale (override esplicito della regola a maggioranza, sezione "Preferenze"), account di default (preselezione editor: default esplicito -> ultimo usato -> primo attivo), primo giorno settimana (Lun/Sab/Dom, consumato dal nuovo preset "Questa settimana" nei filtri del registro) (tema: già fatto in Fase 6.5; backup: già fatto in Fase 8)
+- [x] Onboarding al primo avvio (5 pagine: benvenuto, privacy, valuta, primo conto con saldo iniziale, notifiche contestuali; proposta di ripristino da backup nella pagina conto). Gate in `MainViewModel`: le installazioni esistenti (flag assente ma DB con conti) non lo vedono mai. Il permesso notifiche non è più chiesto a freddo all'avvio: solo in onboarding o attivando il radar rinnovi
+- [x] Revisione completa stringhe IT + EN (IT: entità uniformata su "conto/conti" al posto del misto account/conto; EN: uniformata su "transaction" al posto del misto movement/transaction; parità chiavi verificata, nessuna stringa hardcoded)
 - [ ] Pass di accessibilità: TalkBack, font scaling 200%, contrasto, touch target, non solo colore per spese/entrate
-- [ ] Empty state e stati di errore su tutte le schermate
+- [x] Empty state e stati di errore su tutte le schermate (audit: empty/loading già coperti ovunque; aggiunta gestione errori di scrittura con snackbar a conti (archivia/elimina/rettifica), registro (elimina/undo), da confermare (conferma/salta) e riordino categorie, che prima potevano crashare su un errore Room)
 - [ ] Performance: baseline profile, lista movimenti fluida con migliaia di record (paging se necessario)
 
 ## Fase 10 - Release v1.0

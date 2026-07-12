@@ -76,13 +76,13 @@
     <string name="dashboard_recurring_incomes_label">Income / month</string>
     <string name="dashboard_recurring_next">Next: %1$s %2$s · %3$s</string>
     <string name="dashboard_recurring_empty">No recurring transactions yet · tap to add one</string>
-    <string name="dashboard_recent_title">Recent movements</string>
+    <string name="dashboard_recent_title">Recent transactions</string>
     <string name="dashboard_recent_see_all">See all</string>
-    <string name="dashboard_recent_empty">No movements yet</string>
+    <string name="dashboard_recent_empty">No transactions yet</string>
     <string name="dashboard_empty_title">Welcome to Saldo</string>
     <string name="dashboard_empty_body">Create your first account to start tracking your money.</string>
     <string name="dashboard_empty_cta">Create your first account</string>
-    <string name="dashboard_fab_add">Add movement</string>
+    <string name="dashboard_fab_add">Add transaction</string>
     <string name="dashboard_fab_expense">Expense</string>
     <string name="dashboard_fab_income">Income</string>
     <string name="dashboard_fab_transfer">Transfer</string>
@@ -116,11 +116,11 @@
     <string name="accounts_adjust_no_change">The balance is already correct</string>
     <string name="accounts_adjust_confirm">Adjust</string>
     <string name="accounts_delete_title">Delete account?</string>
-    <string name="accounts_delete_body">"%1$s" has no movements and will be permanently deleted.</string>
+    <string name="accounts_delete_body">"%1$s" has no transactions and will be permanently deleted.</string>
     <string name="accounts_cannot_delete_title">Cannot delete</string>
     <plurals name="accounts_cannot_delete_body">
-        <item quantity="one">"%1$s" has %2$d movement. Deleting it would lose your history: archive it instead.</item>
-        <item quantity="other">"%1$s" has %2$d movements. Deleting it would lose your history: archive it instead.</item>
+        <item quantity="one">"%1$s" has %2$d transaction. Deleting it would lose your history: archive it instead.</item>
+        <item quantity="other">"%1$s" has %2$d transactions. Deleting it would lose your history: archive it instead.</item>
     </plurals>
     <string name="account_editor_title_new">New account</string>
     <string name="account_editor_title_edit">Edit account</string>
@@ -129,7 +129,7 @@
     <string name="account_editor_name_error">Enter a name</string>
     <string name="account_editor_section_type">Type</string>
     <string name="account_editor_currency">Currency</string>
-    <string name="account_editor_currency_locked">Cannot be changed: the account already has movements</string>
+    <string name="account_editor_currency_locked">Cannot be changed: the account already has transactions</string>
     <string name="account_editor_initial_balance">Initial balance</string>
     <string name="account_editor_initial_balance_hint">The current balance is computed from here</string>
     <string name="account_editor_section_color">Color</string>
@@ -354,7 +354,7 @@
     <string name="subscription_editor_icon_option">Icon %1$d</string>
     <string name="subscription_editor_delete">Delete recurring expense</string>
     <string name="subscription_delete_title">Delete recurring expense?</string>
-    <string name="subscription_delete_body">The rule will be removed and no new movements will be generated. Movements already recorded are kept.</string>
+    <string name="subscription_delete_body">The rule will be removed and no new transactions will be generated. Transactions already recorded are kept.</string>
     <string name="income_editor_title_new">New recurring income</string>
     <string name="income_editor_title_edit">Edit recurring income</string>
     <string name="income_editor_save">Save income</string>
@@ -375,13 +375,13 @@
         <item quantity="other">%1$d charges to confirm</item>
     </plurals>
     <string name="dashboard_pending_subtitle">Tap to confirm or skip</string>
-    <string name="notif_channel_activity_name">Recurring movements</string>
+    <string name="notif_channel_activity_name">Recurring transactions</string>
     <string name="notif_channel_confirm_name">Recurring charge confirmations</string>
     <plurals name="notif_activity_title">
-        <item quantity="one">%1$d recurring movement recorded</item>
-        <item quantity="other">%1$d recurring movements recorded</item>
+        <item quantity="one">%1$d recurring transaction recorded</item>
+        <item quantity="other">%1$d recurring transactions recorded</item>
     </plurals>
-    <string name="notif_activity_body">Tap to review your movements.</string>
+    <string name="notif_activity_body">Tap to review your transactions.</string>
     <plurals name="notif_confirm_title">
         <item quantity="one">%1$d charge to confirm</item>
         <item quantity="other">%1$d charges to confirm</item>
@@ -567,7 +567,7 @@
     <string name="onboarding_restore_cancel">Not this file</string>
     <string name="onboarding_restore_done">All set — everything is back where it was.</string>
     <string name="onboarding_notifications_title">A nudge at the right time</string>
-    <string name="onboarding_notifications_body">Saldo can remind you before a subscription renews and when a recurring movement is waiting for your OK. Only useful stuff — no spam, ever.</string>
+    <string name="onboarding_notifications_body">Saldo can remind you before a subscription renews and when a recurring transaction is waiting for your OK. Only useful stuff — no spam, ever.</string>
     <string name="onboarding_notifications_cta">Turn on notifications</string>
     <string name="onboarding_notifications_skip">Maybe later</string>
     <string name="onboarding_step_of">Step %1$d of %2$d</string>

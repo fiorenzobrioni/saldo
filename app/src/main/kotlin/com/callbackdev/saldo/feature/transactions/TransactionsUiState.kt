@@ -86,6 +86,9 @@ sealed interface TransactionsEvent {
     data class CsvExported(val uri: Uri) : TransactionsEvent
 
     data object CsvExportFailed : TransactionsEvent
+
+    /** A delete or undo failed: nothing changed, let the user retry. */
+    data object WriteFailed : TransactionsEvent
 }
 
 /** The calendar day of a movement in the timezone it was recorded in (ADR 7). */
