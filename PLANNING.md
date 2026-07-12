@@ -35,6 +35,8 @@
 | 15 | Palette brand statica di default, dynamic color opt-in da Impostazioni | Identità visiva riconoscibile su Play Store e screenshot coerenti tra device; Material You resta disponibile come scelta esplicita dell'utente. Rivede la parte "solo dynamic color" dell'ADR 9 (min SDK 33 resta invariato) |
 | 16 | Importi inseriti con la tastiera di sistema (`OutlinedTextField` + `KeyboardType.Decimal`) in tutti gli editor; rimosso il tastierino custom | Coerenza tra tutti i campi importo (prima solo l'editor movimenti aveva un tastierino, gli altri la tastiera di sistema), accessibilità nativa (TalkBack, Switch Access, incolla, tastiera hardware) e meno codice da mantenere. Le regole di dominio restano garantite da `MoneyInput`/`MoneyMapper`, con cap cifre intere spostato in `MoneyInput.sanitize` così ogni campo è protetto dall'overflow. Decade l'haptic del tastierino (subentrano feedback/suoni tasto secondo le impostazioni di sistema) |
 | 17 | Backup cloud (Google Sign-In + Drive App Data + backup automatico) fuori dal percorso v1.0: il backup della release è quello manuale locale su file (ADR 13); la parte cloud è una fase dedicata da valutare a fine roadmap | Nessun account Google nel percorso critico, coerente con offline/privacy-first; il formato JSON versionato (ADR 5) resta l'unico code path di export/restore, quindi l'eventuale fase cloud lo riusa senza migrazioni. Decisione di prodotto di luglio 2026 |
+| 18 | Budget mensili: un budget complessivo opzionale (categoryId NULL) più budget per singola categoria di spesa, una riga per budget con valuta esplicita; la spesa confrontata è quella "statistica" (rimborsi a nettare, TRANSFER/ADJUSTMENT/esclusi/pending mai contati), non quella di cassa della card Mese; unicità del budget complessivo garantita a livello applicativo (upsert transazionale), perché l'indice UNIQUE di SQLite non vincola i NULL | I budget per categoria devono combaciare con gli aggregati delle statistiche; nelle categorie "entrambi" le entrate pure non riducono il consumato (filtro spesa refund-netted dedicato). Soglie 🟢<80% 🟡80-99% 🔴>=100% calcolate in aritmetica intera sui minor units, mai float. Anticipato dalla v1.5 prima della release: la tabella nasce nello schema di produzione e il backup resta a version 1 (campo additivo) |
+| 19 | Notifiche soglia budget (80%/100%): use case one-shot idempotente con watermark mensile per budget (`lastNotified80/100EpochMonth`), invocato sia dal worker giornaliero delle ricorrenze sia da un watcher reattivo application-scoped (segnali di spesa debounced) | Il worker copre gli addebiti automatici a device fermo, il watcher notifica entro pochi istanti una spesa manuale che supera la soglia; il watermark rende la doppia via innocua (una notifica per soglia per mese per budget, superamento diretto del 100% = un solo avviso, nessun riarmo se la spesa rientra nel mese) |
 
 ---
 
@@ -174,6 +176,20 @@
 - [x] Empty state e stati di errore su tutte le schermate (audit: empty/loading già coperti ovunque; aggiunta gestione errori di scrittura con snackbar a conti (archivia/elimina/rettifica), registro (elimina/undo), da confermare (conferma/salta) e riordino categorie, che prima potevano crashare su un errore Room)
 - [x] Performance: registro appiattito in item lazy per riga (prima un item monolitico per giorno) con key e contentType stabili su header/righe/spaziatori, così con migliaia di record compongono e riciclano solo le righe visibili; l'aspetto a card raggruppata è preservato con forme a segmento. Paging3 non introdotto: il motore filtri e la ricerca full-text sono in-memory per design (un solo code path), da rivalutare solo se una misurazione su device con migliaia di record mostrasse problemi. Baseline profile spostato in Fase 10 (richiede modulo macrobenchmark e run su device, non disponibile in questo ambiente)
 
+## Fase 9.5 - Budget, spendibile oggi e dashboard configurabile (anticipata dalla v1.5)
+
+> Anticipo deciso a luglio 2026, prima della release v1.0: la tabella budget nasce nello schema che va in produzione (migration 5->6) e il campo `budgets` entra nel backup JSON senza bump di versione. Il Widget resta in v1.5. Design: ADR 18 e 19.
+
+- [x] Budget: entità (`budgets`, migration 5->6, unique su categoryId), modello complessivo + per categoria di spesa, CRUD con schermata dedicata (hero card del complessivo con residuo e barra, categorie ordinate per vicinanza al tetto) ed editor (scope picker, importo nella valuta principale, eliminazione con conferma)
+- [x] Indicatori 🟢🟡🔴: `ThresholdProgressBar` condivisa nel design system, ruolo `warning` ambra in `MoneyColors` (light/dark), soglie esatte in minor units; colore mai da solo (percentuale testuale sempre presente, icona esplicita oltre il 100%)
+- [x] Card dashboard Budget: complessivo con residuo e barra + top 3 categorie per fraction, tap verso la schermata budget
+- [x] Notifiche 80%/100%: canale `budget_alerts`, `CheckBudgetThresholdsUseCase` con watermark mensili, trigger doppio (worker giornaliero + `BudgetThresholdWatcher` reattivo debounced su application scope)
+- [x] Backup: campo additivo `budgets` nello schema version 1 (file vecchi = lista vuota), watermark inclusi per non ri-notificare dopo un restore, conteggio nell'anteprima di ripristino
+- [x] **Spendibile oggi** (dall'idea in Note e appunti): card in evidenza sotto il saldo = budget mensile - spesa statistica - pending del mese (impegnati ma non confermati) - ricorrenze a importo fisso in arrivo entro fine mese (`UpcomingChargesCalculator` puro, stesso floor di generazione della dashboard); quota giornaliera arrotondata per difetto; superamento su `errorContainer` con icona e testo espliciti; visibile solo con un budget complessivo
+- [x] Dashboard configurabile: sezione "Dashboard" in Impostazioni con 3 switch (Spendibile oggi, scheda budget, ultimi movimenti), boolean DataStore default visibile; le card core (saldo, oggi/mese, da confermare, ricorrenti) restano fisse
+- [x] Voce "Budget" in Impostazioni > Gestione
+- [x] Test: mapper (minor units, epoch month), soglie esatte e ordinamento (`ObserveBudgetProgressUseCaseTest`), dedupe watermark (`CheckBudgetThresholdsUseCaseTest`), calculator ricorrenze in arrivo (floor, mesi corti, variabili escluse), safe-to-spend (pending contato una sola volta, FLOOR, ultimo giorno del mese), round-trip backup esteso, ViewModel dashboard; strumentati scritti ma da eseguire su device (migration 5->6, DAO budget con CASCADE e unique, query spend)
+
 ## Fase 10 - Release v1.0
 
 - [ ] Baseline profile (spostato dalla Fase 9: richiede modulo macrobenchmark e generazione su device/emulatore)
@@ -188,7 +204,8 @@
 
 # Roadmap v1.5
 
-- [ ] Budget: entità, CRUD, periodo mensile, indicatori 🟢🟡🔴, card dashboard, notifiche 80%/100%
+> Il Budget, originariamente in questa roadmap, è stato anticipato nella Fase 9.5.
+
 - [ ] PIN lock + biometria (`BiometricPrompt`) + `FLAG_SECURE` opzionale
 - [ ] Widget: saldo totale, spese oggi, aggiunta rapida (Glance)
 - [ ] Import CSV con wizard di mappatura colonne
@@ -242,8 +259,8 @@
 
 - Chore da pianificare: migrazione ad AGP 9.x + Gradle 9.1+ e compileSdk/targetSdk 37, da fare quando Android 17 (API 37) diventa stabile: a luglio 2026 è ancora in Beta (verificato su developer.android.com/about/versions/17), quindi il valore fissato 36 (ADR 14) è anche l'ultimo stabile disponibile. Vincoli attuali: Hilt 2.59+ richiede AGP 9; androidx core 1.19, lifecycle 2.11 e Compose BOM 2026.06 richiedono compileSdk 37 (AGP 9.1+). Fino ad allora restano fissati: AGP 8.13.2, Hilt 2.58, compileSdk/targetSdk 36, core-ktx 1.18.0, lifecycle 2.10.0, BOM 2026.02.01, activity-compose 1.12.4.
 - Nota ambiente Claude Code web: il download delle distribuzioni Gradle è bloccato dal proxy (il redirect finale punta a un asset GitHub fuori dallo scope di rete della sessione); i build locali usano il Gradle preinstallato in `/opt/gradle`. AGP e le librerie si scaricano normalmente da Google Maven/Maven Central; `sdkmanager` funziona (dl.google.com), incluso `platforms;android-37.0` quando servirà.
-- Idee "wow" dalla review completa di luglio 2026 (tutte compatibili con VISION: offline-first, privacy-first, niente open banking). Non implementarle senza deciderlo esplicitamente. Il "Radar abbonamenti" è stato implementato a luglio 2026 (Fase 6, incremento 3):
-  - "Spendibile oggi" (safe-to-spend): un numero in dashboard = budget del mese - speso - ricorrenze in arrivo. Si aggancia al budget v1.5 e alla Fase 6. Trasforma il tracker da passivo a proattivo. Rimandata di proposito (luglio 2026): richiede prima il budget della v1.5.
+- Idee "wow" dalla review completa di luglio 2026 (tutte compatibili con VISION: offline-first, privacy-first, niente open banking). Non implementarle senza deciderlo esplicitamente. Il "Radar abbonamenti" è stato implementato a luglio 2026 (Fase 6, incremento 3); "Spendibile oggi" è stato implementato nella Fase 9.5 insieme al budget:
+  - ~~"Spendibile oggi" (safe-to-spend)~~: implementata (Fase 9.5).
   - Rilevamento automatico ricorrenze: euristica on-device che nota spese simili ripetute a cadenza regolare e propone di creare la regola. "Intelligenza senza cloud", coerente col posizionamento privacy. Rimandata di proposito (luglio 2026): da implementare in una fase successiva, agganciandola all'hub Ricorrenze.
   - Recap mensile condivisibile (stile Wrapped): report generato sul device, esportabile come immagine, zero dati che escono.
   - Quick-add ovunque: widget home (già in v1.5), app shortcut statici, Quick Settings tile: spesa registrata in 2 tap senza aprire l'app.
