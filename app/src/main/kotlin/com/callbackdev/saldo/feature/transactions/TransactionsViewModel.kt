@@ -60,13 +60,20 @@ class TransactionsViewModel @Inject constructor(
         ::TagData,
     )
 
+    /** Filters plus the week-start setting, pre-combined to stay within combine's arity. */
+    private val filterInputs = combine(
+        filters,
+        userPreferences.firstDayOfWeek,
+        ::Pair,
+    )
+
     val uiState: StateFlow<TransactionsUiState> = combine(
         transactionRepository.observeTransactions(),
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
         tagData,
-        filters,
-    ) { transactions, accounts, categories, tags, activeFilters ->
+        filterInputs,
+    ) { transactions, accounts, categories, tags, (activeFilters, firstDayOfWeek) ->
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
         val today = LocalDate.now(clock)
@@ -78,6 +85,7 @@ class TransactionsViewModel @Inject constructor(
                     tagIds = tags.assignments[transaction.id].orEmpty(),
                     filters = activeFilters,
                     today = today,
+                    firstDayOfWeek = firstDayOfWeek,
                 )
             }
             .map { transaction ->

@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import java.time.Clock
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 /** Immutable UI state of the statistics drill-down list. */
@@ -90,6 +91,8 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
                     tagIds = tagAssignments[transaction.id].orEmpty(),
                     filters = filters,
                     today = today,
+                    // The preset here is always CUSTOM: the week start is unused.
+                    firstDayOfWeek = DayOfWeek.MONDAY,
                 )
             }
             .map { transaction ->

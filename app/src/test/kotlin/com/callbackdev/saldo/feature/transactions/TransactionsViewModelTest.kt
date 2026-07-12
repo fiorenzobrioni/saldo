@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.math.BigDecimal
 import java.time.Clock
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -58,6 +59,7 @@ class TransactionsViewModelTest {
     private val tagRepository = mockk<TagRepository>(relaxUnitFun = true)
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true) {
         every { csvSeparator } returns flowOf(CsvSeparator.SEMICOLON)
+        every { firstDayOfWeek } returns flowOf(DayOfWeek.MONDAY)
     }
     private val csvExporter = mockk<TransactionsCsvExporter>()
 

@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.transactions.filter
 
+import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -8,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -51,7 +53,15 @@ class TransactionFilterEngineTest {
         tagIds = tagIds,
         filters = filters,
         today = today,
+        firstDayOfWeek = DayOfWeek.MONDAY,
     )
+
+    private fun weekRange(anchor: LocalDate, firstDay: DayOfWeek): ClosedRange<LocalDate> =
+        TransactionFilterEngine.dateRange(
+            TransactionFilters(datePreset = DatePreset.THIS_WEEK),
+            anchor,
+            firstDay,
+        )!!
 
     @Test
     fun `no filters matches everything`() {
@@ -98,7 +108,7 @@ class TransactionFilterEngineTest {
     @Test
     fun `last month covers the whole previous calendar month`() {
         val filters = TransactionFilters(datePreset = DatePreset.LAST_MONTH)
-        val range = TransactionFilterEngine.dateRange(filters, today)!!
+        val range = TransactionFilterEngine.dateRange(filters, today, DayOfWeek.MONDAY)!!
         assertEquals(LocalDate.of(2026, 6, 1), range.start)
         assertEquals(LocalDate.of(2026, 6, 30), range.endInclusive)
     }
@@ -106,9 +116,56 @@ class TransactionFilterEngineTest {
     @Test
     fun `last 90 days includes today and spans 90 days`() {
         val filters = TransactionFilters(datePreset = DatePreset.LAST_90_DAYS)
-        val range = TransactionFilterEngine.dateRange(filters, today)!!
+        val range = TransactionFilterEngine.dateRange(filters, today, DayOfWeek.MONDAY)!!
         assertEquals(today, range.endInclusive)
         assertEquals(today.minusDays(89), range.start)
+    }
+
+    @Test
+    fun `this week spans seven days anchored on the chosen first day`() {
+        // 10 July 2026 is a Friday.
+        val monday = weekRange(today, DayOfWeek.MONDAY)
+        assertEquals(LocalDate.of(2026, 7, 6), monday.start)
+        assertEquals(LocalDate.of(2026, 7, 12), monday.endInclusive)
+
+        val sunday = weekRange(today, DayOfWeek.SUNDAY)
+        assertEquals(LocalDate.of(2026, 7, 5), sunday.start)
+        assertEquals(LocalDate.of(2026, 7, 11), sunday.endInclusive)
+
+        val saturday = weekRange(today, DayOfWeek.SATURDAY)
+        assertEquals(LocalDate.of(2026, 7, 4), saturday.start)
+        assertEquals(LocalDate.of(2026, 7, 10), saturday.endInclusive)
+    }
+
+    @Test
+    fun `this week starts today when today is the first day of the week`() {
+        // 6 July 2026 is a Monday.
+        val range = weekRange(LocalDate.of(2026, 7, 6), DayOfWeek.MONDAY)
+        assertEquals(LocalDate.of(2026, 7, 6), range.start)
+        assertEquals(LocalDate.of(2026, 7, 12), range.endInclusive)
+    }
+
+    @Test
+    fun `this week crosses month and year boundaries`() {
+        // 1 July 2026 is a Wednesday: the Monday week starts back in June.
+        val acrossMonths = weekRange(LocalDate.of(2026, 7, 1), DayOfWeek.MONDAY)
+        assertEquals(LocalDate.of(2026, 6, 29), acrossMonths.start)
+        assertEquals(LocalDate.of(2026, 7, 5), acrossMonths.endInclusive)
+
+        // 1 January 2026 is a Thursday: the Monday week starts back in 2025.
+        val acrossYears = weekRange(LocalDate.of(2026, 1, 1), DayOfWeek.MONDAY)
+        assertEquals(LocalDate.of(2025, 12, 29), acrossYears.start)
+        assertEquals(LocalDate.of(2026, 1, 4), acrossYears.endInclusive)
+    }
+
+    @Test
+    fun `unsupported locale week starts snap to Monday`() {
+        // Arabic (Egypt) weeks start on Saturday: supported, kept as is.
+        assertEquals(DayOfWeek.SATURDAY, FirstDayOfWeek.coerce(DayOfWeek.SATURDAY))
+        // Some locales report Friday, which Settings does not offer.
+        assertEquals(DayOfWeek.MONDAY, FirstDayOfWeek.coerce(DayOfWeek.FRIDAY))
+        assertEquals(DayOfWeek.MONDAY, FirstDayOfWeek.coerce(DayOfWeek.WEDNESDAY))
+        assertEquals(DayOfWeek.SUNDAY, FirstDayOfWeek.coerce(DayOfWeek.SUNDAY))
     }
 
     @Test
@@ -125,7 +182,7 @@ class TransactionFilterEngineTest {
         assertTrue(matches(transaction(timestamp = Instant.parse("2026-06-01T08:00:00Z")), openStart))
 
         val unbounded = bounded.copy(customStart = null, customEnd = null)
-        assertNull(TransactionFilterEngine.dateRange(unbounded, today))
+        assertNull(TransactionFilterEngine.dateRange(unbounded, today, DayOfWeek.MONDAY))
     }
 
     @Test

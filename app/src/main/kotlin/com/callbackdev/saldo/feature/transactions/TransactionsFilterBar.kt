@@ -126,6 +126,7 @@ private fun customRangeLabel(filters: TransactionFilters): String {
 private val DatePreset.labelRes: Int
     get() = when (this) {
         DatePreset.ALL -> R.string.filter_date_all
+        DatePreset.THIS_WEEK -> R.string.filter_date_this_week
         DatePreset.THIS_MONTH -> R.string.filter_date_this_month
         DatePreset.LAST_MONTH -> R.string.filter_date_last_month
         DatePreset.LAST_90_DAYS -> R.string.filter_date_last_90_days

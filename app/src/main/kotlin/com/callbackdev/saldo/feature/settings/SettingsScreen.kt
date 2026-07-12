@@ -52,10 +52,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.BuildConfig
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
+import java.time.DayOfWeek
+import java.time.format.TextStyle
 import java.util.Currency
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,6 +77,7 @@ fun SettingsScreen(
     val primaryCurrency by viewModel.primaryCurrencyOverride.collectAsStateWithLifecycle()
     val activeAccounts by viewModel.activeAccounts.collectAsStateWithLifecycle()
     val defaultAccountId by viewModel.defaultAccountId.collectAsStateWithLifecycle()
+    val firstDayOfWeek by viewModel.firstDayOfWeek.collectAsStateWithLifecycle()
     var showCurrencyDialog by rememberSaveable { mutableStateOf(false) }
     var showDefaultAccountDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -103,6 +107,15 @@ fun SettingsScreen(
                     ?: stringResource(R.string.settings_default_account_auto),
                 icon = Icons.Outlined.AccountBalanceWallet,
                 onClick = { showDefaultAccountDialog = true },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_first_day_of_week)) },
+                supportingContent = { Text(stringResource(R.string.settings_first_day_of_week_hint)) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            )
+            FirstDayOfWeekSelector(
+                selected = firstDayOfWeek,
+                onSelected = viewModel::onFirstDayOfWeekSelected,
             )
 
             SettingsSectionHeader(stringResource(R.string.settings_section_appearance))
@@ -348,6 +361,34 @@ private fun ThemeModeSelector(
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
             ) {
                 Text(stringResource(labelRes))
+            }
+        }
+    }
+}
+
+/** Week-start choice for the "This week" filter; day names come from the locale. */
+@Composable
+private fun FirstDayOfWeekSelector(
+    selected: DayOfWeek,
+    onSelected: (DayOfWeek) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val locale = LocalConfiguration.current.locales[0]
+    SingleChoiceSegmentedButtonRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    ) {
+        FirstDayOfWeek.options.forEachIndexed { index, day ->
+            SegmentedButton(
+                selected = selected == day,
+                onClick = { onSelected(day) },
+                shape = SegmentedButtonDefaults.itemShape(
+                    index = index,
+                    count = FirstDayOfWeek.options.size,
+                ),
+            ) {
+                Text(day.getDisplayName(TextStyle.SHORT, locale))
             }
         }
     }

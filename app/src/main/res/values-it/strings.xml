@@ -165,6 +165,7 @@
     <string name="transactions_search_clear">Cancella la ricerca</string>
     <string name="transactions_filters">Filtri</string>
     <string name="filter_date_all">Tutto</string>
+    <string name="filter_date_this_week">Questa settimana</string>
     <string name="filter_date_this_month">Questo mese</string>
     <string name="filter_date_last_month">Mese scorso</string>
     <string name="filter_date_last_90_days">Ultimi 90 giorni</string>
@@ -444,6 +445,8 @@
     <string name="settings_primary_currency_auto">Automatica (in base ai tuoi conti)</string>
     <string name="settings_default_account">Conto predefinito</string>
     <string name="settings_default_account_auto">Automatico (ultimo usato)</string>
+    <string name="settings_first_day_of_week">Primo giorno della settimana</string>
+    <string name="settings_first_day_of_week_hint">Usato dal filtro Questa settimana</string>
 
     <!-- Settings: appearance -->
     <string name="settings_section_appearance">Aspetto</string>

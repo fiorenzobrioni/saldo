@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
 import java.util.Currency
 import javax.inject.Inject
 
@@ -49,6 +51,14 @@ class SettingsViewModel @Inject constructor(
             initialValue = null,
         )
 
+    /** First day of the week used by the "This week" filter. */
+    val firstDayOfWeek: StateFlow<DayOfWeek> = userPreferences.firstDayOfWeek
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = FirstDayOfWeek.localeDefault(),
+        )
+
     val themePreferences: StateFlow<ThemePreferences> = userPreferences.themePreferences
         .stateIn(
             scope = viewModelScope,
@@ -72,6 +82,10 @@ class SettingsViewModel @Inject constructor(
     /** Persists the default-account choice; null returns to automatic (last used). */
     fun onDefaultAccountSelected(accountId: Long?) {
         viewModelScope.launch { userPreferences.setDefaultAccountId(accountId) }
+    }
+
+    fun onFirstDayOfWeekSelected(day: DayOfWeek) {
+        viewModelScope.launch { userPreferences.setFirstDayOfWeek(day) }
     }
 
     fun onThemeModeSelected(mode: ThemeMode) {

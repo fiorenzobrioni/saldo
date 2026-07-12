@@ -9,7 +9,10 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.DayOfWeek
+import java.time.temporal.WeekFields
 import java.util.Currency
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -47,9 +50,23 @@ data class RenewalReminderPreferences(
 enum class CsvSeparator(val symbol: Char) { SEMICOLON(';'), COMMA(',') }
 
 /**
+ * The week starts offered in Settings, consumed by the "This week" date
+ * preset. The default comes from the locale, snapped to an offered option
+ * (some locales start on Friday, which is not offered).
+ */
+object FirstDayOfWeek {
+    val options: List<DayOfWeek> = listOf(DayOfWeek.MONDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY)
+
+    fun localeDefault(): DayOfWeek = coerce(WeekFields.of(Locale.getDefault()).firstDayOfWeek)
+
+    fun coerce(day: DayOfWeek): DayOfWeek = if (day in options) day else DayOfWeek.MONDAY
+}
+
+/**
  * Small UI preferences persisted with DataStore. These are convenience hints
  * (not user data): losing them never loses money information.
  */
+@Suppress("TooManyFunctions") // Flat settings registry: one Flow + setter pair per preference.
 @Singleton
 class UserPreferencesRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,
@@ -141,6 +158,20 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+    /** First day of the week for the "This week" filter; defaults from the locale. */
+    val firstDayOfWeek: Flow<DayOfWeek> = dataStore.data.map { preferences ->
+        preferences[FIRST_DAY_OF_WEEK]
+            ?.let { stored -> DayOfWeek.entries.firstOrNull { it.name == stored } }
+            ?.let(FirstDayOfWeek::coerce)
+            ?: FirstDayOfWeek.localeDefault()
+    }
+
+    suspend fun setFirstDayOfWeek(day: DayOfWeek) {
+        dataStore.edit { preferences ->
+            preferences[FIRST_DAY_OF_WEEK] = FirstDayOfWeek.coerce(day).name
+        }
+    }
+
     /** Instant of the last successful backup export, epoch millis; null if never. */
     val lastBackupAtEpochMilli: Flow<Long?> =
         dataStore.data.map { preferences -> preferences[LAST_BACKUP_AT_EPOCH_MILLI] }
@@ -173,6 +204,7 @@ class UserPreferencesRepository @Inject constructor(
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         val RENEWAL_REMINDER_ENABLED = booleanPreferencesKey("renewal_reminder_enabled")
         val RENEWAL_REMINDER_LEAD_DAYS = intPreferencesKey("renewal_reminder_lead_days")
+        val FIRST_DAY_OF_WEEK = stringPreferencesKey("first_day_of_week")
         val LAST_BACKUP_AT_EPOCH_MILLI = longPreferencesKey("last_backup_at_epoch_milli")
         val CSV_SEPARATOR = stringPreferencesKey("csv_separator")
     }
