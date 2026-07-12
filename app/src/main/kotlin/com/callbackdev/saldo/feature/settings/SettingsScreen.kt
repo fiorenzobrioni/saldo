@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions") // One small composable per settings row/section/dialog.
+
 package com.callbackdev.saldo.feature.settings
 
 import android.Manifest
@@ -82,6 +84,7 @@ fun SettingsScreen(
 ) {
     val themePreferences by viewModel.themePreferences.collectAsStateWithLifecycle()
     val renewalReminder by viewModel.renewalReminderPreferences.collectAsStateWithLifecycle()
+    val dashboardCards by viewModel.dashboardCardPreferences.collectAsStateWithLifecycle()
     val primaryCurrency by viewModel.primaryCurrencyOverride.collectAsStateWithLifecycle()
     val activeAccounts by viewModel.activeAccounts.collectAsStateWithLifecycle()
     val defaultAccountId by viewModel.defaultAccountId.collectAsStateWithLifecycle()
@@ -141,6 +144,26 @@ fun SettingsScreen(
                     )
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            )
+
+            SettingsSectionHeader(stringResource(R.string.settings_section_dashboard))
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_dashboard_show_sts),
+                hint = stringResource(R.string.settings_dashboard_show_sts_hint),
+                checked = dashboardCards.showSafeToSpend,
+                onCheckedChange = viewModel::onShowSafeToSpendChanged,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_dashboard_show_budget),
+                hint = stringResource(R.string.settings_dashboard_show_budget_hint),
+                checked = dashboardCards.showBudget,
+                onCheckedChange = viewModel::onShowBudgetCardChanged,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_dashboard_show_recent),
+                hint = stringResource(R.string.settings_dashboard_show_recent_hint),
+                checked = dashboardCards.showRecentTransactions,
+                onCheckedChange = viewModel::onShowRecentTransactionsChanged,
             )
 
             SettingsSectionHeader(stringResource(R.string.settings_section_notifications))
@@ -478,5 +501,25 @@ private fun SettingsEntry(
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier.clickable(onClick = onClick),
+    )
+}
+
+/** A toggle row, like the dynamic-color one: title, supporting hint and a switch. */
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    hint: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(hint) },
+        trailingContent = {
+            Switch(checked = checked, onCheckedChange = onCheckedChange)
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = modifier,
     )
 }

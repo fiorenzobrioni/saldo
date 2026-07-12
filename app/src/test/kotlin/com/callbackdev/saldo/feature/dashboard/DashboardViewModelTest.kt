@@ -13,6 +13,7 @@ import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
@@ -104,9 +105,11 @@ class DashboardViewModelTest {
         currencyOverride: Currency? = null,
         budgets: List<BudgetProgress> = emptyList(),
         safeToSpend: SafeToSpend? = null,
+        cardPrefs: DashboardCardPreferences = DashboardCardPreferences(),
     ): DashboardViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
+        every { userPreferences.dashboardCardPreferences } returns flowOf(cardPrefs)
         every { transactionRepository.observeDashboardTotals(any(), any()) } returns flowOf(totals)
         every { transactionRepository.observeRecentTransactions(any()) } returns flowOf(recent)
         every { transactionRepository.observePendingTransactions() } returns flowOf(emptyList<Transaction>())
@@ -181,6 +184,24 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `card visibility preferences flow into the ui state`() = runTest {
+        val prefs = DashboardCardPreferences(
+            showBudget = false,
+            showSafeToSpend = false,
+            showRecentTransactions = false,
+        )
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            cardPrefs = prefs,
+        )
+
+        viewModel.uiState.test {
+            assertEquals(prefs, awaitLoaded().cardPrefs)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `explicit currency override wins over the account plurality`() = runTest {
         val accounts = listOf(
             AccountWithBalance(account(1L, eur), BigDecimal("100.00")),
@@ -205,6 +226,7 @@ class DashboardViewModelTest {
             listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
         )
         every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
+        every { userPreferences.dashboardCardPreferences } returns flowOf(DashboardCardPreferences())
         every {
             transactionRepository.observeDashboardTotals(capture(windows), eur)
         } returns flowOf(DashboardTotals())

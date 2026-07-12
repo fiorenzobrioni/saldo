@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
@@ -74,6 +75,15 @@ class SettingsViewModel @Inject constructor(
                 initialValue = RenewalReminderPreferences(),
             )
 
+    /** Visibility of the optional dashboard cards. */
+    val dashboardCardPreferences: StateFlow<DashboardCardPreferences> =
+        userPreferences.dashboardCardPreferences
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                initialValue = DashboardCardPreferences(),
+            )
+
     /** Persists the primary-currency choice; null returns to automatic. */
     fun onPrimaryCurrencySelected(currency: Currency?) {
         viewModelScope.launch { userPreferences.setPrimaryCurrencyOverride(currency) }
@@ -102,6 +112,18 @@ class SettingsViewModel @Inject constructor(
 
     fun onRenewalLeadDaysSelected(days: Int) {
         viewModelScope.launch { userPreferences.setRenewalReminderLeadDays(days) }
+    }
+
+    fun onShowBudgetCardChanged(shown: Boolean) {
+        viewModelScope.launch { userPreferences.setShowBudgetCard(shown) }
+    }
+
+    fun onShowSafeToSpendChanged(shown: Boolean) {
+        viewModelScope.launch { userPreferences.setShowSafeToSpendCard(shown) }
+    }
+
+    fun onShowRecentTransactionsChanged(shown: Boolean) {
+        viewModelScope.launch { userPreferences.setShowRecentTransactions(shown) }
     }
 
     private companion object {

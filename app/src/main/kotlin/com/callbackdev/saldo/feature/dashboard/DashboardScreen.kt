@@ -150,7 +150,7 @@ private fun DashboardContent(
                 onManageAccounts = onManageAccounts,
             )
         }
-        uiState.safeToSpend?.let { safeToSpend ->
+        uiState.safeToSpend?.takeIf { uiState.cardPrefs.showSafeToSpend }?.let { safeToSpend ->
             item {
                 SafeToSpendCard(
                     safeToSpend = safeToSpend,
@@ -176,7 +176,7 @@ private fun DashboardContent(
                 )
             }
         }
-        if (uiState.budgets.isNotEmpty()) {
+        if (uiState.budgets.isNotEmpty() && uiState.cardPrefs.showBudget) {
             item { BudgetCard(budgets = uiState.budgets, onClick = onBudgetsClick) }
         }
         if (uiState.pendingCount > 0) {
@@ -189,22 +189,24 @@ private fun DashboardContent(
                 onClick = onRecurringClick,
             )
         }
-        item { RecentHeader(onSeeAll = onSeeAllTransactions) }
-        if (uiState.recent.isEmpty()) {
-            item {
-                Text(
-                    text = stringResource(R.string.dashboard_recent_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, top = 4.dp),
-                )
-            }
-        } else {
-            item {
-                RecentMovementsCard(
-                    items = uiState.recent,
-                    onItemClick = onTransactionClick,
-                )
+        if (uiState.cardPrefs.showRecentTransactions) {
+            item { RecentHeader(onSeeAll = onSeeAllTransactions) }
+            if (uiState.recent.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.dashboard_recent_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+                    )
+                }
+            } else {
+                item {
+                    RecentMovementsCard(
+                        items = uiState.recent,
+                        onItemClick = onTransactionClick,
+                    )
+                }
             }
         }
     }

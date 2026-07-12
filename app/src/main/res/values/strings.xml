@@ -631,4 +631,13 @@
     <string name="dashboard_sts_upcoming">Already committed before month end: %1$s</string>
     <string name="dashboard_sts_exhausted">This month\'s budget is used up</string>
     <string name="dashboard_sts_over_hint">Spending and upcoming charges exceed the monthly budget.</string>
+
+    <!-- Dashboard visibility settings -->
+    <string name="settings_section_dashboard">Dashboard</string>
+    <string name="settings_dashboard_show_sts">Safe to spend</string>
+    <string name="settings_dashboard_show_sts_hint">Show what you can still spend today (needs a monthly budget)</string>
+    <string name="settings_dashboard_show_budget">Budgets card</string>
+    <string name="settings_dashboard_show_budget_hint">Show the month\'s budget progress</string>
+    <string name="settings_dashboard_show_recent">Latest transactions</string>
+    <string name="settings_dashboard_show_recent_hint">Show the most recent transactions at the bottom</string>
 </resources>

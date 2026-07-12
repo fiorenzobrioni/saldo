@@ -14,6 +14,7 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
+import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
@@ -116,6 +117,8 @@ data class DashboardUiState(
     val budgets: List<BudgetProgress> = emptyList(),
     /** Safe-to-spend figure; null without an overall budget in the primary currency. */
     val safeToSpend: SafeToSpend? = null,
+    /** Which optional cards the user keeps visible (Settings > Dashboard). */
+    val cardPrefs: DashboardCardPreferences = DashboardCardPreferences(),
     val date: LocalDate = LocalDate.ofEpochDay(0),
     /** Greeting band and a stable [0,1) roll, both fixed once per app-open. */
     val greetingBand: GreetingBand = GreetingBand.MORNING,
@@ -184,7 +187,8 @@ class DashboardViewModel @Inject constructor(
                 sources,
                 observeBudgetProgress(primary),
                 observeSafeToSpend(primary),
-            ) { collapsed, budgets, safeToSpend ->
+                userPreferences.dashboardCardPreferences,
+            ) { collapsed, budgets, safeToSpend, cardPrefs ->
                 buildState(
                     accounts = accounts,
                     primary = primary,
@@ -192,6 +196,7 @@ class DashboardViewModel @Inject constructor(
                     sources = collapsed,
                     budgets = budgets,
                     safeToSpend = safeToSpend,
+                    cardPrefs = cardPrefs,
                 )
             }
         }
@@ -212,6 +217,7 @@ class DashboardViewModel @Inject constructor(
         sources: Sources,
         budgets: List<BudgetProgress>,
         safeToSpend: SafeToSpend?,
+        cardPrefs: DashboardCardPreferences,
     ): DashboardUiState {
         val active = accounts.filter { !it.account.isArchived }
         val totalBalance = active
@@ -251,6 +257,7 @@ class DashboardViewModel @Inject constructor(
             recent = recent,
             budgets = budgets,
             safeToSpend = safeToSpend,
+            cardPrefs = cardPrefs,
             date = today,
             greetingBand = greetingBand,
             greetingRoll = greetingRoll,
