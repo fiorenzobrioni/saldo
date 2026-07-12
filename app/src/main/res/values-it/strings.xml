@@ -609,4 +609,19 @@
     <string name="budgets_delete_dialog_body">I movimenti non vengono toccati; spariscono solo il tetto e i suoi avvisi.</string>
     <string name="settings_budgets">Budget</string>
     <string name="settings_budgets_hint">Tetti mensili e avvisi</string>
+
+    <!-- Budget notifications and dashboard card -->
+    <string name="dashboard_budget_title">Budget</string>
+    <string name="notif_channel_budget_name">Avvisi budget</string>
+    <string name="notif_budget_warning_title">%1$s: usato il %2$d%%</string>
+    <string name="notif_budget_exceeded_title">%1$s superato (%2$d%%)</string>
+    <string name="notif_budget_body">Spesi %1$s di %2$s</string>
+    <plurals name="notif_budget_warning_summary_title">
+        <item quantity="one">%d budget oltre l\'80%%</item>
+        <item quantity="other">%d budget oltre l\'80%%</item>
+    </plurals>
+    <plurals name="notif_budget_exceeded_summary_title">
+        <item quantity="one">%d budget superato</item>
+        <item quantity="other">%d budget superati</item>
+    </plurals>
 </resources>

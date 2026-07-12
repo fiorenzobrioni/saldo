@@ -108,6 +108,7 @@ fun SaldoApp() {
                         onSeeAllTransactions = { backStack.switchTopLevelTab(TransactionsRoute) },
                         onNavigateToRecurrences = { backStack.add(RecurrencesRoute) },
                         onNavigateToPending = { backStack.add(PendingMovementsRoute) },
+                        onNavigateToBudgets = { backStack.add(BudgetsRoute) },
                     )
                 }
                 entry<TransactionsRoute> {

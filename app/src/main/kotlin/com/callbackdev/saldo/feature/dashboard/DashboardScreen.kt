@@ -52,6 +52,7 @@ fun DashboardScreen(
     onSeeAllTransactions: () -> Unit,
     onNavigateToRecurrences: () -> Unit,
     onNavigateToPending: () -> Unit,
+    onNavigateToBudgets: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -93,6 +94,7 @@ fun DashboardScreen(
                     onTransactionClick = onNavigateToEditTransaction,
                     onRecurringClick = onNavigateToRecurrences,
                     onPendingClick = onNavigateToPending,
+                    onBudgetsClick = onNavigateToBudgets,
                 )
             }
 
@@ -124,6 +126,7 @@ private fun DashboardContent(
     onTransactionClick: (Long) -> Unit,
     onRecurringClick: () -> Unit,
     onPendingClick: () -> Unit,
+    onBudgetsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -163,6 +166,9 @@ private fun DashboardContent(
                     currency = uiState.primaryCurrency,
                 )
             }
+        }
+        if (uiState.budgets.isNotEmpty()) {
+            item { BudgetCard(budgets = uiState.budgets, onClick = onBudgetsClick) }
         }
         if (uiState.pendingCount > 0) {
             item { PendingConfirmationCard(count = uiState.pendingCount, onClick = onPendingClick) }
