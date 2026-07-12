@@ -438,6 +438,11 @@
     <!-- Shared editor feedback -->
     <string name="editor_write_failed">Operazione non riuscita. Riprova.</string>
 
+    <!-- Settings: preferences (Phase 9) -->
+    <string name="settings_section_preferences">Preferenze</string>
+    <string name="settings_primary_currency">Valuta principale</string>
+    <string name="settings_primary_currency_auto">Automatica (in base ai tuoi conti)</string>
+
     <!-- Settings: appearance -->
     <string name="settings_section_appearance">Aspetto</string>
     <string name="settings_section_notifications">Notifiche</string>

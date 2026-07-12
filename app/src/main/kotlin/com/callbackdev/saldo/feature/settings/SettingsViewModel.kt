@@ -11,13 +11,22 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Currency
 import javax.inject.Inject
 
-/** Drives the theme and notification choices in Settings; values apply live app-wide. */
+/** Drives the preference, theme and notification choices in Settings; values apply live app-wide. */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val userPreferences: UserPreferencesRepository,
 ) : ViewModel() {
+
+    /** The explicit primary currency; null shows as "Automatic". */
+    val primaryCurrencyOverride: StateFlow<Currency?> = userPreferences.primaryCurrencyOverride
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = null,
+        )
 
     val themePreferences: StateFlow<ThemePreferences> = userPreferences.themePreferences
         .stateIn(
@@ -33,6 +42,11 @@ class SettingsViewModel @Inject constructor(
                 started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
                 initialValue = RenewalReminderPreferences(),
             )
+
+    /** Persists the primary-currency choice; null returns to automatic. */
+    fun onPrimaryCurrencySelected(currency: Currency?) {
+        viewModelScope.launch { userPreferences.setPrimaryCurrencyOverride(currency) }
+    }
 
     fun onThemeModeSelected(mode: ThemeMode) {
         viewModelScope.launch { userPreferences.setThemeMode(mode) }

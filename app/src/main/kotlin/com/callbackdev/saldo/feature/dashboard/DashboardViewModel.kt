@@ -13,6 +13,7 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
@@ -116,6 +117,7 @@ data class DashboardUiState(
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     accountRepository: AccountRepository,
+    userPreferences: UserPreferencesRepository,
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val recurringRuleRepository: RecurringRuleRepository,
@@ -138,16 +140,21 @@ class DashboardViewModel @Inject constructor(
     )
 
     /**
-     * The account list drives the primary currency and the aggregate windows;
-     * every figure is then computed by the database ([DashboardWindows],
+     * The account list (plus the explicit Settings choice, when present)
+     * drives the primary currency and the aggregate windows; every figure is
+     * then computed by the database ([DashboardWindows],
      * [TransactionRepository.observeDashboardTotals]) instead of loading the
      * ledger in memory.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
-    val uiState: StateFlow<DashboardUiState> = accountRepository.observeAccountsWithBalance()
-        .flatMapLatest { accounts ->
+    val uiState: StateFlow<DashboardUiState> = combine(
+        accountRepository.observeAccountsWithBalance(),
+        userPreferences.primaryCurrencyOverride,
+        ::Pair,
+    )
+        .flatMapLatest { (accounts, currencyOverride) ->
             val today = LocalDate.now(clock)
-            val primary = accounts.primaryCurrency()
+            val primary = primaryCurrency(accounts, currencyOverride)
             combine(
                 transactionRepository.observeDashboardTotals(
                     windows = DashboardWindows.around(today, clock.zone),

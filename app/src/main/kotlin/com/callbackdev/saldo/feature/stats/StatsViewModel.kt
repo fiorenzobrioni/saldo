@@ -9,6 +9,7 @@ import com.callbackdev.saldo.core.domain.model.CategoryTotal
 import com.callbackdev.saldo.core.domain.model.MonthlyBalance
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -32,6 +33,7 @@ import javax.inject.Inject
 @HiltViewModel
 class StatsViewModel @Inject constructor(
     accountRepository: AccountRepository,
+    userPreferences: UserPreferencesRepository,
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val observeBalanceHistory: ObserveBalanceHistoryUseCase,
@@ -52,19 +54,21 @@ class StatsViewModel @Inject constructor(
     )
 
     /**
-     * The account list drives the primary currency; the period drives the ring
-     * and per-account windows. The trend charts always cover the last 12
-     * months. All aggregation happens in SQL; this only resolves names and
-     * shapes the rows for display.
+     * The account list (plus the explicit Settings choice, when present)
+     * drives the primary currency; the period drives the ring and per-account
+     * windows. The trend charts always cover the last 12 months. All
+     * aggregation happens in SQL; this only resolves names and shapes the
+     * rows for display.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<StatsUiState> = combine(
         accountRepository.observeAccountsWithBalance(),
         period,
-        ::Pair,
+        userPreferences.primaryCurrencyOverride,
+        ::Triple,
     )
-        .flatMapLatest { (accounts, activePeriod) ->
-            val currency = accounts.primaryCurrency()
+        .flatMapLatest { (accounts, activePeriod, currencyOverride) ->
+            val currency = primaryCurrency(accounts, currencyOverride)
             val zone = clock.zone
             val range = activePeriod.dateRange()
             val periodStart = range.start.atStartOfDay(zone).toInstant()

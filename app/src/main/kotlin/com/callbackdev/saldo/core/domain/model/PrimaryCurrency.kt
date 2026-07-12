@@ -23,3 +23,12 @@ fun List<AccountWithBalance>.primaryCurrency(): Currency = this
     .eachCount()
     .maxByOrNull { it.value }?.key
     ?: fallbackCurrency
+
+/**
+ * The primary currency honoring an explicit user choice (Settings or
+ * onboarding) over the automatic account-plurality rule. A null [override]
+ * means "automatic", which is also what existing installs get until they
+ * pick one.
+ */
+fun primaryCurrency(accounts: List<AccountWithBalance>, override: Currency?): Currency =
+    override ?: accounts.primaryCurrency()

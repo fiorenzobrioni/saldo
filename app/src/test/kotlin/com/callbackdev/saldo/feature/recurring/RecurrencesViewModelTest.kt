@@ -7,6 +7,7 @@ import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
@@ -34,6 +35,7 @@ class RecurrencesViewModelTest {
     private val recurringRuleRepository = mockk<RecurringRuleRepository>()
     private val accountRepository = mockk<AccountRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
+    private val userPreferences = mockk<UserPreferencesRepository>()
 
     private fun rule(
         id: Long,
@@ -79,11 +81,21 @@ class RecurrencesViewModelTest {
         LocalDate.of(2025, 1, 1), TransactionType.INCOME, endDate = LocalDate.of(2026, 1, 1),
     )
 
-    private fun viewModel(rules: List<RecurringRule>): RecurrencesViewModel {
+    private fun viewModel(
+        rules: List<RecurringRule>,
+        currencyOverride: Currency? = null,
+    ): RecurrencesViewModel {
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(emptyList<AccountWithBalance>())
         every { categoryRepository.observeCategories() } returns flowOf(emptyList<Category>())
-        return RecurrencesViewModel(recurringRuleRepository, accountRepository, categoryRepository, clock)
+        every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
+        return RecurrencesViewModel(
+            recurringRuleRepository,
+            accountRepository,
+            categoryRepository,
+            userPreferences,
+            clock,
+        )
     }
 
     private suspend fun ReceiveTurbine<RecurrencesUiState>.awaitLoaded(): RecurrencesUiState {
@@ -103,6 +115,24 @@ class RecurrencesViewModelTest {
             // 12.99 + 9.99 + (96.00 / 6) = 38.98
             assertEquals(BigDecimal("38.98"), state.expenses.monthlyTotal)
             assertEquals(BigDecimal("467.76"), state.expenses.annualProjection)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `explicit currency override scopes the section totals over the item majority`() = runTest {
+        val usd = Currency.getInstance("USD")
+        val viewModel = viewModel(listOf(netflix, spotify), currencyOverride = usd)
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            // All rules are EUR: with a USD override the section stays in USD
+            // (consistent with dashboard and stats) and totals nothing.
+            assertEquals(usd, state.expenses.currency)
+            assertEquals(BigDecimal.ZERO, state.expenses.monthlyTotal)
+            assertEquals(0, state.expenses.activeCount)
+            // The rules themselves are still listed, each in its own currency.
+            assertEquals(2, state.expenses.items.size)
             cancelAndIgnoreRemainingEvents()
         }
     }

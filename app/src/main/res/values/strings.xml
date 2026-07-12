@@ -430,6 +430,11 @@
     <string name="editor_write_failed">Something went wrong. Please try again.</string>
     <string name="editor_amount_placeholder" translatable="false">0</string>
 
+    <!-- Settings: preferences (Phase 9) -->
+    <string name="settings_section_preferences">Preferences</string>
+    <string name="settings_primary_currency">Main currency</string>
+    <string name="settings_primary_currency_auto">Automatic (based on your accounts)</string>
+
     <!-- Settings: appearance and notifications -->
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_section_notifications">Notifications</string>

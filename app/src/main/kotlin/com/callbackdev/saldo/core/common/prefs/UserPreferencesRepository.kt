@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.util.Currency
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -64,6 +65,27 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setLastUsedAccountId(accountId: Long) {
         dataStore.edit { preferences -> preferences[LAST_USED_ACCOUNT_ID] = accountId }
+    }
+
+    /**
+     * The user-chosen primary currency; null means automatic (the currency
+     * shared by most accounts included in the total). Stored as an ISO 4217
+     * code; an invalid stored code reads back as automatic.
+     */
+    val primaryCurrencyOverride: Flow<Currency?> = dataStore.data.map { preferences ->
+        preferences[PRIMARY_CURRENCY_CODE]?.let { code ->
+            runCatching { Currency.getInstance(code) }.getOrNull()
+        }
+    }
+
+    suspend fun setPrimaryCurrencyOverride(currency: Currency?) {
+        dataStore.edit { preferences ->
+            if (currency == null) {
+                preferences.remove(PRIMARY_CURRENCY_CODE)
+            } else {
+                preferences[PRIMARY_CURRENCY_CODE] = currency.currencyCode
+            }
+        }
     }
 
     val themePreferences: Flow<ThemePreferences> = dataStore.data.map { preferences ->
@@ -127,6 +149,7 @@ class UserPreferencesRepository @Inject constructor(
 
     private companion object {
         val LAST_USED_ACCOUNT_ID = longPreferencesKey("last_used_account_id")
+        val PRIMARY_CURRENCY_CODE = stringPreferencesKey("primary_currency_code")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         val RENEWAL_REMINDER_ENABLED = booleanPreferencesKey("renewal_reminder_enabled")
