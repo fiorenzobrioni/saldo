@@ -624,4 +624,14 @@
         <item quantity="one">%d budget superato</item>
         <item quantity="other">%d budget superati</item>
     </plurals>
+
+    <!-- Safe to spend -->
+    <string name="dashboard_sts_title">Spendibile oggi</string>
+    <plurals name="dashboard_sts_month_left">
+        <item quantity="one">Ancora %1$s per oggi</item>
+        <item quantity="other">Ancora %1$s per i prossimi %2$d giorni</item>
+    </plurals>
+    <string name="dashboard_sts_upcoming">Già impegnati entro fine mese: %1$s</string>
+    <string name="dashboard_sts_exhausted">Budget del mese esaurito</string>
+    <string name="dashboard_sts_over_hint">Spese e addebiti in arrivo superano il budget mensile.</string>
 </resources>

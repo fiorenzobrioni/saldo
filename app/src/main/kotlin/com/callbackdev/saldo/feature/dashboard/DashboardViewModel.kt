@@ -20,6 +20,8 @@ import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
+import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -112,6 +114,8 @@ data class DashboardUiState(
     val recent: List<TransactionListItem> = emptyList(),
     /** Budget progress in the primary currency, overall first (empty: no budgets set). */
     val budgets: List<BudgetProgress> = emptyList(),
+    /** Safe-to-spend figure; null without an overall budget in the primary currency. */
+    val safeToSpend: SafeToSpend? = null,
     val date: LocalDate = LocalDate.ofEpochDay(0),
     /** Greeting band and a stable [0,1) roll, both fixed once per app-open. */
     val greetingBand: GreetingBand = GreetingBand.MORNING,
@@ -127,6 +131,7 @@ class DashboardViewModel @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val recurringRuleRepository: RecurringRuleRepository,
     private val observeBudgetProgress: ObserveBudgetProgressUseCase,
+    private val observeSafeToSpend: ObserveSafeToSpendUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -178,13 +183,15 @@ class DashboardViewModel @Inject constructor(
             combine(
                 sources,
                 observeBudgetProgress(primary),
-            ) { collapsed, budgets ->
+                observeSafeToSpend(primary),
+            ) { collapsed, budgets, safeToSpend ->
                 buildState(
                     accounts = accounts,
                     primary = primary,
                     today = today,
                     sources = collapsed,
                     budgets = budgets,
+                    safeToSpend = safeToSpend,
                 )
             }
         }
@@ -204,6 +211,7 @@ class DashboardViewModel @Inject constructor(
         today: LocalDate,
         sources: Sources,
         budgets: List<BudgetProgress>,
+        safeToSpend: SafeToSpend?,
     ): DashboardUiState {
         val active = accounts.filter { !it.account.isArchived }
         val totalBalance = active
@@ -242,6 +250,7 @@ class DashboardViewModel @Inject constructor(
             pendingCount = sources.pendingCount,
             recent = recent,
             budgets = budgets,
+            safeToSpend = safeToSpend,
             date = today,
             greetingBand = greetingBand,
             greetingRoll = greetingRoll,

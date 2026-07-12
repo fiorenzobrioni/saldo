@@ -150,6 +150,15 @@ private fun DashboardContent(
                 onManageAccounts = onManageAccounts,
             )
         }
+        uiState.safeToSpend?.let { safeToSpend ->
+            item {
+                SafeToSpendCard(
+                    safeToSpend = safeToSpend,
+                    currency = uiState.primaryCurrency,
+                    onClick = onBudgetsClick,
+                )
+            }
+        }
         item {
             PeriodCardsRow(
                 date = uiState.date,

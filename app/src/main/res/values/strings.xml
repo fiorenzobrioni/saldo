@@ -621,4 +621,14 @@
         <item quantity="one">%d budget exceeded</item>
         <item quantity="other">%d budgets exceeded</item>
     </plurals>
+
+    <!-- Safe to spend -->
+    <string name="dashboard_sts_title">Safe to spend today</string>
+    <plurals name="dashboard_sts_month_left">
+        <item quantity="one">%1$s left for today</item>
+        <item quantity="other">%1$s left for the next %2$d days</item>
+    </plurals>
+    <string name="dashboard_sts_upcoming">Already committed before month end: %1$s</string>
+    <string name="dashboard_sts_exhausted">This month\'s budget is used up</string>
+    <string name="dashboard_sts_over_hint">Spending and upcoming charges exceed the monthly budget.</string>
 </resources>

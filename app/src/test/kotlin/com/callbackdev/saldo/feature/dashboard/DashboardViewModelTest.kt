@@ -20,6 +20,8 @@ import com.callbackdev.saldo.core.domain.model.BudgetProgress
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
+import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.every
 import io.mockk.mockk
@@ -58,6 +60,7 @@ class DashboardViewModelTest {
     private val categoryRepository = mockk<CategoryRepository>()
     private val recurringRuleRepository = mockk<RecurringRuleRepository>()
     private val observeBudgetProgress = mockk<ObserveBudgetProgressUseCase>()
+    private val observeSafeToSpend = mockk<ObserveSafeToSpendUseCase>()
 
     private fun account(
         id: Long,
@@ -100,6 +103,7 @@ class DashboardViewModelTest {
         rules: List<RecurringRule> = emptyList(),
         currencyOverride: Currency? = null,
         budgets: List<BudgetProgress> = emptyList(),
+        safeToSpend: SafeToSpend? = null,
     ): DashboardViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
@@ -109,6 +113,7 @@ class DashboardViewModelTest {
         every { categoryRepository.observeCategories() } returns flowOf(categories)
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
         every { observeBudgetProgress(any()) } returns flowOf(budgets)
+        every { observeSafeToSpend(any()) } returns flowOf(safeToSpend)
         return DashboardViewModel(
             accountRepository,
             userPreferences,
@@ -116,6 +121,7 @@ class DashboardViewModelTest {
             categoryRepository,
             recurringRuleRepository,
             observeBudgetProgress,
+            observeSafeToSpend,
             clock,
         )
     }
@@ -207,6 +213,7 @@ class DashboardViewModelTest {
         every { categoryRepository.observeCategories() } returns flowOf(emptyList())
         every { recurringRuleRepository.observeRules() } returns flowOf(emptyList())
         every { observeBudgetProgress(any()) } returns flowOf(emptyList())
+        every { observeSafeToSpend(any()) } returns flowOf(null)
         val viewModel = DashboardViewModel(
             accountRepository,
             userPreferences,
@@ -214,6 +221,7 @@ class DashboardViewModelTest {
             categoryRepository,
             recurringRuleRepository,
             observeBudgetProgress,
+            observeSafeToSpend,
             clock,
         )
 
