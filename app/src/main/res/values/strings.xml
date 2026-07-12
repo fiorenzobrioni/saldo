@@ -207,6 +207,11 @@
     <string name="stats_total_spent_label">Total spent in the period</string>
     <string name="stats_no_data_period">No data for this period.</string>
     <string name="stats_view_movements">View transactions for %1$s</string>
+    <!-- Chart summaries for screen readers (the charts draw on a silent canvas). -->
+    <string name="stats_chart_ring_a11y">Donut chart of expenses by category. The details are in the list below.</string>
+    <string name="stats_chart_trend_a11y">Bar chart of the last 12 months\' expenses. Tap a column to select a month.</string>
+    <string name="stats_chart_income_expense_a11y">Bar chart of monthly income and expenses over the last 12 months. Tap a column to select a month.</string>
+    <string name="stats_chart_balance_a11y">Line chart of the total balance over the last 12 months.</string>
     <string name="stats_percent" translatable="false">%1$d%%</string>
 
     <!-- Transaction editor (Phase 3) -->

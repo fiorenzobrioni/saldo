@@ -113,6 +113,7 @@ fun StatsScreen(
                                     uiState.currency,
                                 ),
                                 centerLabel = stringResource(R.string.stats_total_spent_label),
+                                chartDescription = stringResource(R.string.stats_chart_ring_a11y),
                             )
                         },
                         onSliceClick = { slice ->
@@ -180,6 +181,7 @@ private fun ExpenseTrendCard(
             ),
             monthLabels = monthLabels(uiState),
             currency = uiState.currency,
+            chartDescription = stringResource(R.string.stats_chart_trend_a11y),
             onSelectedIndexChange = { selectedIndex = it },
         )
         MonthDrillDownButton(
@@ -221,6 +223,7 @@ private fun IncomeExpenseCard(
             ),
             monthLabels = monthLabels(uiState),
             currency = uiState.currency,
+            chartDescription = stringResource(R.string.stats_chart_income_expense_a11y),
             onSelectedIndexChange = { selectedIndex = it },
         )
         Spacer(Modifier.height(8.dp))
@@ -301,6 +304,7 @@ private fun BalanceHistoryCard(uiState: StatsUiState, modifier: Modifier = Modif
                     uiState.balanceHistory.map { monthInitial(it.month, locale) }
                 },
                 currency = uiState.currency,
+                chartDescription = stringResource(R.string.stats_chart_balance_a11y),
             )
         }
     }

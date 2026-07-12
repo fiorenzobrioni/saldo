@@ -17,6 +17,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
@@ -82,6 +84,7 @@ internal fun MonthlyBarsChart(
     series: List<BarSeries>,
     monthLabels: List<String>,
     currency: Currency,
+    chartDescription: String,
     modifier: Modifier = Modifier,
     onSelectedIndexChange: ((Int?) -> Unit)? = null,
 ) {
@@ -124,7 +127,9 @@ internal fun MonthlyBarsChart(
             scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End),
             modifier = modifier
                 .fillMaxWidth()
-                .height(CHART_HEIGHT),
+                .height(CHART_HEIGHT)
+                // The chart draws on a silent canvas: give TalkBack a summary.
+                .semantics { contentDescription = chartDescription },
         )
     }
 }
@@ -157,6 +162,7 @@ internal fun BalanceLineChart(
     valuesMinor: List<Long>,
     monthLabels: List<String>,
     currency: Currency,
+    chartDescription: String,
     modifier: Modifier = Modifier,
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
@@ -193,7 +199,9 @@ internal fun BalanceLineChart(
             scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End),
             modifier = modifier
                 .fillMaxWidth()
-                .height(CHART_HEIGHT),
+                .height(CHART_HEIGHT)
+                // The chart draws on a silent canvas: give TalkBack a summary.
+                .semantics { contentDescription = chartDescription },
         )
     }
 }
@@ -208,6 +216,7 @@ internal fun CategoryDonut(
     slices: List<CategorySlice>,
     centerAmount: String,
     centerLabel: String,
+    chartDescription: String,
     modifier: Modifier = Modifier,
 ) {
     val modelProducer = remember { PieChartModelProducer() }
@@ -232,7 +241,11 @@ internal fun CategoryDonut(
                 innerSize = PieSize.Inner.fixed(DONUT_HOLE),
             ),
             modelProducer = modelProducer,
-            modifier = Modifier.fillMaxWidth().height(DONUT_HEIGHT),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(DONUT_HEIGHT)
+                // The ring draws on a silent canvas: point TalkBack to the list.
+                .semantics { contentDescription = chartDescription },
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
