@@ -14,6 +14,29 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-12 - Fase 9 completata: impostazioni, onboarding, i18n, accessibilità, performance (+ fix marker grafici)
+
+**Fatto:** fase implementata in 8 step, un commit per step, gate `assembleDebug testDebugUnitTest lint detekt` verde per ognuno.
+
+- **Fix marker grafici** (0.8.8): nei grafici "Spese" ed "Entrate e uscite" il bottone "Vedi i movimenti di <mese>" spariva al rilascio del dito, perché Vico nasconde il marker al touch-up e il listener azzerava la selezione in `onHidden`. Ora la selezione resta e il bottone è cliccabile. Segnalato dall'utente, aggiunto ai bug conosciuti già spuntato.
+- **Valuta principale** (0.8.9): preferenza esplicita in Impostazioni > Preferenze che sovrascrive la regola a maggioranza; assente = automatica (retrocompatibile). Consumata in modo uniforme da dashboard, statistiche e hub ricorrenze. Lista valute estratta in `CurrencyCatalog` condiviso (editor conti, Impostazioni, onboarding).
+- **Conto predefinito** (0.8.10): preselezione dell'editor movimenti con ordine default esplicito -> ultimo usato -> primo attivo; default archiviato/eliminato ignorato.
+- **Primo giorno settimana + preset "Questa settimana"** (0.8.11): segmented Lun/Sab/Dom, default dalla locale (coercizione a Lunedì per locale non offerte, es. venerdì); il preset nel registro è il primo consumatore reale. `dateRange`/`matches` del motore filtri prendono il week start come input esplicito e restano funzioni pure testate (confini di mese/anno, oggi = primo giorno).
+- **Onboarding premium** (0.8.12): 5 pagine con `HorizontalPager` (benvenuto, privacy, valuta, primo conto, notifiche), avanzamento solo via CTA, back di sistema torna indietro di pagina, copy caldo e non tecnico IT+EN. Il primo conto si crea inline (nome prefill + saldo, `MoneyInput`); "Ho già un backup di Saldo" riusa `ImportBackupUseCase` con conferma amichevole e salta la creazione conto. Gate in `MainViewModel`: flag `onboarding_completed`; se assente ma il DB ha conti (installazione esistente) viene marcato in silenzio e si apre l'app; qualunque errore di lettura apre l'app. Rimosso il cold-ask del permesso notifiche all'avvio: ora è chiesto solo in contesto (pagina onboarding, o attivando il radar rinnovi in Impostazioni). Non ripristinare il cold-ask.
+- **Revisione stringhe + audit stati** (0.8.13): IT uniformato su "conto/conti" per l'entità (il misto account/conto stonava e "account" in italiano evoca la registrazione online, in conflitto con "senza registrazione"); EN uniformato su "transaction" dove compariva "movement". Parità chiavi verificata (le sole differenze sono `translatable="false"`), nessuna stringa hardcoded. Empty/loading già coperti ovunque; aggiunta la gestione errori di scrittura (snackbar riutilizzando `editor_write_failed`) alle azioni dei list screen che prima potevano crashare su un errore Room: conti (archivia/ripristina/elimina/rettifica), registro (elimina/undo), da confermare (conferma/salta), riordino categorie (silenzioso: la lista torna all'ordine persistito).
+- **Accessibilità** (0.8.14): riassunti TalkBack sui 4 grafici Vico (canvas muto) via `semantics`; `EditorSaveButton` e CTA onboarding a `heightIn(min)` per il font scaling 200%; audit contentDescription (tutti gli interattivi a sola icona coperti), segni espliciti accanto ai colori del denaro, merge semantico delle righe cliccabili. Verifica manuale TalkBack/200% su device: pending.
+- **Performance + chiusura** (0.9.0): registro appiattito da un item monolitico per giorno a item lazy per riga con key/contentType stabili; l'aspetto a card raggruppata è ricostruito con forme a segmento (prima/ultima riga arrotondate) e il clip contiene anche lo sfondo dello swipe-delete. Conti/categorie/ricorrenze restano a card unica (liste corte, non serve). Paging3 non introdotto: filtri e ricerca sono in-memory per design; baseline profile spostato in Fase 10.
+
+**Decisioni:** vedi sopra (override valuta con fallback a maggioranza; ordine di preselezione conto; coercizione week start; gate onboarding fail-open; permesso notifiche solo contestuale; terminologia IT "conto"; niente Paging3; baseline profile in Fase 10 - concordato con l'utente).
+
+**Problemi:** Vico non offre una selezione persistente nativa (marker legato al gesto), risolto tenendo l'ultimo indice lato app. MockK non intercetta i default argument (`GenerateRecurringMovementsUseCase()` esplodeva sul `clock` del mock): l'onboarding passa `today` esplicito. Detekt: soppressioni motivate per `LongParameterList`/`TooManyFunctions` seguendo lo stile del progetto.
+
+**Verifica:** unit test JVM nuovi/estesi: `MainViewModelTest` (gate), `OnboardingViewModelTest` (conto, restore, doppio tap), `TransactionFilterEngineTest` (settimana), override valuta in Dashboard/Stats/RecurrencesViewModelTest, preselezione in TransactionEditorViewModelTest. Da verificare su device: onboarding da APK pulito, update in place senza onboarding, bottone drill-down, preset "Questa settimana", TalkBack/200%, resa visiva del registro a segmenti.
+
+**Prossimo:** Fase 10 (release v1.0): QA manuale, baseline profile, icona/screenshot/scheda Play Store, privacy policy, firma release.
+
+---
+
 ## 2026-07-11 - Icona app: iterazioni e design definitivo (portafoglio bicolore)
 
 **Fatto:**

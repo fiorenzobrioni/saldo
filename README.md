@@ -19,19 +19,21 @@ Un'app Android moderna, offline-first e privacy-first per il tracciamento delle 
 
 ## Cos'è Saldo
 
-Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a monitorare spese ed entrate, tenere sotto controllo il saldo dei propri account (conto, carte, contanti, wallet) e capire le proprie abitudini di spesa. Nessun collegamento ai conti bancari, nessun backend, nessun account obbligatorio: **i dati restano sul dispositivo**.
+Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a monitorare spese ed entrate, tenere sotto controllo il saldo dei propri conti (banca, carte, contanti, wallet) e capire le proprie abitudini di spesa. Nessun collegamento ai conti bancari, nessun backend, nessuna registrazione: **i dati restano sul dispositivo**.
 
 ## Funzionalità (v1.0)
 
+- 👋 **Onboarding al primo avvio** - benvenuto, scelta della valuta, primo conto e, per chi torna, ripristino diretto da un backup
 - 📊 **Dashboard "Oggi"** - saldo totale, spese del giorno e del mese, ultimi movimenti: tutto in 5 secondi
-- 💸 **Movimenti** - spese, entrate e trasferimenti tra account, registrabili in 2-3 tap
-- 🏦 **Account multipli** - con saldo iniziale, rettifica saldo e archiviazione
+- 💸 **Movimenti** - spese, entrate e trasferimenti tra conti, registrabili in 2-3 tap
+- 🏦 **Conti multipli** - con saldo iniziale, rettifica saldo e archiviazione
 - 🔁 **Movimenti ricorrenti** - uscite ricorrenti (abbonamenti, affitto, assicurazioni) ed entrate ricorrenti (stipendio, affitti attivi) con registrazione automatica o con conferma, hub dedicato con totale mensile e proiezione annua per tab, notifica di pre-rinnovo opzionale ("Netflix si rinnova tra 3 giorni") con anticipo configurabile
 - 🏷️ **Categorie e tag personalizzabili**
-- 🔍 **Ricerca e filtri combinabili** con totale della vista filtrata
+- 🔍 **Ricerca e filtri combinabili** con totale della vista filtrata e preset rapidi (inclusa "Questa settimana", che rispetta il primo giorno scelto)
 - 📈 **Statistiche** - spese per categoria, trend mensile, entrate vs uscite, andamento saldo
 - 🌍 **Multi-valuta** - ogni movimento conserva importo e valuta originali
 - 🎨 **Tema personalizzabile** - chiaro/scuro/sistema, palette dell'app o colori dinamici Material You
+- ⚙️ **Preferenze** - valuta principale (automatica o esplicita), conto predefinito per i nuovi movimenti, primo giorno della settimana
 - 💾 **Backup e ripristino su file** - export JSON versionato dove vuoi tu (nessun account richiesto), ripristino guidato con anteprima del contenuto - più **export CSV** dei movimenti filtrati, condivisibile
 - 🇮🇹 🇬🇧 Italiano e inglese
 
@@ -90,13 +92,14 @@ app/src/main/kotlin/com/callbackdev/saldo/
 │   ├── designsystem/    # tema Material 3, componenti UI condivisi
 │   └── domain/          # modelli e logica di dominio (da Fase 1)
 ├── feature/
-│   ├── accounts/        # account: lista, editor, rettifica saldo (da Fase 2)
+│   ├── accounts/        # conti: lista, editor, rettifica saldo (da Fase 2)
 │   ├── categories/      # categorie: tab spese/entrate, editor, riordino drag (da Fase 4)
 │   ├── dashboard/       # schermata "Oggi": saldo, oggi/mese, ultimi movimenti, FAB (da Fase 5)
 │   ├── transactions/    # movimenti: lista per giorno, ricerca e filtri, editor (da Fase 3)
 │   ├── recurring/       # movimenti ricorrenti: hub uscite/entrate, editor, motore (da Fase 6)
 │   ├── stats/           # statistiche: grafici Vico, periodo, drill-down (da Fase 7)
 │   ├── backup/          # backup su file: export e ripristino guidato (da Fase 8)
+│   ├── onboarding/      # primo avvio: benvenuto, valuta, primo conto, notifiche (da Fase 9)
 │   ├── settings/        # impostazioni
 │   └── about/           # schermata informazioni: versione, licenza, librerie
 └── navigation/          # route NavKey, scaffold, bottom bar

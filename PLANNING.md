@@ -172,10 +172,11 @@
 - [x] Revisione completa stringhe IT + EN (IT: entità uniformata su "conto/conti" al posto del misto account/conto; EN: uniformata su "transaction" al posto del misto movement/transaction; parità chiavi verificata, nessuna stringa hardcoded)
 - [x] Pass di accessibilità: contentDescription verificate su tutti gli interattivi a sola icona; riassunti TalkBack sui 4 grafici Vico (canvas muto); CTA editor/onboarding a `heightIn(min)` per il font scaling; spese/entrate distinte da segno esplicito (`formatSigned`) oltre che dal colore; righe cliccabili con merge semantico automatico. Verifica manuale TalkBack/200% su device: pending (nessun emulatore in questo ambiente)
 - [x] Empty state e stati di errore su tutte le schermate (audit: empty/loading già coperti ovunque; aggiunta gestione errori di scrittura con snackbar a conti (archivia/elimina/rettifica), registro (elimina/undo), da confermare (conferma/salta) e riordino categorie, che prima potevano crashare su un errore Room)
-- [ ] Performance: baseline profile, lista movimenti fluida con migliaia di record (paging se necessario)
+- [x] Performance: registro appiattito in item lazy per riga (prima un item monolitico per giorno) con key e contentType stabili su header/righe/spaziatori, così con migliaia di record compongono e riciclano solo le righe visibili; l'aspetto a card raggruppata è preservato con forme a segmento. Paging3 non introdotto: il motore filtri e la ricerca full-text sono in-memory per design (un solo code path), da rivalutare solo se una misurazione su device con migliaia di record mostrasse problemi. Baseline profile spostato in Fase 10 (richiede modulo macrobenchmark e run su device, non disponibile in questo ambiente)
 
 ## Fase 10 - Release v1.0
 
+- [ ] Baseline profile (spostato dalla Fase 9: richiede modulo macrobenchmark e generazione su device/emulatore)
 - [ ] QA manuale end-to-end (checklist dei flussi principali)
 - [ ] Test su device reali: API 33 e ultimo Android stabile, tablet/schermi grandi (almeno layout non rotto)
 - [ ] Icona app, screenshot, scheda Play Store

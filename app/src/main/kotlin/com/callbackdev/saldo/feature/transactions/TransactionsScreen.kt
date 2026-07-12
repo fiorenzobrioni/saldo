@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,14 +14,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -44,6 +43,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -277,6 +278,13 @@ private suspend fun handleTransactionsEvent(
     }
 }
 
+/**
+ * The register as flat lazy items (one per row, not one per day): with
+ * thousands of movements only the visible rows compose and recycle, and the
+ * day headers, rows and spacers each get a stable key and contentType. The
+ * per-row segment shapes recompose the grouped-card look of the old
+ * one-card-per-day layout.
+ */
 @Composable
 private fun TransactionsList(
     days: List<TransactionDayGroup>,
@@ -289,54 +297,73 @@ private fun TransactionsList(
         modifier = modifier,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
     ) {
-        items(days, key = { it.date }) { day ->
-            Column(
-                modifier = Modifier
-                    .animateItem()
-                    .padding(bottom = SaldoDimens.cardSpacing),
-            ) {
-                DayHeader(day = day, today = today)
-                Spacer(Modifier.height(6.dp))
-                DayCard(
-                    items = day.items,
-                    onItemClick = onItemClick,
-                    onItemDelete = onItemDelete,
+        days.forEach { day ->
+            item(key = "header-${day.date}", contentType = "day-header") {
+                Column(modifier = Modifier.animateItem()) {
+                    DayHeader(day = day, today = today)
+                    Spacer(Modifier.height(6.dp))
+                }
+            }
+            itemsIndexed(
+                items = day.items,
+                key = { _, item -> item.id },
+                contentType = { _, _ -> "transaction" },
+            ) { index, item ->
+                TransactionSegment(
+                    item = item,
+                    isFirst = index == 0,
+                    isLast = index == day.items.lastIndex,
+                    onClick = { onItemClick(item) },
+                    onDelete = { onItemDelete(item) },
+                    modifier = Modifier.animateItem(),
                 )
+            }
+            item(key = "spacer-${day.date}", contentType = "day-spacer") {
+                Spacer(Modifier.height(SaldoDimens.cardSpacing))
             }
         }
     }
 }
 
-/** All of a day's movements in a single grouped card, split by hairline dividers. */
+/**
+ * One movement row drawn as a segment of its day's card: the first row rounds
+ * the top corners, the last the bottom ones, and a hairline divider separates
+ * consecutive rows. The clip also bounds the swipe-delete background.
+ */
 @Composable
-private fun DayCard(
-    items: List<TransactionListItem>,
-    onItemClick: (TransactionListItem) -> Unit,
-    onItemDelete: (TransactionListItem) -> Unit,
+private fun TransactionSegment(
+    item: TransactionListItem,
+    isFirst: Boolean,
+    isLast: Boolean,
+    onClick: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
+    val cardShape = MaterialTheme.shapes.large
+    val square = CornerSize(0.dp)
+    val shape = when {
+        isFirst && isLast -> cardShape
+        isFirst -> cardShape.copy(bottomStart = square, bottomEnd = square)
+        isLast -> cardShape.copy(topStart = square, topEnd = square)
+        else -> RectangleShape
+    }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(MaterialTheme.colorScheme.surfaceContainer),
     ) {
-        Column(modifier = Modifier.animateContentSize()) {
-            items.forEachIndexed { index, item ->
-                if (index > 0) {
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                }
-                SwipeableTransactionRow(
-                    item = item,
-                    onClick = { onItemClick(item) },
-                    onDelete = { onItemDelete(item) },
-                )
-            }
+        if (!isFirst) {
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
         }
+        SwipeableTransactionRow(
+            item = item,
+            onClick = onClick,
+            onDelete = onDelete,
+        )
     }
 }
 
