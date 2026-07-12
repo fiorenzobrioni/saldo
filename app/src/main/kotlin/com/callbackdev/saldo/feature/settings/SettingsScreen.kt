@@ -1,5 +1,9 @@
 package com.callbackdev.saldo.feature.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,10 +48,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.BuildConfig
@@ -136,13 +142,31 @@ fun SettingsScreen(
             )
 
             SettingsSectionHeader(stringResource(R.string.settings_section_notifications))
+            // The permission is asked contextually here (and in onboarding), never
+            // cold at launch: turning the reminder on is the moment it makes sense.
+            val context = LocalContext.current
+            val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission(),
+            ) { /* the reminder stays on either way; a denial just mutes it */ }
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_renewal_reminder)) },
                 supportingContent = { Text(stringResource(R.string.settings_renewal_reminder_hint)) },
                 trailingContent = {
                     Switch(
                         checked = renewalReminder.enabled,
-                        onCheckedChange = viewModel::onRenewalReminderChanged,
+                        onCheckedChange = { enabled ->
+                            viewModel.onRenewalReminderChanged(enabled)
+                            if (enabled) {
+                                val granted = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.POST_NOTIFICATIONS,
+                                ) == PackageManager.PERMISSION_GRANTED
+                                if (!granted) {
+                                    notificationPermissionLauncher
+                                        .launch(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            }
+                        },
                     )
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),

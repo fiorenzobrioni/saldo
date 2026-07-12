@@ -158,6 +158,18 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+    /**
+     * Whether the first-launch onboarding has been completed. Null means the
+     * key was never written: a fresh install, or an install that predates the
+     * flag (told apart by whether any account exists).
+     */
+    val onboardingCompleted: Flow<Boolean?> =
+        dataStore.data.map { preferences -> preferences[ONBOARDING_COMPLETED] }
+
+    suspend fun setOnboardingCompleted() {
+        dataStore.edit { preferences -> preferences[ONBOARDING_COMPLETED] = true }
+    }
+
     /** First day of the week for the "This week" filter; defaults from the locale. */
     val firstDayOfWeek: Flow<DayOfWeek> = dataStore.data.map { preferences ->
         preferences[FIRST_DAY_OF_WEEK]
@@ -204,6 +216,7 @@ class UserPreferencesRepository @Inject constructor(
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         val RENEWAL_REMINDER_ENABLED = booleanPreferencesKey("renewal_reminder_enabled")
         val RENEWAL_REMINDER_LEAD_DAYS = intPreferencesKey("renewal_reminder_lead_days")
+        val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val FIRST_DAY_OF_WEEK = stringPreferencesKey("first_day_of_week")
         val LAST_BACKUP_AT_EPOCH_MILLI = longPreferencesKey("last_backup_at_epoch_milli")
         val CSV_SEPARATOR = stringPreferencesKey("csv_separator")

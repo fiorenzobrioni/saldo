@@ -541,4 +541,34 @@
         <item>Charts</item>
     </string-array>
     <string name="about_libraries_footer">Plus Google\'s Android Jetpack and Material Design libraries.</string>
+
+    <!-- Onboarding (Phase 9) -->
+    <string name="onboarding_welcome_title">Hi! I\'m Saldo</string>
+    <string name="onboarding_welcome_body">Your money, finally clear. Expenses, income and subscriptions under control in a few taps — no bank logins, no sign-up, no fuss.</string>
+    <string name="onboarding_welcome_cta">Let\'s get started</string>
+    <string name="onboarding_privacy_title">Your data stays with you</string>
+    <string name="onboarding_privacy_body">Everything lives on your phone and nowhere else. No cloud, no tracking — Saldo works even in airplane mode. Want a copy? You can export a backup whenever you like.</string>
+    <string name="onboarding_privacy_cta">Sounds good</string>
+    <string name="onboarding_currency_title">Pick your currency</string>
+    <string name="onboarding_currency_body">The one you use every day. You can change it anytime in Settings — promise.</string>
+    <string name="onboarding_currency_cta">Continue</string>
+    <string name="onboarding_account_title">Where does your money live?</string>
+    <string name="onboarding_account_body">Create your first account: your bank account, your wallet, wherever you keep it. Tell us what\'s in it right now and we\'ll take it from here.</string>
+    <string name="onboarding_account_name_label">Account name</string>
+    <string name="onboarding_account_default_name">Checking account</string>
+    <string name="onboarding_account_balance_label">What\'s in it today</string>
+    <string name="onboarding_account_balance_hint">Even zero is perfectly fine</string>
+    <string name="onboarding_account_cta">Create my account</string>
+    <string name="onboarding_account_skip">I\'ll do it later</string>
+    <string name="onboarding_account_restore">I already have a Saldo backup</string>
+    <string name="onboarding_restore_title">Welcome back!</string>
+    <string name="onboarding_restore_body">We found a backup from %1$s. Want to bring everything back just the way it was?</string>
+    <string name="onboarding_restore_confirm">Restore everything</string>
+    <string name="onboarding_restore_cancel">Not this file</string>
+    <string name="onboarding_restore_done">All set — everything is back where it was.</string>
+    <string name="onboarding_notifications_title">A nudge at the right time</string>
+    <string name="onboarding_notifications_body">Saldo can remind you before a subscription renews and when a recurring movement is waiting for your OK. Only useful stuff — no spam, ever.</string>
+    <string name="onboarding_notifications_cta">Turn on notifications</string>
+    <string name="onboarding_notifications_skip">Maybe later</string>
+    <string name="onboarding_step_of">Step %1$d of %2$d</string>
 </resources>
