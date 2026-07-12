@@ -47,6 +47,8 @@ class BackupCodecTest {
         assertEquals(1, decoded.data.accounts.size)
         assertTrue(decoded.data.accounts.single().isIncludedInTotal)
         assertEquals(emptyList<TransactionBackup>(), decoded.data.transactions)
+        // Files written before the budgets feature restore with no budgets.
+        assertEquals(emptyList<BudgetBackup>(), decoded.data.budgets)
     }
 
     @Test
@@ -102,6 +104,7 @@ class BackupCodecTest {
         assertEquals(2, summary.transactions)
         assertEquals(1, summary.recurringRules)
         assertEquals(1, summary.tags)
+        assertEquals(2, summary.budgets)
         assertEquals("1.2.3", summary.appVersion)
     }
 }
@@ -204,5 +207,23 @@ internal fun fullyPopulatedBackupFile(): BackupFile = BackupFile(
             ),
         ),
         transactionTags = listOf(TransactionTagBackup(transactionId = 100L, tagId = 20L)),
+        budgets = listOf(
+            BudgetBackup(
+                id = 40L,
+                categoryId = null,
+                amountMinor = 80_000L,
+                currency = "EUR",
+                lastNotified80EpochMonth = 24_318L,
+                lastNotified100EpochMonth = null,
+            ),
+            BudgetBackup(
+                id = 41L,
+                categoryId = 10L,
+                amountMinor = 25_000L,
+                currency = "EUR",
+                lastNotified80EpochMonth = 24_318L,
+                lastNotified100EpochMonth = 24_318L,
+            ),
+        ),
     ),
 )

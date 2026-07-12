@@ -45,6 +45,8 @@ data class BackupData(
     val recurringRules: List<RecurringRuleBackup> = emptyList(),
     val transactions: List<TransactionBackup> = emptyList(),
     val transactionTags: List<TransactionTagBackup> = emptyList(),
+    /** Added with the budgets feature; older files simply restore none. */
+    val budgets: List<BudgetBackup> = emptyList(),
 )
 
 @Serializable
@@ -136,6 +138,19 @@ data class TransactionTagBackup(
     val tagId: Long,
 )
 
+@Serializable
+data class BudgetBackup(
+    val id: Long,
+    /** Null for the overall monthly budget. */
+    val categoryId: Long? = null,
+    val amountMinor: Long,
+    /** ISO 4217 code. */
+    val currency: String,
+    /** Notification watermarks (proleptic month), kept so a restore does not re-alert. */
+    val lastNotified80EpochMonth: Long? = null,
+    val lastNotified100EpochMonth: Long? = null,
+)
+
 /** What a backup contains, for the export confirmation and the guided restore. */
 data class BackupSummary(
     val exportedAt: Instant,
@@ -145,6 +160,7 @@ data class BackupSummary(
     val transactions: Int,
     val recurringRules: Int,
     val tags: Int,
+    val budgets: Int = 0,
 )
 
 fun BackupFile.summary(): BackupSummary = BackupSummary(
@@ -155,4 +171,5 @@ fun BackupFile.summary(): BackupSummary = BackupSummary(
     transactions = data.transactions.size,
     recurringRules = data.recurringRules.size,
     tags = data.tags.size,
+    budgets = data.budgets.size,
 )

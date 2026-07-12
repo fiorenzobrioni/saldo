@@ -496,7 +496,7 @@
     <string name="backup_restore_dialog_title">Ripristinare questo backup?</string>
     <string name="backup_restore_dialog_metadata">Backup del %1$s</string>
     <string name="backup_restore_dialog_metadata_versioned">Backup del %1$s (Saldo %2$s)</string>
-    <string name="backup_restore_dialog_counts">Conti: %1$d\nMovimenti: %2$d\nCategorie: %3$d\nRicorrenze: %4$d\nTag: %5$d</string>
+    <string name="backup_restore_dialog_counts">Conti: %1$d\nMovimenti: %2$d\nCategorie: %3$d\nRicorrenze: %4$d\nTag: %5$d\nBudget: %6$d</string>
     <string name="backup_restore_dialog_warning">Tutti i dati attuali verranno sostituiti. L\'operazione non si può annullare.</string>
     <string name="backup_restore_confirm">Ripristina</string>
     <string name="backup_snackbar_exported">Backup salvato (%1$d movimenti)</string>

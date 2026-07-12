@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.core.database.repository
 
 import com.callbackdev.saldo.core.database.dao.AccountDao
+import com.callbackdev.saldo.core.database.dao.BudgetDao
 import com.callbackdev.saldo.core.database.dao.CategoryDao
 import com.callbackdev.saldo.core.database.dao.RecurringRuleDao
 import com.callbackdev.saldo.core.database.dao.TagDao
@@ -23,12 +24,14 @@ import javax.inject.Inject
  * survive as they are. Table order respects the foreign keys: children are
  * deleted first and inserted last.
  */
+@Suppress("LongParameterList") // One DAO per backed-up table, by design.
 class RoomBackupRepository @Inject constructor(
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
     private val tagDao: TagDao,
     private val recurringRuleDao: RecurringRuleDao,
     private val transactionDao: TransactionDao,
+    private val budgetDao: BudgetDao,
     private val transactionRunner: TransactionRunner,
 ) : BackupRepository {
 
@@ -40,6 +43,7 @@ class RoomBackupRepository @Inject constructor(
             recurringRules = recurringRuleDao.getAll().map { it.toBackup() },
             transactions = transactionDao.getAll().map { it.toBackup() },
             transactionTags = tagDao.getAllCrossRefs().map { it.toBackup() },
+            budgets = budgetDao.getAll().map { it.toBackup() },
         )
     }
 
@@ -48,6 +52,7 @@ class RoomBackupRepository @Inject constructor(
             tagDao.deleteAllCrossRefs()
             transactionDao.deleteAll()
             recurringRuleDao.deleteAll()
+            budgetDao.deleteAll()
             tagDao.deleteAll()
             categoryDao.deleteAll()
             accountDao.deleteAll()
@@ -58,6 +63,7 @@ class RoomBackupRepository @Inject constructor(
             recurringRuleDao.insertAll(data.recurringRules.map { it.toEntity() })
             transactionDao.insertAll(data.transactions.map { it.toEntity() })
             tagDao.insertCrossRefs(data.transactionTags.map { it.toEntity() })
+            budgetDao.insertAll(data.budgets.map { it.toEntity() })
         }
     }
 }

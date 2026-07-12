@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.core.database.mapper
 
 import com.callbackdev.saldo.core.database.entity.AccountEntity
+import com.callbackdev.saldo.core.database.entity.BudgetEntity
 import com.callbackdev.saldo.core.database.entity.CategoryEntity
 import com.callbackdev.saldo.core.database.entity.RecurringRuleEntity
 import com.callbackdev.saldo.core.database.entity.TagEntity
@@ -132,6 +133,34 @@ class BackupMapperTest {
     @Test
     fun `tag assignment survives the backup round trip`() {
         val entity = TransactionTagCrossRef(transactionId = 42L, tagId = 5L)
+
+        assertEquals(entity, entity.toBackup().toEntity())
+    }
+
+    @Test
+    fun `overall budget survives the backup round trip`() {
+        val entity = BudgetEntity(
+            id = 40L,
+            categoryId = null,
+            amountMinor = 80_000L,
+            currency = "EUR",
+            lastNotified80EpochMonth = 24_318L,
+            lastNotified100EpochMonth = null,
+        )
+
+        assertEquals(entity, entity.toBackup().toEntity())
+    }
+
+    @Test
+    fun `category budget survives the backup round trip`() {
+        val entity = BudgetEntity(
+            id = 41L,
+            categoryId = 3L,
+            amountMinor = 25_000L,
+            currency = "USD",
+            lastNotified80EpochMonth = 24_318L,
+            lastNotified100EpochMonth = 24_318L,
+        )
 
         assertEquals(entity, entity.toBackup().toEntity())
     }
