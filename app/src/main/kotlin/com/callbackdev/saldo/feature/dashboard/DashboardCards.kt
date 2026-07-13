@@ -157,7 +157,7 @@ internal fun BalanceCard(
                 )
                 Text(
                     text = fullWeekdayDate(date),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
@@ -626,4 +626,4 @@ private fun netColor(value: BigDecimal): Color = when {
 }
 
 private const val AVATAR_TINT_ALPHA = 0.16f
-private val HERO_CARD_ELEVATION = 2.dp
+private val HERO_CARD_ELEVATION = 3.dp
