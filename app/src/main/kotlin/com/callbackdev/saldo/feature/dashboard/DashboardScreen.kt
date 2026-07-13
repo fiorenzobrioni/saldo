@@ -150,6 +150,15 @@ private fun DashboardContent(
                 onManageAccounts = onManageAccounts,
             )
         }
+        uiState.safeToSpend?.takeIf { uiState.cardPrefs.showSafeToSpend }?.let { safeToSpend ->
+            item {
+                SafeToSpendCard(
+                    safeToSpend = safeToSpend,
+                    currency = uiState.primaryCurrency,
+                    onClick = onBudgetsClick,
+                )
+            }
+        }
         item {
             PeriodCardsRow(
                 date = uiState.date,
@@ -169,15 +178,6 @@ private fun DashboardContent(
         }
         if (uiState.cardPrefs.showBudget) {
             item { BudgetCard(budgets = uiState.budgets, onClick = onBudgetsClick) }
-        }
-        uiState.safeToSpend?.takeIf { uiState.cardPrefs.showSafeToSpend }?.let { safeToSpend ->
-            item {
-                SafeToSpendCard(
-                    safeToSpend = safeToSpend,
-                    currency = uiState.primaryCurrency,
-                    onClick = onBudgetsClick,
-                )
-            }
         }
         if (uiState.pendingCount > 0) {
             item { PendingConfirmationCard(count = uiState.pendingCount, onClick = onPendingClick) }

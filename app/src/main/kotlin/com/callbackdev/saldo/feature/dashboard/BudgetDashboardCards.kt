@@ -38,12 +38,11 @@ import java.util.Currency
 import kotlin.math.roundToInt
 
 /**
- * The proactive daily allowance, right under the budget card it derives from:
- * what can still be spent today while staying on the monthly plan (budget
- * minus spend, pending and upcoming recurring charges, spread over the days
- * left). Turns alarming when the plan is blown, with an explicit icon and
- * wording, never color alone. Rendered only when an overall budget exists;
- * navigates to the budgets screen.
+ * The proactive hero figure, right under the balance: what can still be spent
+ * today while staying on the monthly plan (budget minus spend, pending and
+ * upcoming recurring charges, spread over the days left). Turns alarming when
+ * the plan is blown, with an explicit icon and wording, never color alone.
+ * Rendered only when an overall budget exists; navigates to the budgets screen.
  */
 @Composable
 internal fun SafeToSpendCard(
