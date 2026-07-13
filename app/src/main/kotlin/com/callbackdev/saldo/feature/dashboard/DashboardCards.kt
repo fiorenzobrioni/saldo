@@ -146,9 +146,9 @@ private fun fullWeekdayDate(date: LocalDate): String {
 /**
  * Hero card: the total balance with the per-account breakdown always in view.
  * The whole card is tappable and opens account management, with
- * [R.string.dashboard_manage_accounts] as the spoken affordance. A slight
- * shadow on top of the tonal color singles it out as the screen's primary
- * card; every other card stays flat.
+ * [R.string.dashboard_manage_accounts] as the spoken affordance. The higher
+ * tonal color and the larger shape single it out as the screen's primary
+ * card, keeping the whole dashboard flat.
  */
 @Composable
 internal fun BalanceCard(
@@ -169,7 +169,6 @@ internal fun BalanceCard(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = HERO_CARD_ELEVATION),
     ) {
         Column(
             modifier = Modifier.padding(
@@ -623,4 +622,3 @@ private fun netColor(value: BigDecimal): Color = when {
 }
 
 private const val AVATAR_TINT_ALPHA = 0.16f
-private val HERO_CARD_ELEVATION = 3.dp
