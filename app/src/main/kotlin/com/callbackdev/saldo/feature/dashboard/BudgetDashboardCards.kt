@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Savings
@@ -70,32 +69,15 @@ internal fun SafeToSpendCard(
                 vertical = SaldoDimens.cardPaddingVertical,
             ),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.Payments,
-                    contentDescription = null,
-                    tint = if (over) {
-                        MaterialTheme.colorScheme.onErrorContainer
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.dashboard_sts_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    imageVector = Icons.Outlined.ChevronRight,
-                    contentDescription = null,
-                    tint = if (over) {
-                        MaterialTheme.colorScheme.onErrorContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                )
-            }
+            DashboardCardHeader(
+                icon = Icons.Outlined.Payments,
+                title = stringResource(R.string.dashboard_sts_title),
+                iconTint = if (over) {
+                    MaterialTheme.colorScheme.onErrorContainer
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+            )
             Spacer(Modifier.height(8.dp))
             when {
                 over -> SafeToSpendOverContent(safeToSpend, currency)
@@ -211,24 +193,10 @@ internal fun BudgetCard(
                 vertical = SaldoDimens.cardPaddingVertical,
             ),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.Savings,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.dashboard_budget_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    imageVector = Icons.Outlined.ChevronRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            DashboardCardHeader(
+                icon = Icons.Outlined.Savings,
+                title = stringResource(R.string.dashboard_budget_title),
+            )
             if (budgets.isEmpty()) {
                 Spacer(Modifier.height(4.dp))
                 Text(

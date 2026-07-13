@@ -196,7 +196,7 @@
     <string name="stats_empty_body">Le statistiche compaiono con le prime spese registrate.</string>
     <string name="stats_period_month">Mese</string>
     <string name="stats_period_year">Anno</string>
-    <string name="stats_period_custom">Personalizzato</string>
+    <string name="stats_period_custom">Date</string>
     <string name="stats_previous_period">Periodo precedente</string>
     <string name="stats_next_period">Periodo successivo</string>
     <string name="stats_categories_title">Spese per categoria</string>
