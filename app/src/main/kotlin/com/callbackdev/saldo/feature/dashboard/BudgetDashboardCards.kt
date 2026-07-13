@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,11 +38,12 @@ import java.util.Currency
 import kotlin.math.roundToInt
 
 /**
- * The proactive hero figure, right under the balance: what can still be spent
- * today while staying on the monthly plan (budget minus spend, pending and
- * upcoming recurring charges, spread over the days left). Turns alarming when
- * the plan is blown, with an explicit icon and wording, never color alone.
- * Rendered only when an overall budget exists; navigates to the budgets screen.
+ * The proactive daily allowance, right under the budget card it derives from:
+ * what can still be spent today while staying on the monthly plan (budget
+ * minus spend, pending and upcoming recurring charges, spread over the days
+ * left). Turns alarming when the plan is blown, with an explicit icon and
+ * wording, never color alone. Rendered only when an overall budget exists;
+ * navigates to the budgets screen.
  */
 @Composable
 internal fun SafeToSpendCard(
@@ -70,6 +72,16 @@ internal fun SafeToSpendCard(
             ),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.Payments,
+                    contentDescription = null,
+                    tint = if (over) {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(
                     text = stringResource(R.string.dashboard_sts_title),
                     style = MaterialTheme.typography.titleMedium,
@@ -78,7 +90,11 @@ internal fun SafeToSpendCard(
                 Icon(
                     imageVector = Icons.Outlined.ChevronRight,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (over) {
+                        MaterialTheme.colorScheme.onErrorContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -170,8 +186,9 @@ private fun SafeToSpendOverContent(
 /**
  * Dashboard summary of the month's budgets: the overall budget with its
  * remaining amount and bar, then the category budgets closest to their cap.
- * Rendered only when at least one budget exists in the primary currency; the
- * whole card navigates to the budgets screen.
+ * With no budgets in the primary currency it shows an invitation to create
+ * one, mirroring the recurring card; the whole card navigates to the budgets
+ * screen.
  */
 @Composable
 internal fun BudgetCard(
@@ -211,6 +228,14 @@ internal fun BudgetCard(
                     imageVector = Icons.Outlined.ChevronRight,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (budgets.isEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.dashboard_budget_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (overall != null) {

@@ -612,6 +612,7 @@
 
     <!-- Budget notifications and dashboard card -->
     <string name="dashboard_budget_title">Budget</string>
+    <string name="dashboard_budget_empty">Nessun budget · tocca per aggiungerne uno</string>
     <string name="notif_channel_budget_name">Avvisi budget</string>
     <string name="notif_budget_warning_title">%1$s: usato il %2$d%%</string>
     <string name="notif_budget_exceeded_title">%1$s superato (%2$d%%)</string>
@@ -637,10 +638,10 @@
 
     <!-- Dashboard visibility settings -->
     <string name="settings_section_dashboard">Dashboard</string>
-    <string name="settings_dashboard_show_sts">Spendibile oggi</string>
+    <string name="settings_dashboard_show_sts">Scheda spendibile oggi</string>
     <string name="settings_dashboard_show_sts_hint">Mostra quanto puoi ancora spendere oggi (richiede un budget mensile)</string>
     <string name="settings_dashboard_show_budget">Scheda budget</string>
     <string name="settings_dashboard_show_budget_hint">Mostra i progressi dei budget del mese</string>
-    <string name="settings_dashboard_show_recent">Ultimi movimenti</string>
+    <string name="settings_dashboard_show_recent">Scheda ultimi movimenti</string>
     <string name="settings_dashboard_show_recent_hint">Mostra i movimenti più recenti in fondo</string>
 </resources>

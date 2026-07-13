@@ -609,6 +609,7 @@
 
     <!-- Budget notifications and dashboard card -->
     <string name="dashboard_budget_title">Budgets</string>
+    <string name="dashboard_budget_empty">No budgets yet · tap to add one</string>
     <string name="notif_channel_budget_name">Budget alerts</string>
     <string name="notif_budget_warning_title">%1$s: %2$d%% used</string>
     <string name="notif_budget_exceeded_title">%1$s exceeded (%2$d%%)</string>
@@ -634,10 +635,10 @@
 
     <!-- Dashboard visibility settings -->
     <string name="settings_section_dashboard">Dashboard</string>
-    <string name="settings_dashboard_show_sts">Safe to spend</string>
+    <string name="settings_dashboard_show_sts">Safe to spend card</string>
     <string name="settings_dashboard_show_sts_hint">Show what you can still spend today (needs a monthly budget)</string>
     <string name="settings_dashboard_show_budget">Budgets card</string>
     <string name="settings_dashboard_show_budget_hint">Show the month\'s budget progress</string>
-    <string name="settings_dashboard_show_recent">Latest transactions</string>
+    <string name="settings_dashboard_show_recent">Latest transactions card</string>
     <string name="settings_dashboard_show_recent_hint">Show the most recent transactions at the bottom</string>
 </resources>

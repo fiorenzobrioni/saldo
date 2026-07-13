@@ -148,16 +148,16 @@ fun SettingsScreen(
 
             SettingsSectionHeader(stringResource(R.string.settings_section_dashboard))
             SettingsSwitchRow(
-                title = stringResource(R.string.settings_dashboard_show_sts),
-                hint = stringResource(R.string.settings_dashboard_show_sts_hint),
-                checked = dashboardCards.showSafeToSpend,
-                onCheckedChange = viewModel::onShowSafeToSpendChanged,
-            )
-            SettingsSwitchRow(
                 title = stringResource(R.string.settings_dashboard_show_budget),
                 hint = stringResource(R.string.settings_dashboard_show_budget_hint),
                 checked = dashboardCards.showBudget,
                 onCheckedChange = viewModel::onShowBudgetCardChanged,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_dashboard_show_sts),
+                hint = stringResource(R.string.settings_dashboard_show_sts_hint),
+                checked = dashboardCards.showSafeToSpend,
+                onCheckedChange = viewModel::onShowSafeToSpendChanged,
             )
             SettingsSwitchRow(
                 title = stringResource(R.string.settings_dashboard_show_recent),
