@@ -14,6 +14,27 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-13 - Rifinitura Dashboard: card omogenee, drill-down dei periodi, fix data italiana
+
+**Fatto:** giro di rifinitura UI/UX della Dashboard guidato dall'utente, iterato su APK di prova generati da GitHub (versioni 0.9.6 -> 0.9.11, versionCode 45 -> 50, un commit per iterazione).
+
+- **Card omogenee**: tutte le card standard ora condividono la stessa intestazione, estratta nel composable `DashboardCardHeader` (icona 24dp in tinta primary, titolo `titleMedium`, slot opzionale in coda usato dalla data del saldo). Prima convivevano tre stili diversi (label piccola sul saldo, icona 20dp grigia sui ricorrenti, icona colorata sul budget). Icone assegnate: portafoglio (Saldo totale), banconote (Spendibile oggi, che passa a `onErrorContainer` in sforamento), calendario-giorno (Oggi), calendario-mese (mese corrente), salvadanaio (Budget, invariata), ripetizione (Movimenti ricorrenti).
+- **Card Budget sempre visibile**: senza budget mostra un invito con lo stesso pattern dell'empty state dei ricorrenti ("Nessun budget, tocca per aggiungerne uno") invece di sparire; resta soggetta al toggle di visibilità in Impostazioni. Fa anche da punto d'ingresso per scoprire "Spendibile oggi", che senza budget complessivo non compare.
+- **Tutte le card tappabili, niente chevron**: le card Oggi e mese corrente aprono i movimenti filtrati sul rispettivo intervallo (riuso di `FilteredTransactionsRoute`, la stessa schermata drill-down delle statistiche). Con ogni card che apre il proprio dettaglio il chevron non discrimina più nulla: rimosso da tutte (saldo, spendibile, budget, ricorrenti, da confermare).
+- **Data sulla card saldo**: stile `bodyMedium` attenuato (da `titleMedium`: è un metadato, non deve competere con il titolo) e minuscolo forzato per la locale italiana.
+- **Impostazioni > Dashboard**: le tre voci iniziano tutte con "Scheda" (EN: suffisso "card") e seguono l'ordine delle card in Dashboard (spendibile, budget, ultimi movimenti).
+- **Statistiche**: il segmento del periodo personalizzato in italiano passa da "Personalizzato" a "Date": con la spunta di selezione Material il testo lungo sbordava dalla cella del `SegmentedButton`.
+
+**Decisioni:** "Spendibile oggi" è stata provata sotto la card Budget (coerenza col dato di origine) e poi riportata sotto il saldo: da provata su device, la posizione hero per la cifra più azionabile vale più del raggruppamento logico (decisione utente, condivisa). Stessa sorte per l'elevazione della card saldo: provata a 2dp e 3dp, poi rimossa; la gerarchia la fanno già il colore tonale più alto (`surfaceContainerHigh`), la forma `extraLarge` e la cifra in `displaySmall`, e la schermata piatta è più coerente col resto (decisione utente, condivisa: in dark theme l'ombra era comunque quasi invisibile). Drill-down dei periodi verso i movimenti filtrati e non verso le statistiche: le stats non hanno vista giornaliera e la domanda dietro l'aggregato è "quali movimenti lo compongono". La riga di confronto col mese scorso resta fuori dalle card (valutata l'integrazione nella card mese, scartata: troppo compressa).
+
+**Problemi:** su alcuni device la data estesa italiana compariva con iniziali maiuscole ("Lunedì 13 Luglio"): alcune build OEM di ICU applicano ai nomi di giorni e mesi la capitalizzazione da contesto standalone. Fix con normalizzazione esplicita a minuscolo per la locale italiana in `fullWeekdayDate` (commit 64eb59e), registrato in Bug conosciuti.
+
+**Verifica:** `testDebugUnitTest` e `lint` verdi a ogni iterazione; `assembleDebug` e `detekt` verdi sul commit finale. Prova visiva su device reale da parte dell'utente per ogni iterazione (APK da GitHub, update in place grazie al keystore condiviso e al bump di versione).
+
+**Prossimo:** Fase 10 (release v1.0).
+
+---
+
 ## 2026-07-12 - Fase 9.5: budget, spendibile oggi e dashboard configurabile (anticipo dalla v1.5)
 
 **Fatto:** anticipati dalla Roadmap v1.5 (decisione utente; il Widget resta in v1.5) budget completi e "Spendibile oggi", più la configurabilità delle card della dashboard proposta dall'utente. Cinque commit di implementazione, gate `assembleDebug testDebugUnitTest lint detekt` verde per ognuno.

@@ -37,6 +37,7 @@ import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
 
 /**
  * The "Today" home screen: a single glance at total balance, today's and this
@@ -53,6 +54,7 @@ fun DashboardScreen(
     onNavigateToRecurrences: () -> Unit,
     onNavigateToPending: () -> Unit,
     onNavigateToBudgets: () -> Unit,
+    onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -95,6 +97,7 @@ fun DashboardScreen(
                     onRecurringClick = onNavigateToRecurrences,
                     onPendingClick = onNavigateToPending,
                     onBudgetsClick = onNavigateToBudgets,
+                    onNavigateToFiltered = onNavigateToFiltered,
                 )
             }
 
@@ -127,6 +130,7 @@ private fun DashboardContent(
     onRecurringClick: () -> Unit,
     onPendingClick: () -> Unit,
     onBudgetsClick: () -> Unit,
+    onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -165,6 +169,23 @@ private fun DashboardContent(
                 today = uiState.today,
                 month = uiState.month,
                 currency = uiState.primaryCurrency,
+                onTodayClick = {
+                    onNavigateToFiltered(
+                        FilteredTransactionsRoute(
+                            startEpochDay = uiState.date.toEpochDay(),
+                            endEpochDayExclusive = uiState.date.plusDays(1).toEpochDay(),
+                        ),
+                    )
+                },
+                onMonthClick = {
+                    val firstOfMonth = uiState.date.withDayOfMonth(1)
+                    onNavigateToFiltered(
+                        FilteredTransactionsRoute(
+                            startEpochDay = firstOfMonth.toEpochDay(),
+                            endEpochDayExclusive = firstOfMonth.plusMonths(1).toEpochDay(),
+                        ),
+                    )
+                },
             )
         }
         uiState.previousMonthSpendToDate?.let { previousSpend ->
@@ -176,7 +197,7 @@ private fun DashboardContent(
                 )
             }
         }
-        if (uiState.budgets.isNotEmpty() && uiState.cardPrefs.showBudget) {
+        if (uiState.cardPrefs.showBudget) {
             item { BudgetCard(budgets = uiState.budgets, onClick = onBudgetsClick) }
         }
         if (uiState.pendingCount > 0) {

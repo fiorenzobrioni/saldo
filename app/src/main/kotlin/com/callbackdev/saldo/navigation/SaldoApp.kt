@@ -109,6 +109,7 @@ fun SaldoApp() {
                         onNavigateToRecurrences = { backStack.add(RecurrencesRoute) },
                         onNavigateToPending = { backStack.add(PendingMovementsRoute) },
                         onNavigateToBudgets = { backStack.add(BudgetsRoute) },
+                        onNavigateToFiltered = { route -> backStack.add(route) },
                     )
                 }
                 entry<TransactionsRoute> {

@@ -14,12 +14,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -33,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
@@ -79,6 +83,41 @@ internal fun DashboardHeader(band: GreetingBand, roll: Float, modifier: Modifier
     )
 }
 
+/**
+ * The uniform card header: leading icon in the primary tint, [title] in
+ * titleMedium and an optional trailing slot (the balance card's date). Every
+ * dashboard card opens its detail on tap, so no chevron: the convention is
+ * carried by the cards themselves, not per-card affordances.
+ */
+@Composable
+internal fun DashboardCardHeader(
+    icon: ImageVector,
+    title: String,
+    modifier: Modifier = Modifier,
+    iconTint: Color = MaterialTheme.colorScheme.primary,
+    trailingContent: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconTint,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        trailingContent?.invoke()
+    }
+}
+
 @androidx.annotation.ArrayRes
 private fun GreetingBand.greetingsArrayRes(): Int = when (this) {
     GreetingBand.NIGHT -> R.array.dashboard_greetings_night
@@ -90,23 +129,26 @@ private fun GreetingBand.greetingsArrayRes(): Int = when (this) {
 /**
  * Full localized weekday date in the locale's own casing: Italian dates are
  * lowercase ("venerdì 10 luglio"), English weekday/month names are proper
- * nouns ("Friday, July 10"). CLDR data already gets this right, so the
- * formatted string is used as is.
+ * nouns ("Friday, July 10"). Stock CLDR data gets this right, but some OEM
+ * ICU builds ship day/month names titlecased for standalone contexts, so for
+ * Italian the string is normalized to lowercase explicitly.
  */
 @Composable
 private fun fullWeekdayDate(date: LocalDate): String {
     val locale = LocalConfiguration.current.locales[0]
     return remember(date, locale) {
         val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM")
-        date.format(DateTimeFormatter.ofPattern(pattern, locale))
+        val formatted = date.format(DateTimeFormatter.ofPattern(pattern, locale))
+        if (locale.language == "it") formatted.lowercase(locale) else formatted
     }
 }
 
 /**
  * Hero card: the total balance with the per-account breakdown always in view.
- * The whole card is tappable and opens account management; the chevron next to
- * the date is the visual affordance, [R.string.dashboard_manage_accounts] the
- * spoken one.
+ * The whole card is tappable and opens account management, with
+ * [R.string.dashboard_manage_accounts] as the spoken affordance. The higher
+ * tonal color and the larger shape single it out as the screen's primary
+ * card, keeping the whole dashboard flat.
  */
 @Composable
 internal fun BalanceCard(
@@ -134,27 +176,18 @@ internal fun BalanceCard(
                 vertical = SaldoDimens.cardPaddingVertical,
             ),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(R.string.dashboard_balance_total),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = fullWeekdayDate(date),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
-                Spacer(Modifier.size(4.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp),
-                )
-            }
+            DashboardCardHeader(
+                icon = Icons.Outlined.AccountBalanceWallet,
+                title = stringResource(R.string.dashboard_balance_total),
+                trailingContent = {
+                    Text(
+                        text = fullWeekdayDate(date),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                },
+            )
             Spacer(Modifier.height(4.dp))
             Text(
                 text = MoneyFormatter.format(totalBalance, currency),
@@ -219,13 +252,19 @@ private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = M
     }
 }
 
-/** The "Today" and current-month cards, side by side and equal height. */
+/**
+ * The "Today" and current-month cards, side by side and equal height. Each
+ * opens the filtered-transactions drill-down for its own window: the natural
+ * question behind the aggregate is "which movements make it up".
+ */
 @Composable
 internal fun PeriodCardsRow(
     date: LocalDate,
     today: PeriodTotals,
     month: PeriodTotals,
     currency: Currency,
+    onTodayClick: () -> Unit,
+    onMonthClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val locale = LocalConfiguration.current.locales[0]
@@ -241,16 +280,20 @@ internal fun PeriodCardsRow(
     ) {
         PeriodCompactCard(
             title = stringResource(R.string.dashboard_today),
+            icon = Icons.Outlined.Today,
             flow = today,
             currency = currency,
+            onClick = onTodayClick,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
         )
         PeriodCompactCard(
             title = monthTitle,
+            icon = Icons.Outlined.CalendarMonth,
             flow = month,
             currency = currency,
+            onClick = onMonthClick,
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
@@ -261,11 +304,14 @@ internal fun PeriodCardsRow(
 @Composable
 private fun PeriodCompactCard(
     title: String,
+    icon: ImageVector,
     flow: PeriodTotals,
     currency: Currency,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
+        onClick = onClick,
         modifier = modifier,
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
@@ -278,12 +324,7 @@ private fun PeriodCompactCard(
                 vertical = SaldoDimens.cardPaddingVertical,
             ),
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            DashboardCardHeader(icon = icon, title = title)
             Spacer(Modifier.height(4.dp))
             Text(
                 text = MoneyFormatter.formatSigned(flow.net, currency),
@@ -414,11 +455,6 @@ internal fun PendingConfirmationCard(
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
             }
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-            )
         }
     }
 }
@@ -448,28 +484,10 @@ internal fun RecurringCard(
                 vertical = SaldoDimens.cardPaddingVertical,
             ),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.EventRepeat,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    text = stringResource(R.string.dashboard_recurring_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 8.dp),
-                )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            DashboardCardHeader(
+                icon = Icons.Outlined.EventRepeat,
+                title = stringResource(R.string.dashboard_recurring_title),
+            )
             if (summary.hasRules) {
                 Spacer(Modifier.height(10.dp))
                 Row(modifier = Modifier.fillMaxWidth()) {
