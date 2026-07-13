@@ -52,6 +52,7 @@ fun DashboardScreen(
     onSeeAllTransactions: () -> Unit,
     onNavigateToRecurrences: () -> Unit,
     onNavigateToPending: () -> Unit,
+    onNavigateToBudgets: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -93,6 +94,7 @@ fun DashboardScreen(
                     onTransactionClick = onNavigateToEditTransaction,
                     onRecurringClick = onNavigateToRecurrences,
                     onPendingClick = onNavigateToPending,
+                    onBudgetsClick = onNavigateToBudgets,
                 )
             }
 
@@ -124,6 +126,7 @@ private fun DashboardContent(
     onTransactionClick: (Long) -> Unit,
     onRecurringClick: () -> Unit,
     onPendingClick: () -> Unit,
+    onBudgetsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -147,6 +150,15 @@ private fun DashboardContent(
                 onManageAccounts = onManageAccounts,
             )
         }
+        uiState.safeToSpend?.takeIf { uiState.cardPrefs.showSafeToSpend }?.let { safeToSpend ->
+            item {
+                SafeToSpendCard(
+                    safeToSpend = safeToSpend,
+                    currency = uiState.primaryCurrency,
+                    onClick = onBudgetsClick,
+                )
+            }
+        }
         item {
             PeriodCardsRow(
                 date = uiState.date,
@@ -164,6 +176,9 @@ private fun DashboardContent(
                 )
             }
         }
+        if (uiState.budgets.isNotEmpty() && uiState.cardPrefs.showBudget) {
+            item { BudgetCard(budgets = uiState.budgets, onClick = onBudgetsClick) }
+        }
         if (uiState.pendingCount > 0) {
             item { PendingConfirmationCard(count = uiState.pendingCount, onClick = onPendingClick) }
         }
@@ -174,22 +189,24 @@ private fun DashboardContent(
                 onClick = onRecurringClick,
             )
         }
-        item { RecentHeader(onSeeAll = onSeeAllTransactions) }
-        if (uiState.recent.isEmpty()) {
-            item {
-                Text(
-                    text = stringResource(R.string.dashboard_recent_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, top = 4.dp),
-                )
-            }
-        } else {
-            item {
-                RecentMovementsCard(
-                    items = uiState.recent,
-                    onItemClick = onTransactionClick,
-                )
+        if (uiState.cardPrefs.showRecentTransactions) {
+            item { RecentHeader(onSeeAll = onSeeAllTransactions) }
+            if (uiState.recent.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.dashboard_recent_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+                    )
+                }
+            } else {
+                item {
+                    RecentMovementsCard(
+                        items = uiState.recent,
+                        onItemClick = onTransactionClick,
+                    )
+                }
             }
         }
     }

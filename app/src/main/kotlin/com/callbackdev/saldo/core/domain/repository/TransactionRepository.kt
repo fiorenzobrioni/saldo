@@ -8,6 +8,7 @@ import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.domain.model.Transaction
 import kotlinx.coroutines.flow.Flow
+import java.math.BigDecimal
 import java.time.Instant
 import java.util.Currency
 
@@ -59,6 +60,43 @@ interface TransactionRepository {
         end: Instant,
         currency: Currency,
     ): Flow<List<AccountTotal>>
+
+    /**
+     * Total signed spend in `[start, end)`, restricted to [currency], with the
+     * same statistics rules as [observeMonthlyTotals] (expenses negative,
+     * refunds netting them). Zero when nothing matches. Drives overall budget
+     * progress; unlike [observeDashboardTotals] this is not a cash figure.
+     */
+    fun observeStatsSpendTotal(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<BigDecimal>
+
+    /** One-shot variant of [observeStatsSpendTotal] for the budget threshold check. */
+    suspend fun getStatsSpendTotal(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): BigDecimal
+
+    /**
+     * Per-category signed spend totals in `[start, end)`, restricted to
+     * [currency]: expenses plus their refunds only, so pure incomes in a BOTH
+     * category never offset its budget. Drives category budget progress.
+     */
+    fun observeCategorySpendTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<CategoryTotal>>
+
+    /** One-shot variant of [observeCategorySpendTotals] for the budget threshold check. */
+    suspend fun getCategorySpendTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): List<CategoryTotal>
 
     /**
      * Net effect per local month on the balance of the accounts included in

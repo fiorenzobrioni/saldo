@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.model.BudgetProgress
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
@@ -13,11 +14,15 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
+import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
+import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -108,6 +113,12 @@ data class DashboardUiState(
     /** Number of recurring movements awaiting confirmation. */
     val pendingCount: Int = 0,
     val recent: List<TransactionListItem> = emptyList(),
+    /** Budget progress in the primary currency, overall first (empty: no budgets set). */
+    val budgets: List<BudgetProgress> = emptyList(),
+    /** Safe-to-spend figure; null without an overall budget in the primary currency. */
+    val safeToSpend: SafeToSpend? = null,
+    /** Which optional cards the user keeps visible (Settings > Dashboard). */
+    val cardPrefs: DashboardCardPreferences = DashboardCardPreferences(),
     val date: LocalDate = LocalDate.ofEpochDay(0),
     /** Greeting band and a stable [0,1) roll, both fixed once per app-open. */
     val greetingBand: GreetingBand = GreetingBand.MORNING,
@@ -115,12 +126,15 @@ data class DashboardUiState(
 )
 
 @HiltViewModel
+@Suppress("LongParameterList") // The dashboard aggregates one source per card, all Hilt-injected.
 class DashboardViewModel @Inject constructor(
     accountRepository: AccountRepository,
     userPreferences: UserPreferencesRepository,
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val recurringRuleRepository: RecurringRuleRepository,
+    private val observeBudgetProgress: ObserveBudgetProgressUseCase,
+    private val observeSafeToSpend: ObserveSafeToSpendUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -155,7 +169,9 @@ class DashboardViewModel @Inject constructor(
         .flatMapLatest { (accounts, currencyOverride) ->
             val today = LocalDate.now(clock)
             val primary = primaryCurrency(accounts, currencyOverride)
-            combine(
+            // The typed combine overloads stop at five flows, so the core
+            // sources collapse first and the budget figures join on top.
+            val sources = combine(
                 transactionRepository.observeDashboardTotals(
                     windows = DashboardWindows.around(today, clock.zone),
                     currency = primary,
@@ -165,11 +181,22 @@ class DashboardViewModel @Inject constructor(
                 recurringRuleRepository.observeRules(),
                 transactionRepository.observePendingTransactions(),
             ) { totals, recent, categories, rules, pending ->
+                Sources(totals, recent, categories, rules, pending.size)
+            }
+            combine(
+                sources,
+                observeBudgetProgress(primary),
+                observeSafeToSpend(primary),
+                userPreferences.dashboardCardPreferences,
+            ) { collapsed, budgets, safeToSpend, cardPrefs ->
                 buildState(
                     accounts = accounts,
                     primary = primary,
                     today = today,
-                    sources = Sources(totals, recent, categories, rules, pending.size),
+                    sources = collapsed,
+                    budgets = budgets,
+                    safeToSpend = safeToSpend,
+                    cardPrefs = cardPrefs,
                 )
             }
         }
@@ -188,6 +215,9 @@ class DashboardViewModel @Inject constructor(
         primary: Currency,
         today: LocalDate,
         sources: Sources,
+        budgets: List<BudgetProgress>,
+        safeToSpend: SafeToSpend?,
+        cardPrefs: DashboardCardPreferences,
     ): DashboardUiState {
         val active = accounts.filter { !it.account.isArchived }
         val totalBalance = active
@@ -225,6 +255,9 @@ class DashboardViewModel @Inject constructor(
             recurring = recurringSummary(sources.rules, primary, today),
             pendingCount = sources.pendingCount,
             recent = recent,
+            budgets = budgets,
+            safeToSpend = safeToSpend,
+            cardPrefs = cardPrefs,
             date = today,
             greetingBand = greetingBand,
             greetingRoll = greetingRoll,

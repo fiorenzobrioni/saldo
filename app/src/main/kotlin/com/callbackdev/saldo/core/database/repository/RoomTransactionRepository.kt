@@ -10,9 +10,11 @@ import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.domain.model.Transaction
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.math.BigDecimal
 import java.time.Instant
 import java.util.Currency
 import javax.inject.Inject
@@ -70,6 +72,52 @@ class RoomTransactionRepository @Inject constructor(
             end.toEpochMilli(),
             currency.currencyCode,
         ).map { rows -> rows.map { it.toDomain(currency) } }
+
+    override fun observeStatsSpendTotal(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<BigDecimal> =
+        transactionDao.observeStatsSpendTotal(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { MoneyMapper.toAmount(it ?: 0L, currency) }
+
+    override suspend fun getStatsSpendTotal(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): BigDecimal = MoneyMapper.toAmount(
+        transactionDao.getStatsSpendTotal(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ) ?: 0L,
+        currency,
+    )
+
+    override fun observeCategorySpendTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<CategoryTotal>> =
+        transactionDao.observeCategorySpendTotals(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { rows -> rows.map { it.toDomain(currency) } }
+
+    override suspend fun getCategorySpendTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): List<CategoryTotal> =
+        transactionDao.getCategorySpendTotals(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { it.toDomain(currency) }
 
     override fun observeMonthlyNetChanges(currency: Currency): Flow<List<MonthlyNet>> =
         transactionDao.observeMonthlyNetChanges(currency.currencyCode)

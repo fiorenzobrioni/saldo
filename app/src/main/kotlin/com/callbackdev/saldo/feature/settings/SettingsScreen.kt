@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions") // One small composable per settings row/section/dialog.
+
 package com.callbackdev.saldo.feature.settings
 
 import android.Manifest
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -73,6 +76,7 @@ fun SettingsScreen(
     onNavigateToAccounts: () -> Unit,
     onNavigateToCategories: () -> Unit,
     onNavigateToRecurrences: () -> Unit,
+    onNavigateToBudgets: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
@@ -80,6 +84,7 @@ fun SettingsScreen(
 ) {
     val themePreferences by viewModel.themePreferences.collectAsStateWithLifecycle()
     val renewalReminder by viewModel.renewalReminderPreferences.collectAsStateWithLifecycle()
+    val dashboardCards by viewModel.dashboardCardPreferences.collectAsStateWithLifecycle()
     val primaryCurrency by viewModel.primaryCurrencyOverride.collectAsStateWithLifecycle()
     val activeAccounts by viewModel.activeAccounts.collectAsStateWithLifecycle()
     val defaultAccountId by viewModel.defaultAccountId.collectAsStateWithLifecycle()
@@ -141,6 +146,26 @@ fun SettingsScreen(
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
 
+            SettingsSectionHeader(stringResource(R.string.settings_section_dashboard))
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_dashboard_show_sts),
+                hint = stringResource(R.string.settings_dashboard_show_sts_hint),
+                checked = dashboardCards.showSafeToSpend,
+                onCheckedChange = viewModel::onShowSafeToSpendChanged,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_dashboard_show_budget),
+                hint = stringResource(R.string.settings_dashboard_show_budget_hint),
+                checked = dashboardCards.showBudget,
+                onCheckedChange = viewModel::onShowBudgetCardChanged,
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_dashboard_show_recent),
+                hint = stringResource(R.string.settings_dashboard_show_recent_hint),
+                checked = dashboardCards.showRecentTransactions,
+                onCheckedChange = viewModel::onShowRecentTransactionsChanged,
+            )
+
             SettingsSectionHeader(stringResource(R.string.settings_section_notifications))
             // The permission is asked contextually here (and in onboarding), never
             // cold at launch: turning the reminder on is the moment it makes sense.
@@ -190,6 +215,12 @@ fun SettingsScreen(
                 hint = stringResource(R.string.settings_recurrences_hint),
                 icon = Icons.Outlined.EventRepeat,
                 onClick = onNavigateToRecurrences,
+            )
+            SettingsEntry(
+                title = stringResource(R.string.settings_budgets),
+                hint = stringResource(R.string.settings_budgets_hint),
+                icon = Icons.Outlined.Savings,
+                onClick = onNavigateToBudgets,
             )
             SettingsEntry(
                 title = stringResource(R.string.settings_categories),
@@ -470,5 +501,25 @@ private fun SettingsEntry(
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = modifier.clickable(onClick = onClick),
+    )
+}
+
+/** A toggle row, like the dynamic-color one: title, supporting hint and a switch. */
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    hint: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(hint) },
+        trailingContent = {
+            Switch(checked = checked, onCheckedChange = onCheckedChange)
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = modifier,
     )
 }

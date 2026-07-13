@@ -14,6 +14,26 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-12 - Fase 9.5: budget, spendibile oggi e dashboard configurabile (anticipo dalla v1.5)
+
+**Fatto:** anticipati dalla Roadmap v1.5 (decisione utente; il Widget resta in v1.5) budget completi e "Spendibile oggi", più la configurabilità delle card della dashboard proposta dall'utente. Cinque commit di implementazione, gate `assembleDebug testDebugUnitTest lint detekt` verde per ognuno.
+
+- **Data layer** (0.9.1): tabella `budgets` (migration 5->6, DDL copiata dallo schema esportato da Room), un budget complessivo opzionale (categoryId NULL) + budget per categoria (unique index, FK CASCADE), valuta esplicita per riga, watermark notifiche come epoch month. Unicità del complessivo via upsert transazionale (l'UNIQUE di SQLite non vincola i NULL). Nuove query di spesa stats-consistent (totale e per categoria, filtro `EXPENSE OR (INCOME AND isRefund)`: nelle categorie "entrambi" le entrate pure non riducono il consumato). Backup: campo additivo `budgets` nello schema version 1, watermark inclusi, conteggio nell'anteprima restore.
+- **Schermata Budget + editor** (0.9.2): hero card del complessivo (residuo grande, barra animata, speso/limite, percentuale) o CTA se assente; categorie ordinate per vicinanza al tetto con avatar squircle. Editor con scope picker a chip (complessivo se non esiste, categorie di spesa senza budget), importo con tastiera di sistema nella valuta principale, eliminazione con conferma; la modifica preserva id e watermark. `ThresholdProgressBar` condivisa nel design system; ruolo `warning` ambra (light/dark) aggiunto a `MoneyColors`. Soglie 🟢<80% 🟡80-99% 🔴>=100% in aritmetica intera sui minor units.
+- **Card dashboard + notifiche** (0.9.3): card Budget (complessivo + top 3 categorie) tra confronto mese e da confermare; `CheckBudgetThresholdsUseCase` idempotente con watermark mensili, invocato dal worker giornaliero e dal nuovo `BudgetThresholdWatcher` (application scope, segnali di spesa debounced 500ms): una notifica per soglia per mese per budget, superamento diretto del 100% = un solo avviso, nessun riarmo se la spesa rientra. Canale `budget_alerts`, id 1004/1005.
+- **Spendibile oggi** (0.9.4): card sotto il saldo = budget - spesa statistica - pending del mese - ricorrenze a importo fisso in arrivo entro fine mese (`UpcomingChargesCalculator` puro, stesso floor di generazione della dashboard). Numero grande = quota giornaliera (FLOOR alla scala valuta), righe secondarie con residuo mese e impegni; superamento su `errorContainer` con icona e testo. Sottigliezza pending gestita: un'occorrenza generata ma non confermata è fuori sia dalla spesa sia dall'upcoming (floor), quindi è contata una sola volta come `pendingCommitted`.
+- **Dashboard configurabile** (0.9.5): sezione "Dashboard" in Impostazioni con 3 switch (Spendibile oggi, scheda budget, ultimi movimenti), boolean DataStore default visibile; le card core restano fisse. La combine della dashboard, già al limite tipizzato di 5 flussi, è stata annidata (sources collassate + budget/safe-to-spend/prefs sopra).
+
+**Decisioni:** ADR 18 (modello budget e spesa stats-consistent) e ADR 19 (trigger notifiche doppio con watermark); anticipo pre-release così la tabella nasce nello schema di produzione e il backup resta a version 1; card Budget senza teaser (chi non usa i budget non la vede); l'editor non permette di cambiare scope a un budget esistente (eliminare e ricreare, preserva i watermark).
+
+**Problemi:** scala BigDecimal nel calculator (0 vs 0.00 nei fold: risolto saltando le regole senza occorrenze); detekt su soglie TooManyFunctions/LongParameterList: soppressioni motivate nello stile del progetto.
+
+**Verifica:** unit test JVM nuovi: `BudgetMapperTest`, `ObserveBudgetProgressUseCaseTest` (soglie esatte 79.99/80/100, rimborsi, ordinamento), `CheckBudgetThresholdsUseCaseTest` (dedupe watermark, riarmo mese successivo), `UpcomingChargesCalculatorTest` (floor, mesi corti, settimanali), `ObserveSafeToSpendUseCaseTest` (pending una sola volta, FLOOR, ultimo giorno mese); estesi `BackupCodecTest`/`BackupMapperTest`/`DashboardViewModelTest`. Strumentati scritti ma da eseguire su device (nessun emulatore): migration 5->6, `BudgetDaoTest` (unique, CASCADE, watermark mirati), `TransactionDaoBudgetSpendTest`. Da verificare su device anche: notifiche soglia reali, resa delle card in light/dark e con dynamic color.
+
+**Prossimo:** Fase 10 (release v1.0).
+
+---
+
 ## 2026-07-12 - Fase 9 completata: impostazioni, onboarding, i18n, accessibilità, performance (+ fix marker grafici)
 
 **Fatto:** fase implementata in 8 step, un commit per step, gate `assembleDebug testDebugUnitTest lint detekt` verde per ognuno.

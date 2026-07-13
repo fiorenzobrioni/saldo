@@ -496,7 +496,7 @@
     <string name="backup_restore_dialog_title">Ripristinare questo backup?</string>
     <string name="backup_restore_dialog_metadata">Backup del %1$s</string>
     <string name="backup_restore_dialog_metadata_versioned">Backup del %1$s (Saldo %2$s)</string>
-    <string name="backup_restore_dialog_counts">Conti: %1$d\nMovimenti: %2$d\nCategorie: %3$d\nRicorrenze: %4$d\nTag: %5$d</string>
+    <string name="backup_restore_dialog_counts">Conti: %1$d\nMovimenti: %2$d\nCategorie: %3$d\nRicorrenze: %4$d\nTag: %5$d\nBudget: %6$d</string>
     <string name="backup_restore_dialog_warning">Tutti i dati attuali verranno sostituiti. L\'operazione non si può annullare.</string>
     <string name="backup_restore_confirm">Ripristina</string>
     <string name="backup_snackbar_exported">Backup salvato (%1$d movimenti)</string>
@@ -579,4 +579,68 @@
     <string name="onboarding_notifications_cta">Attiva le notifiche</string>
     <string name="onboarding_notifications_skip">Magari dopo</string>
     <string name="onboarding_step_of">Passo %1$d di %2$d</string>
+
+    <!-- Budgets -->
+    <string name="budgets_title">Budget</string>
+    <string name="budgets_add">Nuovo budget</string>
+    <string name="budgets_overall_title">Budget mensile</string>
+    <string name="budgets_overall_cta_title">Imposta un budget mensile</string>
+    <string name="budgets_overall_cta_body">Un unico tetto per tutte le spese del mese. Sblocca anche lo Spendibile oggi in Dashboard.</string>
+    <string name="budgets_remaining">Ancora %1$s</string>
+    <string name="budgets_overspent_by">Superato di %1$s</string>
+    <string name="budgets_spent_of">Spesi %1$s di %2$s</string>
+    <string name="budgets_section_categories">Budget per categoria</string>
+    <string name="budgets_over_a11y">Budget superato</string>
+    <string name="budgets_empty_title">Nessun budget</string>
+    <string name="budgets_empty_body">Imposta un tetto mensile per tutte le spese o per singole categorie: Saldo segue i progressi e ti avvisa all\'80% e al 100%.</string>
+    <string name="budgets_empty_cta">Crea un budget</string>
+    <string name="budgets_editor_title_new">Nuovo budget</string>
+    <string name="budgets_editor_title_edit">Modifica budget</string>
+    <string name="budgets_editor_save">Salva budget</string>
+    <string name="budgets_editor_section_scope">Cosa limita</string>
+    <string name="budgets_editor_scope_overall">Tutto il mese</string>
+    <string name="budgets_editor_scope_locked">L\'ambito di un budget esistente non si può cambiare: eliminalo e creane uno nuovo.</string>
+    <string name="budgets_editor_no_scopes">Il budget mensile e tutte le categorie di spesa ne hanno già uno. Modificali dalla lista.</string>
+    <string name="budgets_editor_amount">Limite mensile</string>
+    <string name="budgets_editor_amount_hint">I budget usano la valuta principale.</string>
+    <string name="budgets_editor_amount_error">Inserisci un importo maggiore di zero.</string>
+    <string name="budgets_editor_delete">Elimina budget</string>
+    <string name="budgets_delete_dialog_title">Eliminare questo budget?</string>
+    <string name="budgets_delete_dialog_body">I movimenti non vengono toccati; spariscono solo il tetto e i suoi avvisi.</string>
+    <string name="settings_budgets">Budget</string>
+    <string name="settings_budgets_hint">Tetti mensili e avvisi</string>
+
+    <!-- Budget notifications and dashboard card -->
+    <string name="dashboard_budget_title">Budget</string>
+    <string name="notif_channel_budget_name">Avvisi budget</string>
+    <string name="notif_budget_warning_title">%1$s: usato il %2$d%%</string>
+    <string name="notif_budget_exceeded_title">%1$s superato (%2$d%%)</string>
+    <string name="notif_budget_body">Spesi %1$s di %2$s</string>
+    <plurals name="notif_budget_warning_summary_title">
+        <item quantity="one">%d budget oltre l\'80%%</item>
+        <item quantity="other">%d budget oltre l\'80%%</item>
+    </plurals>
+    <plurals name="notif_budget_exceeded_summary_title">
+        <item quantity="one">%d budget superato</item>
+        <item quantity="other">%d budget superati</item>
+    </plurals>
+
+    <!-- Safe to spend -->
+    <string name="dashboard_sts_title">Spendibile oggi</string>
+    <plurals name="dashboard_sts_month_left">
+        <item quantity="one">Ancora %1$s per oggi</item>
+        <item quantity="other">Ancora %1$s per i prossimi %2$d giorni</item>
+    </plurals>
+    <string name="dashboard_sts_upcoming">Già impegnati entro fine mese: %1$s</string>
+    <string name="dashboard_sts_exhausted">Budget del mese esaurito</string>
+    <string name="dashboard_sts_over_hint">Spese e addebiti in arrivo superano il budget mensile.</string>
+
+    <!-- Dashboard visibility settings -->
+    <string name="settings_section_dashboard">Dashboard</string>
+    <string name="settings_dashboard_show_sts">Spendibile oggi</string>
+    <string name="settings_dashboard_show_sts_hint">Mostra quanto puoi ancora spendere oggi (richiede un budget mensile)</string>
+    <string name="settings_dashboard_show_budget">Scheda budget</string>
+    <string name="settings_dashboard_show_budget_hint">Mostra i progressi dei budget del mese</string>
+    <string name="settings_dashboard_show_recent">Ultimi movimenti</string>
+    <string name="settings_dashboard_show_recent_hint">Mostra i movimenti più recenti in fondo</string>
 </resources>

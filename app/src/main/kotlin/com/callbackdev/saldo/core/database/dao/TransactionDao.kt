@@ -162,6 +162,92 @@ interface TransactionDao {
     ): Flow<List<AccountTotalRow>>
 
     /**
+     * Total signed spend in `[startMillis, endMillis)`, restricted to
+     * [currency], with the same statistics rules as [observeMonthlyTotals]:
+     * refunds net the spend, transfers/adjustments/excluded/pending never
+     * count. Used for overall budget progress; NULL when nothing matches.
+     */
+    @Query(
+        """
+        SELECT SUM(amountMinor)
+        FROM transactions
+        WHERE (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        """,
+    )
+    fun observeStatsSpendTotal(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): Flow<Long?>
+
+    /** One-shot variant of [observeStatsSpendTotal] for the budget threshold check. */
+    @Query(
+        """
+        SELECT SUM(amountMinor)
+        FROM transactions
+        WHERE (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        """,
+    )
+    suspend fun getStatsSpendTotal(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): Long?
+
+    /**
+     * Per-category signed spend totals in `[startMillis, endMillis)`, restricted
+     * to [currency]. Unlike [observeCategoryTotals] this keeps the spend filter
+     * only (expenses plus refunds): pure incomes in a BOTH category must not
+     * offset its budget. Used for category budget progress.
+     */
+    @Query(
+        """
+        SELECT categoryId AS categoryId, SUM(amountMinor) AS totalMinor, COUNT(*) AS count
+        FROM transactions
+        WHERE categoryId IS NOT NULL
+            AND (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        GROUP BY categoryId
+        """,
+    )
+    fun observeCategorySpendTotals(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): Flow<List<CategoryTotalRow>>
+
+    /** One-shot variant of [observeCategorySpendTotals] for the budget threshold check. */
+    @Query(
+        """
+        SELECT categoryId AS categoryId, SUM(amountMinor) AS totalMinor, COUNT(*) AS count
+        FROM transactions
+        WHERE categoryId IS NOT NULL
+            AND (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        GROUP BY categoryId
+        """,
+    )
+    suspend fun getCategorySpendTotals(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): List<CategoryTotalRow>
+
+    /**
      * Net effect per local month on the balance of the accounts included in the
      * total (non-archived, denominated in [currency]), across the whole ledger.
      * Every type counts, exactly like [AccountDao.observeTotalBalance]: the

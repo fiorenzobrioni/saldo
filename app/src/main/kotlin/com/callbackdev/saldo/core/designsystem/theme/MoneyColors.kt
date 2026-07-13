@@ -18,6 +18,9 @@ import androidx.compose.ui.graphics.Color
  *   icon carry the distinction (also for color-blind users).
  * - [neutral]: money that is neither gain nor loss (transfers, adjustments).
  * - [negative]: balances below zero, a warning rather than a flow direction.
+ * - [warning]: spending approaching a cap (budget between its thresholds).
+ *   Amber sits between the calm default and [negative]; M3 has no warning
+ *   role, so the two variants are fixed per theme for contrast on surfaces.
  */
 @Immutable
 data class MoneyColors(
@@ -25,13 +28,21 @@ data class MoneyColors(
     val expense: Color,
     val neutral: Color,
     val negative: Color,
+    val warning: Color,
 )
 
-internal fun moneyColors(colorScheme: ColorScheme): MoneyColors = MoneyColors(
+@Suppress("MagicNumber") // A palette is literal color values by nature.
+private val WarningOnLight = Color(0xFF9A6700)
+
+@Suppress("MagicNumber") // A palette is literal color values by nature.
+private val WarningOnDark = Color(0xFFFFB74D)
+
+internal fun moneyColors(colorScheme: ColorScheme, darkTheme: Boolean): MoneyColors = MoneyColors(
     income = colorScheme.tertiary,
     expense = colorScheme.onSurface,
     neutral = colorScheme.onSurfaceVariant,
     negative = colorScheme.error,
+    warning = if (darkTheme) WarningOnDark else WarningOnLight,
 )
 
 internal val LocalMoneyColors = staticCompositionLocalOf {
@@ -40,6 +51,7 @@ internal val LocalMoneyColors = staticCompositionLocalOf {
         expense = Color.Unspecified,
         neutral = Color.Unspecified,
         negative = Color.Unspecified,
+        warning = Color.Unspecified,
     )
 }
 

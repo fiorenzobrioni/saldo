@@ -487,7 +487,7 @@
     <string name="backup_restore_dialog_title">Restore this backup?</string>
     <string name="backup_restore_dialog_metadata">Backup from %1$s</string>
     <string name="backup_restore_dialog_metadata_versioned">Backup from %1$s (Saldo %2$s)</string>
-    <string name="backup_restore_dialog_counts">Accounts: %1$d\nTransactions: %2$d\nCategories: %3$d\nRecurring rules: %4$d\nTags: %5$d</string>
+    <string name="backup_restore_dialog_counts">Accounts: %1$d\nTransactions: %2$d\nCategories: %3$d\nRecurring rules: %4$d\nTags: %5$d\nBudgets: %6$d</string>
     <string name="backup_restore_dialog_warning">All current data will be replaced. This cannot be undone.</string>
     <string name="backup_restore_confirm">Restore</string>
     <string name="backup_snackbar_exported">Backup saved (%1$d transactions)</string>
@@ -576,4 +576,68 @@
     <string name="onboarding_notifications_cta">Turn on notifications</string>
     <string name="onboarding_notifications_skip">Maybe later</string>
     <string name="onboarding_step_of">Step %1$d of %2$d</string>
+
+    <!-- Budgets -->
+    <string name="budgets_title">Budgets</string>
+    <string name="budgets_add">New budget</string>
+    <string name="budgets_overall_title">Monthly budget</string>
+    <string name="budgets_overall_cta_title">Set a monthly budget</string>
+    <string name="budgets_overall_cta_body">One cap for the whole month\'s spending. It also unlocks the Safe to spend figure on the Dashboard.</string>
+    <string name="budgets_remaining">%1$s left</string>
+    <string name="budgets_overspent_by">Over by %1$s</string>
+    <string name="budgets_spent_of">Spent %1$s of %2$s</string>
+    <string name="budgets_section_categories">Category budgets</string>
+    <string name="budgets_over_a11y">Budget exceeded</string>
+    <string name="budgets_empty_title">No budgets yet</string>
+    <string name="budgets_empty_body">Set a monthly cap for all spending or for single categories: Saldo tracks the progress and warns you at 80% and 100%.</string>
+    <string name="budgets_empty_cta">Create a budget</string>
+    <string name="budgets_editor_title_new">New budget</string>
+    <string name="budgets_editor_title_edit">Edit budget</string>
+    <string name="budgets_editor_save">Save budget</string>
+    <string name="budgets_editor_section_scope">What it caps</string>
+    <string name="budgets_editor_scope_overall">Whole month</string>
+    <string name="budgets_editor_scope_locked">The scope of an existing budget cannot change: delete it and create a new one instead.</string>
+    <string name="budgets_editor_no_scopes">The monthly budget and every expense category already have one. Edit them from the list.</string>
+    <string name="budgets_editor_amount">Monthly limit</string>
+    <string name="budgets_editor_amount_hint">Budgets use the primary currency.</string>
+    <string name="budgets_editor_amount_error">Enter an amount greater than zero.</string>
+    <string name="budgets_editor_delete">Delete budget</string>
+    <string name="budgets_delete_dialog_title">Delete this budget?</string>
+    <string name="budgets_delete_dialog_body">Your transactions are not affected; only the cap and its alerts go away.</string>
+    <string name="settings_budgets">Budgets</string>
+    <string name="settings_budgets_hint">Monthly caps and alerts</string>
+
+    <!-- Budget notifications and dashboard card -->
+    <string name="dashboard_budget_title">Budgets</string>
+    <string name="notif_channel_budget_name">Budget alerts</string>
+    <string name="notif_budget_warning_title">%1$s: %2$d%% used</string>
+    <string name="notif_budget_exceeded_title">%1$s exceeded (%2$d%%)</string>
+    <string name="notif_budget_body">Spent %1$s of %2$s</string>
+    <plurals name="notif_budget_warning_summary_title">
+        <item quantity="one">%d budget past 80%%</item>
+        <item quantity="other">%d budgets past 80%%</item>
+    </plurals>
+    <plurals name="notif_budget_exceeded_summary_title">
+        <item quantity="one">%d budget exceeded</item>
+        <item quantity="other">%d budgets exceeded</item>
+    </plurals>
+
+    <!-- Safe to spend -->
+    <string name="dashboard_sts_title">Safe to spend today</string>
+    <plurals name="dashboard_sts_month_left">
+        <item quantity="one">%1$s left for today</item>
+        <item quantity="other">%1$s left for the next %2$d days</item>
+    </plurals>
+    <string name="dashboard_sts_upcoming">Already committed before month end: %1$s</string>
+    <string name="dashboard_sts_exhausted">This month\'s budget is used up</string>
+    <string name="dashboard_sts_over_hint">Spending and upcoming charges exceed the monthly budget.</string>
+
+    <!-- Dashboard visibility settings -->
+    <string name="settings_section_dashboard">Dashboard</string>
+    <string name="settings_dashboard_show_sts">Safe to spend</string>
+    <string name="settings_dashboard_show_sts_hint">Show what you can still spend today (needs a monthly budget)</string>
+    <string name="settings_dashboard_show_budget">Budgets card</string>
+    <string name="settings_dashboard_show_budget_hint">Show the month\'s budget progress</string>
+    <string name="settings_dashboard_show_recent">Latest transactions</string>
+    <string name="settings_dashboard_show_recent_hint">Show the most recent transactions at the bottom</string>
 </resources>

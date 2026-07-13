@@ -9,6 +9,7 @@ import com.callbackdev.saldo.core.database.migration.MIGRATION_1_2
 import com.callbackdev.saldo.core.database.migration.MIGRATION_2_3
 import com.callbackdev.saldo.core.database.migration.MIGRATION_3_4
 import com.callbackdev.saldo.core.database.migration.MIGRATION_4_5
+import com.callbackdev.saldo.core.database.migration.MIGRATION_5_6
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -198,6 +199,47 @@ class RecurringRuleMigrationTest {
             assertEquals("Netflix", cursor.getString(0))
             // Existing rules have never been reminded.
             assertTrue(cursor.isNull(1))
+        }
+    }
+
+    @Test
+    fun migrate5To6_createsBudgetsTable_keepingExistingData() {
+        val dbName = "migration-test-5-6"
+
+        helper.createDatabase(dbName, 5).use { db ->
+            db.insert(
+                "categories",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("id", 10L)
+                    put("name", "Groceries")
+                    put("type", "EXPENSE")
+                    put("color", 0x66BB6A)
+                    put("icon", "shopping_cart")
+                    put("sortOrder", 0)
+                    put("isDefault", 0)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 6, true, MIGRATION_5_6)
+
+        // Pre-existing data is intact and the new table starts empty.
+        db.query("SELECT name FROM categories").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Groceries", cursor.getString(0))
+        }
+        db.query("SELECT COUNT(*) FROM budgets").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+        // The unique index on categoryId is in place.
+        db.query(
+            "SELECT COUNT(*) FROM sqlite_master " +
+                "WHERE type = 'index' AND name = 'index_budgets_categoryId'",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1, cursor.getInt(0))
         }
     }
 

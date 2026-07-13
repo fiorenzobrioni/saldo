@@ -13,11 +13,16 @@ import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
+import com.callbackdev.saldo.core.domain.model.BudgetProgress
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
+import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.every
 import io.mockk.mockk
@@ -55,6 +60,8 @@ class DashboardViewModelTest {
     private val transactionRepository = mockk<TransactionRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
     private val recurringRuleRepository = mockk<RecurringRuleRepository>()
+    private val observeBudgetProgress = mockk<ObserveBudgetProgressUseCase>()
+    private val observeSafeToSpend = mockk<ObserveSafeToSpendUseCase>()
 
     private fun account(
         id: Long,
@@ -96,20 +103,28 @@ class DashboardViewModelTest {
         categories: List<Category> = emptyList(),
         rules: List<RecurringRule> = emptyList(),
         currencyOverride: Currency? = null,
+        budgets: List<BudgetProgress> = emptyList(),
+        safeToSpend: SafeToSpend? = null,
+        cardPrefs: DashboardCardPreferences = DashboardCardPreferences(),
     ): DashboardViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
+        every { userPreferences.dashboardCardPreferences } returns flowOf(cardPrefs)
         every { transactionRepository.observeDashboardTotals(any(), any()) } returns flowOf(totals)
         every { transactionRepository.observeRecentTransactions(any()) } returns flowOf(recent)
         every { transactionRepository.observePendingTransactions() } returns flowOf(emptyList<Transaction>())
         every { categoryRepository.observeCategories() } returns flowOf(categories)
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
+        every { observeBudgetProgress(any()) } returns flowOf(budgets)
+        every { observeSafeToSpend(any()) } returns flowOf(safeToSpend)
         return DashboardViewModel(
             accountRepository,
             userPreferences,
             transactionRepository,
             categoryRepository,
             recurringRuleRepository,
+            observeBudgetProgress,
+            observeSafeToSpend,
             clock,
         )
     }
@@ -143,6 +158,50 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `budget progress flows into the ui state`() = runTest {
+        val progress = BudgetProgress(
+            budget = com.callbackdev.saldo.core.domain.model.Budget(
+                id = 1L,
+                categoryId = null,
+                amount = BigDecimal("500.00"),
+                currency = eur,
+            ),
+            category = null,
+            spent = BigDecimal("120.00"),
+            fraction = 0.24f,
+            level = com.callbackdev.saldo.core.domain.model.BudgetLevel.UNDER,
+        )
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            budgets = listOf(progress),
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(listOf(progress), state.budgets)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `card visibility preferences flow into the ui state`() = runTest {
+        val prefs = DashboardCardPreferences(
+            showBudget = false,
+            showSafeToSpend = false,
+            showRecentTransactions = false,
+        )
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            cardPrefs = prefs,
+        )
+
+        viewModel.uiState.test {
+            assertEquals(prefs, awaitLoaded().cardPrefs)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `explicit currency override wins over the account plurality`() = runTest {
         val accounts = listOf(
             AccountWithBalance(account(1L, eur), BigDecimal("100.00")),
@@ -167,6 +226,7 @@ class DashboardViewModelTest {
             listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
         )
         every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
+        every { userPreferences.dashboardCardPreferences } returns flowOf(DashboardCardPreferences())
         every {
             transactionRepository.observeDashboardTotals(capture(windows), eur)
         } returns flowOf(DashboardTotals())
@@ -174,12 +234,16 @@ class DashboardViewModelTest {
         every { transactionRepository.observePendingTransactions() } returns flowOf(emptyList())
         every { categoryRepository.observeCategories() } returns flowOf(emptyList())
         every { recurringRuleRepository.observeRules() } returns flowOf(emptyList())
+        every { observeBudgetProgress(any()) } returns flowOf(emptyList())
+        every { observeSafeToSpend(any()) } returns flowOf(null)
         val viewModel = DashboardViewModel(
             accountRepository,
             userPreferences,
             transactionRepository,
             categoryRepository,
             recurringRuleRepository,
+            observeBudgetProgress,
+            observeSafeToSpend,
             clock,
         )
 

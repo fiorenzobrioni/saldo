@@ -25,6 +25,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * the pre-renewal reminder notification (the occurrence date last reminded, so
  * each upcoming charge is reminded once). Nullable: existing rules have never
  * been reminded.
+ *
+ * v5 -> v6: creates the `budgets` table (monthly budgets: one optional overall
+ * row with NULL categoryId plus per-category caps, unique index on categoryId)
+ * with the per-threshold notification watermarks. DDL copied verbatim from the
+ * schema Room exports for version 6, so validation matches byte for byte.
  */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -71,5 +76,27 @@ val MIGRATION_4_5: Migration = object : Migration(4, 5) {
     }
 }
 
+@Suppress("MagicNumber") // Schema version numbers.
+val MIGRATION_5_6: Migration = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `budgets` (" +
+                "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`categoryId` INTEGER, " +
+                "`amountMinor` INTEGER NOT NULL, " +
+                "`currency` TEXT NOT NULL, " +
+                "`lastNotified80EpochMonth` INTEGER, " +
+                "`lastNotified100EpochMonth` INTEGER, " +
+                "FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) " +
+                "ON UPDATE NO ACTION ON DELETE CASCADE )",
+        )
+        db.execSQL(
+            "CREATE UNIQUE INDEX IF NOT EXISTS `index_budgets_categoryId` " +
+                "ON `budgets` (`categoryId`)",
+        )
+    }
+}
+
 /** All migrations, applied in order by Room. */
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+val ALL_MIGRATIONS: Array<Migration> =
+    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)

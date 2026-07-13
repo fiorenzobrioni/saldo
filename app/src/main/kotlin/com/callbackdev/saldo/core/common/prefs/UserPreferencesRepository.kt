@@ -43,6 +43,17 @@ data class RenewalReminderPreferences(
 }
 
 /**
+ * Which optional dashboard cards are shown. Everything defaults to visible;
+ * the core cards (balance, today/month, pending, recurring) are not
+ * configurable on purpose: they are the dashboard.
+ */
+data class DashboardCardPreferences(
+    val showBudget: Boolean = true,
+    val showSafeToSpend: Boolean = true,
+    val showRecentTransactions: Boolean = true,
+)
+
+/**
  * The CSV column separator offered by the movements export. [SEMICOLON] pairs
  * with comma decimals (what Excel expects in an Italian locale), [COMMA] with
  * dot decimals (the international CSV convention).
@@ -192,6 +203,27 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { preferences -> preferences[LAST_BACKUP_AT_EPOCH_MILLI] = epochMilli }
     }
 
+    /** Visibility of the optional dashboard cards; everything shown by default. */
+    val dashboardCardPreferences: Flow<DashboardCardPreferences> = dataStore.data.map { preferences ->
+        DashboardCardPreferences(
+            showBudget = preferences[DASHBOARD_SHOW_BUDGET_CARD] ?: true,
+            showSafeToSpend = preferences[DASHBOARD_SHOW_SAFE_TO_SPEND] ?: true,
+            showRecentTransactions = preferences[DASHBOARD_SHOW_RECENT_TRANSACTIONS] ?: true,
+        )
+    }
+
+    suspend fun setShowBudgetCard(shown: Boolean) {
+        dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_BUDGET_CARD] = shown }
+    }
+
+    suspend fun setShowSafeToSpendCard(shown: Boolean) {
+        dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_SAFE_TO_SPEND] = shown }
+    }
+
+    suspend fun setShowRecentTransactions(shown: Boolean) {
+        dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_RECENT_TRANSACTIONS] = shown }
+    }
+
     /** Column separator of the CSV export; semicolon by default (Excel friendly). */
     val csvSeparator: Flow<CsvSeparator> = dataStore.data.map { preferences ->
         preferences[CSV_SEPARATOR]
@@ -220,5 +252,9 @@ class UserPreferencesRepository @Inject constructor(
         val FIRST_DAY_OF_WEEK = stringPreferencesKey("first_day_of_week")
         val LAST_BACKUP_AT_EPOCH_MILLI = longPreferencesKey("last_backup_at_epoch_milli")
         val CSV_SEPARATOR = stringPreferencesKey("csv_separator")
+        val DASHBOARD_SHOW_BUDGET_CARD = booleanPreferencesKey("dashboard_show_budget_card")
+        val DASHBOARD_SHOW_SAFE_TO_SPEND = booleanPreferencesKey("dashboard_show_safe_to_spend")
+        val DASHBOARD_SHOW_RECENT_TRANSACTIONS =
+            booleanPreferencesKey("dashboard_show_recent_transactions")
     }
 }

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.callbackdev.saldo.core.database.SaldoDatabase
 import com.callbackdev.saldo.core.database.dao.AccountDao
+import com.callbackdev.saldo.core.database.dao.BudgetDao
 import com.callbackdev.saldo.core.database.dao.CategoryDao
 import com.callbackdev.saldo.core.database.dao.RecurringRuleDao
 import com.callbackdev.saldo.core.database.dao.TagDao
@@ -49,6 +50,9 @@ object DatabaseModule {
     @Provides
     fun provideRecurringRuleDao(database: SaldoDatabase): RecurringRuleDao =
         database.recurringRuleDao()
+
+    @Provides
+    fun provideBudgetDao(database: SaldoDatabase): BudgetDao = database.budgetDao()
 
     @Provides
     fun provideTransactionRunner(database: SaldoDatabase): TransactionRunner =

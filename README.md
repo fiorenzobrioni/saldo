@@ -28,16 +28,18 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - 💸 **Movimenti** - spese, entrate e trasferimenti tra conti, registrabili in 2-3 tap
 - 🏦 **Conti multipli** - con saldo iniziale, rettifica saldo e archiviazione
 - 🔁 **Movimenti ricorrenti** - uscite ricorrenti (abbonamenti, affitto, assicurazioni) ed entrate ricorrenti (stipendio, affitti attivi) con registrazione automatica o con conferma, hub dedicato con totale mensile e proiezione annua per tab, notifica di pre-rinnovo opzionale ("Netflix si rinnova tra 3 giorni") con anticipo configurabile
+- 💰 **Budget mensili** - un tetto complessivo per il mese e tetti per singole categorie di spesa, con barre di avanzamento verde/giallo/rosso e avvisi all'80% e al 100%
+- 🟢 **Spendibile oggi** - quanto puoi ancora spendere restando nel budget: tiene conto di quanto speso, dei movimenti da confermare e degli addebiti ricorrenti in arrivo entro fine mese
 - 🏷️ **Categorie e tag personalizzabili**
 - 🔍 **Ricerca e filtri combinabili** con totale della vista filtrata e preset rapidi (inclusa "Questa settimana", che rispetta il primo giorno scelto)
 - 📈 **Statistiche** - spese per categoria, trend mensile, entrate vs uscite, andamento saldo
 - 🌍 **Multi-valuta** - ogni movimento conserva importo e valuta originali
 - 🎨 **Tema personalizzabile** - chiaro/scuro/sistema, palette dell'app o colori dinamici Material You
-- ⚙️ **Preferenze** - valuta principale (automatica o esplicita), conto predefinito per i nuovi movimenti, primo giorno della settimana
+- ⚙️ **Preferenze** - valuta principale (automatica o esplicita), conto predefinito per i nuovi movimenti, primo giorno della settimana, scelta delle card visibili in Dashboard
 - 💾 **Backup e ripristino su file** - export JSON versionato dove vuoi tu (nessun account richiesto), ripristino guidato con anteprima del contenuto - più **export CSV** dei movimenti filtrati, condivisibile
 - 🇮🇹 🇬🇧 Italiano e inglese
 
-In arrivo (v1.5 / v2.0): budget, PIN e biometria, widget, import CSV, export Google Sheets/Excel/PDF, obiettivi di risparmio, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
+In arrivo (v1.5 / v2.0): PIN e biometria, widget, import CSV, export Google Sheets/Excel/PDF, obiettivi di risparmio, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
 
 ## Principi
 

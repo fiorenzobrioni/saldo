@@ -76,6 +76,14 @@ data class RecurringRuleEditorRoute(
 @Serializable
 data object PendingMovementsRoute : NavKey
 
+/** Budget management (overall and per-category), reached from the dashboard and Settings. */
+@Serializable
+data object BudgetsRoute : NavKey
+
+/** Budget editor: create mode when [budgetId] is null, edit mode otherwise. */
+@Serializable
+data class BudgetEditorRoute(val budgetId: Long? = null) : NavKey
+
 /** Manual file backup and guided restore, reached from Settings. */
 @Serializable
 data object BackupRoute : NavKey

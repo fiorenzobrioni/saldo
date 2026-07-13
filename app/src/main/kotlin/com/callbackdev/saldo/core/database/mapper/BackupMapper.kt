@@ -3,12 +3,14 @@
 package com.callbackdev.saldo.core.database.mapper
 
 import com.callbackdev.saldo.core.database.entity.AccountEntity
+import com.callbackdev.saldo.core.database.entity.BudgetEntity
 import com.callbackdev.saldo.core.database.entity.CategoryEntity
 import com.callbackdev.saldo.core.database.entity.RecurringRuleEntity
 import com.callbackdev.saldo.core.database.entity.TagEntity
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
 import com.callbackdev.saldo.core.database.entity.TransactionTagCrossRef
 import com.callbackdev.saldo.core.domain.backup.AccountBackup
+import com.callbackdev.saldo.core.domain.backup.BudgetBackup
 import com.callbackdev.saldo.core.domain.backup.CategoryBackup
 import com.callbackdev.saldo.core.domain.backup.RecurringRuleBackup
 import com.callbackdev.saldo.core.domain.backup.TagBackup
@@ -167,3 +169,21 @@ fun TransactionTagCrossRef.toBackup(): TransactionTagBackup =
 
 fun TransactionTagBackup.toEntity(): TransactionTagCrossRef =
     TransactionTagCrossRef(transactionId = transactionId, tagId = tagId)
+
+fun BudgetEntity.toBackup(): BudgetBackup = BudgetBackup(
+    id = id,
+    categoryId = categoryId,
+    amountMinor = amountMinor,
+    currency = currency,
+    lastNotified80EpochMonth = lastNotified80EpochMonth,
+    lastNotified100EpochMonth = lastNotified100EpochMonth,
+)
+
+fun BudgetBackup.toEntity(): BudgetEntity = BudgetEntity(
+    id = id,
+    categoryId = categoryId,
+    amountMinor = amountMinor,
+    currency = currency,
+    lastNotified80EpochMonth = lastNotified80EpochMonth,
+    lastNotified100EpochMonth = lastNotified100EpochMonth,
+)

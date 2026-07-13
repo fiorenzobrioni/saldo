@@ -386,6 +386,7 @@ private fun RestoreConfirmationDialog(
                         summary.categories,
                         summary.recurringRules,
                         summary.tags,
+                        summary.budgets,
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                 )
