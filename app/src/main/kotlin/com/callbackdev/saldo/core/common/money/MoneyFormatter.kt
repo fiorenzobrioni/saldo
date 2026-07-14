@@ -35,11 +35,25 @@ object MoneyFormatter {
         return if (amount.signum() > 0) "+$formatted" else formatted
     }
 
-    private fun currencyFormat(currency: Currency, locale: Locale): NumberFormat =
-        NumberFormat.getCurrencyInstance(locale).apply {
-            this.currency = currency
-            val digits = MoneyMapper.fractionDigits(currency)
-            minimumFractionDigits = digits
-            maximumFractionDigits = digits
+    /**
+     * Per-thread cache of configured formatters, keyed by currency and locale.
+     * [NumberFormat] construction goes through ICU and is not free; money is
+     * formatted once per row on every recomposition of a list, so rebuilding it
+     * each time shows up while scrolling. [NumberFormat] is also not
+     * thread-safe, hence a [ThreadLocal] map rather than a shared instance: each
+     * thread reuses its own formatter with no locking on the format path.
+     */
+    private val cache = ThreadLocal.withInitial { HashMap<String, NumberFormat>() }
+
+    private fun currencyFormat(currency: Currency, locale: Locale): NumberFormat {
+        val key = "${currency.currencyCode}|${locale.toLanguageTag()}"
+        return cache.get()!!.getOrPut(key) {
+            NumberFormat.getCurrencyInstance(locale).apply {
+                this.currency = currency
+                val digits = MoneyMapper.fractionDigits(currency)
+                minimumFractionDigits = digits
+                maximumFractionDigits = digits
+            }
         }
+    }
 }

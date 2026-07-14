@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="add_expense"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_expense"
+        android:shortcutShortLabel="@string/shortcut_expense_short"
+        android:shortcutLongLabel="@string/shortcut_expense_long">
+        <intent
+            android:action="com.callbackdev.saldo.action.ADD_EXPENSE"
+            android:targetPackage="com.callbackdev.saldo"
+            android:targetClass="com.callbackdev.saldo.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="add_income"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_income"
+        android:shortcutShortLabel="@string/shortcut_income_short"
+        android:shortcutLongLabel="@string/shortcut_income_long">
+        <intent
+            android:action="com.callbackdev.saldo.action.ADD_INCOME"
+            android:targetPackage="com.callbackdev.saldo"
+            android:targetClass="com.callbackdev.saldo.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="add_transfer"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_transfer"
+        android:shortcutShortLabel="@string/shortcut_transfer_short"
+        android:shortcutLongLabel="@string/shortcut_transfer_long">
+        <intent
+            android:action="com.callbackdev.saldo.action.ADD_TRANSFER"
+            android:targetPackage="com.callbackdev.saldo"
+            android:targetClass="com.callbackdev.saldo.MainActivity" />
+    </shortcut>
+</shortcuts>

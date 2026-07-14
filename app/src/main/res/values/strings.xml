@@ -87,6 +87,15 @@
     <string name="dashboard_fab_income">Income</string>
     <string name="dashboard_fab_transfer">Transfer</string>
 
+    <!-- Launcher app shortcuts (long-press the icon). Short labels are kept
+         within ~10 chars so launchers do not truncate them. -->
+    <string name="shortcut_expense_short">Expense</string>
+    <string name="shortcut_expense_long">Add expense</string>
+    <string name="shortcut_income_short">Income</string>
+    <string name="shortcut_income_long">Add income</string>
+    <string name="shortcut_transfer_short">Transfer</string>
+    <string name="shortcut_transfer_long">New transfer</string>
+
     <!-- Accounts (Phase 2) -->
     <string name="accounts_title">Accounts</string>
     <string name="accounts_new">New account</string>

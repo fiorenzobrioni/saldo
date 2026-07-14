@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+
+    <!-- Launcher shortcut icon backgrounds, drawn from the brand palette so the
+         adaptive icons stay on-brand and legible under any launcher mask. -->
+    <color name="shortcut_expense_background">#BA1A1A</color>
+    <color name="shortcut_income_background">#3E6837</color>
+    <color name="shortcut_transfer_background">#00696D</color>
 </resources>

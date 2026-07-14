@@ -86,6 +86,15 @@
     <string name="dashboard_fab_income">Entrata</string>
     <string name="dashboard_fab_transfer">Trasferimento</string>
 
+    <!-- Scorciatoie del launcher (pressione prolungata sull'icona). Le label
+         brevi restano entro ~10 caratteri per non essere troncate. -->
+    <string name="shortcut_expense_short">Spesa</string>
+    <string name="shortcut_expense_long">Aggiungi spesa</string>
+    <string name="shortcut_income_short">Entrata</string>
+    <string name="shortcut_income_long">Aggiungi entrata</string>
+    <string name="shortcut_transfer_short">Trasferisci</string>
+    <string name="shortcut_transfer_long">Nuovo trasferimento</string>
+
     <!-- Account (Fase 2) -->
     <string name="accounts_title">Conti</string>
     <string name="accounts_new">Nuovo conto</string>
