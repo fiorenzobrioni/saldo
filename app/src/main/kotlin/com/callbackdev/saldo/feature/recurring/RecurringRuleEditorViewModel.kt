@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.recurring
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
+import com.callbackdev.saldo.core.common.di.ApplicationScope
 import com.callbackdev.saldo.core.common.money.MoneyInput
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Account
@@ -17,11 +18,13 @@ import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
+import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
 import com.callbackdev.saldo.navigation.RecurringRuleEditorRoute
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -95,6 +98,8 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
     private val recurringRuleRepository: RecurringRuleRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
+    private val generateRecurringMovements: GenerateRecurringMovementsUseCase,
+    @ApplicationScope private val applicationScope: CoroutineScope,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -271,6 +276,15 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         viewModelScope.launch {
             val result = suspendRunCatching { recurringRuleRepository.upsert(rule) }
             isSaving = false
+            if (result.isSuccess) {
+                // Materialize any occurrence already owed by the rule (e.g. one
+                // due today) right away, instead of waiting for the next app
+                // launch or the daily worker. Runs in the application scope so
+                // navigating back off this screen cannot cancel it mid-run; the
+                // use case is idempotent and mutex-guarded, so overlapping with
+                // the launch catch-up is harmless.
+                applicationScope.launch { runCatching { generateRecurringMovements() } }
+            }
             _events.send(
                 if (result.isSuccess) RecurringRuleEditorEvent.Saved else RecurringRuleEditorEvent.WriteFailed,
             )
