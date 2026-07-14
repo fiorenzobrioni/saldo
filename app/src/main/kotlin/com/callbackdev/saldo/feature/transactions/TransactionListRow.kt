@@ -22,8 +22,10 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,17 +59,21 @@ internal fun SwipeableTransactionRow(
 ) {
     val currentOnDelete by rememberUpdatedState(onDelete)
     val haptics = LocalHapticFeedback.current
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                currentOnDelete()
-                true
-            } else {
-                false
+    val dismissState = rememberSwipeToDismissBoxState()
+    // Trigger the delete when the row settles in the dismissed state, observing
+    // the state instead of vetoing it from a callback (confirmValueChange is
+    // deprecated). Only the end-to-start direction is enabled below, and the box
+    // reaches EndToStart only past the swipe threshold, so a short drag that
+    // snaps back never deletes.
+    LaunchedEffect(dismissState) {
+        snapshotFlow { dismissState.currentValue }
+            .collect { value ->
+                if (value == SwipeToDismissBoxValue.EndToStart) {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    currentOnDelete()
+                }
             }
-        },
-    )
+    }
     SwipeToDismissBox(
         state = dismissState,
         enableDismissFromStartToEnd = false,

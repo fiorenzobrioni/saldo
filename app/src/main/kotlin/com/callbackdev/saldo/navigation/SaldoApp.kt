@@ -4,8 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
@@ -54,25 +52,11 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 /** Height of the Material 3 navigation bar content (excluding the system inset). */
 private val BottomBarHeight = 80.dp
 
-/** Duration of the slide/scale motion (the 700ms default feels slow; this reads as snappy). */
-private const val NAV_TRANSITION_MS = 240
-
-/**
- * Fade duration, kept shorter than the motion on purpose: the cross-fade forces
- * both screens into offscreen alpha layers, the most expensive part of the
- * transition, so the incoming screen turns opaque (and the outgoing one drops
- * out) well before the slide settles, cutting the heavy compositing window.
- */
-private const val NAV_FADE_MS = 150
+/** Duration of the screen and bottom-bar transitions (the 700ms default feels slow). */
+private const val NAV_TRANSITION_MS = 300
 
 /** How far the incoming/outgoing screens slide, as a fraction (1/N) of their width. */
-private const val SLIDE_DIVISOR = 8
-
-/** Start scale of the entering screen: a slight grow reads as depth (shared Z axis). */
-private const val SCALE_ENTER = 0.96f
-
-/** End scale of the exiting screen: it recedes forward as the new screen arrives. */
-private const val SCALE_EXIT = 1.03f
+private const val SLIDE_DIVISOR = 6
 
 /**
  * Root composable: the Navigation 3 display with a bottom navigation bar shown
@@ -270,30 +254,21 @@ fun SaldoApp(
     }
 }
 
-/**
- * Push transition: the incoming screen slides in from the right, grows from
- * [SCALE_ENTER] and fades in, while the outgoing one recedes to [SCALE_EXIT] and
- * fades out. The slide + fade + scale together read as a screen coming forward
- * over the previous one (Material shared Z axis), snappier than a plain fade.
- */
+/** Push transition: the incoming screen slides in from the right and fades in. */
 private fun forwardTransition(): ContentTransform {
-    val enter = fadeIn(tween(NAV_FADE_MS, easing = FastOutSlowInEasing)) +
-        slideInHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { it / SLIDE_DIVISOR } +
-        scaleIn(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing), initialScale = SCALE_ENTER)
-    val exit = fadeOut(tween(NAV_FADE_MS, easing = FastOutSlowInEasing)) +
-        slideOutHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { -it / SLIDE_DIVISOR } +
-        scaleOut(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing), targetScale = SCALE_EXIT)
+    val enter = fadeIn(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) +
+        slideInHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { it / SLIDE_DIVISOR }
+    val exit = fadeOut(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) +
+        slideOutHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { -it / SLIDE_DIVISOR }
     return enter togetherWith exit
 }
 
-/** Pop transition: the reverse of [forwardTransition]; the previous screen comes back from depth. */
+/** Pop transition: the reverse of [forwardTransition], sliding back to the right. */
 private fun backwardTransition(): ContentTransform {
-    val enter = fadeIn(tween(NAV_FADE_MS, easing = FastOutSlowInEasing)) +
-        slideInHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { -it / SLIDE_DIVISOR } +
-        scaleIn(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing), initialScale = SCALE_EXIT)
-    val exit = fadeOut(tween(NAV_FADE_MS, easing = FastOutSlowInEasing)) +
-        slideOutHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { it / SLIDE_DIVISOR } +
-        scaleOut(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing), targetScale = SCALE_ENTER)
+    val enter = fadeIn(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) +
+        slideInHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { -it / SLIDE_DIVISOR }
+    val exit = fadeOut(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) +
+        slideOutHorizontally(tween(NAV_TRANSITION_MS, easing = FastOutSlowInEasing)) { it / SLIDE_DIVISOR }
     return enter togetherWith exit
 }
 
