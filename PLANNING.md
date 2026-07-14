@@ -190,6 +190,19 @@
 - [x] Voce "Budget" in Impostazioni > Gestione
 - [x] Test: mapper (minor units, epoch month), soglie esatte e ordinamento (`ObserveBudgetProgressUseCaseTest`), dedupe watermark (`CheckBudgetThresholdsUseCaseTest`), calculator ricorrenze in arrivo (floor, mesi corti, variabili escluse), safe-to-spend (pending contato una sola volta, FLOOR, ultimo giorno del mese), round-trip backup esteso, ViewModel dashboard; strumentati scritti ma da eseguire su device (migration 5->6, DAO budget con CASCADE e unique, query spend)
 
+## Fase 9.6 - Rifinitura premium e ottimizzazioni (2ª review, luglio 2026)
+
+> Giro di rifinitura "da app premium" guidato dall'utente sulla base di una seconda review completa, iterato su APK di prova da GitHub (versionCode 50 -> 54, versionName 0.9.11 -> 0.9.15). Nessuna modifica a dominio o schema.
+
+- [x] App shortcut statici dal launcher (dall'idea in Note e appunti): pressione prolungata sull'icona -> Nuova spesa, Nuova entrata, Trasferimento. Icone adattive on-brand (glifo bianco su sfondo brand rosso/verde/teal), label brevi azionabili + label lunghe IT/EN. Intent instradato in `MainActivity` (`singleTop` + `onNewIntent`) verso il back stack Nav3: apre l'editor giusto una sola volta, a freddo o a caldo, senza ri-trigger su rotazione. Le label brevi sono azionate ("Nuova spesa/entrata") mentre il FAB resta a nomi asciutti (contesto "+"), scelta condivisa con l'utente (commit 519a7f9, 4bff471)
+- [x] Skeleton di caricamento al posto dello spinner: `DashboardSkeleton` che ricalca il layout reale e `ListSkeleton` per le liste, con un unico pulse condiviso per schermata; adottati da Dashboard, Movimenti, Conti, Budget (commit 519a7f9)
+- [x] Ricorrenze: generazione immediata al salvataggio di una regola (application scope, idempotente e mutex-guarded), così un'occorrenza già scaduta compare subito nel registro senza attendere il prossimo avvio o il worker giornaliero (commit ba1f5df)
+- [x] Perf: `MoneyFormatter` mette in cache il `NumberFormat` per `(valuta, locale)` con `ThreadLocal` (`NumberFormat` non è thread-safe) invece di ricostruirlo a ogni chiamata, che pesava scorrendo le liste di importi (commit 519a7f9)
+- [x] Perf: catch-up ricorrenze e parsing dell'intent shortcut solo all'avvio genuino (`savedInstanceState == null`), non a ogni ricreazione da cambio configurazione (rotazione ecc.); WorkManager copre comunque i giorni a device spento (commit 519a7f9)
+- [x] `SwipeToDismiss` del registro migrato fuori dall'API deprecata `confirmValueChange`: l'eliminazione osserva lo stato assestato via `snapshotFlow`, con la sola direzione destra->sinistra abilitata (stesso comportamento, niente warning, a prova di rimozione futura dell'API) (commit 754767c)
+- [x] Transizioni di schermata: valutato uno stile "espressivo" (scale shared-Z) e poi ripristinata la transizione originale slide + fade dopo verifica su device (decisione utente, condivisa). Lo scatto residuo percepito è di build debug / assenza di baseline profile, non dello spec dell'animazione: il tema è tracciato in Fase 10 (commit 754767c)
+- [x] Verifica: gate `assembleDebug testDebugUnitTest lint detekt` verde in CI per ogni commit; APK di prova validato su device reale dall'utente (shortcut, skeleton, ricorrenza scaduta oggi, transizioni)
+
 ## Fase 10 - Release v1.0
 
 - [ ] Baseline profile (spostato dalla Fase 9: richiede modulo macrobenchmark e generazione su device/emulatore)
@@ -263,7 +276,7 @@
   - ~~"Spendibile oggi" (safe-to-spend)~~: implementata (Fase 9.5).
   - Rilevamento automatico ricorrenze: euristica on-device che nota spese simili ripetute a cadenza regolare e propone di creare la regola. "Intelligenza senza cloud", coerente col posizionamento privacy. Rimandata di proposito (luglio 2026): da implementare in una fase successiva, agganciandola all'hub Ricorrenze.
   - Recap mensile condivisibile (stile Wrapped): report generato sul device, esportabile come immagine, zero dati che escono.
-  - Quick-add ovunque: widget home (già in v1.5), app shortcut statici, Quick Settings tile: spesa registrata in 2 tap senza aprire l'app.
+  - Quick-add ovunque: widget home (già in v1.5), ~~app shortcut statici~~ (implementati in Fase 9.6), Quick Settings tile: spesa registrata in 2 tap senza aprire l'app.
   - Quick entry testuale: parser offline di "12,50 pizza" → importo + categoria suggerita.
 
 # Bug conosciuti
@@ -280,6 +293,7 @@ Trovati dalla review completa di luglio 2026:
 - [x] Cambio cadenza di una regola ricorrente manteneva il vecchio `lastGeneratedDate`, disallineato con la nuova schedule (commit 74c805e)
 - [x] Notifica di conferma con il conteggio del solo batch appena generato invece dei pending totali in attesa (commit 74c805e)
 - [ ] Riordino categorie: il `sortOrder` globale accoppia i tab; riordinare Spese può rimescolare l'ordine relativo delle categorie "entrambi" nel tab Entrate. Da decidere: accettare (documentato) o passare a un sortOrder per tipo.
+- [ ] Dashboard multi-valuta: la card "Saldo totale" somma solo i conti nella valuta principale, ma il breakdown sotto elenca tutti i conti attivi ciascuno nella propria valuta; con conti in valute diverse il totale sembra non tornare rispetto alle righe. Non è un errore di calcolo (valute diverse non si sommano senza cambio), ma la presentazione è ambigua. Da decidere: etichettare il totale con la valuta, raggruppare il breakdown per valuta con subtotali, o distinguere i conti non-primari. Emerso dalla 2ª review di luglio 2026.
 - [x] Tema scuro forzato dall'app con sistema in chiaro: `enableEdgeToEdge()` senza argomenti segue solo il uiMode di sistema, quindi le icone della status bar restavano scure su sfondo scuro (barra illeggibile, "tutta nera"). Fix: `enableEdgeToEdge` riapplicata in `setContent` con `SystemBarStyle` agganciato al tema risolto in-app (commit 15eb056)
 - [x] Sfarfallio bianco nelle transizioni di navigazione con tema scuro forzato: durante il fade delle transizioni Nav3 si intravedeva la finestra Android chiara sotto Compose (stessa causa del bug status bar). Fix: `SaldoTheme` avvolge il contenuto in un `Surface` a tutto schermo con `colorScheme.background`, backdrop opaco a tema sempre presente (commit 6dc7675)
 - [x] Saluti della dashboard troncati: header a riga singola (`maxLines = 1`) con varianti più lunghe dello spazio disponibile, testo tagliato con ellipsis. Fix: varianti accorciate (IT+EN) e `maxLines = 2` come margine per il font scaling (v0.7.2)

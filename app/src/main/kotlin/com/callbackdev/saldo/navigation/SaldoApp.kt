@@ -19,6 +19,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -46,6 +47,7 @@ import com.callbackdev.saldo.feature.stats.FilteredTransactionsScreen
 import com.callbackdev.saldo.feature.stats.StatsScreen
 import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
+import com.callbackdev.saldo.core.domain.model.TransactionType
 
 /** Height of the Material 3 navigation bar content (excluding the system inset). */
 private val BottomBarHeight = 80.dp
@@ -70,10 +72,23 @@ private const val SLIDE_DIVISOR = 6
  * and only the bar itself slides in and out.
  */
 @Composable
-fun SaldoApp() {
+fun SaldoApp(
+    quickAction: TransactionType? = null,
+    onQuickActionHandled: () -> Unit = {},
+) {
     val backStack = rememberNavBackStack(DashboardRoute)
     val currentRoute = backStack.lastOrNull()
     val isTopLevel = TopLevelDestination.entries.any { it.route == currentRoute }
+
+    // A launcher shortcut asked for a specific movement: open its editor once,
+    // on top of whatever is showing, then hand the request back as consumed so a
+    // recomposition or rotation cannot re-open it.
+    LaunchedEffect(quickAction) {
+        if (quickAction != null) {
+            backStack.add(TransactionEditorRoute(initialTypeName = quickAction.name))
+            onQuickActionHandled()
+        }
+    }
 
     // Reserve space for the bar only where it is shown; detail screens fill the
     // whole height so their bottom-anchored content lands in its final place.

@@ -1,5 +1,6 @@
 package com.callbackdev.saldo
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -17,11 +18,13 @@ import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.designsystem.theme.SaldoTheme
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
 import com.callbackdev.saldo.feature.onboarding.OnboardingScreen
 import com.callbackdev.saldo.navigation.SaldoApp
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -40,14 +43,28 @@ class MainActivity : ComponentActivity() {
 
     private val mainViewModel: MainViewModel by viewModels()
 
+    /**
+     * The quick action requested by a launcher app shortcut, consumed once the
+     * navigation is up. Kept as state (rather than read straight from the
+     * intent) so the app opens onto the right editor whether it was cold or
+     * warm started, and so a configuration change never re-fires it.
+     */
+    private val pendingQuickAction = MutableStateFlow<TransactionType?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // Catch-up generation on launch, covering days the device was off
-        // (PLANNING ADR 4). Idempotent, so running it every launch is safe; the
-        // periodic WorkManager job covers days the app is not opened. Launched in
-        // the application scope so a configuration change cannot cancel it mid-run.
-        applicationScope.launch { runCatching { generateRecurringMovements() } }
+        // Only on a genuine start, never on a configuration-change recreation:
+        // the catch-up is idempotent but pointless to repeat on every rotation,
+        // and the launching intent must open its shortcut editor just once.
+        if (savedInstanceState == null) {
+            // Catch-up generation on launch, covering days the device was off
+            // (PLANNING ADR 4). The periodic WorkManager job covers days the app
+            // is not opened. Launched in the application scope so a configuration
+            // change cannot cancel it mid-run.
+            applicationScope.launch { runCatching { generateRecurringMovements() } }
+            pendingQuickAction.value = quickActionFrom(intent)
+        }
         setContent {
             val themePreferences by userPreferences.themePreferences
                 .collectAsStateWithLifecycle(initialValue = ThemePreferences())
@@ -83,10 +100,36 @@ class MainActivity : ComponentActivity() {
                         LaunchGate.ONBOARDING -> OnboardingScreen(
                             onFinished = mainViewModel::completeOnboarding,
                         )
-                        LaunchGate.APP -> SaldoApp()
+                        LaunchGate.APP -> {
+                            val quickAction by pendingQuickAction.collectAsStateWithLifecycle()
+                            SaldoApp(
+                                quickAction = quickAction,
+                                onQuickActionHandled = { pendingQuickAction.value = null },
+                            )
+                        }
                     }
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        quickActionFrom(intent)?.let { pendingQuickAction.value = it }
+    }
+
+    /** Maps a launcher shortcut intent to the movement type it opens, or null. */
+    private fun quickActionFrom(intent: Intent?): TransactionType? = when (intent?.action) {
+        ACTION_ADD_EXPENSE -> TransactionType.EXPENSE
+        ACTION_ADD_INCOME -> TransactionType.INCOME
+        ACTION_ADD_TRANSFER -> TransactionType.TRANSFER
+        else -> null
+    }
+
+    companion object {
+        const val ACTION_ADD_EXPENSE = "com.callbackdev.saldo.action.ADD_EXPENSE"
+        const val ACTION_ADD_INCOME = "com.callbackdev.saldo.action.ADD_INCOME"
+        const val ACTION_ADD_TRANSFER = "com.callbackdev.saldo.action.ADD_TRANSFER"
     }
 }

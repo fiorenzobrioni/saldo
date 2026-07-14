@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.DashboardSkeleton
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
-import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
@@ -82,7 +82,7 @@ fun DashboardScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             when {
-                uiState.isLoading -> LoadingState()
+                uiState.isLoading -> DashboardSkeleton()
 
                 !uiState.hasAccounts -> DashboardEmptyState(
                     onCreateFirstAccount = onCreateFirstAccount,

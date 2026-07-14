@@ -54,7 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
-import com.callbackdev.saldo.core.designsystem.component.LoadingState
+import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.feature.transactions.export.CsvExportSheet
@@ -143,7 +143,7 @@ fun TransactionsScreen(
         },
     ) { innerPadding ->
         when {
-            uiState.isLoading -> LoadingState(Modifier.padding(innerPadding))
+            uiState.isLoading -> ListSkeleton(Modifier.padding(innerPadding))
 
             uiState.isEmpty -> TransactionsEmptyState(
                 hasAccounts = uiState.hasAccounts,

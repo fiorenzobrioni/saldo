@@ -12,10 +12,13 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
+import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
 import com.callbackdev.saldo.navigation.RecurringRuleEditorRoute
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import app.cash.turbine.test
 import io.mockk.coEvery
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -46,6 +49,8 @@ class RecurringRuleEditorViewModelTest {
     private val recurringRuleRepository = mockk<RecurringRuleRepository>()
     private val accountRepository = mockk<AccountRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
+    private val generateRecurringMovements = mockk<GenerateRecurringMovementsUseCase>(relaxed = true)
+    private val applicationScope = CoroutineScope(Dispatchers.Unconfined)
 
     private fun account(id: Long, currency: Currency) = Account(
         id = id,
@@ -92,6 +97,8 @@ class RecurringRuleEditorViewModelTest {
             recurringRuleRepository,
             accountRepository,
             categoryRepository,
+            generateRecurringMovements,
+            applicationScope,
             clock,
         )
     }

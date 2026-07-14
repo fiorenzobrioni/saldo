@@ -47,7 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
-import com.callbackdev.saldo.core.designsystem.component.LoadingState
+import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
 import com.callbackdev.saldo.core.designsystem.component.ThresholdProgressBar
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
@@ -104,7 +104,7 @@ fun BudgetsScreen(
         },
     ) { innerPadding ->
         when {
-            uiState.isLoading -> LoadingState(modifier = Modifier.padding(innerPadding))
+            uiState.isLoading -> ListSkeleton(modifier = Modifier.padding(innerPadding))
             uiState.isEmpty -> BudgetsEmptyState(
                 onCreate = { onNavigateToEditor(null) },
                 modifier = Modifier.fillMaxSize().padding(innerPadding),

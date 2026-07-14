@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Downward arrow: money going out. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,78 L38,56 L50,56 L50,32 L58,32 L58,56 L70,56 Z" />
+</vector>
