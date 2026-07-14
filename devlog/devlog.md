@@ -14,6 +14,30 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-14 - Rifinitura premium: app shortcut, skeleton, ricorrenze immediate, perf (Fase 9.6)
+
+**Fatto:** giro di rifinitura "da app premium" guidato dall'utente su una seconda review completa, iterato su APK di prova da GitHub (versionName 0.9.11 -> 0.9.15, versionCode 50 -> 54; un commit per intervento più i fix). Nessuna modifica a dominio o schema.
+
+- **App shortcut statici** dal launcher: Nuova spesa, Nuova entrata, Trasferimento. Icone adattive on-brand (glifo bianco a freccia su sfondo brand rosso/verde/teal, `adaptive-icon` in `drawable-anydpi` come il launcher del progetto), label brevi + lunghe IT/EN. Intent instradato in `MainActivity` (`singleTop` + `onNewIntent`) verso il back stack Nav3 tramite un `MutableStateFlow` consumato una tantum in `SaldoApp`: apre l'editor giusto a freddo o a caldo, senza ri-trigger su rotazione.
+- **Skeleton di caricamento**: `DashboardSkeleton` (ricalca il layout reale) e `ListSkeleton`, un solo pulse condiviso per schermata, al posto dello spinner su Dashboard, Movimenti, Conti, Budget.
+- **Ricorrenze immediate**: al salvataggio di una regola parte la generazione catch-up in application scope (idempotente, mutex-guarded), così un'occorrenza già scaduta compare subito nel registro senza attendere avvio o worker.
+- **Perf**: `MoneyFormatter` mette in cache il `NumberFormat` per `(valuta, locale)` con `ThreadLocal`; catch-up e parsing intent shortcut solo all'avvio genuino (`savedInstanceState == null`), non a ogni ricreazione da cambio configurazione.
+- **SwipeToDismiss** del registro migrato fuori da `confirmValueChange` (deprecato) a osservazione dello stato via `snapshotFlow`.
+
+**Decisioni:**
+- **Transizioni di schermata**: esplorato uno stile "espressivo" (scale shared-Z + tuning), poi ripristinato l'originale slide + fade dopo verifica su device dell'utente. Parere condiviso: lo scatto residuo è di build debug e assenza di baseline profile, non dello spec animazione. Il baseline profile resta tracciato in Fase 10 (richiede modulo macrobenchmark e run su device).
+- **Label shortcut** azionate ("Nuova spesa/entrata") perché invocate fuori dall'app senza il contesto del "+"; il FAB resta a nomi asciutti. "Trasferimento" senza "Nuovo" (il prefisso suona pesante in italiano e un trasferimento è un'operazione, non un'entità creata); label lunga "Trasferimento tra conti". Decisioni condivise con l'utente.
+- **SwipeToDismiss**: osservare lo stato assestato invece di vietarlo in callback è la migrazione idiomatica (la direzione è già ristretta da `enableDismissFromStartToEnd = false`); bonus, un trascinamento breve che rimbalza non elimina più per errore.
+- **Multi-valuta dashboard**: la review ha notato che la card "Saldo totale" somma solo i conti nella valuta principale mentre il breakdown li elenca tutti; non è un errore di calcolo ma la presentazione è ambigua. Non fixato in questo giro (scelta di prodotto), registrato in Bug conosciuti.
+
+**Problemi:** CI rossa una volta su `detekt` (`LongParameterList`: il costruttore del ViewModel ricorrenze è passato a 7 parametri con i nuovi collaboratori). Fix con `@Suppress` coerente con gli altri ViewModel injected-heavy (`DashboardViewModel`, `TransactionEditorViewModel`), commit 014a8dc. In locale avevo validato con `-x lint` ma senza `detekt`: da includere sempre nella verifica pre-push.
+
+**Verifica:** compile + `detekt` in locale (Gradle di sistema in `/opt/gradle`, il wrapper è bloccato dal proxy); CI GitHub verde (build + lint + unit test + detekt + upload APK) su ogni commit finale; `RecurringRuleEditorViewModelTest` aggiornato ai nuovi parametri e verde. APK di prova validato su device reale dall'utente (shortcut, skeleton, ricorrenza scaduta oggi, transizioni). PR #17.
+
+**Prossimo:** Fase 10 (release v1.0). Da valutare: fix presentazione dashboard multi-valuta e baseline profile.
+
+---
+
 ## 2026-07-13 - Rifinitura Dashboard: card omogenee, drill-down dei periodi, fix data italiana
 
 **Fatto:** giro di rifinitura UI/UX della Dashboard guidato dall'utente, iterato su APK di prova generati da GitHub (versioni 0.9.6 -> 0.9.11, versionCode 45 -> 50, un commit per iterazione).
