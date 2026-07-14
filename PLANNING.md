@@ -203,6 +203,17 @@
 - [x] Transizioni di schermata: valutato uno stile "espressivo" (scale shared-Z) e poi ripristinata la transizione originale slide + fade dopo verifica su device (decisione utente, condivisa). Lo scatto residuo percepito è di build debug / assenza di baseline profile, non dello spec dell'animazione: il tema è tracciato in Fase 10 (commit 754767c)
 - [x] Verifica: gate `assembleDebug testDebugUnitTest lint detekt` verde in CI per ogni commit; APK di prova validato su device reale dall'utente (shortcut, skeleton, ricorrenza scaduta oggi, transizioni)
 
+## Fase 9.7 - Fix dalla terza review completa (luglio 2026)
+
+> Giro unico su branch dedicato (versionCode 55, versionName 0.9.16) nato da una terza review completa in parallelo su dominio, database, ViewModel, UI/UX e performance. Bug trovati e fixati elencati in "Bug conosciuti"; qui gli interventi strutturali.
+
+- [x] Validazione semantica del payload di backup al decode (enum, codici ISO 4217, invarianti transfer, budget complessivo unico) più backstop nei mapper: un file malformato viene rifiutato all'ispezione, mai dopo aver sostituito i dati
+- [x] Navigazione: back stack per tab (pattern Nav3 "multiple back stacks", API verificate sui sorgenti 1.1.4); ogni tab conserva ViewModel, scroll, ricerca e periodo tra i cambi, back invariato (exit through home)
+- [x] Drill-down statistiche allineato alle query (`statsScope` nella route) e fetta "Senza categoria" nell'anello, così tutte le cifre della schermata coincidono; caricamento a finestra SQL
+- [x] Perf: `distinctUntilChanged` sui flow delle preferenze (stop ai rebuild della pipeline dashboard a ogni salvataggio), filtri precompilati una volta per passata, campo di ricerca sincrono
+- [x] Ticker di mezzanotte condiviso: dashboard e statistiche ri-ancorano "oggi" se lo schermo resta acceso oltre il cambio giorno
+- [x] Rifinitura: `contentColorOn` per il contrasto dei glifi sui colori pieni, skeleton allineati alla geometria reale + `StatsSkeleton`, righe switch di Impostazioni interamente toccabili, ultimo chevron e ultimo avatar circolare rimossi, crossfade sulla ricerca del registro
+
 ## Fase 10 - Release v1.0
 
 - [ ] Baseline profile (spostato dalla Fase 9: richiede modulo macrobenchmark e generazione su device/emulatore)
@@ -299,3 +310,19 @@ Trovati dalla review completa di luglio 2026:
 - [x] Saluti della dashboard troncati: header a riga singola (`maxLines = 1`) con varianti più lunghe dello spazio disponibile, testo tagliato con ellipsis. Fix: varianti accorciate (IT+EN) e `maxLines = 2` come margine per il font scaling (v0.7.2)
 - [x] Statistiche, grafici "Spese" e "Entrate e uscite": il bottone "Vedi i movimenti di <mese>" compariva solo mentre il dito restava sul grafico e spariva al rilascio, rendendolo impremibile. Causa: il listener del marker Vico azzerava la selezione in `onHidden`, che scatta al touch-up. Fix: la selezione resta dopo il rilascio, il bottone rimane visibile e cliccabile (v0.8.8)
 - [x] Data estesa italiana sulla card "Saldo totale" con iniziali maiuscole ("Lunedì 13 Luglio") su alcuni device: certe build OEM di ICU applicano ai nomi di giorni e mesi la capitalizzazione da contesto standalone, mentre la data italiana in prosa è minuscola. Fix: normalizzazione esplicita a minuscolo per la locale italiana in `fullWeekdayDate` (commit 64eb59e)
+
+Trovati dalla terza review completa di luglio 2026 (fix nella Fase 9.7):
+
+- [x] Restore backup: un codice valuta non ISO 4217 superava inspect e restore, poi `Currency.getInstance` crashava ogni lettura a dati vecchi già eliminati. Fix: validazione semantica del payload al decode + backstop nei mapper (commit 2f42f30)
+- [x] Eliminazione conto con regole ricorrenti: il guard contava solo i movimenti, la FK faceva fallire la DELETE con un generico "scrittura fallita". Fix: conteggio regole nel guard e messaggio con il motivo reale (commit 1b02e32)
+- [x] Editor regola ricorrente inutilizzabile se il conto della regola era archiviato (salvataggio fallito senza errore visibile). Fix: il conto referenziato resta selezionabile, come nell'editor movimenti (commit 21bef39)
+- [x] Watermark di generazione avanzato con upsert full-row: una modifica dell'utente salvata durante una run poteva essere sovrascritta. Fix: UPDATE mirato `updateLastGenerated` (commit 21bef39)
+- [x] Modifica di una regola azzerava `lastReminderDate`: il promemoria pre-rinnovo veniva rinotificato. Fix: il watermark sopravvive all'edit (commit 21bef39)
+- [x] Drill-down statistiche incoerente con la cifra toccata (includeva esclusi, altre valute e, per i conti, trasferimenti/rettifiche/entrate pure); il totale al centro del donut escludeva la spesa senza categoria che i 12 mesi contavano. Fix: scope statistiche nella route e fetta "Senza categoria" (commit bf9f6b9)
+- [x] Day header del registro con maiuscole OEM italiane ("Lunedì 13 Luglio"), stesso bug già fixato sulla dashboard. Fix: normalizzazione condivisa `withLocaleDateCasing` su tutti i formatter con nomi (commit ac4f16d)
+- [x] Riassegnazione in eliminazione categoria: le recurring rules andavano a NULL (movimenti futuri senza categoria) e il budget spariva in CASCADE senza avviso. Fix: riassegnazione estesa alle regole e avviso nel dialog (commit 4bd08a8)
+- [x] Filtro importi con minimo > massimo: lista sempre vuota senza spiegazione. Fix: bounds normalizzati all'apply (commit a3fb9a9)
+- [x] Card "Oggi" congelata oltre la mezzanotte a schermo acceso. Fix: ticker di mezzanotte condiviso su dashboard e statistiche (commit a3fb9a9)
+- [x] Insets di sistema applicati due volte nell'onboarding (padding dello Scaffold + statusBars/navigationBars espliciti). Fix: insets consumati una volta sola (commit a3fb9a9)
+- [x] Cambio tab distruggeva i ViewModel (skeleton, ri-query e perdita di scroll/ricerca/periodo a ogni rientro). Fix: back stack per tab (commit 436d8cd)
+- [x] Icona bianca sui colori chiari della palette (~1.6-2.5:1 di contrasto su lime, verde chiaro, ambra, azzurro). Fix: `contentColorOn` per luminanza (commit ecc2d1c)
