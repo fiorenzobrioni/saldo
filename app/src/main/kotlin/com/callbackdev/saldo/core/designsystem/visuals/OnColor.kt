@@ -16,5 +16,7 @@ fun contentColorOn(background: Color): Color =
 /** Relative luminance above which a white glyph stops being readable. */
 private const val LIGHT_LUMINANCE_THRESHOLD = 0.35f
 
-/** 87% black, the conventional dark ink on light Material surfaces. */
-private val OnLightColor = Color(0xDE000000)
+/** 87% black (0xDE alpha), the conventional dark ink on light Material surfaces. */
+private const val ON_LIGHT_ARGB = 0xDE000000
+
+private val OnLightColor = Color(ON_LIGHT_ARGB)

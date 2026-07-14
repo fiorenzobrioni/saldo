@@ -78,13 +78,13 @@ class StatsViewModel @Inject constructor(
         midnightTicker(clock),
         ::Inputs,
     )
-        .flatMapLatest { (accounts, activePeriod, currencyOverride, today) ->
-            val currency = primaryCurrency(accounts, currencyOverride)
+        .flatMapLatest { inputs ->
+            val currency = primaryCurrency(inputs.accounts, inputs.currencyOverride)
             val zone = clock.zone
-            val range = activePeriod.dateRange()
+            val range = inputs.period.dateRange()
             val periodStart = range.start.atStartOfDay(zone).toInstant()
             val periodEnd = range.endInclusive.plusDays(1).atStartOfDay(zone).toInstant()
-            val months = trailingMonths(YearMonth.from(today))
+            val months = trailingMonths(YearMonth.from(inputs.today))
             val trendStart = months.first().atDay(1).atStartOfDay(zone).toInstant()
             val trendEnd = months.last().plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
             combine(
@@ -95,10 +95,10 @@ class StatsViewModel @Inject constructor(
                 categoryRepository.observeCategories(),
             ) { categoryTotals, accountTotals, monthlyTotals, balances, categories ->
                 buildState(
-                    accounts = accounts,
-                    activePeriod = activePeriod,
+                    accounts = inputs.accounts,
+                    activePeriod = inputs.period,
                     currency = currency,
-                    today = today,
+                    today = inputs.today,
                     months = months,
                     sources = Sources(
                         categoryTotals = categoryTotals,

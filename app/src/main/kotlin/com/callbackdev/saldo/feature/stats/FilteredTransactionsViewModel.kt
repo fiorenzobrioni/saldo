@@ -149,15 +149,17 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
      */
     private fun matchesStatsScope(transaction: Transaction, currency: Currency): Boolean {
         if (!route.statsScope) return true
-        if (transaction.isExcludedFromStats || transaction.currency != currency) return false
-        if (route.uncategorizedOnly && transaction.categoryId != null) return false
+        val counted = !transaction.isExcludedFromStats &&
+            transaction.currency == currency &&
+            (!route.uncategorizedOnly || transaction.categoryId == null)
         val isRefund = transaction.type == TransactionType.INCOME && transaction.isRefund
-        return if (route.accountId != null) {
+        val typeMatches = if (route.accountId != null) {
             transaction.accountId == route.accountId &&
                 (transaction.type == TransactionType.EXPENSE || isRefund)
         } else {
             transaction.type == TransactionType.EXPENSE || transaction.type == TransactionType.INCOME
         }
+        return counted && typeMatches
     }
 
     private companion object {

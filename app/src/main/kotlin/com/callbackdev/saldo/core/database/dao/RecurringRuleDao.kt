@@ -10,6 +10,7 @@ import com.callbackdev.saldo.core.database.entity.RecurringRuleEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@Suppress("TooManyFunctions") // A data-access interface naturally has many queries.
 interface RecurringRuleDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
