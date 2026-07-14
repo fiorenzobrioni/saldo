@@ -24,11 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.callbackdev.saldo.feature.about.AboutScreen
 import com.callbackdev.saldo.feature.accounts.AccountEditorScreen
@@ -76,8 +72,10 @@ fun SaldoApp(
     quickAction: TransactionType? = null,
     onQuickActionHandled: () -> Unit = {},
 ) {
-    val backStack = rememberNavBackStack(DashboardRoute)
-    val currentRoute = backStack.lastOrNull()
+    // One back stack per tab (Nav3 multiple-back-stacks recipe): switching
+    // tabs keeps every tab's ViewModels, scroll and filters alive.
+    val nav = rememberSaldoNavigationState()
+    val currentRoute = nav.currentRoute
     val isTopLevel = TopLevelDestination.entries.any { it.route == currentRoute }
 
     // A launcher shortcut asked for a specific movement: open its editor once,
@@ -85,7 +83,7 @@ fun SaldoApp(
     // recomposition or rotation cannot re-open it.
     LaunchedEffect(quickAction) {
         if (quickAction != null) {
-            backStack.add(TransactionEditorRoute(initialTypeName = quickAction.name))
+            nav.navigate(TransactionEditorRoute(initialTypeName = quickAction.name))
             onQuickActionHandled()
         }
     }
@@ -94,150 +92,149 @@ fun SaldoApp(
     // whole height so their bottom-anchored content lands in its final place.
     val topLevelModifier = Modifier.padding(bottom = BottomBarHeight)
 
+    val provider = entryProvider {
+        entry<DashboardRoute> {
+            DashboardScreen(
+                modifier = topLevelModifier,
+                onNavigateToAccounts = { nav.navigate(AccountsRoute) },
+                onCreateFirstAccount = { nav.navigate(AccountEditorRoute()) },
+                onNavigateToNewTransaction = { type ->
+                    nav.navigate(TransactionEditorRoute(initialTypeName = type.name))
+                },
+                onNavigateToEditTransaction = { id ->
+                    nav.navigate(TransactionEditorRoute(id))
+                },
+                onSeeAllTransactions = { nav.switchTab(TopLevelDestination.TRANSACTIONS) },
+                onNavigateToRecurrences = { nav.navigate(RecurrencesRoute) },
+                onNavigateToPending = { nav.navigate(PendingMovementsRoute) },
+                onNavigateToBudgets = { nav.navigate(BudgetsRoute) },
+                onNavigateToFiltered = { route -> nav.navigate(route) },
+            )
+        }
+        entry<TransactionsRoute> {
+            TransactionsScreen(
+                modifier = topLevelModifier,
+                onNavigateToNewTransaction = { nav.navigate(TransactionEditorRoute()) },
+                onNavigateToEditTransaction = { id ->
+                    nav.navigate(TransactionEditorRoute(id))
+                },
+                onNavigateToAccounts = { nav.navigate(AccountsRoute) },
+            )
+        }
+        entry<StatsRoute> {
+            StatsScreen(
+                modifier = topLevelModifier,
+                onNavigateToFiltered = { route -> nav.navigate(route) },
+            )
+        }
+        entry<SettingsRoute> {
+            SettingsScreen(
+                modifier = topLevelModifier,
+                onNavigateToAccounts = { nav.navigate(AccountsRoute) },
+                onNavigateToCategories = { nav.navigate(CategoriesRoute) },
+                onNavigateToRecurrences = { nav.navigate(RecurrencesRoute) },
+                onNavigateToBudgets = { nav.navigate(BudgetsRoute) },
+                onNavigateToBackup = { nav.navigate(BackupRoute) },
+                onNavigateToAbout = { nav.navigate(AboutRoute) },
+            )
+        }
+        entry<AccountsRoute> {
+            AccountsScreen(
+                onNavigateBack = { nav.goBack() },
+                onNavigateToNewAccount = { nav.navigate(AccountEditorRoute()) },
+                onNavigateToEditAccount = { id -> nav.navigate(AccountEditorRoute(id)) },
+            )
+        }
+        entry<AccountEditorRoute> { route ->
+            AccountEditorScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
+            )
+        }
+        entry<CategoriesRoute> {
+            CategoriesScreen(
+                onNavigateBack = { nav.goBack() },
+                onNavigateToNewCategory = { type ->
+                    nav.navigate(CategoryEditorRoute(initialTypeName = type.name))
+                },
+                onNavigateToEditCategory = { id ->
+                    nav.navigate(CategoryEditorRoute(categoryId = id))
+                },
+            )
+        }
+        entry<CategoryEditorRoute> { route ->
+            CategoryEditorScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
+            )
+        }
+        entry<TransactionEditorRoute> { route ->
+            TransactionEditorScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
+            )
+        }
+        entry<RecurrencesRoute> {
+            RecurrencesScreen(
+                onNavigateBack = { nav.goBack() },
+                onNavigateToNewRule = { type ->
+                    nav.navigate(RecurringRuleEditorRoute(initialTypeName = type.name))
+                },
+                onNavigateToEditRule = { id ->
+                    nav.navigate(RecurringRuleEditorRoute(id))
+                },
+            )
+        }
+        entry<RecurringRuleEditorRoute> { route ->
+            RecurringRuleEditorScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
+            )
+        }
+        entry<PendingMovementsRoute> {
+            PendingMovementsScreen(onNavigateBack = { nav.goBack() })
+        }
+        entry<BudgetsRoute> {
+            BudgetsScreen(
+                onNavigateBack = { nav.goBack() },
+                onNavigateToEditor = { id -> nav.navigate(BudgetEditorRoute(id)) },
+            )
+        }
+        entry<BudgetEditorRoute> { route ->
+            BudgetEditorScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
+            )
+        }
+        entry<FilteredTransactionsRoute> { route ->
+            FilteredTransactionsScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
+                onNavigateToTransaction = { id ->
+                    nav.navigate(TransactionEditorRoute(id))
+                },
+            )
+        }
+        entry<BackupRoute> {
+            BackupScreen(onNavigateBack = { nav.goBack() })
+        }
+        entry<AboutRoute> {
+            AboutScreen(onNavigateBack = { nav.goBack() })
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         NavDisplay(
-            backStack = backStack,
+            // Entries are decorated per tab stack, so hidden tabs keep their
+            // ViewModels and saved state alive across switches.
+            entries = nav.rememberDecoratedEntries(provider),
             modifier = Modifier.fillMaxSize(),
-            onBack = { backStack.removeLastOrNull() },
+            onBack = { nav.goBack() },
             // The library default is a 700ms fade, which feels sluggish; a short
             // slide + fade (~300ms) reads as snappy and premium instead.
             transitionSpec = { forwardTransition() },
             popTransitionSpec = { backwardTransition() },
             predictivePopTransitionSpec = { backwardTransition() },
-            entryDecorators = listOf(
-                rememberSaveableStateHolderNavEntryDecorator(),
-                rememberViewModelStoreNavEntryDecorator(),
-            ),
-            entryProvider = entryProvider {
-                entry<DashboardRoute> {
-                    DashboardScreen(
-                        modifier = topLevelModifier,
-                        onNavigateToAccounts = { backStack.add(AccountsRoute) },
-                        onCreateFirstAccount = { backStack.add(AccountEditorRoute()) },
-                        onNavigateToNewTransaction = { type ->
-                            backStack.add(TransactionEditorRoute(initialTypeName = type.name))
-                        },
-                        onNavigateToEditTransaction = { id ->
-                            backStack.add(TransactionEditorRoute(id))
-                        },
-                        onSeeAllTransactions = { backStack.switchTopLevelTab(TransactionsRoute) },
-                        onNavigateToRecurrences = { backStack.add(RecurrencesRoute) },
-                        onNavigateToPending = { backStack.add(PendingMovementsRoute) },
-                        onNavigateToBudgets = { backStack.add(BudgetsRoute) },
-                        onNavigateToFiltered = { route -> backStack.add(route) },
-                    )
-                }
-                entry<TransactionsRoute> {
-                    TransactionsScreen(
-                        modifier = topLevelModifier,
-                        onNavigateToNewTransaction = { backStack.add(TransactionEditorRoute()) },
-                        onNavigateToEditTransaction = { id ->
-                            backStack.add(TransactionEditorRoute(id))
-                        },
-                        onNavigateToAccounts = { backStack.add(AccountsRoute) },
-                    )
-                }
-                entry<StatsRoute> {
-                    StatsScreen(
-                        modifier = topLevelModifier,
-                        onNavigateToFiltered = { route -> backStack.add(route) },
-                    )
-                }
-                entry<SettingsRoute> {
-                    SettingsScreen(
-                        modifier = topLevelModifier,
-                        onNavigateToAccounts = { backStack.add(AccountsRoute) },
-                        onNavigateToCategories = { backStack.add(CategoriesRoute) },
-                        onNavigateToRecurrences = { backStack.add(RecurrencesRoute) },
-                        onNavigateToBudgets = { backStack.add(BudgetsRoute) },
-                        onNavigateToBackup = { backStack.add(BackupRoute) },
-                        onNavigateToAbout = { backStack.add(AboutRoute) },
-                    )
-                }
-                entry<AccountsRoute> {
-                    AccountsScreen(
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                        onNavigateToNewAccount = { backStack.add(AccountEditorRoute()) },
-                        onNavigateToEditAccount = { id -> backStack.add(AccountEditorRoute(id)) },
-                    )
-                }
-                entry<AccountEditorRoute> { route ->
-                    AccountEditorScreen(
-                        route = route,
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                    )
-                }
-                entry<CategoriesRoute> {
-                    CategoriesScreen(
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                        onNavigateToNewCategory = { type ->
-                            backStack.add(CategoryEditorRoute(initialTypeName = type.name))
-                        },
-                        onNavigateToEditCategory = { id ->
-                            backStack.add(CategoryEditorRoute(categoryId = id))
-                        },
-                    )
-                }
-                entry<CategoryEditorRoute> { route ->
-                    CategoryEditorScreen(
-                        route = route,
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                    )
-                }
-                entry<TransactionEditorRoute> { route ->
-                    TransactionEditorScreen(
-                        route = route,
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                    )
-                }
-                entry<RecurrencesRoute> {
-                    RecurrencesScreen(
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                        onNavigateToNewRule = { type ->
-                            backStack.add(RecurringRuleEditorRoute(initialTypeName = type.name))
-                        },
-                        onNavigateToEditRule = { id ->
-                            backStack.add(RecurringRuleEditorRoute(id))
-                        },
-                    )
-                }
-                entry<RecurringRuleEditorRoute> { route ->
-                    RecurringRuleEditorScreen(
-                        route = route,
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                    )
-                }
-                entry<PendingMovementsRoute> {
-                    PendingMovementsScreen(onNavigateBack = { backStack.removeLastOrNull() })
-                }
-                entry<BudgetsRoute> {
-                    BudgetsScreen(
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                        onNavigateToEditor = { id -> backStack.add(BudgetEditorRoute(id)) },
-                    )
-                }
-                entry<BudgetEditorRoute> { route ->
-                    BudgetEditorScreen(
-                        route = route,
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                    )
-                }
-                entry<FilteredTransactionsRoute> { route ->
-                    FilteredTransactionsScreen(
-                        route = route,
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                        onNavigateToTransaction = { id ->
-                            backStack.add(TransactionEditorRoute(id))
-                        },
-                    )
-                }
-                entry<BackupRoute> {
-                    BackupScreen(onNavigateBack = { backStack.removeLastOrNull() })
-                }
-                entry<AboutRoute> {
-                    AboutScreen(onNavigateBack = { backStack.removeLastOrNull() })
-                }
-            },
         )
 
         AnimatedVisibility(
@@ -247,8 +244,8 @@ fun SaldoApp(
             modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             SaldoBottomBar(
-                currentRoute = currentRoute,
-                onSelect = { backStack.switchTopLevelTab(it) },
+                selected = nav.selected,
+                onSelect = { nav.switchTab(it) },
             )
         }
     }
@@ -274,16 +271,16 @@ private fun backwardTransition(): ContentTransform {
 
 @Composable
 private fun SaldoBottomBar(
-    currentRoute: NavKey?,
-    onSelect: (NavKey) -> Unit,
+    selected: TopLevelDestination,
+    onSelect: (TopLevelDestination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavigationBar(modifier = modifier) {
         TopLevelDestination.entries.forEach { destination ->
             val label = stringResource(destination.labelRes)
             NavigationBarItem(
-                selected = currentRoute == destination.route,
-                onClick = { onSelect(destination.route) },
+                selected = selected == destination,
+                onClick = { onSelect(destination) },
                 icon = {
                     Icon(imageVector = destination.icon, contentDescription = label)
                 },
