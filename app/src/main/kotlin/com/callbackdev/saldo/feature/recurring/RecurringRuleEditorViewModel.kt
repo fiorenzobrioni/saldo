@@ -91,7 +91,9 @@ sealed interface RecurringRuleEditorEvent {
     data object WriteFailed : RecurringRuleEditorEvent
 }
 
-@Suppress("TooManyFunctions") // One callback per form field is the natural shape of an editor.
+// One callback per form field is the natural shape of an editor; the constructor
+// takes one Hilt-injected collaborator per concern (repos, generation, scope, clock).
+@Suppress("TooManyFunctions", "LongParameterList")
 @HiltViewModel(assistedFactory = RecurringRuleEditorViewModel.Factory::class)
 class RecurringRuleEditorViewModel @AssistedInject constructor(
     @Assisted private val route: RecurringRuleEditorRoute,
