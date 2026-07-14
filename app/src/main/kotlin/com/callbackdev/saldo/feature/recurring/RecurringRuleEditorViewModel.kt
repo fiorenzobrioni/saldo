@@ -143,9 +143,9 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
     }
 
     private suspend fun load() {
-        val accounts = accountRepository.observeAccountsWithBalance().first()
+        val allAccounts = accountRepository.observeAccountsWithBalance().first()
             .map { it.account }
-            .filter { !it.isArchived }
+        val accounts = allAccounts.filter { !it.isArchived }
         val allCategories = categoryRepository.observeCategories().first()
 
         val ruleId = route.ruleId
@@ -170,6 +170,14 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         }
         existing = rule
         userPickedIcon = true
+        // Keep the referenced account pickable even when archived, so editing
+        // a rule tied to an archived account still resolves and saves (same
+        // pattern as the movement editor).
+        val pickableAccounts = if (accounts.any { it.id == rule.accountId }) {
+            accounts
+        } else {
+            accounts + allAccounts.filter { it.id == rule.accountId }
+        }
         _uiState.update {
             it.copy(
                 isLoading = false,
@@ -177,7 +185,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
                 type = rule.type,
                 name = rule.name,
                 amountInput = rule.amount?.stripTrailingZeros()?.toPlainString().orEmpty(),
-                accounts = accounts,
+                accounts = pickableAccounts,
                 accountId = rule.accountId,
                 categories = allCategories.forRuleType(rule.type),
                 categoryId = rule.categoryId,
@@ -324,6 +332,9 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
             color = state.color,
             icon = state.icon,
             note = base?.note,
+            // Watermarks survive an edit: losing the reminder one would
+            // re-notify an occurrence that was already announced.
+            lastReminderDate = base?.lastReminderDate,
         )
         // Preserve progress on edit; on create, skip past occurrences so an
         // existing subscription is not back-filled with history. When the

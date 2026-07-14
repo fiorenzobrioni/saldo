@@ -86,7 +86,10 @@ class GenerateRecurringMovementsUseCase @Inject constructor(
                     isPending = pending,
                 )
             }
-            recurringRuleRepository.upsert(rule.copy(lastGeneratedDate = occurrences.last()))
+            // Targeted watermark advance: a full-row upsert of the rule read at
+            // the start of the run would clobber any edit the user saved while
+            // this run was in flight.
+            recurringRuleRepository.updateLastGeneratedDate(rule.id, occurrences.last())
             generated
         }
     }
