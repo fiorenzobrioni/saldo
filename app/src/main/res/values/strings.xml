@@ -89,12 +89,12 @@
 
     <!-- Launcher app shortcuts (long-press the icon). Short labels are kept
          within ~10 chars so launchers do not truncate them. -->
-    <string name="shortcut_expense_short">Expense</string>
+    <string name="shortcut_expense_short">New expense</string>
     <string name="shortcut_expense_long">Add expense</string>
-    <string name="shortcut_income_short">Income</string>
+    <string name="shortcut_income_short">New income</string>
     <string name="shortcut_income_long">Add income</string>
     <string name="shortcut_transfer_short">Transfer</string>
-    <string name="shortcut_transfer_long">New transfer</string>
+    <string name="shortcut_transfer_long">Transfer between accounts</string>
 
     <!-- Accounts (Phase 2) -->
     <string name="accounts_title">Accounts</string>

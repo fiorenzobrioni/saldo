@@ -88,12 +88,12 @@
 
     <!-- Scorciatoie del launcher (pressione prolungata sull'icona). Le label
          brevi restano entro ~10 caratteri per non essere troncate. -->
-    <string name="shortcut_expense_short">Spesa</string>
+    <string name="shortcut_expense_short">Nuova spesa</string>
     <string name="shortcut_expense_long">Aggiungi spesa</string>
-    <string name="shortcut_income_short">Entrata</string>
+    <string name="shortcut_income_short">Nuova entrata</string>
     <string name="shortcut_income_long">Aggiungi entrata</string>
-    <string name="shortcut_transfer_short">Trasferisci</string>
-    <string name="shortcut_transfer_long">Nuovo trasferimento</string>
+    <string name="shortcut_transfer_short">Trasferimento</string>
+    <string name="shortcut_transfer_long">Trasferimento tra conti</string>
 
     <!-- Account (Fase 2) -->
     <string name="accounts_title">Conti</string>
