@@ -43,7 +43,7 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
-import com.callbackdev.saldo.core.designsystem.component.LoadingState
+import com.callbackdev.saldo.core.designsystem.component.StatsSkeleton
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
@@ -76,7 +76,7 @@ fun StatsScreen(
         },
     ) { innerPadding ->
         when {
-            uiState.isLoading -> LoadingState(Modifier.padding(innerPadding))
+            uiState.isLoading -> StatsSkeleton(Modifier.padding(innerPadding))
 
             uiState.isEmpty -> EmptyState(
                 icon = Icons.Outlined.Insights,

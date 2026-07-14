@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,7 +58,9 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var fabExpanded by rememberSaveable { mutableStateOf(false) }
+    // Plain remember on purpose: an open speed dial should not survive
+    // navigating away and back (the tab keeps its state now), nor a rotation.
+    var fabExpanded by remember { mutableStateOf(false) }
 
     fun quickAction(type: TransactionType) {
         fabExpanded = false

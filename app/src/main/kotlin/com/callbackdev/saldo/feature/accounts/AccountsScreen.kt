@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.feature.accounts
 
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
+import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.designsystem.visuals.labelRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -339,17 +340,18 @@ internal fun AccountAvatar(
     account: Account,
     modifier: Modifier = Modifier,
 ) {
+    val avatarColor = AccountVisuals.color(account.color)
     Box(
         modifier = modifier
             .size(44.dp)
             .clip(AvatarShape)
-            .background(AccountVisuals.color(account.color)),
+            .background(avatarColor),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = AccountVisuals.icon(account.icon),
             contentDescription = null,
-            tint = Color.White,
+            tint = contentColorOn(avatarColor),
             modifier = Modifier.size(22.dp),
         )
     }

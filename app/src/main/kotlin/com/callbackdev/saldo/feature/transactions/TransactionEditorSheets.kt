@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.AlertDialog
@@ -46,7 +45,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
+import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
@@ -118,17 +119,18 @@ private fun AccountPickerRow(
                 .alpha(if (enabled) 1f else 0.4f)
                 .padding(horizontal = 24.dp, vertical = 12.dp),
         ) {
+            val avatarColor = AccountVisuals.color(account.color)
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(CircleShape)
-                    .background(AccountVisuals.color(account.color)),
+                    .clip(AvatarShape)
+                    .background(avatarColor),
             ) {
                 Icon(
                     imageVector = AccountVisuals.icon(account.icon),
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = contentColorOn(avatarColor),
                     modifier = Modifier.size(20.dp),
                 )
             }
