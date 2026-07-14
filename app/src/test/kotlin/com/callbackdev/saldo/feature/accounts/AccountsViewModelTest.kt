@@ -122,9 +122,11 @@ class AccountsViewModelTest {
     @Test
     fun `delete request with recurring rules proposes archiving instead`() = runTest {
         val target = account()
+        val viewModel = viewModel()
+        // After viewModel(): its catch-all countForAccount(any()) stub would
+        // otherwise shadow these (MockK: the last matching stub wins).
         coEvery { transactionRepository.countForAccount(target.id) } returns 0
         coEvery { recurringRuleRepository.countForAccount(target.id) } returns 2
-        val viewModel = viewModel()
 
         viewModel.requestDelete(target)
 
