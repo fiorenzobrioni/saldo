@@ -41,7 +41,6 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,6 +58,7 @@ import com.callbackdev.saldo.core.designsystem.component.rememberReorderableList
 import com.callbackdev.saldo.core.designsystem.component.reorderableHandle
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
+import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
 
@@ -262,17 +262,18 @@ internal fun CategoryAvatar(
     modifier: Modifier = Modifier,
     size: Dp = 44.dp,
 ) {
+    val avatarColor = CategoryVisuals.color(category.color)
     Box(
         modifier = modifier
             .size(size)
             .clip(AvatarShape)
-            .background(CategoryVisuals.color(category.color)),
+            .background(avatarColor),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             imageVector = CategoryVisuals.icon(category.icon),
             contentDescription = null,
-            tint = Color.White,
+            tint = contentColorOn(avatarColor),
             modifier = Modifier.size(size * 0.5f),
         )
     }

@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.feature.accounts
 
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
+import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -54,7 +54,7 @@ internal fun ColorPicker(
                     Icon(
                         imageVector = Icons.Outlined.Check,
                         contentDescription = label,
-                        tint = Color.White,
+                        tint = contentColorOn(AccountVisuals.color(color)),
                     )
                 }
             }
@@ -100,7 +100,7 @@ internal fun IconPicker(
                     imageVector = AccountVisuals.icon(key),
                     contentDescription = label,
                     tint = if (isSelected) {
-                        Color.White
+                        contentColorOn(AccountVisuals.color(selectedColor))
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },

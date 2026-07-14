@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
@@ -129,17 +130,15 @@ private fun GreetingBand.greetingsArrayRes(): Int = when (this) {
 /**
  * Full localized weekday date in the locale's own casing: Italian dates are
  * lowercase ("venerdì 10 luglio"), English weekday/month names are proper
- * nouns ("Friday, July 10"). Stock CLDR data gets this right, but some OEM
- * ICU builds ship day/month names titlecased for standalone contexts, so for
- * Italian the string is normalized to lowercase explicitly.
+ * nouns ("Friday, July 10"); see [withLocaleDateCasing].
  */
 @Composable
 private fun fullWeekdayDate(date: LocalDate): String {
     val locale = LocalConfiguration.current.locales[0]
     return remember(date, locale) {
         val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEEdMMMM")
-        val formatted = date.format(DateTimeFormatter.ofPattern(pattern, locale))
-        if (locale.language == "it") formatted.lowercase(locale) else formatted
+        date.format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
 }
 
@@ -560,6 +559,7 @@ private fun NextRecurringEventLine(next: NextRecurringEvent, modifier: Modifier 
     val dateText = remember(next.date, locale) {
         val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "dMMM")
         next.date.format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
     Text(
         text = stringResource(

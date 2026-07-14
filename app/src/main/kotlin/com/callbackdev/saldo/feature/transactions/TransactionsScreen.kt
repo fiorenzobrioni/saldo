@@ -4,6 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -75,6 +80,7 @@ fun TransactionsScreen(
     viewModel: TransactionsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val csvSeparator by viewModel.csvSeparator.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
@@ -99,36 +105,47 @@ fun TransactionsScreen(
     Scaffold(
         modifier = modifier,
         topBar = {
-            if (isSearching) {
-                SearchTopBar(
-                    query = uiState.filters.query,
-                    onQueryChange = viewModel::setQuery,
-                    onClose = closeSearch,
-                )
-            } else {
-                TopAppBar(
-                    title = { Text(stringResource(R.string.nav_transactions)) },
-                    actions = {
-                        if (uiState.hasAnyTransactions) {
-                            IconButton(onClick = { isSearching = true }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Search,
-                                    contentDescription = stringResource(R.string.transactions_search),
+            // A brief crossfade instead of a hard swap: the only bar change
+            // in the app that would otherwise cut without a transition.
+            AnimatedContent(
+                targetState = isSearching,
+                transitionSpec = {
+                    fadeIn(tween(durationMillis = SEARCH_SWAP_MILLIS)) togetherWith
+                        fadeOut(tween(durationMillis = SEARCH_SWAP_MILLIS))
+                },
+                label = "searchTopBarSwap",
+            ) { searching ->
+                if (searching) {
+                    SearchTopBar(
+                        query = searchQuery,
+                        onQueryChange = viewModel::setQuery,
+                        onClose = closeSearch,
+                    )
+                } else {
+                    TopAppBar(
+                        title = { Text(stringResource(R.string.nav_transactions)) },
+                        actions = {
+                            if (uiState.hasAnyTransactions) {
+                                IconButton(onClick = { isSearching = true }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Search,
+                                        contentDescription = stringResource(R.string.transactions_search),
+                                    )
+                                }
+                                FilterButton(
+                                    activeCount = uiState.filters.activeCount,
+                                    onClick = { showFilterSheet = true },
                                 )
+                                IconButton(onClick = { showExportSheet = true }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.IosShare,
+                                        contentDescription = stringResource(R.string.csv_export_title),
+                                    )
+                                }
                             }
-                            FilterButton(
-                                activeCount = uiState.filters.activeCount,
-                                onClick = { showFilterSheet = true },
-                            )
-                            IconButton(onClick = { showExportSheet = true }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.IosShare,
-                                    contentDescription = stringResource(R.string.csv_export_title),
-                                )
-                            }
-                        }
-                    },
-                )
+                        },
+                    )
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -418,3 +435,6 @@ private fun TransactionsEmptyState(
         modifier = modifier,
     )
 }
+
+/** Duration of the top-bar/search crossfade; brief on purpose, it is chrome. */
+private const val SEARCH_SWAP_MILLIS = 180

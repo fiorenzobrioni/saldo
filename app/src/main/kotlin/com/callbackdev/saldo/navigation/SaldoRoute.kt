@@ -96,6 +96,13 @@ data object AboutRoute : NavKey
  * Statistics drill-down: the movements of a local-date window (`[start, end)`
  * as epoch days), optionally narrowed to one category or account. Pushed on
  * top of the Stats tab so back returns to the charts.
+ *
+ * [statsScope] restricts the list to what the statistics queries counted
+ * (primary currency, excluded-from-stats skipped, spend-only rows for an
+ * account drill-down), so the list always agrees with the tapped figure;
+ * the dashboard's today/month drill-downs keep the cash view instead.
+ * [uncategorizedOnly] narrows to movements without a category (the ring's
+ * uncategorized slice).
  */
 @Serializable
 data class FilteredTransactionsRoute(
@@ -103,4 +110,6 @@ data class FilteredTransactionsRoute(
     val endEpochDayExclusive: Long,
     val categoryId: Long? = null,
     val accountId: Long? = null,
+    val statsScope: Boolean = false,
+    val uncategorizedOnly: Boolean = false,
 ) : NavKey

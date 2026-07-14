@@ -21,12 +21,15 @@ import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import com.callbackdev.saldo.core.domain.model.RecurrenceMode
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import java.util.Currency
 
 // Entity <-> backup-schema mapping. Field-by-field on purpose: the backup file
 // must stay stable even if entities are ever renamed or refactored, so nothing
-// here is derived via serialization of the entity itself. Enum names are
-// validated on the way in (valueOf throws inside the restore transaction,
-// which rolls back leaving the current data untouched).
+// here is derived via serialization of the entity itself. Enum names and
+// currency codes are validated on the way in (valueOf/Currency.getInstance
+// throw inside the restore transaction, which rolls back leaving the current
+// data untouched); the same checks already ran at inspect time in BackupCodec,
+// this is the last line of defense for callers that skip inspection.
 
 fun AccountEntity.toBackup(): AccountBackup = AccountBackup(
     id = id,
@@ -46,7 +49,7 @@ fun AccountBackup.toEntity(): AccountEntity = AccountEntity(
     id = id,
     name = name,
     type = AccountType.valueOf(type),
-    currency = currency,
+    currency = validatedCurrencyCode(currency),
     initialBalanceMinor = initialBalanceMinor,
     color = color,
     icon = icon,
@@ -105,7 +108,7 @@ fun RecurringRuleBackup.toEntity(): RecurringRuleEntity = RecurringRuleEntity(
     id = id,
     name = name,
     type = TransactionType.valueOf(type),
-    currency = currency,
+    currency = validatedCurrencyCode(currency),
     accountId = accountId,
     frequency = RecurrenceFrequency.valueOf(frequency),
     startDateEpochDay = startDateEpochDay,
@@ -147,13 +150,13 @@ fun TransactionBackup.toEntity(): TransactionEntity = TransactionEntity(
     id = id,
     type = TransactionType.valueOf(type),
     amountMinor = amountMinor,
-    currency = currency,
+    currency = validatedCurrencyCode(currency),
     accountId = accountId,
     timestampEpochMilli = timestampEpochMilli,
     zoneOffsetSeconds = zoneOffsetSeconds,
     transferAccountId = transferAccountId,
     transferAmountMinor = transferAmountMinor,
-    transferCurrency = transferCurrency,
+    transferCurrency = transferCurrency?.let(::validatedCurrencyCode),
     categoryId = categoryId,
     description = description,
     note = note,
@@ -183,7 +186,13 @@ fun BudgetBackup.toEntity(): BudgetEntity = BudgetEntity(
     id = id,
     categoryId = categoryId,
     amountMinor = amountMinor,
-    currency = currency,
+    currency = validatedCurrencyCode(currency),
     lastNotified80EpochMonth = lastNotified80EpochMonth,
     lastNotified100EpochMonth = lastNotified100EpochMonth,
 )
+
+/** Throws [IllegalArgumentException] on codes [java.util.Currency] does not know. */
+private fun validatedCurrencyCode(code: String): String {
+    Currency.getInstance(code)
+    return code
+}

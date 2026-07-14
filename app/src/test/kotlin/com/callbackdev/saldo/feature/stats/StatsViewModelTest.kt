@@ -132,10 +132,29 @@ class StatsViewModelTest {
 
         viewModel.uiState.test {
             val state = loaded()
-            assertEquals(listOf("Transport", "Groceries"), state.slices.map { it.category.name })
+            assertEquals(listOf("Transport", "Groceries"), state.slices.map { it.category?.name })
             assertEquals(listOf(75, 25), state.slices.map { it.percent })
             assertEquals(BigDecimal("100.00"), state.periodSpendTotal)
             assertTrue(state.hasData)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `uncategorized spend becomes its own slice and counts in the center total`() = runTest {
+        val viewModel = viewModel(
+            categoryTotals = listOf(
+                CategoryTotal(groceries.id, BigDecimal("-60.00"), count = 2),
+                CategoryTotal(null, BigDecimal("-40.00"), count = 1),
+            ),
+        )
+
+        viewModel.uiState.test {
+            val state = loaded()
+            assertEquals(BigDecimal("100.00"), state.periodSpendTotal)
+            val uncategorized = state.slices.single { it.category == null }
+            assertEquals(BigDecimal("40.00"), uncategorized.amount)
+            assertEquals(40, uncategorized.percent)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -152,7 +171,7 @@ class StatsViewModelTest {
 
         viewModel.uiState.test {
             val state = loaded()
-            assertEquals(listOf("Groceries"), state.slices.map { it.category.name })
+            assertEquals(listOf("Groceries"), state.slices.map { it.category?.name })
             assertEquals(listOf(100), state.slices.map { it.percent })
             cancelAndIgnoreRemainingEvents()
         }

@@ -81,13 +81,14 @@ interface TransactionDao {
      * Per-category signed totals for expenses and incomes in `[startMillis, endMillis)`,
      * restricted to [currency]. Transfers and adjustments are excluded by the type
      * filter (and carry no category); movements flagged out of statistics are skipped.
+     * Uncategorized movements group under a NULL categoryId row, so the ring and
+     * its center total cover the whole period's spend like the trend bars do.
      */
     @Query(
         """
         SELECT categoryId AS categoryId, SUM(amountMinor) AS totalMinor, COUNT(*) AS count
         FROM transactions
-        WHERE categoryId IS NOT NULL
-            AND type IN ('EXPENSE', 'INCOME')
+        WHERE type IN ('EXPENSE', 'INCOME')
             AND isExcludedFromStats = 0
             AND isPending = 0
             AND currency = :currency

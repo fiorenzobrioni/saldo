@@ -57,11 +57,46 @@ object TransactionFilterEngine {
         }
 
     /**
-     * Whether [transaction] passes every active filter. [localDate] is the
-     * movement's calendar day in the timezone it was recorded in (ADR 7);
-     * [tagIds] are the tags attached to it. Tag and account filters match on
-     * "any of"; the account filter also matches a transfer's destination.
+     * [filters] with the per-application work resolved once: the date range
+     * (allocations and temporal adjusters) and the normalized search needle
+     * (Unicode normalization and regex). Compile once per list pass, then
+     * call [matches] per row: the loop over the ledger runs on every
+     * keystroke, so this work must not repeat per movement.
      */
+    class CompiledFilters internal constructor(
+        private val filters: TransactionFilters,
+        private val range: ClosedRange<LocalDate>?,
+        private val needle: String?,
+    ) {
+        /**
+         * Whether [transaction] passes every active filter. [localDate] is
+         * the movement's calendar day in the timezone it was recorded in
+         * (ADR 7); [tagIds] are the tags attached to it. Tag and account
+         * filters match on "any of"; the account filter also matches a
+         * transfer's destination.
+         */
+        fun matches(transaction: Transaction, localDate: LocalDate, tagIds: Set<Long>): Boolean =
+            (range == null || localDate in range) &&
+                matchesType(transaction, filters) &&
+                matchesCategory(transaction, filters) &&
+                matchesAccount(transaction, filters) &&
+                matchesTags(tagIds, filters) &&
+                matchesAmount(transaction, filters) &&
+                matchesQuery(transaction, needle)
+    }
+
+    /** Resolves the date range and search needle of [filters] once. */
+    fun compile(
+        filters: TransactionFilters,
+        today: LocalDate,
+        firstDayOfWeek: DayOfWeek,
+    ): CompiledFilters = CompiledFilters(
+        filters = filters,
+        range = dateRange(filters, today, firstDayOfWeek),
+        needle = filters.query.trim().takeIf { it.isNotBlank() }?.let(::normalize),
+    )
+
+    /** One-shot convenience over [compile] + [CompiledFilters.matches]. */
     @Suppress("LongParameterList") // Pure function: every argument is one input of the match.
     fun matches(
         transaction: Transaction,
@@ -70,23 +105,7 @@ object TransactionFilterEngine {
         filters: TransactionFilters,
         today: LocalDate,
         firstDayOfWeek: DayOfWeek,
-    ): Boolean = matchesDate(localDate, filters, today, firstDayOfWeek) &&
-        matchesType(transaction, filters) &&
-        matchesCategory(transaction, filters) &&
-        matchesAccount(transaction, filters) &&
-        matchesTags(tagIds, filters) &&
-        matchesAmount(transaction, filters) &&
-        matchesQuery(transaction, filters)
-
-    private fun matchesDate(
-        localDate: LocalDate,
-        filters: TransactionFilters,
-        today: LocalDate,
-        firstDayOfWeek: DayOfWeek,
-    ): Boolean {
-        val range = dateRange(filters, today, firstDayOfWeek) ?: return true
-        return localDate in range
-    }
+    ): Boolean = compile(filters, today, firstDayOfWeek).matches(transaction, localDate, tagIds)
 
     private fun matchesType(transaction: Transaction, filters: TransactionFilters): Boolean =
         filters.types.isEmpty() || transaction.type in filters.types
@@ -109,9 +128,8 @@ object TransactionFilterEngine {
             (filters.amountMax == null || magnitude <= filters.amountMax)
     }
 
-    private fun matchesQuery(transaction: Transaction, filters: TransactionFilters): Boolean {
-        if (filters.query.isBlank()) return true
-        val needle = normalize(filters.query.trim())
+    private fun matchesQuery(transaction: Transaction, needle: String?): Boolean {
+        if (needle == null) return true
         return listOfNotNull(transaction.description, transaction.note)
             .any { normalize(it).contains(needle) }
     }

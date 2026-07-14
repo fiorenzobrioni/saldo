@@ -15,11 +15,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -49,6 +48,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.domain.backup.BackupSummary
 import com.callbackdev.saldo.core.domain.usecase.ImportBackupUseCase
 import java.time.Instant
@@ -109,9 +109,10 @@ fun OnboardingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                // The Scaffold padding already covers the system bars; consume
+                // it so imePadding does not re-apply the navigation bar inset.
                 .padding(innerPadding)
-                .statusBarsPadding()
-                .navigationBarsPadding()
+                .consumeWindowInsets(innerPadding)
                 .imePadding(),
         ) {
             HorizontalPager(
@@ -379,5 +380,6 @@ private fun formatBackupDate(instant: Instant): String {
     return remember(instant, locale) {
         val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "dMMMyyyy")
         instant.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
 }

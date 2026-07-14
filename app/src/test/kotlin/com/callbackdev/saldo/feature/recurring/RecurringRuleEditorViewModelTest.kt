@@ -343,4 +343,71 @@ class RecurringRuleEditorViewModelTest {
             assertEquals(LocalDate.of(2026, 6, 18), lastGeneratedDate)
         }
     }
+
+    @Test
+    fun `editing preserves the reminder watermark so an edit does not re-notify`() = runTest {
+        val existing = RecurringRule(
+            id = 7L,
+            name = "Disney+",
+            type = TransactionType.EXPENSE,
+            currency = eur,
+            accountId = 1L,
+            frequency = RecurrenceFrequency.MONTHLY,
+            startDate = LocalDate.of(2026, 1, 18),
+            amount = BigDecimal("8.99"),
+            categoryId = 10L,
+            dayOfReference = 18,
+            lastGeneratedDate = LocalDate.of(2026, 6, 18),
+            lastReminderDate = LocalDate.of(2026, 7, 18),
+        )
+        coEvery { recurringRuleRepository.getRule(7L) } returns existing
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 7L
+
+        val viewModel = viewModel(route = RecurringRuleEditorRoute(ruleId = 7L))
+        viewModel.onNameChanged("Disney Plus")
+        viewModel.save()
+
+        assertEquals(LocalDate.of(2026, 7, 18), saved.captured.lastReminderDate)
+    }
+
+    @Test
+    fun `editing a rule tied to an archived account keeps that account resolvable and saves`() = runTest {
+        val archived = account(3L, eur).copy(isArchived = true)
+        val existing = RecurringRule(
+            id = 8L,
+            name = "Gym",
+            type = TransactionType.EXPENSE,
+            currency = eur,
+            accountId = 3L,
+            frequency = RecurrenceFrequency.MONTHLY,
+            startDate = LocalDate.of(2026, 1, 10),
+            amount = BigDecimal("30.00"),
+            categoryId = 10L,
+            dayOfReference = 10,
+            lastGeneratedDate = LocalDate.of(2026, 7, 10),
+        )
+        coEvery { recurringRuleRepository.getRule(8L) } returns existing
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 8L
+
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(ruleId = 8L),
+            accounts = listOf(account(1L, eur), archived),
+        )
+
+        // The archived account the rule points to is still in the pickable list.
+        assertEquals(3L, viewModel.uiState.value.accountId)
+        assertEquals(listOf(1L, 3L), viewModel.uiState.value.accounts.map { it.id })
+
+        viewModel.onAmountChanged("35,00")
+        viewModel.save()
+
+        viewModel.events.test {
+            assertEquals(RecurringRuleEditorEvent.Saved, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(3L, saved.captured.accountId)
+        assertEquals(BigDecimal("35.00"), saved.captured.amount)
+    }
 }

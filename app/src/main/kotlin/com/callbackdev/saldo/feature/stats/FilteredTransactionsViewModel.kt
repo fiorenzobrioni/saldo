@@ -3,6 +3,10 @@ package com.callbackdev.saldo.feature.stats
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.di.DefaultDispatcher
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.domain.model.Transaction
+import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
@@ -30,12 +34,15 @@ import kotlinx.coroutines.flow.stateIn
 import java.time.Clock
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.util.Currency
 
 /** Immutable UI state of the statistics drill-down list. */
 data class FilteredTransactionsUiState(
     val isLoading: Boolean = true,
     /** The tapped category's or account's name; null for a pure period drill-down. */
     val title: String? = null,
+    /** True when the list shows the uncategorized bucket (title resolved by the screen). */
+    val isUncategorized: Boolean = false,
     val today: LocalDate = LocalDate.ofEpochDay(0),
     val days: List<TransactionDayGroup> = emptyList(),
     val totals: List<FilteredTotal> = emptyList(),
@@ -47,7 +54,13 @@ data class FilteredTransactionsUiState(
 /**
  * Movements behind a tapped chart element: the route's window (and optional
  * category/account) seeds a [TransactionFilters] evaluated by the same engine
- * as the ledger tab, so both screens always agree on what matches.
+ * as the ledger tab. With [FilteredTransactionsRoute.statsScope] set, an extra
+ * predicate mirrors the statistics queries (primary currency, excluded and
+ * pending skipped, spend-only rows for an account drill-down), so the list and
+ * its totals always agree with the tapped figure; the dashboard drill-downs
+ * keep the cash view. Loading is windowed in SQL: the local-date bounds are
+ * widened by one day per side to cover rows recorded in other offsets, and
+ * the engine's per-day match does the exact cut.
  */
 @Suppress("LongParameterList") // The route plus the DI graph of the aggregates the list resolves.
 @HiltViewModel(assistedFactory = FilteredTransactionsViewModel.Factory::class)
@@ -57,6 +70,7 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
     tagRepository: TagRepository,
+    userPreferences: UserPreferencesRepository,
     private val clock: Clock,
     @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -75,25 +89,31 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
     )
 
     val uiState: StateFlow<FilteredTransactionsUiState> = combine(
-        transactionRepository.observeTransactions(),
+        transactionRepository.observeTransactionsBetween(
+            start = LocalDate.ofEpochDay(route.startEpochDay)
+                .minusDays(1).atStartOfDay(clock.zone).toInstant(),
+            end = LocalDate.ofEpochDay(route.endEpochDayExclusive)
+                .plusDays(1).atStartOfDay(clock.zone).toInstant(),
+        ),
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
         tagRepository.observeTagAssignments(),
-    ) { transactions, accounts, categories, tagAssignments ->
+        userPreferences.primaryCurrencyOverride,
+    ) { transactions, accounts, categories, tagAssignments, currencyOverride ->
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
         val today = LocalDate.now(clock)
+        val currency = primaryCurrency(accounts, currencyOverride)
+        // The preset here is always CUSTOM: the week start is unused.
+        val compiled = TransactionFilterEngine.compile(filters, today, DayOfWeek.MONDAY)
         val filtered = transactions
             .filter { transaction ->
-                TransactionFilterEngine.matches(
-                    transaction = transaction,
-                    localDate = transaction.localDate,
-                    tagIds = tagAssignments[transaction.id].orEmpty(),
-                    filters = filters,
-                    today = today,
-                    // The preset here is always CUSTOM: the week start is unused.
-                    firstDayOfWeek = DayOfWeek.MONDAY,
-                )
+                matchesStatsScope(transaction, currency) &&
+                    compiled.matches(
+                        transaction = transaction,
+                        localDate = transaction.localDate,
+                        tagIds = tagAssignments[transaction.id].orEmpty(),
+                    )
             }
             .map { transaction ->
                 TransactionListItem(
@@ -107,6 +127,7 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
             isLoading = false,
             title = route.categoryId?.let { categoryById[it]?.name }
                 ?: route.accountId?.let { accountById[it]?.name },
+            isUncategorized = route.uncategorizedOnly,
             today = today,
             days = buildDayGroups(filtered),
             totals = filteredTotals(filtered),
@@ -119,6 +140,27 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
             started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
             initialValue = FilteredTransactionsUiState(),
         )
+
+    /**
+     * Mirrors the statistics queries when the route is stats-scoped: only the
+     * primary currency, never excluded-from-stats rows, only spend rows
+     * (expenses plus refunds) charged to the account itself for an account
+     * drill-down, and only uncategorized rows for the uncategorized slice.
+     */
+    private fun matchesStatsScope(transaction: Transaction, currency: Currency): Boolean {
+        if (!route.statsScope) return true
+        val counted = !transaction.isExcludedFromStats &&
+            transaction.currency == currency &&
+            (!route.uncategorizedOnly || transaction.categoryId == null)
+        val isRefund = transaction.type == TransactionType.INCOME && transaction.isRefund
+        val typeMatches = if (route.accountId != null) {
+            transaction.accountId == route.accountId &&
+                (transaction.type == TransactionType.EXPENSE || isRefund)
+        } else {
+            transaction.type == TransactionType.EXPENSE || transaction.type == TransactionType.INCOME
+        }
+        return counted && typeMatches
+    }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

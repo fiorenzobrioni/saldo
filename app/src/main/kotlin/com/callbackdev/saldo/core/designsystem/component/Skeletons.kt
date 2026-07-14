@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 
 /**
  * Content-shaped placeholders shown while a screen's first data resolves, in
@@ -78,11 +79,13 @@ fun DashboardSkeleton(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .padding(start = 16.dp, end = 16.dp, top = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        // Matches SaldoDimens.cardSpacing: the skeleton's rhythm must be the
+        // real dashboard's, or the layout jumps when data arrives.
+        verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
         SkeletonBlock(color, Modifier.padding(start = 4.dp).width(200.dp).height(28.dp))
         SkeletonBlock(color, Modifier.fillMaxWidth().height(150.dp), shape = CardShape)
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing)) {
             SkeletonBlock(color, Modifier.weight(1f).height(96.dp), shape = CardShape)
             SkeletonBlock(color, Modifier.weight(1f).height(96.dp), shape = CardShape)
         }
@@ -106,6 +109,25 @@ fun ListSkeleton(modifier: Modifier = Modifier, rows: Int = LIST_ROWS) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         repeat(rows) { SkeletonRow(color) }
+    }
+}
+
+/**
+ * Loading placeholder for the statistics tab: the segmented period selector,
+ * then two tall chart cards, matching the real screen's rhythm.
+ */
+@Composable
+fun StatsSkeleton(modifier: Modifier = Modifier) {
+    val color = rememberSkeletonColor()
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
+    ) {
+        SkeletonBlock(color, Modifier.fillMaxWidth().height(40.dp), shape = CircleShape)
+        SkeletonBlock(color, Modifier.fillMaxWidth().height(280.dp), shape = CardShape)
+        SkeletonBlock(color, Modifier.fillMaxWidth().height(180.dp), shape = CardShape)
     }
 }
 
@@ -133,7 +155,9 @@ private fun SkeletonRow(color: Color, modifier: Modifier = Modifier) {
 }
 
 private val BlockShape = RoundedCornerShape(8.dp)
-private val CardShape = RoundedCornerShape(24.dp)
+
+/** Same radius as the theme's extraLarge card shape, so cards do not morph when data lands. */
+private val CardShape = RoundedCornerShape(16.dp)
 
 private const val MIN_ALPHA = 0.10f
 private const val MAX_ALPHA = 0.28f

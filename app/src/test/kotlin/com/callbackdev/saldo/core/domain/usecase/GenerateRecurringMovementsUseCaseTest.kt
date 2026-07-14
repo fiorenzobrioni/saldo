@@ -36,7 +36,7 @@ class GenerateRecurringMovementsUseCaseTest {
     private val transactionRepository = mockk<TransactionRepository>()
 
     private val generatedMovements = mutableListOf<Transaction>()
-    private val updatedRules = mutableListOf<RecurringRule>()
+    private val advancedWatermarks = mutableListOf<LocalDate>()
 
     /** Pass-through runner that records whether writes happen inside a transaction. */
     private class RecordingTransactionRunner : TransactionRunner {
@@ -60,7 +60,7 @@ class GenerateRecurringMovementsUseCaseTest {
         alreadyGenerated: Set<LocalDate> = emptySet(),
     ): GenerateRecurringMovementsUseCase {
         generatedMovements.clear()
-        updatedRules.clear()
+        advancedWatermarks.clear()
         coEvery { recurringRuleRepository.getRules() } returns rules
         coEvery { transactionRepository.insertIfAbsent(any()) } answers {
             check(transactionRunner.inTransaction) { "movement inserted outside a transaction" }
@@ -72,10 +72,9 @@ class GenerateRecurringMovementsUseCaseTest {
                 generatedMovements.size.toLong()
             }
         }
-        coEvery { recurringRuleRepository.upsert(any()) } answers {
+        coEvery { recurringRuleRepository.updateLastGeneratedDate(any(), any()) } answers {
             check(transactionRunner.inTransaction) { "watermark advanced outside a transaction" }
-            updatedRules.add(firstArg())
-            firstArg<RecurringRule>().id
+            advancedWatermarks.add(secondArg())
         }
         return GenerateRecurringMovementsUseCase(
             recurringRuleRepository,
@@ -135,7 +134,7 @@ class GenerateRecurringMovementsUseCaseTest {
         assertEquals("Netflix", movement.description)
         assertTrue(generatedMovements.none { it.isPending })
         assertTrue(result.none { it.isPending })
-        assertEquals(LocalDate.of(2026, 7, 7), updatedRules.single().lastGeneratedDate)
+        assertEquals(LocalDate.of(2026, 7, 7), advancedWatermarks.single())
     }
 
     @Test
@@ -163,7 +162,7 @@ class GenerateRecurringMovementsUseCaseTest {
 
         assertEquals(0, result.size)
         assertEquals(emptyList<Transaction>(), generatedMovements)
-        coVerify(exactly = 0) { recurringRuleRepository.upsert(any()) }
+        coVerify(exactly = 0) { recurringRuleRepository.updateLastGeneratedDate(any(), any()) }
     }
 
     @Test
@@ -261,7 +260,7 @@ class GenerateRecurringMovementsUseCaseTest {
 
         assertEquals(listOf(LocalDate.of(2026, 7, 7)), result.map { it.date })
         assertEquals(listOf(LocalDate.of(2026, 7, 7)), generatedMovements.map { it.localDate() })
-        assertEquals(LocalDate.of(2026, 7, 7), updatedRules.single().lastGeneratedDate)
+        assertEquals(LocalDate.of(2026, 7, 7), advancedWatermarks.single())
     }
 
     @Test
@@ -275,7 +274,7 @@ class GenerateRecurringMovementsUseCaseTest {
 
         assertTrue(result.isEmpty())
         assertTrue(generatedMovements.isEmpty())
-        assertEquals(LocalDate.of(2026, 7, 7), updatedRules.single().lastGeneratedDate)
+        assertEquals(LocalDate.of(2026, 7, 7), advancedWatermarks.single())
     }
 
     @Test
@@ -285,9 +284,8 @@ class GenerateRecurringMovementsUseCaseTest {
         coEvery { recurringRuleRepository.getRules() } answers {
             listOf(rule(startDate = startDate, lastGenerated = watermark))
         }
-        coEvery { recurringRuleRepository.upsert(any()) } answers {
-            watermark = firstArg<RecurringRule>().lastGeneratedDate
-            firstArg<RecurringRule>().id
+        coEvery { recurringRuleRepository.updateLastGeneratedDate(any(), any()) } answers {
+            watermark = secondArg()
         }
         generatedMovements.clear()
         coEvery { transactionRepository.insertIfAbsent(any()) } answers {

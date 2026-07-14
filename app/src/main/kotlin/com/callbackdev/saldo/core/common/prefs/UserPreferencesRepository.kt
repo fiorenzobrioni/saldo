@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
 import java.time.temporal.WeekFields
@@ -76,6 +77,12 @@ object FirstDayOfWeek {
 /**
  * Small UI preferences persisted with DataStore. These are convenience hints
  * (not user data): losing them never loses money information.
+ *
+ * Every exposed flow is deduplicated: `dataStore.data` re-emits on every
+ * write of *any* key, and several of these flows sit upstream of
+ * `flatMapLatest` pipelines (dashboard, stats) that would otherwise tear
+ * down and rebuild their Room subscriptions on unrelated writes (e.g. the
+ * last-used account saved with every movement).
  */
 @Suppress("TooManyFunctions") // Flat settings registry: one Flow + setter pair per preference.
 @Singleton
@@ -90,6 +97,7 @@ class UserPreferencesRepository @Inject constructor(
      */
     val lastUsedAccountId: Flow<Long?> =
         dataStore.data.map { preferences -> preferences[LAST_USED_ACCOUNT_ID] }
+            .distinctUntilChanged()
 
     suspend fun setLastUsedAccountId(accountId: Long) {
         dataStore.edit { preferences -> preferences[LAST_USED_ACCOUNT_ID] = accountId }
@@ -102,6 +110,7 @@ class UserPreferencesRepository @Inject constructor(
      */
     val defaultAccountId: Flow<Long?> =
         dataStore.data.map { preferences -> preferences[DEFAULT_ACCOUNT_ID] }
+            .distinctUntilChanged()
 
     suspend fun setDefaultAccountId(accountId: Long?) {
         dataStore.edit { preferences ->
@@ -122,7 +131,7 @@ class UserPreferencesRepository @Inject constructor(
         preferences[PRIMARY_CURRENCY_CODE]?.let { code ->
             runCatching { Currency.getInstance(code) }.getOrNull()
         }
-    }
+    }.distinctUntilChanged()
 
     suspend fun setPrimaryCurrencyOverride(currency: Currency?) {
         dataStore.edit { preferences ->
@@ -141,7 +150,7 @@ class UserPreferencesRepository @Inject constructor(
                 ?: ThemeMode.SYSTEM,
             useDynamicColor = preferences[USE_DYNAMIC_COLOR] ?: false,
         )
-    }
+    }.distinctUntilChanged()
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { preferences -> preferences[THEME_MODE] = mode.name }
@@ -157,7 +166,7 @@ class UserPreferencesRepository @Inject constructor(
             leadDays = (preferences[RENEWAL_REMINDER_LEAD_DAYS] ?: RenewalReminderPreferences.DEFAULT_LEAD_DAYS)
                 .coerceToAllowedLeadDays(),
         )
-    }
+    }.distinctUntilChanged()
 
     suspend fun setRenewalReminderEnabled(enabled: Boolean) {
         dataStore.edit { preferences -> preferences[RENEWAL_REMINDER_ENABLED] = enabled }
@@ -176,6 +185,7 @@ class UserPreferencesRepository @Inject constructor(
      */
     val onboardingCompleted: Flow<Boolean?> =
         dataStore.data.map { preferences -> preferences[ONBOARDING_COMPLETED] }
+            .distinctUntilChanged()
 
     suspend fun setOnboardingCompleted() {
         dataStore.edit { preferences -> preferences[ONBOARDING_COMPLETED] = true }
@@ -187,7 +197,7 @@ class UserPreferencesRepository @Inject constructor(
             ?.let { stored -> DayOfWeek.entries.firstOrNull { it.name == stored } }
             ?.let(FirstDayOfWeek::coerce)
             ?: FirstDayOfWeek.localeDefault()
-    }
+    }.distinctUntilChanged()
 
     suspend fun setFirstDayOfWeek(day: DayOfWeek) {
         dataStore.edit { preferences ->
@@ -198,6 +208,7 @@ class UserPreferencesRepository @Inject constructor(
     /** Instant of the last successful backup export, epoch millis; null if never. */
     val lastBackupAtEpochMilli: Flow<Long?> =
         dataStore.data.map { preferences -> preferences[LAST_BACKUP_AT_EPOCH_MILLI] }
+            .distinctUntilChanged()
 
     suspend fun setLastBackupAt(epochMilli: Long) {
         dataStore.edit { preferences -> preferences[LAST_BACKUP_AT_EPOCH_MILLI] = epochMilli }
@@ -210,7 +221,7 @@ class UserPreferencesRepository @Inject constructor(
             showSafeToSpend = preferences[DASHBOARD_SHOW_SAFE_TO_SPEND] ?: true,
             showRecentTransactions = preferences[DASHBOARD_SHOW_RECENT_TRANSACTIONS] ?: true,
         )
-    }
+    }.distinctUntilChanged()
 
     suspend fun setShowBudgetCard(shown: Boolean) {
         dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_BUDGET_CARD] = shown }
@@ -229,7 +240,7 @@ class UserPreferencesRepository @Inject constructor(
         preferences[CSV_SEPARATOR]
             ?.let { stored -> CsvSeparator.entries.firstOrNull { it.name == stored } }
             ?: CsvSeparator.SEMICOLON
-    }
+    }.distinctUntilChanged()
 
     suspend fun setCsvSeparator(separator: CsvSeparator) {
         dataStore.edit { preferences -> preferences[CSV_SEPARATOR] = separator.name }

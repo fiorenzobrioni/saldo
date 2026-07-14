@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
@@ -47,6 +48,14 @@ class TransactionsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val filters = MutableStateFlow(TransactionFilters.DEFAULT)
+
+    /**
+     * The search text, mirrored synchronously: the field's `value` must not
+     * round-trip through the filtered-list combine (which re-filters the
+     * whole ledger on a background dispatcher), or fast typing glitches.
+     */
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     /** Tags and their assignments, pre-combined to stay within combine's arity. */
     private data class TagData(
@@ -77,15 +86,15 @@ class TransactionsViewModel @Inject constructor(
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
         val today = LocalDate.now(clock)
+        // Compiled once per pass: this loop runs over the whole ledger on
+        // every keystroke of the search field.
+        val compiled = TransactionFilterEngine.compile(activeFilters, today, firstDayOfWeek)
         val filtered = transactions
             .filter { transaction ->
-                TransactionFilterEngine.matches(
+                compiled.matches(
                     transaction = transaction,
                     localDate = transaction.localDate,
                     tagIds = tags.assignments[transaction.id].orEmpty(),
-                    filters = activeFilters,
-                    today = today,
-                    firstDayOfWeek = firstDayOfWeek,
                 )
             }
             .map { transaction ->
@@ -159,6 +168,7 @@ class TransactionsViewModel @Inject constructor(
 
     /** Replaces the search text, leaving the other filters untouched. */
     fun setQuery(query: String) {
+        _searchQuery.value = query
         filters.update { it.copy(query = query) }
     }
 
@@ -180,11 +190,13 @@ class TransactionsViewModel @Inject constructor(
 
     /** Replaces the whole filter state (the sheet commits its edited copy here). */
     fun applyFilters(newFilters: TransactionFilters) {
+        _searchQuery.value = newFilters.query
         filters.value = newFilters
     }
 
     /** Back to the default view (current month), search included. */
     fun clearFilters() {
+        _searchQuery.value = TransactionFilters.DEFAULT.query
         filters.value = TransactionFilters.DEFAULT
     }
 

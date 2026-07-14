@@ -126,10 +126,16 @@
     <string name="accounts_delete_title">Eliminare il conto?</string>
     <string name="accounts_delete_body">"%1$s" non ha movimenti e verrà eliminato definitivamente.</string>
     <string name="accounts_cannot_delete_title">Impossibile eliminare</string>
+    <string name="category_delete_budget_note">Verrà eliminato anche il suo budget mensile.</string>
     <plurals name="accounts_cannot_delete_body">
         <item quantity="one">"%1$s" ha %2$d movimento. Eliminandolo perderesti lo storico: archivialo invece.</item>
         <item quantity="many">"%1$s" ha %2$d movimenti. Eliminandolo perderesti lo storico: archivialo invece.</item>
         <item quantity="other">"%1$s" ha %2$d movimenti. Eliminandolo perderesti lo storico: archivialo invece.</item>
+    </plurals>
+    <plurals name="accounts_cannot_delete_rules_body">
+        <item quantity="one">"%1$s" è usato da %2$d regola ricorrente. Elimina prima la regola, oppure archivia il conto.</item>
+        <item quantity="many">"%1$s" è usato da %2$d regole ricorrenti. Elimina prima le regole, oppure archivia il conto.</item>
+        <item quantity="other">"%1$s" è usato da %2$d regole ricorrenti. Elimina prima le regole, oppure archivia il conto.</item>
     </plurals>
     <string name="account_editor_title_new">Nuovo conto</string>
     <string name="account_editor_title_edit">Modifica conto</string>
@@ -628,10 +634,12 @@
     <string name="notif_budget_body">Spesi %1$s di %2$s</string>
     <plurals name="notif_budget_warning_summary_title">
         <item quantity="one">%d budget oltre l\'80%%</item>
+        <item quantity="many">%d budget oltre l\'80%%</item>
         <item quantity="other">%d budget oltre l\'80%%</item>
     </plurals>
     <plurals name="notif_budget_exceeded_summary_title">
         <item quantity="one">%d budget superato</item>
+        <item quantity="many">%d budget superati</item>
         <item quantity="other">%d budget superati</item>
     </plurals>
 
@@ -639,6 +647,7 @@
     <string name="dashboard_sts_title">Spendibile oggi</string>
     <plurals name="dashboard_sts_month_left">
         <item quantity="one">Ancora %1$s per oggi</item>
+        <item quantity="many">Ancora %1$s per i prossimi %2$d giorni</item>
         <item quantity="other">Ancora %1$s per i prossimi %2$d giorni</item>
     </plurals>
     <string name="dashboard_sts_upcoming">Già impegnati entro fine mese: %1$s</string>

@@ -8,6 +8,7 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
+import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.AdjustBalanceUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +28,7 @@ import javax.inject.Inject
 class AccountsViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
+    private val recurringRuleRepository: RecurringRuleRepository,
     private val adjustBalance: AdjustBalanceUseCase,
 ) : ViewModel() {
 
@@ -78,16 +80,19 @@ class AccountsViewModel @Inject constructor(
 
     /**
      * Deletion guard (domain rule): allowed only for accounts without
-     * movements, otherwise archiving is proposed instead.
+     * movements and not referenced by any recurring rule (an enforced
+     * foreign key would reject the delete anyway); otherwise archiving is
+     * proposed instead, with the actual reason spelled out.
      */
     fun requestDelete(account: Account) {
         selectedAccountId.value = null
         viewModelScope.launch {
-            val count = transactionRepository.countForAccount(account.id)
-            dialog.value = if (count == 0) {
+            val movementCount = transactionRepository.countForAccount(account.id)
+            val ruleCount = recurringRuleRepository.countForAccount(account.id)
+            dialog.value = if (movementCount == 0 && ruleCount == 0) {
                 AccountsDialog.ConfirmDelete(account)
             } else {
-                AccountsDialog.ArchiveInstead(account, count)
+                AccountsDialog.ArchiveInstead(account, movementCount, ruleCount)
             }
         }
     }

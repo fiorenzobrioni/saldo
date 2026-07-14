@@ -29,7 +29,10 @@ sealed class BackupDecodeException(message: String) : Exception(message) {
  * should be inspectable with any text editor (privacy-first means no opaque
  * blobs). Decoding validates the format marker and the schema version *before*
  * deserializing the payload, so foreign files and future formats fail with a
- * specific [BackupDecodeException] instead of a generic parse error.
+ * specific [BackupDecodeException] instead of a generic parse error. A decoded
+ * payload is then semantically validated (enum names, currency codes, transfer
+ * invariants: see [validatePayload]) so that a file the read path cannot trust
+ * is refused at inspect time, never after the restore has replaced the data.
  */
 object BackupCodec {
 
@@ -62,6 +65,7 @@ object BackupCodec {
         }
         return try {
             json.decodeFromJsonElement(BackupFile.serializer(), root)
+                .also { it.data.validatePayload() }
         } catch (error: SerializationException) {
             throw BackupDecodeException.Corrupted(error)
         } catch (error: IllegalArgumentException) {

@@ -34,6 +34,7 @@ import com.callbackdev.saldo.core.domain.model.Category
 internal fun CategoryDeleteDialogHost(
     dialog: CategoryDeleteDialog?,
     categoryName: String,
+    alsoRemovesBudget: Boolean,
     onTargetSelected: (Long) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
@@ -41,7 +42,8 @@ internal fun CategoryDeleteDialogHost(
     when (dialog) {
         CategoryDeleteDialog.Confirm -> DeleteAlert(
             title = stringResource(R.string.category_delete_title),
-            body = stringResource(R.string.category_delete_body, categoryName),
+            body = stringResource(R.string.category_delete_body, categoryName)
+                .withBudgetNote(alsoRemovesBudget),
             confirmLabel = stringResource(R.string.category_delete_confirm),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
@@ -54,7 +56,7 @@ internal fun CategoryDeleteDialogHost(
                 dialog.movementCount,
                 categoryName,
                 dialog.movementCount,
-            ),
+            ).withBudgetNote(alsoRemovesBudget),
             confirmLabel = stringResource(R.string.category_delete_confirm),
             onConfirm = onConfirm,
             onDismiss = onDismiss,
@@ -63,6 +65,7 @@ internal fun CategoryDeleteDialogHost(
         is CategoryDeleteDialog.Reassign -> ReassignDialog(
             dialog = dialog,
             categoryName = categoryName,
+            alsoRemovesBudget = alsoRemovesBudget,
             onTargetSelected = onTargetSelected,
             onConfirm = onConfirm,
             onDismiss = onDismiss,
@@ -71,6 +74,15 @@ internal fun CategoryDeleteDialogHost(
         null -> Unit
     }
 }
+
+/** Appends the budget-cascade warning when the category has a monthly budget. */
+@Composable
+private fun String.withBudgetNote(alsoRemovesBudget: Boolean): String =
+    if (alsoRemovesBudget) {
+        this + " " + stringResource(R.string.category_delete_budget_note)
+    } else {
+        this
+    }
 
 @Composable
 private fun DeleteAlert(
@@ -102,6 +114,7 @@ private fun DeleteAlert(
 private fun ReassignDialog(
     dialog: CategoryDeleteDialog.Reassign,
     categoryName: String,
+    alsoRemovesBudget: Boolean,
     onTargetSelected: (Long) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
@@ -118,7 +131,7 @@ private fun ReassignDialog(
                         dialog.movementCount,
                         categoryName,
                         dialog.movementCount,
-                    ),
+                    ).withBudgetNote(alsoRemovesBudget),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.size(12.dp))

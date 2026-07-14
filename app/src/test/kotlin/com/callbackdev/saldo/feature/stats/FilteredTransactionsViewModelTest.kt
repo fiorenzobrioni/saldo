@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
@@ -47,6 +48,7 @@ class FilteredTransactionsViewModelTest {
     private val accountRepository = mockk<AccountRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
     private val tagRepository = mockk<TagRepository>()
+    private val userPreferences = mockk<UserPreferencesRepository>()
 
     private val checking = Account(
         id = 1L,
@@ -85,17 +87,20 @@ class FilteredTransactionsViewModelTest {
         route: FilteredTransactionsRoute,
         transactions: List<Transaction>,
     ): FilteredTransactionsViewModel {
-        every { transactionRepository.observeTransactions() } returns flowOf(transactions)
+        every { transactionRepository.observeTransactionsBetween(any(), any()) } returns
+            flowOf(transactions)
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(listOf(AccountWithBalance(checking, BigDecimal.ZERO)))
         every { categoryRepository.observeCategories() } returns flowOf(listOf(groceries))
         every { tagRepository.observeTagAssignments() } returns flowOf(emptyMap())
+        every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
         return FilteredTransactionsViewModel(
             route = route,
             transactionRepository = transactionRepository,
             accountRepository = accountRepository,
             categoryRepository = categoryRepository,
             tagRepository = tagRepository,
+            userPreferences = userPreferences,
             clock = clock,
             defaultDispatcher = UnconfinedTestDispatcher(),
         )
@@ -141,6 +146,66 @@ class FilteredTransactionsViewModelTest {
             var state = awaitItem()
             while (state.isLoading) state = awaitItem()
             assertTrue(state.isEmpty)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `stats scope drops excluded and foreign-currency rows like the queries do`() = runTest {
+        val counted = transaction(id = 1L, day = LocalDate.of(2026, 7, 5))
+        val excluded = transaction(id = 2L, day = LocalDate.of(2026, 7, 6))
+            .copy(isExcludedFromStats = true)
+        val foreign = transaction(id = 3L, day = LocalDate.of(2026, 7, 7))
+            .copy(currency = Currency.getInstance("USD"))
+        val viewModel = viewModel(
+            route = julyRoute(categoryId = groceries.id).copy(statsScope = true),
+            transactions = listOf(counted, excluded, foreign),
+        )
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+            assertEquals(listOf(1L), state.days.flatMap { it.items }.map { it.id })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `stats-scoped account drill-down keeps spend rows only`() = runTest {
+        val spend = transaction(id = 1L, day = LocalDate.of(2026, 7, 5))
+        val refund = transaction(id = 2L, day = LocalDate.of(2026, 7, 6))
+            .copy(type = TransactionType.INCOME, amount = BigDecimal("3.00"), isRefund = true)
+        val pureIncome = transaction(id = 3L, day = LocalDate.of(2026, 7, 7))
+            .copy(type = TransactionType.INCOME, amount = BigDecimal("500.00"))
+        val adjustment = transaction(id = 4L, day = LocalDate.of(2026, 7, 8))
+            .copy(type = TransactionType.ADJUSTMENT, categoryId = null)
+        val viewModel = viewModel(
+            route = julyRoute(accountId = checking.id).copy(statsScope = true),
+            transactions = listOf(spend, refund, pureIncome, adjustment),
+        )
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+            assertEquals(listOf(1L, 2L), state.days.flatMap { it.items }.map { it.id }.sorted())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `uncategorized drill-down keeps only rows without a category`() = runTest {
+        val uncategorized = transaction(id = 1L, day = LocalDate.of(2026, 7, 5), categoryId = null)
+        val categorized = transaction(id = 2L, day = LocalDate.of(2026, 7, 6))
+        val viewModel = viewModel(
+            route = julyRoute().copy(statsScope = true, uncategorizedOnly = true),
+            transactions = listOf(uncategorized, categorized),
+        )
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+            assertTrue(state.isUncategorized)
+            assertEquals(listOf(1L), state.days.flatMap { it.items }.map { it.id })
             cancelAndIgnoreRemainingEvents()
         }
     }

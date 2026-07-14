@@ -41,15 +41,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
+import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
@@ -313,6 +314,7 @@ private fun formattedDate(date: LocalDate): String {
     return remember(date, locale) {
         val pattern = DateFormat.getBestDateTimePattern(locale, "dMMMy")
         date.format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
 }
 
@@ -346,7 +348,7 @@ internal fun SubscriptionColorPicker(
                     Icon(
                         imageVector = Icons.Outlined.Check,
                         contentDescription = stringResource(R.string.subscription_editor_color_option, index + 1),
-                        tint = Color.White,
+                        tint = contentColorOn(CategoryVisuals.color(color)),
                     )
                 }
             }
@@ -390,7 +392,11 @@ internal fun SubscriptionIconPicker(
                 Icon(
                     imageVector = CategoryVisuals.icon(key),
                     contentDescription = stringResource(R.string.subscription_editor_icon_option, index + 1),
-                    tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (isSelected) {
+                        contentColorOn(CategoryVisuals.color(selectedColor))
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     modifier = Modifier.size(22.dp),
                 )
             }

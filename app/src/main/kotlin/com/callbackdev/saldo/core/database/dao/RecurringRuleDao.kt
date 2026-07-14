@@ -10,6 +10,7 @@ import com.callbackdev.saldo.core.database.entity.RecurringRuleEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@Suppress("TooManyFunctions") // A data-access interface naturally has many queries.
 interface RecurringRuleDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
@@ -39,10 +40,22 @@ interface RecurringRuleDao {
     @Query("SELECT * FROM recurring_rules WHERE id = :id")
     suspend fun getById(id: Long): RecurringRuleEntity?
 
+    /** Rules charging the account, for the account deletion guard. */
+    @Query("SELECT COUNT(*) FROM recurring_rules WHERE accountId = :accountId")
+    suspend fun countForAccount(accountId: Long): Int
+
     /**
      * Advances the pre-renewal reminder watermark. A targeted UPDATE (not a
      * full-row update) so it cannot clobber a concurrent generation write.
      */
     @Query("UPDATE recurring_rules SET lastReminderEpochDay = :epochDay WHERE id = :id")
     suspend fun updateLastReminder(id: Long, epochDay: Long)
+
+    /**
+     * Advances the generation watermark. A targeted UPDATE (not a full-row
+     * update) so it cannot clobber a rule edit saved while a generation run
+     * is in flight.
+     */
+    @Query("UPDATE recurring_rules SET lastGeneratedEpochDay = :epochDay WHERE id = :id")
+    suspend fun updateLastGenerated(id: Long, epochDay: Long)
 }

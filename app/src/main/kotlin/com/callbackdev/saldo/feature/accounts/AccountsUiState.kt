@@ -34,8 +34,15 @@ sealed interface AccountsDialog {
     /** The account has no movements: deletion is allowed after confirmation. */
     data class ConfirmDelete(val account: Account) : AccountsDialog
 
-    /** The account has movements: deletion is refused, archiving is proposed. */
-    data class ArchiveInstead(val account: Account, val movementCount: Int) : AccountsDialog
+    /**
+     * The account has movements or recurring rules: deletion is refused,
+     * archiving is proposed.
+     */
+    data class ArchiveInstead(
+        val account: Account,
+        val movementCount: Int,
+        val ruleCount: Int = 0,
+    ) : AccountsDialog
 }
 
 /** One-shot events consumed by the screen (snackbars). */

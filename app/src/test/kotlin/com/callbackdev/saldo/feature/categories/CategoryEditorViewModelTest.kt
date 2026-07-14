@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.categories
 import app.cash.turbine.test
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.domain.repository.BudgetRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.navigation.CategoryEditorRoute
@@ -25,6 +26,9 @@ class CategoryEditorViewModelTest {
 
     private val categoryRepository = mockk<CategoryRepository>(relaxUnitFun = true)
     private val transactionRepository = mockk<TransactionRepository>()
+    private val budgetRepository = mockk<BudgetRepository> {
+        coEvery { getBudgets() } returns emptyList()
+    }
 
     private fun category(
         id: Long,
@@ -44,7 +48,7 @@ class CategoryEditorViewModelTest {
     )
 
     private fun viewModel(route: CategoryEditorRoute = CategoryEditorRoute()) =
-        CategoryEditorViewModel(route, categoryRepository, transactionRepository)
+        CategoryEditorViewModel(route, categoryRepository, transactionRepository, budgetRepository)
 
     @Test
     fun `a new category adopts the initial type from the route`() = runTest {

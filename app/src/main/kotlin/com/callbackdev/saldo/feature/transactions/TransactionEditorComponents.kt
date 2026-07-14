@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
+import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import java.util.Currency
@@ -213,7 +214,7 @@ private fun CategoryCell(
             Icon(
                 imageVector = CategoryVisuals.icon(category.icon),
                 contentDescription = null,
-                tint = if (isSelected) Color.White else color,
+                tint = if (isSelected) contentColorOn(color) else color,
                 modifier = Modifier.size(22.dp),
             )
         }

@@ -16,6 +16,7 @@ import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.common.time.midnightTicker
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
@@ -158,16 +159,17 @@ class DashboardViewModel @Inject constructor(
      * drives the primary currency and the aggregate windows; every figure is
      * then computed by the database ([DashboardWindows],
      * [TransactionRepository.observeDashboardTotals]) instead of loading the
-     * ledger in memory.
+     * ledger in memory. The midnight ticker re-anchors "today" when the day
+     * changes while the screen stays open.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<DashboardUiState> = combine(
         accountRepository.observeAccountsWithBalance(),
         userPreferences.primaryCurrencyOverride,
-        ::Pair,
+        midnightTicker(clock),
+        ::Triple,
     )
-        .flatMapLatest { (accounts, currencyOverride) ->
-            val today = LocalDate.now(clock)
+        .flatMapLatest { (accounts, currencyOverride, today) ->
             val primary = primaryCurrency(accounts, currencyOverride)
             // The typed combine overloads stop at five flows, so the core
             // sources collapse first and the budget figures join on top.

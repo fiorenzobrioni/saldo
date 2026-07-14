@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -134,16 +135,11 @@ fun SettingsScreen(
                 selected = themePreferences.mode,
                 onSelected = viewModel::onThemeModeSelected,
             )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_dynamic_color)) },
-                supportingContent = { Text(stringResource(R.string.settings_dynamic_color_hint)) },
-                trailingContent = {
-                    Switch(
-                        checked = themePreferences.useDynamicColor,
-                        onCheckedChange = viewModel::onDynamicColorChanged,
-                    )
-                },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_dynamic_color),
+                hint = stringResource(R.string.settings_dynamic_color_hint),
+                checked = themePreferences.useDynamicColor,
+                onCheckedChange = viewModel::onDynamicColorChanged,
             )
 
             SettingsSectionHeader(stringResource(R.string.settings_section_dashboard))
@@ -173,28 +169,23 @@ fun SettingsScreen(
             val notificationPermissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission(),
             ) { /* the reminder stays on either way; a denial just mutes it */ }
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_renewal_reminder)) },
-                supportingContent = { Text(stringResource(R.string.settings_renewal_reminder_hint)) },
-                trailingContent = {
-                    Switch(
-                        checked = renewalReminder.enabled,
-                        onCheckedChange = { enabled ->
-                            viewModel.onRenewalReminderChanged(enabled)
-                            if (enabled) {
-                                val granted = ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS,
-                                ) == PackageManager.PERMISSION_GRANTED
-                                if (!granted) {
-                                    notificationPermissionLauncher
-                                        .launch(Manifest.permission.POST_NOTIFICATIONS)
-                                }
-                            }
-                        },
-                    )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_renewal_reminder),
+                hint = stringResource(R.string.settings_renewal_reminder_hint),
+                checked = renewalReminder.enabled,
+                onCheckedChange = { enabled ->
+                    viewModel.onRenewalReminderChanged(enabled)
+                    if (enabled) {
+                        val granted = ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS,
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (!granted) {
+                            notificationPermissionLauncher
+                                .launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
                 },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
             if (renewalReminder.enabled) {
                 RenewalLeadDaysSelector(
@@ -504,7 +495,12 @@ private fun SettingsEntry(
     )
 }
 
-/** A toggle row, like the dynamic-color one: title, supporting hint and a switch. */
+/**
+ * A toggle row: title, supporting hint and a switch. The whole row is the
+ * touch target ([Modifier.toggleable] with [Role.Switch], the switch itself
+ * has no separate handler), matching the editors' switch rows: a bigger
+ * target and a single TalkBack focus instead of two.
+ */
 @Composable
 private fun SettingsSwitchRow(
     title: String,
@@ -517,9 +513,13 @@ private fun SettingsSwitchRow(
         headlineContent = { Text(title) },
         supportingContent = { Text(hint) },
         trailingContent = {
-            Switch(checked = checked, onCheckedChange = onCheckedChange)
+            Switch(checked = checked, onCheckedChange = null)
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = modifier,
+        modifier = modifier.toggleable(
+            value = checked,
+            role = Role.Switch,
+            onValueChange = onCheckedChange,
+        ),
     )
 }

@@ -57,6 +57,7 @@ import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
+import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.RecurrenceMode
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.navigation.RecurringRuleEditorRoute
@@ -433,7 +434,7 @@ private fun PreviewAvatar(uiState: RecurringRuleEditorUiState, modifier: Modifie
             Icon(
                 imageVector = CategoryVisuals.icon(uiState.icon),
                 contentDescription = null,
-                tint = androidx.compose.ui.graphics.Color.White,
+                tint = contentColorOn(color),
                 modifier = Modifier.size(34.dp),
             )
         }

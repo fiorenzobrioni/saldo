@@ -14,6 +14,31 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-14 - Terza review completa: fix di correttezza, back stack per tab, allineamento premium (Fase 9.7)
+
+**Fatto:** giro unico su branch `feat/review-fixes-premium-round3` (versionCode 54 -> 55, versionName 0.9.15 -> 0.9.16) nato da una terza review completa (5 agenti in parallelo su dominio, database, ViewModel, UI/UX, performance). Un commit per area, in ordine: sicurezza dati, correttezza, performance, navigazione, rifinitura UI.
+
+- **Backup**: il decode valida ora enum, codici ISO 4217 e invarianti del payload (campi transfer, budget complessivo unico); un file con valuta sconosciuta veniva ripristinato e poi crashava ogni lettura a dati vecchi già eliminati. Backstop anche nei mapper dentro la transazione di restore. Test con payload ostili.
+- **Conti**: il guard di eliminazione conta anche le regole ricorrenti che referenziano il conto (la FK faceva fallire la DELETE con un generico "scrittura fallita"); nuove plurals IT/EN col motivo reale.
+- **Ricorrenze**: avanzamento del watermark di generazione con UPDATE mirato (l'upsert full-row poteva sovrascrivere una modifica concorrente dell'editor); l'editor tiene selezionabile il conto archiviato referenziato (prima il salvataggio falliva in silenzio); `lastReminderDate` sopravvive a un edit (niente notifiche doppie).
+- **Statistiche**: il drill-down rispecchia esattamente le query statistiche quando arriva dai grafici (`statsScope` nella route: valuta principale, esclusi e pending fuori, solo righe di spesa per il tap su un conto), mentre i drill-down di cassa della dashboard restano invariati; la spesa senza categoria diventa una fetta propria dell'anello ("Senza categoria", grigio neutro), così centro del donut, lista percentuali e barre dei 12 mesi tornano a coincidere; caricamento a finestra SQL invece dell'intero registro.
+- **Categorie**: la riassegnazione in eliminazione copre anche le recurring rules (prima andavano a NULL); i dialog dichiarano quando verrà eliminato anche il budget della categoria (CASCADE).
+- **Date italiane**: la normalizzazione a minuscolo del commit 64eb59e estratta in `withLocaleDateCasing` e applicata a tutti i formatter con nomi di giorno/mese (registro, drill-down, editor, stats, budget, backup, onboarding, ricorrenze).
+- **Fix minori**: filtro importi con min > max normalizzato allo scambio; insets doppi rimossi dall'onboarding (`consumeWindowInsets`); tre plurals IT senza `many` completate; ticker di mezzanotte condiviso che ri-ancora "oggi" su dashboard e statistiche a schermo acceso oltre la mezzanotte.
+- **Perf**: `distinctUntilChanged` su tutti i flow di `UserPreferencesRepository` (ogni salvataggio movimento scriveva `lastUsedAccountId` e faceva teardown/rebuild dell'intera pipeline dashboard); `TransactionFilterEngine.compile` risolve range date e needle normalizzato una volta per passata invece che per riga a ogni keystroke; il campo di ricerca legge uno `StateFlow` sincrono invece dell'output del combine in background (niente caratteri persi digitando veloce).
+- **Navigazione (il cambio più visibile)**: back stack per tab con il pattern Nav3 "multiple back stacks", verificato sui sorgenti 1.1.4 scaricati da Maven (niente API a memoria). Ogni tab conserva ViewModel, scroll, ricerca e periodo tra un cambio e l'altro: spariscono lo skeleton e le ri-query a ogni rientro. Comportamento back invariato (exit through home); tab selezionato persistito per nome enum.
+- **UI premium**: `contentColorOn(color)` nel design system sceglie bianco/quasi-nero per luminanza sui colori pieni (fix contrasto su lime, verde chiaro, ambra, azzurro in avatar, righe stats e picker); skeleton allineati alla geometria reale (raggio 16dp, ritmo 8dp) e nuovo `StatsSkeleton` (ultimo spinner dei 4 tab); righe switch di Impostazioni toggleabili sull'intera riga con singolo focus TalkBack; rimosso l'ultimo chevron (hero Budget) e l'ultimo avatar circolare (picker conti dell'editor); crossfade breve sullo swap barra/ricerca dei Movimenti; lo speed dial non persiste più lo stato aperto.
+
+**Decisioni:** idee scartate della review confermate scartate (gradienti, ombre, count-up sugli importi, chevron "per affordance"); transizioni di schermata invariate: lo scatto percepito era in gran parte il flash dello skeleton al cambio tab, ora eliminato alla radice dai back stack per tab; se dopo la prova su device si volesse riprovare lo stile espressivo, è un cambio piccolo e isolato. La spesa "senza categoria" entra nell'anello invece di allargare il totale centro-donut a una query separata: ogni cifra della schermata resta la somma visibile delle sue parti. Stato dei form su process death (SavedStateHandle) valutato e rimandato: cambieria tutti gli editor per un caso raro, non nel percorso della v1.0.
+
+**Problemi:** nessun ambiente di build locale in questa sessione: verifica di correttezza fatta su firme reali (sorgenti Nav3 1.1.4 e lifecycle 2.10 scaricati da Google Maven) e sweep di riferimenti orfani; la validazione finale è demandata alla CI GitHub (build + lint + unit test + detekt) e all'APK di prova sul device dell'utente.
+
+**Verifica:** unit test nuovi o aggiornati per payload backup ostili, guard eliminazione conto, watermark ricorrenze (mirato + reminder), drill-down stats-scoped e fetta senza categoria, casing date, ticker mezzanotte, stato di navigazione per tab. Da eseguire in CI al push.
+
+**Prossimo:** push del branch, CI verde, prova su device (in particolare: cambio tab senza skeleton, drill-down coerenti, contrasto avatar sui colori chiari); poi Fase 10 (release v1.0).
+
+---
+
 ## 2026-07-14 - Rifinitura premium: app shortcut, skeleton, ricorrenze immediate, perf (Fase 9.6)
 
 **Fatto:** giro di rifinitura "da app premium" guidato dall'utente su una seconda review completa, iterato su APK di prova da GitHub (versionName 0.9.11 -> 0.9.15, versionCode 50 -> 54; un commit per intervento più i fix). Nessuna modifica a dominio o schema.

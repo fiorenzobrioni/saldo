@@ -235,7 +235,7 @@ internal fun CategoryDonut(
             chart = rememberPieChart(
                 sliceProvider = PieChart.SliceProvider.series(
                     slices.map { slice ->
-                        PieChart.Slice(fill = Fill(CategoryVisuals.color(slice.category.color)))
+                        PieChart.Slice(fill = Fill(CategoryVisuals.color(slice.category?.color)))
                     },
                 ),
                 innerSize = PieSize.Inner.fixed(DONUT_HOLE),

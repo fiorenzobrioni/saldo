@@ -33,6 +33,7 @@ import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
+import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import androidx.compose.ui.res.stringResource
 import java.math.BigDecimal
 import java.util.Currency
@@ -109,25 +110,29 @@ internal fun CategorySharesCard(
         }
         Spacer(Modifier.height(12.dp))
         slices.forEach { slice ->
+            // A null category is the uncategorized bucket: generic glyph,
+            // neutral grey, localized label.
+            val avatarColor = CategoryVisuals.color(slice.category?.color)
             ShareRow(
                 avatar = {
                     StatsAvatar(
                         icon = { size ->
                             Icon(
-                                imageVector = CategoryVisuals.icon(slice.category.icon),
+                                imageVector = CategoryVisuals.icon(slice.category?.icon),
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = contentColorOn(avatarColor),
                                 modifier = Modifier.size(size),
                             )
                         },
-                        color = CategoryVisuals.color(slice.category.color),
+                        color = avatarColor,
                     )
                 },
-                name = slice.category.name,
+                name = slice.category?.name
+                    ?: stringResource(R.string.transaction_uncategorized),
                 amount = MoneyFormatter.format(slice.amount, currency),
                 percentLabel = stringResource(R.string.stats_percent, slice.percent),
                 fraction = slice.fraction,
-                barColor = CategoryVisuals.color(slice.category.color),
+                barColor = avatarColor,
                 onClick = onSliceClick?.let { { it(slice) } },
             )
         }
@@ -151,6 +156,7 @@ internal fun AccountSpendsCard(
             return@StatsCard
         }
         spends.forEach { spend ->
+            val avatarColor = AccountVisuals.color(spend.account.color)
             ShareRow(
                 avatar = {
                     StatsAvatar(
@@ -158,18 +164,18 @@ internal fun AccountSpendsCard(
                             Icon(
                                 imageVector = AccountVisuals.icon(spend.account.icon),
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = contentColorOn(avatarColor),
                                 modifier = Modifier.size(size),
                             )
                         },
-                        color = AccountVisuals.color(spend.account.color),
+                        color = avatarColor,
                     )
                 },
                 name = spend.account.name,
                 amount = MoneyFormatter.format(spend.amount, currency),
                 percentLabel = null,
                 fraction = spend.fraction,
-                barColor = AccountVisuals.color(spend.account.color),
+                barColor = avatarColor,
                 onClick = onAccountClick?.let { { it(spend) } },
             )
         }

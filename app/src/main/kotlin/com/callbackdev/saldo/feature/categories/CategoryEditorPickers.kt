@@ -16,12 +16,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
+import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 
 /** Circular swatch grid for the shared category color palette. */
 @Composable
@@ -54,7 +54,7 @@ internal fun CategoryColorPicker(
                     Icon(
                         imageVector = Icons.Outlined.Check,
                         contentDescription = label,
-                        tint = Color.White,
+                        tint = contentColorOn(CategoryVisuals.color(color)),
                     )
                 }
             }
@@ -100,7 +100,7 @@ internal fun CategoryIconPicker(
                     imageVector = CategoryVisuals.icon(key),
                     contentDescription = label,
                     tint = if (isSelected) {
-                        Color.White
+                        contentColorOn(CategoryVisuals.color(selectedColor))
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },

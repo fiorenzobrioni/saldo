@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.Card
@@ -37,7 +36,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
@@ -53,6 +52,7 @@ import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
+import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.designsystem.visuals.indicatorColor
 import com.callbackdev.saldo.core.domain.model.BudgetLevel
 import com.callbackdev.saldo.core.domain.model.BudgetProgress
@@ -188,22 +188,17 @@ private fun OverallBudgetCard(
                 vertical = SaldoDimens.cardPaddingLarge,
             ),
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.budgets_overall_title),
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Text(
-                        text = formatMonth(month),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Outlined.ChevronRight,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            // No chevron: cards are tappable as a whole, like everywhere else
+            // in the app (decision of 2026-07-13).
+            Column {
+                Text(
+                    text = stringResource(R.string.budgets_overall_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = formatMonth(month),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Spacer(Modifier.height(12.dp))
@@ -319,17 +314,18 @@ private fun CategoryBudgetCard(
                 vertical = SaldoDimens.cardPaddingVertical,
             ),
         ) {
+            val avatarColor = CategoryVisuals.color(category.color)
             Box(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(AvatarShape)
-                    .background(CategoryVisuals.color(category.color)),
+                    .background(avatarColor),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = CategoryVisuals.icon(category.icon),
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = contentColorOn(avatarColor),
                     modifier = Modifier.size(20.dp),
                 )
             }
@@ -395,6 +391,7 @@ private fun formatMonth(month: YearMonth): String {
     val locale = LocalConfiguration.current.locales[0]
     val pattern = DateFormat.getBestDateTimePattern(locale, "yMMMM")
     return month.atDay(1).format(DateTimeFormatter.ofPattern(pattern, locale))
+        .withLocaleDateCasing(locale)
 }
 
 @Composable

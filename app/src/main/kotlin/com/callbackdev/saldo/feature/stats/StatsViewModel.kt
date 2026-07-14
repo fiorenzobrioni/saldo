@@ -10,6 +10,7 @@ import com.callbackdev.saldo.core.domain.model.MonthlyBalance
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.common.time.midnightTicker
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -53,11 +54,20 @@ class StatsViewModel @Inject constructor(
         val categories: List<Category>,
     )
 
+    /** Everything upstream of the SQL windows: accounts, period, override, today. */
+    private data class Inputs(
+        val accounts: List<AccountWithBalance>,
+        val period: StatsPeriod,
+        val currencyOverride: Currency?,
+        val today: LocalDate,
+    )
+
     /**
      * The account list (plus the explicit Settings choice, when present)
      * drives the primary currency; the period drives the ring and per-account
-     * windows. The trend charts always cover the last 12 months. All
-     * aggregation happens in SQL; this only resolves names and shapes the
+     * windows. The trend charts always cover the last 12 months, re-anchored
+     * by the midnight ticker if the day changes while the screen stays open.
+     * All aggregation happens in SQL; this only resolves names and shapes the
      * rows for display.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -65,15 +75,16 @@ class StatsViewModel @Inject constructor(
         accountRepository.observeAccountsWithBalance(),
         period,
         userPreferences.primaryCurrencyOverride,
-        ::Triple,
+        midnightTicker(clock),
+        ::Inputs,
     )
-        .flatMapLatest { (accounts, activePeriod, currencyOverride) ->
-            val currency = primaryCurrency(accounts, currencyOverride)
+        .flatMapLatest { inputs ->
+            val currency = primaryCurrency(inputs.accounts, inputs.currencyOverride)
             val zone = clock.zone
-            val range = activePeriod.dateRange()
+            val range = inputs.period.dateRange()
             val periodStart = range.start.atStartOfDay(zone).toInstant()
             val periodEnd = range.endInclusive.plusDays(1).atStartOfDay(zone).toInstant()
-            val months = trailingMonths(YearMonth.now(clock))
+            val months = trailingMonths(YearMonth.from(inputs.today))
             val trendStart = months.first().atDay(1).atStartOfDay(zone).toInstant()
             val trendEnd = months.last().plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
             combine(
@@ -84,9 +95,10 @@ class StatsViewModel @Inject constructor(
                 categoryRepository.observeCategories(),
             ) { categoryTotals, accountTotals, monthlyTotals, balances, categories ->
                 buildState(
-                    accounts = accounts,
-                    activePeriod = activePeriod,
+                    accounts = inputs.accounts,
+                    activePeriod = inputs.period,
                     currency = currency,
+                    today = inputs.today,
                     months = months,
                     sources = Sources(
                         categoryTotals = categoryTotals,
@@ -127,10 +139,12 @@ class StatsViewModel @Inject constructor(
         period.value = period.value.shifted(+1) ?: return
     }
 
+    @Suppress("LongParameterList") // One value per figure family on the screen.
     private fun buildState(
         accounts: List<AccountWithBalance>,
         activePeriod: StatsPeriod,
         currency: Currency,
+        today: LocalDate,
         months: List<YearMonth>,
         sources: Sources,
     ): StatsUiState {
@@ -138,7 +152,7 @@ class StatsViewModel @Inject constructor(
         return StatsUiState(
             isLoading = false,
             period = activePeriod,
-            today = LocalDate.now(clock),
+            today = today,
             currency = currency,
             slices = slices,
             periodSpendTotal = slices.fold(BigDecimal.ZERO) { acc, slice -> acc.add(slice.amount) },
@@ -153,7 +167,9 @@ class StatsViewModel @Inject constructor(
 
     /**
      * Categories with positive net spend, biggest first. Percentages are
-     * BigDecimal math; the Float fraction only sizes arcs and bars.
+     * BigDecimal math; the Float fraction only sizes arcs and bars. A NULL
+     * category total (uncategorized movements) becomes its own slice, so the
+     * ring and its center figure agree with the trend bars.
      */
     private fun categorySlices(
         totals: List<CategoryTotal>,
@@ -163,7 +179,10 @@ class StatsViewModel @Inject constructor(
         val spends = totals
             .filter { it.total.signum() < 0 }
             .mapNotNull { total ->
-                val category = categoryById[total.categoryId] ?: return@mapNotNull null
+                val category = when (val id = total.categoryId) {
+                    null -> null // Uncategorized bucket: kept as its own slice.
+                    else -> categoryById[id] ?: return@mapNotNull null
+                }
                 Triple(category, total.total.negate(), total.count)
             }
             .sortedByDescending { it.second }

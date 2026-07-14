@@ -8,7 +8,8 @@ import java.math.BigDecimal
  * positive), so a category's net spend nets refunds automatically.
  */
 data class CategoryTotal(
-    val categoryId: Long,
+    /** Null for movements without a category (their own bucket in the ring). */
+    val categoryId: Long?,
     val total: BigDecimal,
     val count: Int,
 )
