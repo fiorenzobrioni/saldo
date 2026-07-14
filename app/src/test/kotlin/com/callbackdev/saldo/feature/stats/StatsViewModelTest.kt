@@ -132,7 +132,7 @@ class StatsViewModelTest {
 
         viewModel.uiState.test {
             val state = loaded()
-            assertEquals(listOf("Transport", "Groceries"), state.slices.map { it.category.name })
+            assertEquals(listOf("Transport", "Groceries"), state.slices.map { it.category?.name })
             assertEquals(listOf(75, 25), state.slices.map { it.percent })
             assertEquals(BigDecimal("100.00"), state.periodSpendTotal)
             assertTrue(state.hasData)
@@ -171,7 +171,7 @@ class StatsViewModelTest {
 
         viewModel.uiState.test {
             val state = loaded()
-            assertEquals(listOf("Groceries"), state.slices.map { it.category.name })
+            assertEquals(listOf("Groceries"), state.slices.map { it.category?.name })
             assertEquals(listOf(100), state.slices.map { it.percent })
             cancelAndIgnoreRemainingEvents()
         }
