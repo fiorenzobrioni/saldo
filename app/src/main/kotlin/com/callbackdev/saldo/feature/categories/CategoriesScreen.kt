@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -175,13 +176,20 @@ private fun CategoryReorderList(
             } else {
                 Modifier.animateItem()
             }
+            // Read lazily via a stable holder so the handle's pointerInput, keyed
+            // on the id, always sees the row's current index without restarting.
+            val currentIndex by rememberUpdatedState(index)
             CategoryRow(
                 category = category,
                 elevated = isDragging,
                 onClick = { onEditCategory(category.id) },
                 dragHandle = {
                     DragHandle(
-                        modifier = Modifier.reorderableHandle(reorderState, index),
+                        modifier = Modifier.reorderableHandle(
+                            state = reorderState,
+                            key = category.id,
+                            index = { currentIndex },
+                        ),
                     )
                 },
                 modifier = rowModifier,

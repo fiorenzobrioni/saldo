@@ -157,16 +157,25 @@ fun rememberReorderableListState(
 }
 
 /**
- * Attaches this drag handle to the reorderable [state] for the item at [index].
- * Dragging starts immediately (no long press) since the handle is a dedicated
- * affordance, and the gesture is consumed so the list does not scroll under it.
+ * Attaches this drag handle to the reorderable [state] for the item identified
+ * by [key]. Dragging starts immediately (no long press) since the handle is a
+ * dedicated affordance, and the gesture is consumed so the list does not scroll
+ * under it.
+ *
+ * [key] must be stable for the item across reorders (typically its id). The
+ * gesture is keyed on it, never on the item's position: the backing list is
+ * reordered live while dragging, so the row's index changes on the first swap.
+ * Keying [pointerInput] on the index would restart (and so cancel) the in-flight
+ * gesture at that moment, stranding the item mid-drag. [index] is read lazily so
+ * drag start still picks up the row's current position.
  */
 fun Modifier.reorderableHandle(
     state: ReorderableListState,
-    index: Int,
-): Modifier = pointerInput(index) {
+    key: Any,
+    index: () -> Int,
+): Modifier = pointerInput(key) {
     detectDragGestures(
-        onDragStart = { state.onDragStart(index) },
+        onDragStart = { state.onDragStart(index()) },
         onDragEnd = { state.onDragEnd() },
         onDragCancel = { state.onDragCancel() },
         onDrag = { change, dragAmount ->
