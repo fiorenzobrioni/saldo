@@ -169,10 +169,14 @@ internal fun TransactionFilterSheet(
                 Spacer(Modifier.weight(1f))
                 Button(
                     onClick = {
+                        val min = MoneyInput.parse(minText)
+                        val max = MoneyInput.parse(maxText)
+                        // A reversed range would silently match nothing: normalize it.
+                        val reversed = min != null && max != null && min > max
                         onApply(
                             draft.copy(
-                                amountMin = MoneyInput.parse(minText),
-                                amountMax = MoneyInput.parse(maxText),
+                                amountMin = if (reversed) max else min,
+                                amountMax = if (reversed) min else max,
                             ),
                         )
                         onDismiss()

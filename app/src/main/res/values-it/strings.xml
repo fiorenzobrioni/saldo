@@ -634,10 +634,12 @@
     <string name="notif_budget_body">Spesi %1$s di %2$s</string>
     <plurals name="notif_budget_warning_summary_title">
         <item quantity="one">%d budget oltre l\'80%%</item>
+        <item quantity="many">%d budget oltre l\'80%%</item>
         <item quantity="other">%d budget oltre l\'80%%</item>
     </plurals>
     <plurals name="notif_budget_exceeded_summary_title">
         <item quantity="one">%d budget superato</item>
+        <item quantity="many">%d budget superati</item>
         <item quantity="other">%d budget superati</item>
     </plurals>
 
@@ -645,6 +647,7 @@
     <string name="dashboard_sts_title">Spendibile oggi</string>
     <plurals name="dashboard_sts_month_left">
         <item quantity="one">Ancora %1$s per oggi</item>
+        <item quantity="many">Ancora %1$s per i prossimi %2$d giorni</item>
         <item quantity="other">Ancora %1$s per i prossimi %2$d giorni</item>
     </plurals>
     <string name="dashboard_sts_upcoming">Già impegnati entro fine mese: %1$s</string>
