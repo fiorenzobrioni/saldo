@@ -104,17 +104,15 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
         val categoryById = categories.associateBy { it.id }
         val today = LocalDate.now(clock)
         val currency = primaryCurrency(accounts, currencyOverride)
+        // The preset here is always CUSTOM: the week start is unused.
+        val compiled = TransactionFilterEngine.compile(filters, today, DayOfWeek.MONDAY)
         val filtered = transactions
             .filter { transaction ->
                 matchesStatsScope(transaction, currency) &&
-                    TransactionFilterEngine.matches(
+                    compiled.matches(
                         transaction = transaction,
                         localDate = transaction.localDate,
                         tagIds = tagAssignments[transaction.id].orEmpty(),
-                        filters = filters,
-                        today = today,
-                        // The preset here is always CUSTOM: the week start is unused.
-                        firstDayOfWeek = DayOfWeek.MONDAY,
                     )
             }
             .map { transaction ->
