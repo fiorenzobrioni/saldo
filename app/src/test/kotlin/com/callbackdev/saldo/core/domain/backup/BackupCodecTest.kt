@@ -96,6 +96,81 @@ class BackupCodecTest {
     }
 
     @Test
+    fun `an unknown currency code is rejected at decode time`() {
+        val file = fullyPopulatedBackupFile()
+        val tampered = file.copy(
+            data = file.data.copy(
+                accounts = file.data.accounts.map { it.copy(currency = "EURO") },
+            ),
+        )
+
+        assertThrows(BackupDecodeException.Corrupted::class.java) {
+            BackupCodec.decode(BackupCodec.encode(tampered))
+        }
+    }
+
+    @Test
+    fun `an unknown transfer currency is rejected at decode time`() {
+        val file = fullyPopulatedBackupFile()
+        val tampered = file.copy(
+            data = file.data.copy(
+                transactions = file.data.transactions.map {
+                    if (it.transferCurrency != null) it.copy(transferCurrency = "XXY") else it
+                },
+            ),
+        )
+
+        assertThrows(BackupDecodeException.Corrupted::class.java) {
+            BackupCodec.decode(BackupCodec.encode(tampered))
+        }
+    }
+
+    @Test
+    fun `an unknown enum name is rejected at decode time`() {
+        val file = fullyPopulatedBackupFile()
+        val tampered = file.copy(
+            data = file.data.copy(
+                recurringRules = file.data.recurringRules.map { it.copy(frequency = "FORTNIGHTLY") },
+            ),
+        )
+
+        assertThrows(BackupDecodeException.Corrupted::class.java) {
+            BackupCodec.decode(BackupCodec.encode(tampered))
+        }
+    }
+
+    @Test
+    fun `a transfer without destination account or amount is rejected at decode time`() {
+        val file = fullyPopulatedBackupFile()
+        val tampered = file.copy(
+            data = file.data.copy(
+                transactions = file.data.transactions.map {
+                    if (it.type == "TRANSFER") it.copy(transferAmountMinor = null) else it
+                },
+            ),
+        )
+
+        assertThrows(BackupDecodeException.Corrupted::class.java) {
+            BackupCodec.decode(BackupCodec.encode(tampered))
+        }
+    }
+
+    @Test
+    fun `more than one overall budget is rejected at decode time`() {
+        val file = fullyPopulatedBackupFile()
+        val overall = file.data.budgets.first { it.categoryId == null }
+        val tampered = file.copy(
+            data = file.data.copy(
+                budgets = file.data.budgets + overall.copy(id = 999L),
+            ),
+        )
+
+        assertThrows(BackupDecodeException.Corrupted::class.java) {
+            BackupCodec.decode(BackupCodec.encode(tampered))
+        }
+    }
+
+    @Test
     fun `summary counts every collection`() {
         val summary = fullyPopulatedBackupFile().summary()
 
