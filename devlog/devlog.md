@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-14 - Fix riordino categorie: gesto di drag cancellato al primo scambio
+
+**Fatto:** corretto il drag-to-reorder in Impostazioni - Categorie, rotto su entrambi i tab (Spese ed Entrate). Trascinando una categoria, al primo scambio restava sospesa sopra le altre e non rispondeva più al dito. `versionCode` 55 -> 56, `versionName` 0.9.16 -> 0.9.17.
+
+**Decisioni:** la causa era in `core/designsystem/component/ReorderableListState.kt`: `reorderableHandle` chiavava `pointerInput` sull'indice della riga. La lista viene riordinata live durante il drag (`onMove` muta la lista e `draggingItemIndex` diventa l'indice di destinazione), quindi al primo scambio la riga trascinata (stessa istanza, `key = category.id`) riceve un nuovo indice da `itemsIndexed`; il nuovo indice come chiave di `pointerInput` fa restartare (e quindi cancellare) il gesto `detectDragGestures` in corso, lasciando l'item bloccato a metà. Fix: `pointerInput` chiavato sull'id stabile della riga; l'indice serve solo a `onDragStart` e viene letto lazily tramite un `() -> Int` alimentato da `rememberUpdatedState`, così drag start prende sempre la posizione corrente senza restartare il gesto. La firma passa da `reorderableHandle(state, index: Int)` a `reorderableHandle(state, key, index: () -> Int)`; unico chiamante `CategoriesScreen`.
+
+**Problemi:** il path non era mai stato esercitato su device (test UI strumentato del drag rimandato, come da voce Fase 4). Verifica: `assembleDebug testDebugUnitTest lint` verdi. Nessun emulatore disponibile per il test strumentato del gesto; la correttezza del fix è nel ciclo di vita del gesto (chiave stabile invece dell'indice mutevole).
+
+**Prossimo:** eventuale test UI strumentato del drag quando ci sarà un emulatore.
+
+---
+
 ## 2026-07-14 - Terza review completa: fix di correttezza, back stack per tab, allineamento premium (Fase 9.7)
 
 **Fatto:** giro unico su branch `feat/review-fixes-premium-round3` (versionCode 54 -> 55, versionName 0.9.15 -> 0.9.16) nato da una terza review completa (5 agenti in parallelo su dominio, database, ViewModel, UI/UX, performance). Un commit per area, in ordine: sicurezza dati, correttezza, performance, navigazione, rifinitura UI.
