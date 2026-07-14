@@ -141,6 +141,25 @@ class StatsViewModelTest {
     }
 
     @Test
+    fun `uncategorized spend becomes its own slice and counts in the center total`() = runTest {
+        val viewModel = viewModel(
+            categoryTotals = listOf(
+                CategoryTotal(groceries.id, BigDecimal("-60.00"), count = 2),
+                CategoryTotal(null, BigDecimal("-40.00"), count = 1),
+            ),
+        )
+
+        viewModel.uiState.test {
+            val state = loaded()
+            assertEquals(BigDecimal("100.00"), state.periodSpendTotal)
+            val uncategorized = state.slices.single { it.category == null }
+            assertEquals(BigDecimal("40.00"), uncategorized.amount)
+            assertEquals(40, uncategorized.percent)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `a category net-refunded above zero is not a slice`() = runTest {
         val viewModel = viewModel(
             categoryTotals = listOf(

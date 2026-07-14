@@ -118,7 +118,11 @@ fun StatsScreen(
                         },
                         onSliceClick = { slice ->
                             onNavigateToFiltered(
-                                periodRoute(uiState.period, categoryId = slice.category.id),
+                                periodRoute(
+                                    period = uiState.period,
+                                    categoryId = slice.category?.id,
+                                    uncategorizedOnly = slice.category == null,
+                                ),
                             )
                         },
                     )
@@ -264,6 +268,7 @@ private fun MonthDrillDownButton(
                 FilteredTransactionsRoute(
                     startEpochDay = month.atDay(1).toEpochDay(),
                     endEpochDayExclusive = month.plusMonths(1).atDay(1).toEpochDay(),
+                    statsScope = true,
                 ),
             )
         },
@@ -278,6 +283,7 @@ private fun periodRoute(
     period: StatsPeriod,
     categoryId: Long? = null,
     accountId: Long? = null,
+    uncategorizedOnly: Boolean = false,
 ): FilteredTransactionsRoute {
     val range = period.dateRange()
     return FilteredTransactionsRoute(
@@ -285,6 +291,8 @@ private fun periodRoute(
         endEpochDayExclusive = range.endInclusive.plusDays(1).toEpochDay(),
         categoryId = categoryId,
         accountId = accountId,
+        statsScope = true,
+        uncategorizedOnly = uncategorizedOnly,
     )
 }
 

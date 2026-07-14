@@ -78,7 +78,14 @@ fun FilteredTransactionsScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(uiState.title ?: stringResource(R.string.nav_transactions))
+                        Text(
+                            uiState.title
+                                ?: if (uiState.isUncategorized) {
+                                    stringResource(R.string.transaction_uncategorized)
+                                } else {
+                                    stringResource(R.string.nav_transactions)
+                                },
+                        )
                         Text(
                             text = periodLabel,
                             style = MaterialTheme.typography.bodySmall,

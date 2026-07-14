@@ -15,9 +15,11 @@ import java.util.Currency
  * spend (refunds already netted by the query); categories whose refunds
  * exceed their expenses are not slices. [fraction] is the share of the total
  * (0..1) used for arcs and bars; a display proportion, never money math.
+ * [category] is null for the uncategorized bucket (movements left without a
+ * category after a deletion), so the ring always covers the whole spend.
  */
 data class CategorySlice(
-    val category: Category,
+    val category: Category?,
     val amount: BigDecimal,
     val fraction: Float,
     val percent: Int,

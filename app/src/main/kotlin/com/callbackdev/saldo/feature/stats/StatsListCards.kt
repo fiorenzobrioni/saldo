@@ -109,25 +109,28 @@ internal fun CategorySharesCard(
         }
         Spacer(Modifier.height(12.dp))
         slices.forEach { slice ->
+            // A null category is the uncategorized bucket: generic glyph,
+            // neutral grey, localized label.
             ShareRow(
                 avatar = {
                     StatsAvatar(
                         icon = { size ->
                             Icon(
-                                imageVector = CategoryVisuals.icon(slice.category.icon),
+                                imageVector = CategoryVisuals.icon(slice.category?.icon),
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(size),
                             )
                         },
-                        color = CategoryVisuals.color(slice.category.color),
+                        color = CategoryVisuals.color(slice.category?.color),
                     )
                 },
-                name = slice.category.name,
+                name = slice.category?.name
+                    ?: stringResource(R.string.transaction_uncategorized),
                 amount = MoneyFormatter.format(slice.amount, currency),
                 percentLabel = stringResource(R.string.stats_percent, slice.percent),
                 fraction = slice.fraction,
-                barColor = CategoryVisuals.color(slice.category.color),
+                barColor = CategoryVisuals.color(slice.category?.color),
                 onClick = onSliceClick?.let { { it(slice) } },
             )
         }

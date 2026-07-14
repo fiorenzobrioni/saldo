@@ -153,7 +153,9 @@ class StatsViewModel @Inject constructor(
 
     /**
      * Categories with positive net spend, biggest first. Percentages are
-     * BigDecimal math; the Float fraction only sizes arcs and bars.
+     * BigDecimal math; the Float fraction only sizes arcs and bars. A NULL
+     * category total (uncategorized movements) becomes its own slice, so the
+     * ring and its center figure agree with the trend bars.
      */
     private fun categorySlices(
         totals: List<CategoryTotal>,
@@ -163,7 +165,10 @@ class StatsViewModel @Inject constructor(
         val spends = totals
             .filter { it.total.signum() < 0 }
             .mapNotNull { total ->
-                val category = categoryById[total.categoryId] ?: return@mapNotNull null
+                val category = when (val id = total.categoryId) {
+                    null -> null // Uncategorized bucket: kept as its own slice.
+                    else -> categoryById[id] ?: return@mapNotNull null
+                }
                 Triple(category, total.total.negate(), total.count)
             }
             .sortedByDescending { it.second }
