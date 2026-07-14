@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.domain.repository.BudgetRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.navigation.CategoryEditorRoute
@@ -34,6 +35,8 @@ data class CategoryEditorUiState(
     /** Set on a failed save attempt to surface the name error. */
     val showValidation: Boolean = false,
     val deleteDialog: CategoryDeleteDialog? = null,
+    /** True when deleting also removes the category's monthly budget (CASCADE). */
+    val deleteAlsoRemovesBudget: Boolean = false,
 ) {
     val isNameValid: Boolean get() = name.isNotBlank()
 }
@@ -80,6 +83,7 @@ class CategoryEditorViewModel @AssistedInject constructor(
     @Assisted private val route: CategoryEditorRoute,
     private val categoryRepository: CategoryRepository,
     private val transactionRepository: TransactionRepository,
+    private val budgetRepository: BudgetRepository,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -180,6 +184,8 @@ class CategoryEditorViewModel @AssistedInject constructor(
         val category = existing ?: return
         viewModelScope.launch {
             val count = transactionRepository.countForCategory(category.id)
+            // The category's budget goes away with it (CASCADE): say so upfront.
+            val hasBudget = budgetRepository.getBudgets().any { it.categoryId == category.id }
             val dialog = when {
                 count == 0 -> CategoryDeleteDialog.Confirm
                 else -> {
@@ -195,7 +201,7 @@ class CategoryEditorViewModel @AssistedInject constructor(
                     }
                 }
             }
-            _uiState.update { it.copy(deleteDialog = dialog) }
+            _uiState.update { it.copy(deleteDialog = dialog, deleteAlsoRemovesBudget = hasBudget) }
         }
     }
 

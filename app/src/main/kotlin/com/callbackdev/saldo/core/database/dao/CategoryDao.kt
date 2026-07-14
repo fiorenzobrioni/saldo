@@ -63,16 +63,24 @@ interface CategoryDao {
     @Query("UPDATE transactions SET categoryId = :targetId WHERE categoryId = :categoryId")
     suspend fun reassignTransactions(categoryId: Long, targetId: Long)
 
+    /** Recurring rules follow the reassignment too, or their future movements would lose the category. */
+    @Query("UPDATE recurring_rules SET categoryId = :targetId WHERE categoryId = :categoryId")
+    suspend fun reassignRecurringRules(categoryId: Long, targetId: Long)
+
     @Query("DELETE FROM categories WHERE id = :categoryId")
     suspend fun deleteById(categoryId: Long)
 
     /**
-     * Reassigns every movement of [categoryId] to [targetId] and then deletes the
-     * category, atomically, so history is never left dangling mid-operation.
+     * Reassigns every movement and recurring rule of [categoryId] to [targetId]
+     * and then deletes the category, atomically, so neither history nor future
+     * generated movements are left dangling mid-operation. The category's
+     * budget, if any, still goes away with the CASCADE (a budget follows its
+     * category, not the reassignment target, which may already have one).
      */
     @Transaction
     suspend fun reassignTransactionsAndDelete(categoryId: Long, targetId: Long) {
         reassignTransactions(categoryId, targetId)
+        reassignRecurringRules(categoryId, targetId)
         deleteById(categoryId)
     }
 }

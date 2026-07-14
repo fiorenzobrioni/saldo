@@ -126,6 +126,7 @@
     <string name="accounts_delete_title">Eliminare il conto?</string>
     <string name="accounts_delete_body">"%1$s" non ha movimenti e verrà eliminato definitivamente.</string>
     <string name="accounts_cannot_delete_title">Impossibile eliminare</string>
+    <string name="category_delete_budget_note">Verrà eliminato anche il suo budget mensile.</string>
     <plurals name="accounts_cannot_delete_body">
         <item quantity="one">"%1$s" ha %2$d movimento. Eliminandolo perderesti lo storico: archivialo invece.</item>
         <item quantity="many">"%1$s" ha %2$d movimenti. Eliminandolo perderesti lo storico: archivialo invece.</item>

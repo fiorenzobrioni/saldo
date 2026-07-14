@@ -146,6 +146,7 @@ fun CategoryEditorScreen(
     CategoryDeleteDialogHost(
         dialog = uiState.deleteDialog,
         categoryName = uiState.name,
+        alsoRemovesBudget = uiState.deleteAlsoRemovesBudget,
         onTargetSelected = viewModel::onReassignTargetSelected,
         onConfirm = viewModel::confirmDelete,
         onDismiss = viewModel::dismissDeleteDialog,
