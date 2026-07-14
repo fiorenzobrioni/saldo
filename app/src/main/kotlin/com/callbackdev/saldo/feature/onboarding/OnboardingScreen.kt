@@ -49,6 +49,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.domain.backup.BackupSummary
 import com.callbackdev.saldo.core.domain.usecase.ImportBackupUseCase
 import java.time.Instant
@@ -379,5 +380,6 @@ private fun formatBackupDate(instant: Instant): String {
     return remember(instant, locale) {
         val pattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "dMMMyyyy")
         instant.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -28,6 +29,7 @@ fun chipDayLabel(date: LocalDate, today: LocalDate): String {
         val skeleton = if (date.year == today.year) "dMMM" else "dMMMy"
         val pattern = DateFormat.getBestDateTimePattern(locale, skeleton)
         date.format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
     return when (date) {
         today -> "${stringResource(R.string.date_today)}, $shortDate"
@@ -38,8 +40,9 @@ fun chipDayLabel(date: LocalDate, today: LocalDate): String {
 
 /**
  * Human day label: "Today", "Yesterday", then a localized weekday + date
- * (with the year only when it differs from the current one). The locale's
- * own casing is kept: lowercase in Italian, capitalized in English.
+ * (with the year only when it differs from the current one). Casing is
+ * normalized per locale: lowercase in Italian even on OEM ICU builds that
+ * titlecase standalone names, capitalized in English.
  */
 @Composable
 fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
@@ -50,5 +53,6 @@ fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
         val skeleton = if (date.year == today.year) "EEEEdMMMM" else "EEEEdMMMMy"
         val pattern = DateFormat.getBestDateTimePattern(locale, skeleton)
         date.format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
 }

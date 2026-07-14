@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.common.money.MoneyInput
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
@@ -309,5 +310,6 @@ private fun shortDate(date: LocalDate): String {
     return remember(date, locale) {
         val pattern = DateFormat.getBestDateTimePattern(locale, "dMMM")
         date.format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
 }

@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
@@ -261,6 +262,7 @@ private fun MonthDrillDownButton(
     val label = remember(month, locale) {
         val pattern = DateFormat.getBestDateTimePattern(locale, "yMMMM")
         month.atDay(1).format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
     TextButton(
         onClick = {
@@ -398,7 +400,7 @@ private fun PeriodSelector(
 
 private const val MODE_COUNT = 3
 
-/** Localized label of the selected period, keeping the locale's own casing. */
+/** Localized label of the selected period, normalized to the locale's own casing. */
 @Composable
 private fun periodLabel(period: StatsPeriod): String {
     val locale = LocalConfiguration.current.locales[0]
@@ -414,6 +416,6 @@ private fun periodLabel(period: StatsPeriod): String {
                 val formatter = DateTimeFormatter.ofPattern(pattern, locale)
                 "${period.start.format(formatter)} - ${period.end.format(formatter)}"
             }
-        }
+        }.withLocaleDateCasing(locale)
     }
 }

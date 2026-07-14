@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
@@ -230,5 +231,5 @@ private fun formatWindow(start: LocalDate, endInclusive: LocalDate, locale: Loca
             val formatter = DateTimeFormatter.ofPattern(pattern, locale)
             "${start.format(formatter)} - ${endInclusive.format(formatter)}"
         }
-    }
+    }.withLocaleDateCasing(locale)
 }

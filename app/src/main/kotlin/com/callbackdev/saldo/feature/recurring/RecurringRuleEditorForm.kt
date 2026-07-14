@@ -48,6 +48,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Account
@@ -313,6 +314,7 @@ private fun formattedDate(date: LocalDate): String {
     return remember(date, locale) {
         val pattern = DateFormat.getBestDateTimePattern(locale, "dMMMy")
         date.format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
 }
 

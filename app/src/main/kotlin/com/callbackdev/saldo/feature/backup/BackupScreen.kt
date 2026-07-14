@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.domain.backup.BackupSummary
@@ -418,5 +419,6 @@ private fun formatBackupInstant(instant: Instant): String {
     return remember(instant, locale) {
         val pattern = DateFormat.getBestDateTimePattern(locale, "dMMMyyyyHHmm")
         instant.atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(pattern, locale))
+            .withLocaleDateCasing(locale)
     }
 }

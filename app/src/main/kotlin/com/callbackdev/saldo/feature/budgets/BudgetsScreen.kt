@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
@@ -395,6 +396,7 @@ private fun formatMonth(month: YearMonth): String {
     val locale = LocalConfiguration.current.locales[0]
     val pattern = DateFormat.getBestDateTimePattern(locale, "yMMMM")
     return month.atDay(1).format(DateTimeFormatter.ofPattern(pattern, locale))
+        .withLocaleDateCasing(locale)
 }
 
 @Composable
