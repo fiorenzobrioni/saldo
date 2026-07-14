@@ -131,6 +131,11 @@
         <item quantity="many">"%1$s" ha %2$d movimenti. Eliminandolo perderesti lo storico: archivialo invece.</item>
         <item quantity="other">"%1$s" ha %2$d movimenti. Eliminandolo perderesti lo storico: archivialo invece.</item>
     </plurals>
+    <plurals name="accounts_cannot_delete_rules_body">
+        <item quantity="one">"%1$s" è usato da %2$d regola ricorrente. Elimina prima la regola, oppure archivia il conto.</item>
+        <item quantity="many">"%1$s" è usato da %2$d regole ricorrenti. Elimina prima le regole, oppure archivia il conto.</item>
+        <item quantity="other">"%1$s" è usato da %2$d regole ricorrenti. Elimina prima le regole, oppure archivia il conto.</item>
+    </plurals>
     <string name="account_editor_title_new">Nuovo conto</string>
     <string name="account_editor_title_edit">Modifica conto</string>
     <string name="account_editor_save">Salva conto</string>

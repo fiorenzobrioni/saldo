@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
+import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.AdjustBalanceUseCase
 import com.callbackdev.saldo.testing.MainDispatcherExtension
@@ -29,6 +30,7 @@ class AccountsViewModelTest {
 
     private val accountRepository = mockk<AccountRepository>(relaxUnitFun = true)
     private val transactionRepository = mockk<TransactionRepository>()
+    private val recurringRuleRepository = mockk<RecurringRuleRepository>()
     private val adjustBalance = mockk<AdjustBalanceUseCase>()
 
     private fun account(
@@ -48,7 +50,13 @@ class AccountsViewModelTest {
     ): AccountsViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         coEvery { accountRepository.upsert(any()) } returns 1L
-        return AccountsViewModel(accountRepository, transactionRepository, adjustBalance)
+        coEvery { recurringRuleRepository.countForAccount(any()) } returns 0
+        return AccountsViewModel(
+            accountRepository,
+            transactionRepository,
+            recurringRuleRepository,
+            adjustBalance,
+        )
     }
 
     private suspend fun ReceiveTurbine<AccountsUiState>.awaitLoaded(): AccountsUiState {
@@ -106,6 +114,26 @@ class AccountsViewModelTest {
         viewModel.uiState.test {
             val state = awaitLoaded()
             assertEquals(AccountsDialog.ArchiveInstead(target, 3), state.dialog)
+            cancelAndIgnoreRemainingEvents()
+        }
+        coVerify(exactly = 0) { accountRepository.delete(any()) }
+    }
+
+    @Test
+    fun `delete request with recurring rules proposes archiving instead`() = runTest {
+        val target = account()
+        coEvery { transactionRepository.countForAccount(target.id) } returns 0
+        coEvery { recurringRuleRepository.countForAccount(target.id) } returns 2
+        val viewModel = viewModel()
+
+        viewModel.requestDelete(target)
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(
+                AccountsDialog.ArchiveInstead(target, movementCount = 0, ruleCount = 2),
+                state.dialog,
+            )
             cancelAndIgnoreRemainingEvents()
         }
         coVerify(exactly = 0) { accountRepository.delete(any()) }

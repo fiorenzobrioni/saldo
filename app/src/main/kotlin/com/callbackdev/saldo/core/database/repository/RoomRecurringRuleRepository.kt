@@ -35,6 +35,12 @@ class RoomRecurringRuleRepository @Inject constructor(
 
     override suspend fun delete(rule: RecurringRule) = recurringRuleDao.delete(rule.toEntity())
 
+    override suspend fun countForAccount(accountId: Long): Int =
+        recurringRuleDao.countForAccount(accountId)
+
     override suspend fun updateLastReminderDate(ruleId: Long, date: LocalDate) =
         recurringRuleDao.updateLastReminder(ruleId, date.toEpochDay())
+
+    override suspend fun updateLastGeneratedDate(ruleId: Long, date: LocalDate) =
+        recurringRuleDao.updateLastGenerated(ruleId, date.toEpochDay())
 }

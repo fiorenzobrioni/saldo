@@ -131,6 +131,10 @@
         <item quantity="one">"%1$s" has %2$d transaction. Deleting it would lose your history: archive it instead.</item>
         <item quantity="other">"%1$s" has %2$d transactions. Deleting it would lose your history: archive it instead.</item>
     </plurals>
+    <plurals name="accounts_cannot_delete_rules_body">
+        <item quantity="one">"%1$s" is used by %2$d recurring rule. Delete the rule first, or archive the account instead.</item>
+        <item quantity="other">"%1$s" is used by %2$d recurring rules. Delete the rules first, or archive the account instead.</item>
+    </plurals>
     <string name="account_editor_title_new">New account</string>
     <string name="account_editor_title_edit">Edit account</string>
     <string name="account_editor_save">Save account</string>

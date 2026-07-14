@@ -19,6 +19,15 @@ interface RecurringRuleRepository {
 
     suspend fun delete(rule: RecurringRule)
 
+    /** How many rules charge or credit the account, for the deletion guard. */
+    suspend fun countForAccount(accountId: Long): Int
+
     /** Records that a pre-renewal reminder was posted for the occurrence on [date]. */
     suspend fun updateLastReminderDate(ruleId: Long, date: LocalDate)
+
+    /**
+     * Advances the generation watermark to [date] without touching the rest
+     * of the rule, so a concurrent edit from the editor is never overwritten.
+     */
+    suspend fun updateLastGeneratedDate(ruleId: Long, date: LocalDate)
 }

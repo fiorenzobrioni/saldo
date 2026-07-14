@@ -191,12 +191,21 @@ internal fun AccountsDialogHost(
             title = { Text(stringResource(R.string.accounts_cannot_delete_title)) },
             text = {
                 Text(
-                    pluralStringResource(
-                        R.plurals.accounts_cannot_delete_body,
-                        dialog.movementCount,
-                        dialog.account.name,
-                        dialog.movementCount,
-                    ),
+                    if (dialog.movementCount > 0) {
+                        pluralStringResource(
+                            R.plurals.accounts_cannot_delete_body,
+                            dialog.movementCount,
+                            dialog.account.name,
+                            dialog.movementCount,
+                        )
+                    } else {
+                        pluralStringResource(
+                            R.plurals.accounts_cannot_delete_rules_body,
+                            dialog.ruleCount,
+                            dialog.account.name,
+                            dialog.ruleCount,
+                        )
+                    },
                 )
             },
             confirmButton = {
