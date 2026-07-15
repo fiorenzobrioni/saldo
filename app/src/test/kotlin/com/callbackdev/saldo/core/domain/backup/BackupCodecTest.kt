@@ -46,6 +46,8 @@ class BackupCodecTest {
 
         assertEquals(1, decoded.data.accounts.size)
         assertTrue(decoded.data.accounts.single().isIncludedInTotal)
+        // The budget-exclusion flag is additive too: older files default to included.
+        assertTrue(decoded.data.accounts.single().isIncludedInBudget)
         assertEquals(emptyList<TransactionBackup>(), decoded.data.transactions)
         // Files written before the budgets feature restore with no budgets.
         assertEquals(emptyList<BudgetBackup>(), decoded.data.budgets)

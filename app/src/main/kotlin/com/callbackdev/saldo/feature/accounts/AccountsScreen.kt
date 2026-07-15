@@ -365,6 +365,9 @@ private fun accountSupportingText(account: Account): String {
         if (!account.isIncludedInTotal) {
             add(stringResource(R.string.accounts_excluded_from_total))
         }
+        if (!account.isIncludedInBudget) {
+            add(stringResource(R.string.accounts_excluded_from_budget))
+        }
     }
     return parts.joinToString(separator = " · ")
 }

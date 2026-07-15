@@ -23,6 +23,7 @@ class AccountMapperTest {
             color = 0x5C6BC0,
             icon = "account_balance",
             isIncludedInTotal = false,
+            isIncludedInBudget = false,
             isArchived = true,
             sortOrder = 3,
         )
@@ -37,6 +38,7 @@ class AccountMapperTest {
         assertEquals(account.color, restored.color)
         assertEquals(account.icon, restored.icon)
         assertEquals(account.isIncludedInTotal, restored.isIncludedInTotal)
+        assertEquals(account.isIncludedInBudget, restored.isIncludedInBudget)
         assertEquals(account.isArchived, restored.isArchived)
         assertEquals(account.sortOrder, restored.sortOrder)
     }

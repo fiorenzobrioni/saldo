@@ -34,6 +34,7 @@ class BackupMapperTest {
             color = 0x112233,
             icon = "wallet",
             isIncludedInTotal = false,
+            isIncludedInBudget = false,
             isArchived = true,
             sortOrder = 4,
             createdAtEpochMilli = 1_600_000_000_000,

@@ -50,6 +50,7 @@ class AccountEditorViewModelTest {
         viewModel.onColorSelected(AccountVisuals.colors[3])
         viewModel.onIconSelected("savings")
         viewModel.onIncludedInTotalChanged(false)
+        viewModel.onIncludedInBudgetChanged(false)
         viewModel.save()
 
         viewModel.events.test {
@@ -65,6 +66,7 @@ class AccountEditorViewModelTest {
             assertEquals(AccountVisuals.colors[3], color)
             assertEquals("savings", icon)
             assertFalse(isIncludedInTotal)
+            assertFalse(isIncludedInBudget)
             assertFalse(isArchived)
             assertEquals(fixedInstant, createdAt)
         }
@@ -107,6 +109,7 @@ class AccountEditorViewModelTest {
             color = AccountVisuals.colors[5],
             icon = "wallet",
             isIncludedInTotal = false,
+            isIncludedInBudget = false,
             sortOrder = 4,
             createdAt = Instant.parse("2026-01-01T00:00:00Z"),
         )
@@ -123,6 +126,7 @@ class AccountEditorViewModelTest {
             assertTrue(isCurrencyLocked)
             assertEquals("100", initialBalanceInput)
             assertFalse(isIncludedInTotal)
+            assertFalse(isIncludedInBudget)
         }
     }
 

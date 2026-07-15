@@ -118,6 +118,7 @@ class OnboardingViewModelTest {
         assertEquals(BigDecimal("1234.56"), saved.captured.initialBalance)
         assertEquals(AccountType.CHECKING, saved.captured.type)
         assertTrue(saved.captured.isIncludedInTotal)
+        assertTrue(saved.captured.isIncludedInBudget)
         assertEquals(OnboardingPage.NOTIFICATIONS, viewModel.uiState.value.page)
     }
 

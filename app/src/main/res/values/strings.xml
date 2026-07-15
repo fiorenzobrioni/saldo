@@ -61,6 +61,7 @@
     <string name="dashboard_accounts_expand">Show accounts</string>
     <string name="dashboard_accounts_collapse">Hide accounts</string>
     <string name="dashboard_manage_accounts">Manage accounts</string>
+    <string name="dashboard_account_other_currency">Currency %1$s, not in the total</string>
     <string name="dashboard_today">Today</string>
     <string name="dashboard_month">This month</string>
     <string name="dashboard_stat_expenses">Expenses</string>
@@ -105,6 +106,7 @@
     <string name="accounts_archived_header">Archived (%1$d)</string>
     <string name="accounts_archived_label">Archived</string>
     <string name="accounts_excluded_from_total">Excluded from total</string>
+    <string name="accounts_excluded_from_budget">Excluded from budget</string>
     <string name="account_type_checking">Bank account</string>
     <string name="account_type_card">Card</string>
     <string name="account_type_cash">Cash</string>
@@ -152,6 +154,8 @@
     <string name="account_editor_icon_option">Icon %1$d</string>
     <string name="account_editor_include_in_total">Include in total balance</string>
     <string name="account_editor_include_in_total_hint">If off, the account is tracked but does not count towards the total</string>
+    <string name="account_editor_include_in_budget">Include in budget calculation</string>
+    <string name="account_editor_include_in_budget_hint">If off, spending on this account does not count towards the budget or safe-to-spend</string>
 
     <!-- Transactions (Phase 3) -->
     <string name="transactions_new">New transaction</string>

@@ -43,6 +43,7 @@ data class AccountEditorUiState(
     val color: Int,
     val icon: String,
     val isIncludedInTotal: Boolean = true,
+    val isIncludedInBudget: Boolean = true,
     /** Set on a failed save attempt to surface field errors. */
     val showValidation: Boolean = false,
 ) {
@@ -127,6 +128,7 @@ class AccountEditorViewModel @AssistedInject constructor(
                     color = account.color ?: AccountVisuals.colors.first(),
                     icon = account.icon ?: AccountVisuals.defaultIconFor(account.type),
                     isIncludedInTotal = account.isIncludedInTotal,
+                    isIncludedInBudget = account.isIncludedInBudget,
                 )
             }
         }
@@ -186,6 +188,10 @@ class AccountEditorViewModel @AssistedInject constructor(
         _uiState.update { it.copy(isIncludedInTotal = included) }
     }
 
+    fun onIncludedInBudgetChanged(included: Boolean) {
+        _uiState.update { it.copy(isIncludedInBudget = included) }
+    }
+
     fun save() {
         val state = _uiState.value
         if (state.isLoading || isSaving) return
@@ -204,6 +210,7 @@ class AccountEditorViewModel @AssistedInject constructor(
             color = state.color,
             icon = state.icon,
             isIncludedInTotal = state.isIncludedInTotal,
+            isIncludedInBudget = state.isIncludedInBudget,
             isArchived = base?.isArchived ?: false,
             sortOrder = base?.sortOrder ?: 0,
             createdAt = base?.createdAt ?: clock.instant(),

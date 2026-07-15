@@ -60,6 +60,7 @@
     <string name="dashboard_accounts_expand">Mostra i conti</string>
     <string name="dashboard_accounts_collapse">Nascondi i conti</string>
     <string name="dashboard_manage_accounts">Gestisci conti</string>
+    <string name="dashboard_account_other_currency">Valuta %1$s, non nel totale</string>
     <string name="dashboard_today">Oggi</string>
     <string name="dashboard_month">Questo mese</string>
     <string name="dashboard_stat_expenses">Spese</string>
@@ -104,6 +105,7 @@
     <string name="accounts_archived_header">Archiviati (%1$d)</string>
     <string name="accounts_archived_label">Archiviato</string>
     <string name="accounts_excluded_from_total">Escluso dal totale</string>
+    <string name="accounts_excluded_from_budget">Escluso dal budget</string>
     <string name="account_type_checking">Conto corrente</string>
     <string name="account_type_card">Carta</string>
     <string name="account_type_cash">Contanti</string>
@@ -153,6 +155,8 @@
     <string name="account_editor_icon_option">Icona %1$d</string>
     <string name="account_editor_include_in_total">Includi nel saldo totale</string>
     <string name="account_editor_include_in_total_hint">Se disattivato, il conto è tracciato ma non conta nel totale</string>
+    <string name="account_editor_include_in_budget">Includi nel calcolo budget</string>
+    <string name="account_editor_include_in_budget_hint">Se disattivato, le spese su questo conto non contano nel budget né nello spendibile</string>
 
     <!-- Movimenti (Fase 3) -->
     <string name="transactions_new">Nuovo movimento</string>

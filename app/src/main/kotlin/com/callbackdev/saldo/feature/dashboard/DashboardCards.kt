@@ -21,7 +21,9 @@ import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.EventRepeat
+import androidx.compose.material.icons.outlined.MoneyOff
 import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -41,6 +43,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -200,16 +204,31 @@ internal fun BalanceCard(
             )
             if (accounts.isNotEmpty()) {
                 Spacer(Modifier.height(10.dp))
-                accounts.forEach { item -> AccountBreakdownRow(item = item) }
+                accounts.forEach { item ->
+                    AccountBreakdownRow(item = item, primaryCurrency = currency)
+                }
             }
         }
     }
 }
 
+/**
+ * One line of the balance breakdown: avatar, name, then (only when relevant)
+ * small markers explaining why the row does not feed the headline total, and
+ * the balance. An account that does not contribute to the total (its flag is
+ * off or it is in a non-primary currency) has its balance muted, so the eye
+ * sees at a glance which rows are not part of the big number.
+ */
 @Composable
-private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = Modifier) {
+private fun AccountBreakdownRow(
+    item: AccountWithBalance,
+    primaryCurrency: Currency,
+    modifier: Modifier = Modifier,
+) {
     val account = item.account
     val color = AccountVisuals.color(account.color)
+    val nonPrimaryCurrency = account.currency != primaryCurrency
+    val contributesToTotal = account.isIncludedInTotal && !nonPrimaryCurrency
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -239,16 +258,86 @@ private fun AccountBreakdownRow(item: AccountWithBalance, modifier: Modifier = M
                 .weight(1f)
                 .padding(horizontal = 12.dp),
         )
+        AccountBreakdownMarkers(
+            currency = account.currency,
+            showCurrencyCode = nonPrimaryCurrency,
+            excludedFromTotal = !account.isIncludedInTotal && !nonPrimaryCurrency,
+            excludedFromBudget = !account.isIncludedInBudget,
+        )
         Text(
             text = MoneyFormatter.format(item.balance, account.currency),
             style = MaterialTheme.typography.bodyLarge.tabularNumbers(),
-            color = if (item.balance.signum() < 0) {
-                MaterialTheme.moneyColors.negative
-            } else {
-                MaterialTheme.colorScheme.onSurface
+            color = when {
+                !contributesToTotal -> MaterialTheme.colorScheme.onSurfaceVariant
+                item.balance.signum() < 0 -> MaterialTheme.moneyColors.negative
+                else -> MaterialTheme.colorScheme.onSurface
             },
         )
     }
+}
+
+/**
+ * The negation-only markers shown between an account's name and its balance.
+ * A non-primary currency shows its ISO code (which also explains why the row is
+ * out of the total, so the total-excluded icon is suppressed in that case); a
+ * flag-excluded account shows a "not in total" icon; a budget-excluded account
+ * shows a distinct "not in budget" icon. Nothing is drawn when the account is
+ * fully included.
+ */
+@Composable
+private fun AccountBreakdownMarkers(
+    currency: Currency,
+    showCurrencyCode: Boolean,
+    excludedFromTotal: Boolean,
+    excludedFromBudget: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    if (!showCurrencyCode && !excludedFromTotal && !excludedFromBudget) return
+    Row(
+        modifier = modifier.padding(end = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        when {
+            showCurrencyCode -> CurrencyMarker(currency)
+            excludedFromTotal -> MarkerIcon(
+                icon = Icons.Outlined.RemoveCircleOutline,
+                contentDescription = stringResource(R.string.accounts_excluded_from_total),
+            )
+        }
+        if (excludedFromBudget) {
+            MarkerIcon(
+                icon = Icons.Outlined.MoneyOff,
+                contentDescription = stringResource(R.string.accounts_excluded_from_budget),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MarkerIcon(icon: ImageVector, contentDescription: String) {
+    Icon(
+        imageVector = icon,
+        contentDescription = contentDescription,
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.size(16.dp),
+    )
+}
+
+/** The ISO code of a non-primary currency, as a subtle pill. */
+@Composable
+private fun CurrencyMarker(currency: Currency) {
+    val description = stringResource(R.string.dashboard_account_other_currency, currency.currencyCode)
+    Text(
+        text = currency.currencyCode,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+            .clearAndSetSemantics { contentDescription = description },
+    )
 }
 
 /**

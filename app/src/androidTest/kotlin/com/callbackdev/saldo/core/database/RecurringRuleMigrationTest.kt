@@ -11,6 +11,7 @@ import com.callbackdev.saldo.core.database.migration.MIGRATION_3_4
 import com.callbackdev.saldo.core.database.migration.MIGRATION_4_5
 import com.callbackdev.saldo.core.database.migration.MIGRATION_5_6
 import com.callbackdev.saldo.core.database.migration.MIGRATION_6_7
+import com.callbackdev.saldo.core.database.migration.MIGRATION_7_8
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -279,6 +280,37 @@ class RecurringRuleMigrationTest {
         ).use { cursor ->
             assertTrue(cursor.moveToFirst())
             assertEquals(1, cursor.getInt(0))
+        }
+    }
+
+    @Test
+    fun migrate7To8_addsIsIncludedInBudget_defaultingToIncluded() {
+        val dbName = "migration-test-7-8"
+
+        helper.createDatabase(dbName, 7).use { db ->
+            db.insert(
+                "accounts",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("name", "Savings")
+                    put("type", "CHECKING")
+                    put("currency", "EUR")
+                    put("initialBalanceMinor", 0L)
+                    put("isIncludedInTotal", 1)
+                    put("isArchived", 0)
+                    put("sortOrder", 0)
+                    put("createdAtEpochMilli", 0L)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 8, true, MIGRATION_7_8)
+
+        db.query("SELECT name, isIncludedInBudget FROM accounts").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Savings", cursor.getString(0))
+            // Existing accounts keep counting toward the budget.
+            assertEquals(1, cursor.getInt(1))
         }
     }
 

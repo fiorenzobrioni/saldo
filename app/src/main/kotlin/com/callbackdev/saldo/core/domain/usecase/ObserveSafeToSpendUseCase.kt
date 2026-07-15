@@ -5,6 +5,7 @@ import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.recurrence.UpcomingChargesCalculator
+import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.BudgetRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -45,6 +46,11 @@ data class SafeToSpend(
  * still due before month end. Null when no overall budget exists in
  * [currency]: the figure is meaningless without a plan.
  *
+ * Accounts excluded from the budget (`isIncludedInBudget = 0`) are left out of
+ * every leg: their spend is already dropped by [observeStatsSpendTotal], and
+ * here their pending expenses and upcoming recurring charges are filtered out
+ * too, so an excluded account never affects the figure.
+ *
  * [SafeToSpend.perDay] divides the remainder over the days left (today
  * included), floored to the currency scale so it never suggests more than is
  * actually there.
@@ -53,6 +59,7 @@ class ObserveSafeToSpendUseCase @Inject constructor(
     private val budgetRepository: BudgetRepository,
     private val transactionRepository: TransactionRepository,
     private val recurringRuleRepository: RecurringRuleRepository,
+    private val accountRepository: AccountRepository,
     private val clock: Clock,
 ) {
 
@@ -64,12 +71,18 @@ class ObserveSafeToSpendUseCase @Inject constructor(
             transactionRepository.observeStatsSpendTotal(windows.monthStart, windows.monthEnd, currency),
             transactionRepository.observePendingTransactions(),
             recurringRuleRepository.observeRules(),
-        ) { budgets, totalSpend, pending, rules ->
+            accountRepository.observeAccountsWithBalance(),
+        ) { budgets, totalSpend, pending, rules, accounts ->
             val overall = budgets.firstOrNull { it.isOverall && it.currency == currency }
                 ?: return@combine null
+            val budgetExcludedAccountIds = accounts
+                .filterNot { it.account.isIncludedInBudget }
+                .map { it.account.id }
+                .toSet()
             val spent = totalSpend.negate().max(BigDecimal.ZERO)
-            val pendingCommitted = pendingCommitted(pending, windows, currency)
-            val upcoming = UpcomingChargesCalculator.remainingExpenseChargesInMonth(rules, today, currency)
+            val pendingCommitted = pendingCommitted(pending, windows, currency, budgetExcludedAccountIds)
+            val budgetedRules = rules.filterNot { it.accountId in budgetExcludedAccountIds }
+            val upcoming = UpcomingChargesCalculator.remainingExpenseChargesInMonth(budgetedRules, today, currency)
             val remaining = overall.amount
                 .subtract(spent)
                 .subtract(pendingCommitted)
@@ -87,15 +100,20 @@ class ObserveSafeToSpendUseCase @Inject constructor(
         }
     }
 
-    /** The month's pending expenses in [currency], as a positive magnitude. */
+    /**
+     * The month's pending expenses in [currency], as a positive magnitude,
+     * excluding those charged to accounts left out of the budget.
+     */
     private fun pendingCommitted(
         pending: List<Transaction>,
         windows: DashboardWindows,
         currency: Currency,
+        budgetExcludedAccountIds: Set<Long>,
     ): BigDecimal = pending
         .filter { transaction ->
             transaction.type == TransactionType.EXPENSE &&
                 transaction.currency == currency &&
+                transaction.accountId !in budgetExcludedAccountIds &&
                 transaction.timestamp >= windows.monthStart &&
                 transaction.timestamp < windows.monthEnd
         }

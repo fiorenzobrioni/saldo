@@ -168,6 +168,7 @@ class OnboardingViewModel @Inject constructor(
                 color = AccountVisuals.colors.first(),
                 icon = AccountVisuals.defaultIconFor(AccountType.CHECKING),
                 isIncludedInTotal = true,
+                isIncludedInBudget = true,
                 createdAt = clock.instant(),
             )
             val result = suspendRunCatching { accountRepository.upsert(account) }

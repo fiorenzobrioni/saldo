@@ -146,6 +146,7 @@ fun AccountEditorScreen(
                 onColorSelected = viewModel::onColorSelected,
                 onIconSelected = viewModel::onIconSelected,
                 onIncludedInTotalChanged = viewModel::onIncludedInTotalChanged,
+                onIncludedInBudgetChanged = viewModel::onIncludedInBudgetChanged,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
@@ -168,6 +169,7 @@ private fun EditorForm(
     onColorSelected: (Int) -> Unit,
     onIconSelected: (String) -> Unit,
     onIncludedInTotalChanged: (Boolean) -> Unit,
+    onIncludedInBudgetChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -201,9 +203,17 @@ private fun EditorForm(
             onIconSelected = onIconSelected,
         )
         Spacer(Modifier.height(8.dp))
-        IncludeInTotalRow(
+        InclusionToggleRow(
+            titleRes = R.string.account_editor_include_in_total,
+            hintRes = R.string.account_editor_include_in_total_hint,
             included = uiState.isIncludedInTotal,
             onChanged = onIncludedInTotalChanged,
+        )
+        InclusionToggleRow(
+            titleRes = R.string.account_editor_include_in_budget,
+            hintRes = R.string.account_editor_include_in_budget_hint,
+            included = uiState.isIncludedInBudget,
+            onChanged = onIncludedInBudgetChanged,
         )
         Spacer(Modifier.height(32.dp))
     }
@@ -360,8 +370,11 @@ private fun InitialBalanceField(
 private fun toggleSign(input: String): String =
     if (input.startsWith("-")) input.removePrefix("-") else "-$input"
 
+/** A full-width toggle row (title + hint + trailing switch), the whole row tappable. */
 @Composable
-private fun IncludeInTotalRow(
+private fun InclusionToggleRow(
+    titleRes: Int,
+    hintRes: Int,
     included: Boolean,
     onChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -380,11 +393,11 @@ private fun IncludeInTotalRow(
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                text = stringResource(R.string.account_editor_include_in_total),
+                text = stringResource(titleRes),
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
-                text = stringResource(R.string.account_editor_include_in_total_hint),
+                text = stringResource(hintRes),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

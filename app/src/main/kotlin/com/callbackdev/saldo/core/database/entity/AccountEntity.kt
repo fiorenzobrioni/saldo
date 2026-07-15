@@ -28,6 +28,7 @@ data class AccountEntity(
     val color: Int? = null,
     val icon: String? = null,
     val isIncludedInTotal: Boolean = true,
+    val isIncludedInBudget: Boolean = true,
     val isArchived: Boolean = false,
     val sortOrder: Int = 0,
     @ColumnInfo(name = "createdAtEpochMilli")

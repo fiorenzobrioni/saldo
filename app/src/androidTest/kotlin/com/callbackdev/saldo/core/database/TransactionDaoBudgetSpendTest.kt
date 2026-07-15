@@ -82,12 +82,13 @@ class TransactionDaoBudgetSpendTest {
         refund: Boolean = false,
         pending: Boolean = false,
         currency: String = "EUR",
+        account: Long = accountId,
         timestamp: Instant = instantOf(2026, 7, 10),
     ) = TransactionEntity(
         type = type,
         amountMinor = amountMinor,
         currency = currency,
-        accountId = accountId,
+        accountId = account,
         timestampEpochMilli = timestamp.toEpochMilli(),
         zoneOffsetSeconds = 0,
         categoryId = category,
@@ -135,6 +136,32 @@ class TransactionDaoBudgetSpendTest {
         assertEquals(
             -10_00L,
             transactionDao.observeStatsSpendTotal(monthStart, monthEnd, "EUR").first(),
+        )
+    }
+
+    @Test
+    fun spendSkipsAccountsExcludedFromBudget() = runBlocking {
+        val excludedAccount = accountDao.insert(
+            AccountEntity(
+                name = "savings",
+                type = AccountType.CHECKING,
+                currency = "EUR",
+                initialBalanceMinor = 0L,
+                isIncludedInBudget = false,
+            ),
+        )
+        transactionDao.insert(movement(TransactionType.EXPENSE, -100_00))
+        // Spend on a budget-excluded account must not count, in either query.
+        transactionDao.insert(movement(TransactionType.EXPENSE, -70_00, account = excludedAccount))
+
+        assertEquals(
+            -100_00L,
+            transactionDao.observeStatsSpendTotal(monthStart, monthEnd, "EUR").first(),
+        )
+        assertEquals(
+            -100_00L,
+            transactionDao.observeCategorySpendTotals(monthStart, monthEnd, "EUR").first()
+                .single().totalMinor,
         )
     }
 
