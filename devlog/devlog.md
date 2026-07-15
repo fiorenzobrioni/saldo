@@ -14,7 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
-## 2026-07-15 - Flag "Includi nel calcolo budget" per conto + indicatori nella card Saldo totale
+## 2026-07-15 - Avviso modifiche non salvate sul back negli editor
+
+**Fatto:** dialog di conferma a due opzioni quando si esce da un editor con modifiche non salvate, su tutti e cinque gli editor (Conto, Movimento, Movimento ricorrente, Budget, Categoria). versionCode 58 -> 59, versionName 0.9.19 -> 0.9.20.
+
+- **Componente condiviso `UnsavedChangesGuard`** in `core/designsystem/component`: `rememberUnsavedChangesGuard(hasUnsavedChanges, onNavigateBack)` restituisce uno stato che intercetta le due vie d'uscita (bottone X in top bar e back di sistema) e apre `DiscardChangesDialog` solo quando ci sono modifiche, altrimenti esce subito. Il `BackHandler` è abilitato solo quando `hasUnsavedChanges` è vero, così sui form intatti resta attiva l'animazione predittiva di sistema.
+- **Rilevamento "dirty" nei ViewModel:** ogni editor cattura uno snapshot dei soli campi editabili (`captureBaseline()`) quando il form diventa pronto (subito in create mode, dopo il load in edit mode; per il movimento dopo la preselezione asincrona del conto di default) ed espone `hasUnsavedChanges: StateFlow<Boolean>` che confronta lo snapshot corrente col baseline. Il confronto per snapshot rende la revert-to-baseline (rimettere un campo al valore iniziale) di nuovo "pulita".
+- **Dialog:** icona `WarningAmber`, titolo "Scartare le modifiche?", azione distruttiva "Scarta" (colore `error`) e "Continua a modificare". Stringhe in `values` e `values-it`.
+- **Percorsi legittimi non toccati:** salvataggio, eliminazione e record mancante chiamano `onNavigateBack` direttamente, senza passare dalla guardia, quindi non mostrano mai il dialog.
+
+**Decisioni:** dialog a due opzioni (niente "Salva" nel dialog) come da richiesta: l'editor ha già un salvataggio esplicito, il warning sul back ne è il complemento. `hasUnsavedChanges` esposto come StateFlow separato invece di essere inglobato in `uiState`, per non toccare la logica di update esistente e per uniformità (il movimento deriva `uiState` da un `combine`). Snapshot dei soli campi controllati dall'utente (esclusi `isLoading`, `showValidation`, stati dei dialog) per evitare falsi positivi. Nessun impatto su dominio, query o calcolo saldi: solo UI di navigazione.
+
+**Problemi:** il wrapper Gradle non scarica la distribuzione dietro il proxy (403 da github). Usata la gradle di sistema `/opt/gradle/bin/gradle` (stessa 8.14.3). Nessun emulatore disponibile: verifica via `assembleDebug testDebugUnitTest lint` (verdi) e unit test mirati sul dirty (create/edit, revert-to-baseline, e il caso del conto di default preselezionato che non conta come modifica).
+
+**Prossimo:** -
+
+---
 
 **Fatto:** nuovo asse di inclusione per conto, indipendente da "Includi nel saldo totale", e indicatori visivi nel breakdown della card Saldo totale (versionCode 57 -> 58, versionName 0.9.18 -> 0.9.19).
 

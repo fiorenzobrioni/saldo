@@ -178,6 +178,36 @@ class TransactionEditorViewModelTest {
     }
 
     @Test
+    fun `preselecting the default account is not counted as an unsaved change`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        viewModel.hasUnsavedChanges.test {
+            // The asynchronously preselected account is part of the baseline,
+            // so an untouched new movement has nothing to lose.
+            assertFalse(awaitItem())
+            viewModel.onAmountChanged("12.50")
+            assertTrue(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `clearing the amount back to empty clears the unsaved-changes flag`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            viewModel.onAmountChanged("12.50")
+            assertTrue(awaitItem())
+            viewModel.onAmountChanged("")
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `amount input is sanitized to the currency rules`() = runTest {
         val viewModel = viewModel(lastUsedAccountId = 1L)
         collectState(viewModel)

@@ -17,10 +17,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -103,6 +106,14 @@ class CategoryEditorViewModel @AssistedInject constructor(
     private val _events = Channel<CategoryEditorEvent>(Channel.BUFFERED)
     val events: Flow<CategoryEditorEvent> = _events.receiveAsFlow()
 
+    /** Snapshot of the editable fields captured when the form became ready. */
+    private val baseline = MutableStateFlow<FormSnapshot?>(null)
+
+    /** True once the user changed a field away from its initial value. */
+    val hasUnsavedChanges: StateFlow<Boolean> = combine(_uiState, baseline) { state, base ->
+        base != null && base != state.snapshot()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
+
     /** Guards against a double-tap on save creating two categories; reset on failure. */
     private var isSaving = false
 
@@ -110,7 +121,8 @@ class CategoryEditorViewModel @AssistedInject constructor(
     private var existing: Category? = null
 
     init {
-        route.categoryId?.let(::loadCategory)
+        val categoryId = route.categoryId
+        if (categoryId == null) captureBaseline() else loadCategory(categoryId)
     }
 
     private fun loadCategory(categoryId: Long) {
@@ -131,6 +143,7 @@ class CategoryEditorViewModel @AssistedInject constructor(
                     icon = category.icon,
                 )
             }
+            captureBaseline()
         }
     }
 
@@ -289,4 +302,28 @@ class CategoryEditorViewModel @AssistedInject constructor(
         initialTypeName
             ?.let { runCatching { CategoryType.valueOf(it) }.getOrNull() }
             ?: CategoryType.EXPENSE
+
+    /** Records the current form as the baseline to detect later edits against. */
+    private fun captureBaseline() {
+        baseline.value = _uiState.value.snapshot()
+    }
+
+    /** The user-editable fields whose change counts as an unsaved edit. */
+    private data class FormSnapshot(
+        val name: String,
+        val type: CategoryType,
+        val color: Int,
+        val icon: String,
+    )
+
+    private fun CategoryEditorUiState.snapshot() = FormSnapshot(
+        name = name,
+        type = type,
+        color = color,
+        icon = icon,
+    )
+
+    private companion object {
+        const val STOP_TIMEOUT_MILLIS = 5_000L
+    }
 }

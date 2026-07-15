@@ -22,10 +22,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -95,6 +98,14 @@ class BudgetEditorViewModel @AssistedInject constructor(
     private val _events = Channel<BudgetEditorEvent>(Channel.BUFFERED)
     val events: Flow<BudgetEditorEvent> = _events.receiveAsFlow()
 
+    /** Snapshot of the editable fields captured when the form became ready. */
+    private val baseline = MutableStateFlow<FormSnapshot?>(null)
+
+    /** True once the user changed a field away from its initial value. */
+    val hasUnsavedChanges: StateFlow<Boolean> = combine(_uiState, baseline) { state, base ->
+        base != null && base != state.snapshot()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
+
     /** The persisted budget being edited; null in create mode. */
     private var existing: Budget? = null
 
@@ -135,6 +146,7 @@ class BudgetEditorViewModel @AssistedInject constructor(
                 scopeOptions = options,
             )
         }
+        captureBaseline()
     }
 
     private suspend fun loadEditMode(currency: Currency, budgets: List<Budget>, budgetId: Long) {
@@ -156,6 +168,7 @@ class BudgetEditorViewModel @AssistedInject constructor(
                 amountInput = budget.amount.stripTrailingZeros().toPlainString(),
             )
         }
+        captureBaseline()
     }
 
     /** Resolves the edited budget's scope; null when its category vanished. */
@@ -221,5 +234,25 @@ class BudgetEditorViewModel @AssistedInject constructor(
                 if (result.isSuccess) BudgetEditorEvent.Deleted else BudgetEditorEvent.WriteFailed,
             )
         }
+    }
+
+    /** Records the current form as the baseline to detect later edits against. */
+    private fun captureBaseline() {
+        baseline.value = _uiState.value.snapshot()
+    }
+
+    /** The user-editable fields whose change counts as an unsaved edit. */
+    private data class FormSnapshot(
+        val scope: BudgetScope?,
+        val amountInput: String,
+    )
+
+    private fun BudgetEditorUiState.snapshot() = FormSnapshot(
+        scope = scope,
+        amountInput = amountInput,
+    )
+
+    private companion object {
+        const val STOP_TIMEOUT_MILLIS = 5_000L
     }
 }

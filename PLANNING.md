@@ -225,6 +225,15 @@
 - [x] Bug "Dashboard multi-valuta" chiuso dalla presentazione (attenuazione + codice valuta), senza cambio alle query
 - [x] Test: mapper e backup round-trip del nuovo campo, decode default additivo, safe-to-spend con conto escluso, editor e onboarding; migration 7->8 e DAO budget-spend con conto escluso scritti come strumentati (da eseguire su device)
 
+## Fase 9.9 - Avviso modifiche non salvate negli editor (luglio 2026)
+
+> Intervento su richiesta utente (versionCode 58 -> 59, versionName 0.9.19 -> 0.9.20). Il back da un editor con dati inseriti/modificati scartava tutto senza segnalazione; ora chiede conferma.
+
+- [x] Componente condiviso `UnsavedChangesGuard` (`core/designsystem`): `rememberUnsavedChangesGuard(hasUnsavedChanges, onNavigateBack)` intercetta le due vie d'uscita (bottone X e back di sistema) e apre `DiscardChangesDialog` solo quando ci sono modifiche; `BackHandler` abilitato solo se dirty, così i form intatti conservano la predictive back
+- [x] Dirty detection nei 5 ViewModel editor (Conto, Movimento, Ricorrenza, Budget, Categoria): snapshot dei soli campi editabili catturato quando il form è pronto (`captureBaseline()`), `hasUnsavedChanges: StateFlow<Boolean>` per confronto; rimettere un campo al valore iniziale torna "pulito"
+- [x] Dialog a due opzioni (scelta di prodotto): "Scarta" (distruttiva, colore error) e "Continua a modificare", icona `WarningAmber`; stringhe in `values` e `values-it`. Salvataggio/eliminazione/record mancante escono senza passare dalla guardia
+- [x] Test: unit sul dirty (create/edit, revert-to-baseline, e il conto di default preselezionato asincrono che non conta come modifica) per gli editor Conto, Categoria e Movimento; `assembleDebug testDebugUnitTest lint` verdi. Nessun impatto su dominio, query o saldi
+
 ## Fase 10 - Release v1.0
 
 - [ ] Baseline profile (spostato dalla Fase 9: richiede modulo macrobenchmark e generazione su device/emulatore)

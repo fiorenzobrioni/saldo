@@ -28,10 +28,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -131,6 +134,14 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
     private val _events = Channel<RecurringRuleEditorEvent>(Channel.BUFFERED)
     val events: Flow<RecurringRuleEditorEvent> = _events.receiveAsFlow()
 
+    /** Snapshot of the editable fields captured when the form became ready. */
+    private val baseline = MutableStateFlow<FormSnapshot?>(null)
+
+    /** True once the user changed a field away from its initial value. */
+    val hasUnsavedChanges: StateFlow<Boolean> = combine(_uiState, baseline) { state, base ->
+        base != null && base != state.snapshot()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
+
     /** The persisted rule being edited; null in create mode. Preserves untouched fields. */
     private var existing: RecurringRule? = null
     private var userPickedIcon = false
@@ -160,6 +171,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
                     categoryId = defaultCategoryId(categories, initialType),
                 )
             }
+            captureBaseline()
             return
         }
 
@@ -198,6 +210,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
                 icon = rule.icon ?: RecurringRuleEditorUiState.defaultIcon(rule.type),
             )
         }
+        captureBaseline()
     }
 
     /** Categories a rule of [type] can be filed under (its own type, plus "both"). */
@@ -364,7 +377,44 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
     private fun defaultCategoryId(categories: List<Category>, type: TransactionType): Long? =
         categories.firstOrNull { it.icon == RecurringRuleEditorUiState.defaultIcon(type) }?.id
 
+    /** Records the current form as the baseline to detect later edits against. */
+    private fun captureBaseline() {
+        baseline.value = _uiState.value.snapshot()
+    }
+
+    /** The user-editable fields whose change counts as an unsaved edit. */
+    private data class FormSnapshot(
+        val type: TransactionType,
+        val name: String,
+        val amountInput: String,
+        val accountId: Long?,
+        val categoryId: Long?,
+        val frequency: RecurrenceFrequency,
+        val startDate: LocalDate,
+        val endDate: LocalDate?,
+        val mode: RecurrenceMode,
+        val isVariableAmount: Boolean,
+        val color: Int,
+        val icon: String,
+    )
+
+    private fun RecurringRuleEditorUiState.snapshot() = FormSnapshot(
+        type = type,
+        name = name,
+        amountInput = amountInput,
+        accountId = accountId,
+        categoryId = categoryId,
+        frequency = frequency,
+        startDate = startDate,
+        endDate = endDate,
+        mode = mode,
+        isVariableAmount = isVariableAmount,
+        color = color,
+        icon = icon,
+    )
+
     private companion object {
         const val DEFAULT_FRACTION_DIGITS = 2
+        const val STOP_TIMEOUT_MILLIS = 5_000L
     }
 }

@@ -182,4 +182,56 @@ class AccountEditorViewModelTest {
 
         assertEquals("12", viewModel.uiState.value.initialBalanceInput)
     }
+
+    @Test
+    fun `a new form has no unsaved changes until a field is edited`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            viewModel.onNameChanged("Cash")
+            assertTrue(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `reverting an edit back to the initial value clears unsaved changes`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            viewModel.onNameChanged("Cash")
+            assertTrue(awaitItem())
+            viewModel.onNameChanged("")
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a freshly loaded account reports no unsaved changes`() = runTest {
+        val existing = Account(
+            id = 5L,
+            name = "Revolut",
+            type = AccountType.DIGITAL_WALLET,
+            currency = eur,
+            initialBalance = BigDecimal("100.00"),
+            color = AccountVisuals.colors[5],
+            icon = "wallet",
+            sortOrder = 4,
+            createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
+        coEvery { accountRepository.getAccount(5L) } returns existing
+        coEvery { transactionRepository.countForAccount(5L) } returns 0
+
+        val viewModel = viewModel(AccountEditorRoute(accountId = 5L))
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            viewModel.onNameChanged("Revolut EUR")
+            assertTrue(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }
