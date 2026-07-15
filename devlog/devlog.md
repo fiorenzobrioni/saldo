@@ -14,6 +14,24 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-15 - Flag "Includi nel calcolo budget" per conto + indicatori nella card Saldo totale
+
+**Fatto:** nuovo asse di inclusione per conto, indipendente da "Includi nel saldo totale", e indicatori visivi nel breakdown della card Saldo totale (versionCode 57 -> 58, versionName 0.9.18 -> 0.9.19).
+
+- **Flag `isIncludedInBudget`** (default `true`) sul conto: escludendolo, le spese registrate su quel conto non entrano nel consumato di budget né nello spendibile oggi. Colonna in `AccountEntity`, campo in `Account`/`AccountBackup`, mapper e migration 7->8 (`ALTER TABLE accounts ADD COLUMN isIncludedInBudget INTEGER NOT NULL DEFAULT 1`, schema Room v8). Il flag non tocca il saldo totale né le statistiche.
+- **Query di spesa budget account-aware:** le quattro query in `TransactionDao` (`observe/get StatsSpendTotal`, `observe/get CategorySpendTotals`) ora fanno `INNER JOIN accounts a ON a.id = t.accountId` con `a.isIncludedInBudget = 1`. Colonne qualificate con l'alias `t.` perché `accounts` ha anch'essa `currency` e `type` (altrimenti ambigue). `ObserveSafeToSpendUseCase` esclude anche le gambe pending e ricorrenze in arrivo dei conti esclusi (nuova dipendenza `AccountRepository`, set degli id esclusi), così tutte le voci dello spendibile per un conto escluso spariscono insieme.
+- **Editor conto:** `IncludeInTotalRow` generalizzata in `InclusionToggleRow` riusata due volte (saldo totale + calcolo budget). Badge testuale "Escluso dal budget" nella lista conti.
+- **Indicatori card Saldo totale (`AccountBreakdownRow`):** i conti che non contribuiscono al totale hanno il saldo attenuato (`onSurfaceVariant`); marcatori solo in negazione tra nome e saldo: codice valuta ISO per i conti non-primari, icona `RemoveCircleOutline` per l'esclusione manuale dal totale, icona `MoneyOff` per l'esclusione dal budget. `contentDescription` su tutti.
+- **Bug "Dashboard multi-valuta" chiuso:** i conti in valuta diversa dalla principale erano elencati nel breakdown ma esclusi dal totale, dando l'impressione che il totale non tornasse. Ora sono attenuati e marcati col codice valuta. Nessun cambio alle query (già corrette): era solo presentazione.
+
+**Decisioni:** i due assi (totale vs budget) sono ortogonali, come confermato dall'analisi: il totale filtra per conto, budget/spendibile no (sommavano su tutti i conti della valuta principale). Scope del flag limitato a budget + spendibile, non alle statistiche, coerente col nome. Per la multi-valuta scelto il codice valuta invece di un'icona generica: spiega il motivo dell'esclusione. Attenuazione del saldo come segnale primario senza linguaggio.
+
+**Problemi:** `assembleDebug testDebugUnitTest lint detekt` verdi; schema Room v8 esportato. Test unitari aggiornati/aggiunti (mapper e backup round-trip del nuovo campo, decode default additivo, safe-to-spend con conto escluso, editor e onboarding). Migration 7->8 e DAO budget-spend con conto escluso scritti come test strumentati, da eseguire su device (nessun emulatore in questo ambiente); la correttezza della migration è nel DDL additivo e nel default 1.
+
+**Prossimo:** verifica su device del toggle, degli indicatori e del calcolo budget/spendibile con un conto escluso.
+
+---
+
 ## 2026-07-15 - Uniformità UI: menu FAB a pillole, elimina in barra del titolo, sortOrder categorie per tipo
 
 **Fatto:** tre interventi di consistenza UI/UX (versionCode 56 -> 57, versionName 0.9.17 -> 0.9.18).

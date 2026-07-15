@@ -166,17 +166,20 @@ interface TransactionDao {
      * Total signed spend in `[startMillis, endMillis)`, restricted to
      * [currency], with the same statistics rules as [observeMonthlyTotals]:
      * refunds net the spend, transfers/adjustments/excluded/pending never
-     * count. Used for overall budget progress; NULL when nothing matches.
+     * count. Spend on accounts excluded from the budget (`isIncludedInBudget = 0`)
+     * is also left out. Used for overall budget progress; NULL when nothing matches.
      */
     @Query(
         """
-        SELECT SUM(amountMinor)
-        FROM transactions
-        WHERE (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
-            AND isExcludedFromStats = 0
-            AND isPending = 0
-            AND currency = :currency
-            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        SELECT SUM(t.amountMinor)
+        FROM transactions t
+        INNER JOIN accounts a ON a.id = t.accountId
+        WHERE (t.type = 'EXPENSE' OR (t.type = 'INCOME' AND t.isRefund = 1))
+            AND t.isExcludedFromStats = 0
+            AND t.isPending = 0
+            AND t.currency = :currency
+            AND a.isIncludedInBudget = 1
+            AND t.timestampEpochMilli >= :startMillis AND t.timestampEpochMilli < :endMillis
         """,
     )
     fun observeStatsSpendTotal(
@@ -188,13 +191,15 @@ interface TransactionDao {
     /** One-shot variant of [observeStatsSpendTotal] for the budget threshold check. */
     @Query(
         """
-        SELECT SUM(amountMinor)
-        FROM transactions
-        WHERE (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
-            AND isExcludedFromStats = 0
-            AND isPending = 0
-            AND currency = :currency
-            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        SELECT SUM(t.amountMinor)
+        FROM transactions t
+        INNER JOIN accounts a ON a.id = t.accountId
+        WHERE (t.type = 'EXPENSE' OR (t.type = 'INCOME' AND t.isRefund = 1))
+            AND t.isExcludedFromStats = 0
+            AND t.isPending = 0
+            AND t.currency = :currency
+            AND a.isIncludedInBudget = 1
+            AND t.timestampEpochMilli >= :startMillis AND t.timestampEpochMilli < :endMillis
         """,
     )
     suspend fun getStatsSpendTotal(
@@ -207,19 +212,22 @@ interface TransactionDao {
      * Per-category signed spend totals in `[startMillis, endMillis)`, restricted
      * to [currency]. Unlike [observeCategoryTotals] this keeps the spend filter
      * only (expenses plus refunds): pure incomes in a BOTH category must not
-     * offset its budget. Used for category budget progress.
+     * offset its budget. Spend on accounts excluded from the budget
+     * (`isIncludedInBudget = 0`) is left out. Used for category budget progress.
      */
     @Query(
         """
-        SELECT categoryId AS categoryId, SUM(amountMinor) AS totalMinor, COUNT(*) AS count
-        FROM transactions
-        WHERE categoryId IS NOT NULL
-            AND (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
-            AND isExcludedFromStats = 0
-            AND isPending = 0
-            AND currency = :currency
-            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
-        GROUP BY categoryId
+        SELECT t.categoryId AS categoryId, SUM(t.amountMinor) AS totalMinor, COUNT(*) AS count
+        FROM transactions t
+        INNER JOIN accounts a ON a.id = t.accountId
+        WHERE t.categoryId IS NOT NULL
+            AND (t.type = 'EXPENSE' OR (t.type = 'INCOME' AND t.isRefund = 1))
+            AND t.isExcludedFromStats = 0
+            AND t.isPending = 0
+            AND t.currency = :currency
+            AND a.isIncludedInBudget = 1
+            AND t.timestampEpochMilli >= :startMillis AND t.timestampEpochMilli < :endMillis
+        GROUP BY t.categoryId
         """,
     )
     fun observeCategorySpendTotals(
@@ -231,15 +239,17 @@ interface TransactionDao {
     /** One-shot variant of [observeCategorySpendTotals] for the budget threshold check. */
     @Query(
         """
-        SELECT categoryId AS categoryId, SUM(amountMinor) AS totalMinor, COUNT(*) AS count
-        FROM transactions
-        WHERE categoryId IS NOT NULL
-            AND (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
-            AND isExcludedFromStats = 0
-            AND isPending = 0
-            AND currency = :currency
-            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
-        GROUP BY categoryId
+        SELECT t.categoryId AS categoryId, SUM(t.amountMinor) AS totalMinor, COUNT(*) AS count
+        FROM transactions t
+        INNER JOIN accounts a ON a.id = t.accountId
+        WHERE t.categoryId IS NOT NULL
+            AND (t.type = 'EXPENSE' OR (t.type = 'INCOME' AND t.isRefund = 1))
+            AND t.isExcludedFromStats = 0
+            AND t.isPending = 0
+            AND t.currency = :currency
+            AND a.isIncludedInBudget = 1
+            AND t.timestampEpochMilli >= :startMillis AND t.timestampEpochMilli < :endMillis
+        GROUP BY t.categoryId
         """,
     )
     suspend fun getCategorySpendTotals(

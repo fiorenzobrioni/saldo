@@ -35,6 +35,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * order, so reordering the expense tab no longer disturbs BOTH categories in the
  * income tab. Seeded from the existing `sortOrder` so the current income
  * ordering is preserved, with a matching index.
+ *
+ * v7 -> v8: adds `isIncludedInBudget` to `accounts`, an axis independent of
+ * `isIncludedInTotal`: an account can count toward the total balance yet be kept
+ * out of the budget/safe-to-spend spend (e.g. a savings account you occasionally
+ * pay from). NOT NULL DEFAULT 1, so every existing account keeps counting toward
+ * the budget, matching today's behaviour.
  */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -117,6 +123,15 @@ val MIGRATION_6_7: Migration = object : Migration(6, 7) {
     }
 }
 
+@Suppress("MagicNumber") // Schema version numbers.
+val MIGRATION_7_8: Migration = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE accounts ADD COLUMN isIncludedInBudget INTEGER NOT NULL DEFAULT 1",
+        )
+    }
+}
+
 /** All migrations, applied in order by Room. */
 val ALL_MIGRATIONS: Array<Migration> =
     arrayOf(
@@ -126,4 +141,5 @@ val ALL_MIGRATIONS: Array<Migration> =
         MIGRATION_4_5,
         MIGRATION_5_6,
         MIGRATION_6_7,
+        MIGRATION_7_8,
     )

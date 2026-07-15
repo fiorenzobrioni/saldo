@@ -1,10 +1,14 @@
 package com.callbackdev.saldo.core.domain.usecase
 
+import com.callbackdev.saldo.core.domain.model.Account
+import com.callbackdev.saldo.core.domain.model.AccountType
+import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Budget
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.BudgetRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -36,12 +40,14 @@ class ObserveSafeToSpendUseCaseTest {
     private val budgetRepository = mockk<BudgetRepository>()
     private val transactionRepository = mockk<TransactionRepository>()
     private val recurringRuleRepository = mockk<RecurringRuleRepository>()
+    private val accountRepository = mockk<AccountRepository>()
 
     private fun useCase(
         budgets: List<Budget> = listOf(overallBudget("500.00")),
         totalSpend: BigDecimal = BigDecimal.ZERO,
         pending: List<Transaction> = emptyList(),
         rules: List<RecurringRule> = emptyList(),
+        accounts: List<AccountWithBalance> = emptyList(),
         clock: Clock = this.clock,
     ): ObserveSafeToSpendUseCase {
         every { budgetRepository.observeBudgets() } returns flowOf(budgets)
@@ -50,13 +56,27 @@ class ObserveSafeToSpendUseCaseTest {
         } returns flowOf(totalSpend)
         every { transactionRepository.observePendingTransactions() } returns flowOf(pending)
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
+        every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         return ObserveSafeToSpendUseCase(
             budgetRepository = budgetRepository,
             transactionRepository = transactionRepository,
             recurringRuleRepository = recurringRuleRepository,
+            accountRepository = accountRepository,
             clock = clock,
         )
     }
+
+    private fun account(id: Long, includedInBudget: Boolean) = AccountWithBalance(
+        account = Account(
+            id = id,
+            name = "Account $id",
+            type = AccountType.CHECKING,
+            currency = eur,
+            initialBalance = BigDecimal.ZERO,
+            isIncludedInBudget = includedInBudget,
+        ),
+        balance = BigDecimal.ZERO,
+    )
 
     private fun overallBudget(amount: String) =
         Budget(id = 1L, categoryId = null, amount = BigDecimal(amount), currency = eur)
@@ -154,6 +174,20 @@ class ObserveSafeToSpendUseCaseTest {
         ).invoke(eur).first()!!
 
         assertEquals(BigDecimal.ZERO, safeToSpend.pendingCommitted)
+        assertEquals(BigDecimal("500.00"), safeToSpend.remaining)
+    }
+
+    @Test
+    fun `pending and upcoming on a budget-excluded account do not count`() = runTest {
+        val safeToSpend = useCase(
+            // pendingExpense and monthlyExpenseRule both use accountId = 1L.
+            pending = listOf(pendingExpense("-30.00")),
+            rules = listOf(monthlyExpenseRule("15.00", dayOfMonth = 25).copy(id = 6L)),
+            accounts = listOf(account(id = 1L, includedInBudget = false)),
+        ).invoke(eur).first()!!
+
+        assertEquals(BigDecimal.ZERO, safeToSpend.pendingCommitted)
+        assertEquals(BigDecimal.ZERO, safeToSpend.upcomingRecurring)
         assertEquals(BigDecimal("500.00"), safeToSpend.remaining)
     }
 

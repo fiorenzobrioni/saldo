@@ -61,6 +61,8 @@ data class AccountBackup(
     val color: Int? = null,
     val icon: String? = null,
     val isIncludedInTotal: Boolean = true,
+    /** Added with the budget-exclusion flag; older files default to included. */
+    val isIncludedInBudget: Boolean = true,
     val isArchived: Boolean = false,
     val sortOrder: Int = 0,
     val createdAtEpochMilli: Long = 0L,
