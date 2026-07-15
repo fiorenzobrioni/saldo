@@ -113,6 +113,18 @@ class TransactionEditorViewModel @AssistedInject constructor(
     private val _events = Channel<TransactionEditorEvent>(Channel.BUFFERED)
     val events: Flow<TransactionEditorEvent> = _events.receiveAsFlow()
 
+    /** Snapshot of the editable fields captured when the form became ready. */
+    private val baseline = MutableStateFlow<FormSnapshot?>(null)
+
+    /** True once the user changed a field away from its initial value. */
+    val hasUnsavedChanges: StateFlow<Boolean> = combine(form, baseline) { current, base ->
+        base != null && base != current.snapshot()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+        initialValue = false,
+    )
+
     /** The persisted transaction being edited; null in create mode. */
     private var existing: Transaction? = null
 
@@ -316,8 +328,10 @@ class TransactionEditorViewModel @AssistedInject constructor(
             val default = active.firstOrNull { it.id == defaultId }
                 ?: active.firstOrNull { it.id == lastUsedId }
                 ?: active.firstOrNull()
-                ?: return@launch
-            form.update { if (it.accountId == null) it.copy(accountId = default.id) else it }
+            if (default != null) {
+                form.update { if (it.accountId == null) it.copy(accountId = default.id) else it }
+            }
+            captureBaseline()
         }
     }
 
@@ -356,6 +370,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
                     isRefund = transaction.isRefund,
                 )
             }
+            captureBaseline()
         }
     }
 
@@ -438,6 +453,42 @@ class TransactionEditorViewModel @AssistedInject constructor(
 
     private fun plainInput(amount: BigDecimal): String =
         amount.stripTrailingZeros().toPlainString()
+
+    /** Records the current form as the baseline to detect later edits against. */
+    private fun captureBaseline() {
+        baseline.value = form.value.snapshot()
+    }
+
+    /** The user-editable fields whose change counts as an unsaved edit. */
+    private data class FormSnapshot(
+        val type: TransactionType,
+        val date: LocalDate,
+        val time: LocalTime,
+        val amountInput: String,
+        val toAmountInput: String,
+        val accountId: Long?,
+        val toAccountId: Long?,
+        val categoryId: Long?,
+        val description: String,
+        val selectedTagIds: Set<Long>,
+        val isExcludedFromStats: Boolean,
+        val isRefund: Boolean,
+    )
+
+    private fun Form.snapshot() = FormSnapshot(
+        type = type,
+        date = date,
+        time = time,
+        amountInput = amountInput,
+        toAmountInput = toAmountInput,
+        accountId = accountId,
+        toAccountId = toAccountId,
+        categoryId = categoryId,
+        description = description,
+        selectedTagIds = selectedTagIds,
+        isExcludedFromStats = isExcludedFromStats,
+        isRefund = isRefund,
+    )
 
     /**
      * The type a freshly created movement starts with. Only EXPENSE, INCOME and

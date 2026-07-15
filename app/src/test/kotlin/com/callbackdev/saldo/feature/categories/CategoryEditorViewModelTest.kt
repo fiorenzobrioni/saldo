@@ -62,6 +62,35 @@ class CategoryEditorViewModelTest {
     }
 
     @Test
+    fun `editing a field marks the category form as having unsaved changes`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            viewModel.onNameChanged("Coffee")
+            assertTrue(awaitItem())
+            viewModel.onNameChanged("")
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a freshly loaded category reports no unsaved changes`() = runTest {
+        val existing = category(id = 4L, type = CategoryType.EXPENSE, name = "Rent", icon = "home")
+        coEvery { categoryRepository.getCategory(4L) } returns existing
+
+        val viewModel = viewModel(CategoryEditorRoute(categoryId = 4L))
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            viewModel.onColorSelected(0xABCDEF)
+            assertTrue(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `saving a new category appends it at the next sort order`() = runTest {
         coEvery { categoryRepository.nextSortOrder(CategoryType.EXPENSE) } returns 7
         val saved = slot<Category>()

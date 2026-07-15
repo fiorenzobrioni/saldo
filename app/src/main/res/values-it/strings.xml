@@ -463,6 +463,12 @@
     <!-- Shared editor feedback -->
     <string name="editor_write_failed">Operazione non riuscita. Riprova.</string>
 
+    <!-- Modifiche non salvate -->
+    <string name="discard_changes_title">Scartare le modifiche?</string>
+    <string name="discard_changes_message">Se torni indietro ora, le modifiche fatte non verranno salvate.</string>
+    <string name="discard_changes_confirm">Scarta</string>
+    <string name="discard_changes_keep_editing">Continua a modificare</string>
+
     <!-- Settings: preferences (Phase 9) -->
     <string name="settings_section_preferences">Preferenze</string>
     <string name="settings_primary_currency">Valuta principale</string>

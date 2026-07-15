@@ -43,8 +43,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
+import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.navigation.BudgetEditorRoute
 
 /**
@@ -64,6 +66,8 @@ fun BudgetEditorScreen(
         ),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsStateWithLifecycle()
+    val guard = rememberUnsavedChangesGuard(hasUnsavedChanges, onNavigateBack)
     val snackbarHostState = remember { SnackbarHostState() }
     val writeFailedMessage = stringResource(R.string.editor_write_failed)
 
@@ -79,6 +83,8 @@ fun BudgetEditorScreen(
             }
         }
     }
+
+    DiscardChangesDialog(guard)
 
     if (uiState.showDeleteDialog) {
         DeleteBudgetDialog(
@@ -104,7 +110,7 @@ fun BudgetEditorScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = guard::requestNavigateBack) {
                         Icon(
                             imageVector = Icons.Outlined.Close,
                             contentDescription = stringResource(R.string.action_close),

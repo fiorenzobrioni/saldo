@@ -20,9 +20,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.math.BigDecimal
@@ -91,6 +94,14 @@ class AccountEditorViewModel @AssistedInject constructor(
     private val _events = Channel<AccountEditorEvent>(Channel.BUFFERED)
     val events: Flow<AccountEditorEvent> = _events.receiveAsFlow()
 
+    /** Snapshot of the editable fields captured when the form became ready. */
+    private val baseline = MutableStateFlow<FormSnapshot?>(null)
+
+    /** True once the user changed a field away from its initial value. */
+    val hasUnsavedChanges: StateFlow<Boolean> = combine(_uiState, baseline) { state, base ->
+        base != null && base != state.snapshot()
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), false)
+
     /** The persisted account being edited; null in create mode. */
     private var existing: Account? = null
 
@@ -101,7 +112,8 @@ class AccountEditorViewModel @AssistedInject constructor(
     private var userPickedIcon = false
 
     init {
-        route.accountId?.let(::loadAccount)
+        val accountId = route.accountId
+        if (accountId == null) captureBaseline() else loadAccount(accountId)
     }
 
     private fun loadAccount(accountId: Long) {
@@ -131,6 +143,7 @@ class AccountEditorViewModel @AssistedInject constructor(
                     isIncludedInBudget = account.isIncludedInBudget,
                 )
             }
+            captureBaseline()
         }
     }
 
@@ -225,4 +238,35 @@ class AccountEditorViewModel @AssistedInject constructor(
         }
     }
 
+    /** Records the current form as the baseline to detect later edits against. */
+    private fun captureBaseline() {
+        baseline.value = _uiState.value.snapshot()
+    }
+
+    /** The user-editable fields whose change counts as an unsaved edit. */
+    private data class FormSnapshot(
+        val name: String,
+        val type: AccountType,
+        val currency: Currency,
+        val initialBalanceInput: String,
+        val color: Int,
+        val icon: String,
+        val isIncludedInTotal: Boolean,
+        val isIncludedInBudget: Boolean,
+    )
+
+    private fun AccountEditorUiState.snapshot() = FormSnapshot(
+        name = name,
+        type = type,
+        currency = currency,
+        initialBalanceInput = initialBalanceInput,
+        color = color,
+        icon = icon,
+        isIncludedInTotal = isIncludedInTotal,
+        isIncludedInBudget = isIncludedInBudget,
+    )
+
+    private companion object {
+        const val STOP_TIMEOUT_MILLIS = 5_000L
+    }
 }
