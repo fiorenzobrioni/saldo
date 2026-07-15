@@ -109,6 +109,7 @@
     <string name="accounts_excluded_from_budget">Excluded from budget</string>
     <string name="account_type_checking">Bank account</string>
     <string name="account_type_card">Card</string>
+    <string name="account_type_credit_card">Credit card</string>
     <string name="account_type_cash">Cash</string>
     <string name="account_type_digital_wallet">Digital wallet</string>
     <string name="account_type_other">Other</string>
@@ -120,6 +121,13 @@
     <string name="accounts_snackbar_archived">"%1$s" archived</string>
     <string name="accounts_snackbar_deleted">Account deleted</string>
     <string name="accounts_snackbar_adjusted">Adjustment of %1$s recorded</string>
+    <string name="accounts_snackbar_statement_settled">Statement paid: %1$s transferred</string>
+    <!-- Credit card row extras -->
+    <string name="account_cc_utilisation_title">Utilisation</string>
+    <string name="account_cc_utilisation_value">%1$s / %2$s · %3$d%%</string>
+    <string name="account_cc_statement_due">Statement ready to pay</string>
+    <string name="account_cc_statement_charge_date">Charged on %1$s</string>
+    <string name="account_cc_pay_statement">Pay %1$s</string>
     <string name="accounts_adjust_title">Adjust balance</string>
     <string name="accounts_adjust_current">Current balance: %1$s</string>
     <string name="accounts_adjust_real_balance">Actual balance</string>
@@ -156,6 +164,27 @@
     <string name="account_editor_include_in_total_hint">If off, the account is tracked but does not count towards the total</string>
     <string name="account_editor_include_in_budget">Include in budget calculation</string>
     <string name="account_editor_include_in_budget_hint">If off, spending on this account does not count towards the budget or safe-to-spend</string>
+
+    <!-- Credit card configuration -->
+    <string name="account_cc_section_title">Credit card</string>
+    <string name="account_cc_guidance">Use a credit card account only for deferred cards charged monthly. Debit and ATM cards spend straight from the bank account, so record them there instead.</string>
+    <string name="account_cc_closing_day">Statement closing day</string>
+    <string name="account_cc_closing_day_hint">Day the billing cycle closes (31 = last day of the month)</string>
+    <string name="account_cc_due_day">Payment day</string>
+    <string name="account_cc_due_day_hint">Day of the following month the statement is charged</string>
+    <string name="account_cc_day_decrease">Decrease day</string>
+    <string name="account_cc_day_increase">Increase day</string>
+    <string name="account_cc_linked_account">Linked account</string>
+    <string name="account_cc_linked_account_hint">The account charged for the statement</string>
+    <string name="account_cc_linked_account_none">Choose an account</string>
+    <string name="account_cc_linked_account_empty">No account with this currency</string>
+    <string name="account_cc_limit">Credit limit (optional)</string>
+    <string name="account_cc_limit_hint">Shows a utilisation bar on the account</string>
+    <string name="account_cc_mode_title">Statement charge</string>
+    <string name="account_cc_mode_confirm">Ask to confirm</string>
+    <string name="account_cc_mode_confirm_hint">On the payment day you get a notification; you confirm to record the transfer.</string>
+    <string name="account_cc_mode_auto">Automatic</string>
+    <string name="account_cc_mode_auto_hint">The transfer is recorded automatically on the payment day.</string>
 
     <!-- Transactions (Phase 3) -->
     <string name="transactions_new">New transaction</string>
@@ -398,6 +427,12 @@
         <item quantity="other">%1$d charges to confirm</item>
     </plurals>
     <string name="dashboard_pending_subtitle">Tap to confirm or skip</string>
+    <string name="dashboard_statement_title_single">%1$s statement ready</string>
+    <plurals name="dashboard_statement_title">
+        <item quantity="one">%1$d statement to pay</item>
+        <item quantity="other">%1$d statements to pay</item>
+    </plurals>
+    <string name="dashboard_statement_subtitle">%1$s · tap to pay</string>
     <string name="notif_channel_activity_name">Recurring transactions</string>
     <string name="notif_channel_confirm_name">Recurring charge confirmations</string>
     <plurals name="notif_activity_title">
@@ -645,6 +680,21 @@
     <plurals name="notif_budget_exceeded_summary_title">
         <item quantity="one">%d budget exceeded</item>
         <item quantity="other">%d budgets exceeded</item>
+    </plurals>
+
+    <!-- Credit card statement notifications -->
+    <string name="notif_channel_statement_name">Credit card statements</string>
+    <string name="notif_statement_posted_title">%1$s statement charged</string>
+    <string name="notif_statement_posted_body">%1$s was transferred to cover the statement</string>
+    <string name="notif_statement_confirm_title">%1$s statement ready</string>
+    <string name="notif_statement_confirm_body">%1$s to pay · tap to settle</string>
+    <plurals name="notif_statement_posted_summary_title">
+        <item quantity="one">%d statement charged</item>
+        <item quantity="other">%d statements charged</item>
+    </plurals>
+    <plurals name="notif_statement_confirm_summary_title">
+        <item quantity="one">%d statement to pay</item>
+        <item quantity="other">%d statements to pay</item>
     </plurals>
 
     <!-- Safe to spend -->

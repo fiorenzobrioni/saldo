@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.Currency
 import javax.inject.Inject
 
@@ -50,6 +51,9 @@ class RoomAccountRepository @Inject constructor(
             entity.id
         }
     }
+
+    override suspend fun updateSettlementWatermark(accountId: Long, closing: LocalDate) =
+        accountDao.updateSettlementWatermark(accountId, closing.toEpochDay())
 
     override suspend fun delete(account: Account) = accountDao.delete(account.toEntity())
 }

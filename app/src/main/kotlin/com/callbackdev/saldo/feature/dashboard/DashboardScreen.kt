@@ -204,6 +204,14 @@ private fun DashboardContent(
         if (uiState.pendingCount > 0) {
             item { PendingConfirmationCard(count = uiState.pendingCount, onClick = onPendingClick) }
         }
+        if (uiState.dueStatements.isNotEmpty()) {
+            item {
+                StatementDueCard(
+                    statements = uiState.dueStatements,
+                    onClick = onManageAccounts,
+                )
+            }
+        }
         item {
             RecurringCard(
                 summary = uiState.recurring,

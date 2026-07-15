@@ -26,6 +26,12 @@ internal fun BackupData.validatePayload() {
     accounts.forEach { account ->
         AccountType.valueOf(account.type)
         requireKnownCurrency(account.currency)
+        account.statementClosingDay?.let {
+            require(it in DAY_OF_MONTH_RANGE) { "Account ${account.id} has an invalid closing day" }
+        }
+        account.paymentDueDay?.let {
+            require(it in DAY_OF_MONTH_RANGE) { "Account ${account.id} has an invalid payment day" }
+        }
     }
     categories.forEach { category -> CategoryType.valueOf(category.type) }
     recurringRules.forEach { rule ->
@@ -53,3 +59,7 @@ internal fun BackupData.validatePayload() {
 private fun requireKnownCurrency(code: String) {
     Currency.getInstance(code)
 }
+
+/** Valid day-of-month values for the credit card cycle configuration. */
+private const val MAX_DAY_OF_MONTH = 31
+private val DAY_OF_MONTH_RANGE = 1..MAX_DAY_OF_MONTH

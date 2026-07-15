@@ -14,6 +14,26 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-15 - Carte di credito a saldo (addebito differito)
+
+**Fatto:** nuovo tipo di conto `CREDIT_CARD` per le carte ad addebito differito, con ciclo di fatturazione configurabile, addebito automatico o con conferma, indicatore di utilizzo e "paga estratto" da Dashboard/Conti. versionCode 59 -> 60, versionName 0.9.20 -> 0.9.21. Bancomat deliberatamente escluso (si registra sul conto corrente). Design: ADR 20.
+
+- **Modello di dominio:** aggiunto `AccountType.CREDIT_CARD` e `CreditCardConfig` (giorno di chiusura estratto, giorno di addebito, conto collegato, fido opzionale, modalità auto/conferma, watermark `lastSettledClosing`). Colonne additive su `accounts` (migration 8->9, schema v9): tutte null/false per i conti esistenti. Nessuna FK su `linkedAccountId` (self-reference sulla stessa tabella: integrità gestita in logica applicativa, migrazione con sole `ADD COLUMN`). Backup: campi additivi, versione del file invariata; validazione del payload estesa ai giorni 1..31.
+- **`BillingCycleCalculator` (puro):** date di chiusura/addebito con clamp sui mesi corti (chiusura 31 = ultimo giorno del mese), finestra di ciclo `[start, closing]`, rilevamento estratti scaduti (`paymentDue <= today` e non ancora saldati). Il rilevamento parte dal ciclo più recente e scorre all'indietro (il ciclo appena chiuso spesso non è ancora scaduto: si salta, non si ferma), fermandosi al primo ciclo già saldato e limitato a 24 cicli. Unit test dedicati.
+- **Modellazione contabile (nessun doppio conteggio):** le spese sulla carta sono EXPENSE che portano il saldo del conto carta in negativo (il debito del ciclo) e contano nelle statistiche/budget alla data d'acquisto. L'addebito dell'estratto è **un singolo TRANSFER** dal conto collegato alla carta, che azzera il ciclo ed è escluso dalle statistiche come ogni trasferimento (ADR 8). Il saldo totale riflette il debito come patrimonio reale. L'importo dell'estratto è la negazione della somma dei soli movimenti propri del conto carta nella finestra del ciclo (nuova query DAO `sumOwnMovementsInWindow`, che esclude la gamba entrante del trasferimento di saldo).
+- **Settlement:** `SettleCreditCardStatementUseCase` salda il ciclo scaduto più vecchio (trasferimento se dovuto > 0, avanzamento del watermark in un'unica transazione, mutex a livello di processo, idempotente). `ProcessDueCreditCardStatementsUseCase` auto-posta i cicli scaduti delle carte in modalità automatica e segnala (senza scrivere) quelli in modalità conferma; agganciato al worker giornaliero delle ricorrenze e al catch-up all'avvio (stessa infrastruttura, ADR 4). `CreditCardNotifier` con canale dedicato (estratto addebitato / estratto da pagare). `ObserveDueStatementsUseCase` reattivo (si ricalcola sui cambi di conti/movimenti) alimenta le CTA.
+- **Watermark seminato alla creazione:** una carta appena configurata imposta `lastSettledClosing` alla chiusura precedente a oggi, così la storia pregressa non viene mai riaddebitata; solo i cicli che chiudono da lì in poi generano un estratto.
+- **UI:** editor conto con sezione carta di credito (guida bancomat-vs-credito, stepper giorni, selettore conto collegato limitato alla stessa valuta e non-carta, fido opzionale, selettore modalità di addebito con segmented button); schermata Conti con barra di utilizzo (`ThresholdProgressBar`, soglia ambra all'80%, rosso oltre il fido) e CTA "Paga estratto" con importo e data; scheda Dashboard "Estratto pronto" che porta ai Conti (pattern della card "da confermare").
+- **Spendibile oggi / budget:** nessuna modifica. Modellando la carta come conto a saldo negativo, gli acquisti pesano già come "speso" alla data d'acquisto e il saldo totale mostra già il debito; sottrarre di nuovo il debito dallo spendibile sarebbe stato un doppio conteggio. La visibilità dell'addebito imminente è resa dalla scheda Dashboard, non da una modifica al calcolo.
+
+**Decisioni:** ciclo con giorno di chiusura configurabile (non solo mese di calendario) e doppia modalità di addebito (auto/conferma) selezionabile per conto, come richiesto dall'utente. Nessuna FK sul conto collegato per non complicare la migrazione self-reference. Bancomat fuori dall'app: è uno strumento che preleva subito dal conto corrente, non un contenitore di denaro (si registra direttamente sul conto).
+
+**Problemi:** wrapper Gradle bloccato dal proxy, usata `/opt/gradle/bin/gradle`. Nessun emulatore: migration 8->9 aggiunta come test strumentato (da eseguire su device), verifica via `assembleDebug testDebugUnitTest lint detekt` (verdi) e unit test su calcolo ciclo, settlement e round-trip del mapper. Attenzione risolta in fase di test: con watermark null il calcolatore risale fino a 24 cicli storici (per questo il watermark è seminato alla creazione).
+
+**Prossimo:** verifica manuale su device (setup carta, spesa, addebito auto/conferma, utilizzo, mesi corti). Valutabile in seguito: rilevamento automatico dell'estratto reale via import, promemoria pre-scadenza dedicato.
+
+---
+
 ## 2026-07-15 - Avviso modifiche non salvate sul back negli editor
 
 **Fatto:** dialog di conferma a due opzioni quando si esce da un editor con modifiche non salvate, su tutti e cinque gli editor (Conto, Movimento, Movimento ricorrente, Budget, Categoria). versionCode 58 -> 59, versionName 0.9.19 -> 0.9.20.

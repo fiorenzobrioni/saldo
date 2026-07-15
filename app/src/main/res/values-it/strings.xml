@@ -108,6 +108,7 @@
     <string name="accounts_excluded_from_budget">Escluso dal budget</string>
     <string name="account_type_checking">Conto corrente</string>
     <string name="account_type_card">Carta</string>
+    <string name="account_type_credit_card">Carta di credito</string>
     <string name="account_type_cash">Contanti</string>
     <string name="account_type_digital_wallet">Wallet digitale</string>
     <string name="account_type_other">Altro</string>
@@ -119,6 +120,13 @@
     <string name="accounts_snackbar_archived">"%1$s" archiviato</string>
     <string name="accounts_snackbar_deleted">Conto eliminato</string>
     <string name="accounts_snackbar_adjusted">Rettifica di %1$s registrata</string>
+    <string name="accounts_snackbar_statement_settled">Estratto pagato: %1$s trasferiti</string>
+    <!-- Credit card row extras -->
+    <string name="account_cc_utilisation_title">Utilizzo</string>
+    <string name="account_cc_utilisation_value">%1$s / %2$s · %3$d%%</string>
+    <string name="account_cc_statement_due">Estratto pronto da pagare</string>
+    <string name="account_cc_statement_charge_date">Addebito il %1$s</string>
+    <string name="account_cc_pay_statement">Paga %1$s</string>
     <string name="accounts_adjust_title">Rettifica saldo</string>
     <string name="accounts_adjust_current">Saldo attuale: %1$s</string>
     <string name="accounts_adjust_real_balance">Saldo reale</string>
@@ -157,6 +165,27 @@
     <string name="account_editor_include_in_total_hint">Se disattivato, il conto è tracciato ma non conta nel totale</string>
     <string name="account_editor_include_in_budget">Includi nel calcolo budget</string>
     <string name="account_editor_include_in_budget_hint">Se disattivato, le spese su questo conto non contano nel budget né nello spendibile</string>
+
+    <!-- Configurazione carta di credito -->
+    <string name="account_cc_section_title">Carta di credito</string>
+    <string name="account_cc_guidance">Usa un conto carta di credito solo per le carte a saldo differito, addebitate una volta al mese. Bancomat e carte di debito prelevano subito dal conto corrente: registrali direttamente lì.</string>
+    <string name="account_cc_closing_day">Giorno di chiusura estratto</string>
+    <string name="account_cc_closing_day_hint">Giorno in cui chiude il ciclo (31 = ultimo giorno del mese)</string>
+    <string name="account_cc_due_day">Giorno di addebito</string>
+    <string name="account_cc_due_day_hint">Giorno del mese successivo in cui viene addebitato l\'estratto</string>
+    <string name="account_cc_day_decrease">Diminuisci giorno</string>
+    <string name="account_cc_day_increase">Aumenta giorno</string>
+    <string name="account_cc_linked_account">Conto di addebito</string>
+    <string name="account_cc_linked_account_hint">Il conto su cui viene addebitato l\'estratto</string>
+    <string name="account_cc_linked_account_none">Scegli un conto</string>
+    <string name="account_cc_linked_account_empty">Nessun conto con questa valuta</string>
+    <string name="account_cc_limit">Limite di credito (opzionale)</string>
+    <string name="account_cc_limit_hint">Mostra la barra di utilizzo sul conto</string>
+    <string name="account_cc_mode_title">Addebito estratto</string>
+    <string name="account_cc_mode_confirm">Chiedi conferma</string>
+    <string name="account_cc_mode_confirm_hint">Alla data di addebito ricevi una notifica; confermi tu per registrare il trasferimento.</string>
+    <string name="account_cc_mode_auto">Automatico</string>
+    <string name="account_cc_mode_auto_hint">Il trasferimento viene registrato in automatico alla data di addebito.</string>
 
     <!-- Movimenti (Fase 3) -->
     <string name="transactions_new">Nuovo movimento</string>
@@ -403,6 +432,13 @@
         <item quantity="other">%1$d addebiti da confermare</item>
     </plurals>
     <string name="dashboard_pending_subtitle">Tocca per confermare o saltare</string>
+    <string name="dashboard_statement_title_single">Estratto %1$s pronto</string>
+    <plurals name="dashboard_statement_title">
+        <item quantity="one">%1$d estratto da pagare</item>
+        <item quantity="many">%1$d estratti da pagare</item>
+        <item quantity="other">%1$d estratti da pagare</item>
+    </plurals>
+    <string name="dashboard_statement_subtitle">%1$s · tocca per pagare</string>
     <string name="notif_channel_activity_name">Movimenti ricorrenti</string>
     <string name="notif_channel_confirm_name">Conferme movimenti ricorrenti</string>
     <plurals name="notif_activity_title">
@@ -651,6 +687,23 @@
         <item quantity="one">%d budget superato</item>
         <item quantity="many">%d budget superati</item>
         <item quantity="other">%d budget superati</item>
+    </plurals>
+
+    <!-- Credit card statement notifications -->
+    <string name="notif_channel_statement_name">Estratti carta di credito</string>
+    <string name="notif_statement_posted_title">Estratto %1$s addebitato</string>
+    <string name="notif_statement_posted_body">%1$s trasferiti per coprire l\'estratto</string>
+    <string name="notif_statement_confirm_title">Estratto %1$s pronto</string>
+    <string name="notif_statement_confirm_body">%1$s da pagare · tocca per saldare</string>
+    <plurals name="notif_statement_posted_summary_title">
+        <item quantity="one">%d estratto addebitato</item>
+        <item quantity="many">%d estratti addebitati</item>
+        <item quantity="other">%d estratti addebitati</item>
+    </plurals>
+    <plurals name="notif_statement_confirm_summary_title">
+        <item quantity="one">%d estratto da pagare</item>
+        <item quantity="many">%d estratti da pagare</item>
+        <item quantity="other">%d estratti da pagare</item>
     </plurals>
 
     <!-- Safe to spend -->

@@ -8,8 +8,15 @@ enum class AccountType {
     /** Bank current account (conto corrente). */
     CHECKING,
 
-    /** Debit or credit card (carta). */
+    /** Debit or prepaid card that holds its own balance (carta di debito/prepagata). */
     CARD,
+
+    /**
+     * Deferred credit card (carta di credito a saldo): spending accrues as a
+     * negative balance over a billing cycle and is charged in one instalment to
+     * a linked account. Carries a [com.callbackdev.saldo.core.domain.model.CreditCardConfig].
+     */
+    CREDIT_CARD,
 
     /** Physical cash (contanti). */
     CASH,

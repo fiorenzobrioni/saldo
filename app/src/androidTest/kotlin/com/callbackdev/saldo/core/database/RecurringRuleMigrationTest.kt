@@ -12,6 +12,7 @@ import com.callbackdev.saldo.core.database.migration.MIGRATION_4_5
 import com.callbackdev.saldo.core.database.migration.MIGRATION_5_6
 import com.callbackdev.saldo.core.database.migration.MIGRATION_6_7
 import com.callbackdev.saldo.core.database.migration.MIGRATION_7_8
+import com.callbackdev.saldo.core.database.migration.MIGRATION_8_9
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -311,6 +312,47 @@ class RecurringRuleMigrationTest {
             assertEquals("Savings", cursor.getString(0))
             // Existing accounts keep counting toward the budget.
             assertEquals(1, cursor.getInt(1))
+        }
+    }
+
+    @Test
+    fun migrate8To9_addsCreditCardColumns_defaultingToPlainAccount() {
+        val dbName = "migration-test-8-9"
+
+        helper.createDatabase(dbName, 8).use { db ->
+            db.insert(
+                "accounts",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("name", "Checking")
+                    put("type", "CHECKING")
+                    put("currency", "EUR")
+                    put("initialBalanceMinor", 0L)
+                    put("isIncludedInTotal", 1)
+                    put("isIncludedInBudget", 1)
+                    put("isArchived", 0)
+                    put("sortOrder", 0)
+                    put("createdAtEpochMilli", 0L)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 9, true, MIGRATION_8_9)
+
+        db.query(
+            "SELECT name, creditLimitMinor, statementClosingDay, paymentDueDay, " +
+                "linkedAccountId, statementAutoPost, lastSettledClosingEpochDay FROM accounts",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Checking", cursor.getString(0))
+            // Every credit card column is null for a pre-existing plain account,
+            // except the NOT NULL auto-post flag, which defaults to 0 (confirm).
+            assertTrue(cursor.isNull(1))
+            assertTrue(cursor.isNull(2))
+            assertTrue(cursor.isNull(3))
+            assertTrue(cursor.isNull(4))
+            assertEquals(0, cursor.getInt(5))
+            assertTrue(cursor.isNull(6))
         }
     }
 

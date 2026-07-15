@@ -24,6 +24,15 @@ interface AccountDao {
     @Update
     suspend fun update(account: AccountEntity)
 
+    /**
+     * Advances the credit card settlement watermark on its own, without a
+     * full-row update: settlement runs concurrently with the editor, and a
+     * full upsert of the account read at the start of a run would clobber an
+     * edit the user saved meanwhile (same reasoning as the recurring watermark).
+     */
+    @Query("UPDATE accounts SET lastSettledClosingEpochDay = :closingEpochDay WHERE id = :accountId")
+    suspend fun updateSettlementWatermark(accountId: Long, closingEpochDay: Long)
+
     @Delete
     suspend fun delete(account: AccountEntity)
 

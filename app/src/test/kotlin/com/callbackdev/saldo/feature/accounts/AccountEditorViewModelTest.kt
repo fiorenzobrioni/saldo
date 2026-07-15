@@ -10,8 +10,10 @@ import com.callbackdev.saldo.navigation.AccountEditorRoute
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -34,8 +36,10 @@ class AccountEditorViewModelTest {
     private val transactionRepository = mockk<TransactionRepository>()
     private val clock = Clock.fixed(fixedInstant, ZoneId.of("Europe/Rome"))
 
-    private fun viewModel(route: AccountEditorRoute = AccountEditorRoute()) =
-        AccountEditorViewModel(route, accountRepository, transactionRepository, clock)
+    private fun viewModel(route: AccountEditorRoute = AccountEditorRoute()): AccountEditorViewModel {
+        every { accountRepository.observeAccountsWithBalance() } returns flowOf(emptyList())
+        return AccountEditorViewModel(route, accountRepository, transactionRepository, clock)
+    }
 
     @Test
     fun `saving a new account persists the parsed form`() = runTest {

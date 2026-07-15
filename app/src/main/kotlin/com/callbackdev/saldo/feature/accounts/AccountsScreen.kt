@@ -107,6 +107,13 @@ fun AccountsScreen(
                     ),
                 )
 
+                is AccountsEvent.StatementSettled -> snackbarHostState.showSnackbar(
+                    resources.getString(
+                        R.string.accounts_snackbar_statement_settled,
+                        MoneyFormatter.format(event.amount, event.currency),
+                    ),
+                )
+
                 AccountsEvent.AccountDeleted -> snackbarHostState.showSnackbar(
                     resources.getString(R.string.accounts_snackbar_deleted),
                 )
@@ -155,6 +162,7 @@ fun AccountsScreen(
             else -> AccountsList(
                 uiState = uiState,
                 onAccountClick = { viewModel.onAccountSelected(it.account.id) },
+                onSettleStatement = viewModel::settleStatement,
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             )
         }
@@ -189,6 +197,7 @@ fun AccountsScreen(
 private fun AccountsList(
     uiState: AccountsUiState,
     onAccountClick: (AccountWithBalance) -> Unit,
+    onSettleStatement: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var archivedExpanded by rememberSaveable { mutableStateOf(false) }
@@ -200,7 +209,12 @@ private fun AccountsList(
     ) {
         if (uiState.active.isNotEmpty()) {
             item(key = "active") {
-                AccountsCard(items = uiState.active, onAccountClick = onAccountClick)
+                AccountsCard(
+                    items = uiState.active,
+                    uiState = uiState,
+                    onAccountClick = onAccountClick,
+                    onSettleStatement = onSettleStatement,
+                )
             }
         }
 
@@ -214,7 +228,12 @@ private fun AccountsList(
             }
             if (archivedExpanded) {
                 item(key = "archived") {
-                    AccountsCard(items = uiState.archived, onAccountClick = onAccountClick)
+                    AccountsCard(
+                        items = uiState.archived,
+                        uiState = uiState,
+                        onAccountClick = onAccountClick,
+                        onSettleStatement = onSettleStatement,
+                    )
                 }
             }
         }
@@ -225,7 +244,9 @@ private fun AccountsList(
 @Composable
 private fun AccountsCard(
     items: List<AccountWithBalance>,
+    uiState: AccountsUiState,
     onAccountClick: (AccountWithBalance) -> Unit,
+    onSettleStatement: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -243,16 +264,23 @@ private fun AccountsCard(
                         modifier = Modifier.padding(horizontal = SaldoDimens.rowPaddingHorizontal),
                     )
                 }
-                Surface(
-                    onClick = { onAccountClick(item) },
-                    color = Color.Transparent,
-                ) {
-                    AccountRowContent(
+                Column {
+                    Surface(
+                        onClick = { onAccountClick(item) },
+                        color = Color.Transparent,
+                    ) {
+                        AccountRowContent(
+                            item = item,
+                            modifier = Modifier.padding(
+                                horizontal = SaldoDimens.rowPaddingHorizontal,
+                                vertical = SaldoDimens.rowPaddingVertical,
+                            ),
+                        )
+                    }
+                    CreditCardRowExtras(
                         item = item,
-                        modifier = Modifier.padding(
-                            horizontal = SaldoDimens.rowPaddingHorizontal,
-                            vertical = SaldoDimens.rowPaddingVertical,
-                        ),
+                        dueStatement = uiState.dueStatement(item.account.id),
+                        onSettleStatement = { onSettleStatement(item.account.id) },
                     )
                 }
             }

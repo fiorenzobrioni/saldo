@@ -8,6 +8,8 @@ import com.callbackdev.saldo.budget.BudgetNotifier
 import com.callbackdev.saldo.core.domain.usecase.CheckBudgetThresholdsUseCase
 import com.callbackdev.saldo.core.domain.usecase.CheckUpcomingRenewalsUseCase
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
+import com.callbackdev.saldo.core.domain.usecase.ProcessDueCreditCardStatementsUseCase
+import com.callbackdev.saldo.creditcard.CreditCardNotifier
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
@@ -28,12 +30,18 @@ class RecurringGenerationWorker @AssistedInject constructor(
     private val notifier: RecurringNotifier,
     private val checkBudgetThresholds: CheckBudgetThresholdsUseCase,
     private val budgetNotifier: BudgetNotifier,
+    private val processDueStatements: ProcessDueCreditCardStatementsUseCase,
+    private val creditCardNotifier: CreditCardNotifier,
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result = runCatching {
         val generated = generateRecurringMovements()
         notifier.notify(generated)
         notifier.notifyUpcoming(checkUpcomingRenewals())
+        // Auto-post the credit card statements that came due and report the
+        // confirm-mode ones (the settlement transfer itself never touches the
+        // budget, so its position relative to the budget check is immaterial).
+        creditCardNotifier.notify(processDueStatements())
         // After generation, so an automatic charge that crosses a budget
         // threshold alerts on the same run, even with the device untouched.
         budgetNotifier.notify(checkBudgetThresholds())

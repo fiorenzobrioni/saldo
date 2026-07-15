@@ -57,6 +57,7 @@ import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
+import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.navigation.AccountEditorRoute
 import java.util.Currency
@@ -77,6 +78,7 @@ fun AccountEditorScreen(
         ),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val linkedCandidates by viewModel.linkedAccountCandidates.collectAsStateWithLifecycle()
     val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsStateWithLifecycle()
     val guard = rememberUnsavedChangesGuard(hasUnsavedChanges, onNavigateBack)
     val snackbarHostState = remember { SnackbarHostState() }
@@ -145,6 +147,7 @@ fun AccountEditorScreen(
             EditorForm(
                 uiState = uiState,
                 currencies = viewModel.currencies,
+                linkedCandidates = linkedCandidates,
                 onNameChanged = viewModel::onNameChanged,
                 onTypeChanged = viewModel::onTypeChanged,
                 onCurrencyChanged = viewModel::onCurrencyChanged,
@@ -153,6 +156,11 @@ fun AccountEditorScreen(
                 onIconSelected = viewModel::onIconSelected,
                 onIncludedInTotalChanged = viewModel::onIncludedInTotalChanged,
                 onIncludedInBudgetChanged = viewModel::onIncludedInBudgetChanged,
+                onStatementClosingDayChanged = viewModel::onStatementClosingDayChanged,
+                onPaymentDueDayChanged = viewModel::onPaymentDueDayChanged,
+                onLinkedAccountChanged = viewModel::onLinkedAccountChanged,
+                onCreditLimitChanged = viewModel::onCreditLimitChanged,
+                onStatementAutoPostChanged = viewModel::onStatementAutoPostChanged,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
@@ -168,6 +176,7 @@ fun AccountEditorScreen(
 private fun EditorForm(
     uiState: AccountEditorUiState,
     currencies: List<Currency>,
+    linkedCandidates: List<Account>,
     onNameChanged: (String) -> Unit,
     onTypeChanged: (AccountType) -> Unit,
     onCurrencyChanged: (Currency) -> Unit,
@@ -176,6 +185,11 @@ private fun EditorForm(
     onIconSelected: (String) -> Unit,
     onIncludedInTotalChanged: (Boolean) -> Unit,
     onIncludedInBudgetChanged: (Boolean) -> Unit,
+    onStatementClosingDayChanged: (Int) -> Unit,
+    onPaymentDueDayChanged: (Int) -> Unit,
+    onLinkedAccountChanged: (Long?) -> Unit,
+    onCreditLimitChanged: (String) -> Unit,
+    onStatementAutoPostChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -200,6 +214,17 @@ private fun EditorForm(
             currency = uiState.currency,
             onChanged = onInitialBalanceChanged,
         )
+        if (uiState.isCreditCard) {
+            CreditCardSection(
+                uiState = uiState,
+                linkedCandidates = linkedCandidates,
+                onStatementClosingDayChanged = onStatementClosingDayChanged,
+                onPaymentDueDayChanged = onPaymentDueDayChanged,
+                onLinkedAccountChanged = onLinkedAccountChanged,
+                onCreditLimitChanged = onCreditLimitChanged,
+                onStatementAutoPostChanged = onStatementAutoPostChanged,
+            )
+        }
         SectionLabel(stringResource(R.string.account_editor_section_color))
         ColorPicker(selected = uiState.color, onColorSelected = onColorSelected)
         SectionLabel(stringResource(R.string.account_editor_section_icon))

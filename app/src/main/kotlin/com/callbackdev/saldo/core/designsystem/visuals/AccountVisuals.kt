@@ -77,7 +77,8 @@ object AccountVisuals {
     /** Default icon for a freshly selected account type. */
     fun defaultIconFor(type: AccountType): String = when (type) {
         AccountType.CHECKING -> "account_balance"
-        AccountType.CARD -> "credit_card"
+        AccountType.CARD -> "wallet"
+        AccountType.CREDIT_CARD -> "credit_card"
         AccountType.CASH -> "payments"
         AccountType.DIGITAL_WALLET -> "wallet"
         AccountType.OTHER -> "account_balance_wallet"
@@ -93,6 +94,7 @@ object AccountVisuals {
 fun AccountType.labelRes(): Int = when (this) {
     AccountType.CHECKING -> R.string.account_type_checking
     AccountType.CARD -> R.string.account_type_card
+    AccountType.CREDIT_CARD -> R.string.account_type_credit_card
     AccountType.CASH -> R.string.account_type_cash
     AccountType.DIGITAL_WALLET -> R.string.account_type_digital_wallet
     AccountType.OTHER -> R.string.account_type_other

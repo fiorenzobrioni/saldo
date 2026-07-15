@@ -41,6 +41,14 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * out of the budget/safe-to-spend spend (e.g. a savings account you occasionally
  * pay from). NOT NULL DEFAULT 1, so every existing account keeps counting toward
  * the budget, matching today's behaviour.
+ *
+ * v8 -> v9: adds the credit card columns to `accounts` (`creditLimitMinor`,
+ * `statementClosingDay`, `paymentDueDay`, `linkedAccountId`, `statementAutoPost`,
+ * `lastSettledClosingEpochDay`). All meaningful only for AccountType.CREDIT_CARD;
+ * every existing account keeps NULL (and statementAutoPost 0), so it stays a
+ * plain account. No foreign key on `linkedAccountId` on purpose: a self-reference
+ * added via ALTER TABLE would complicate the migration and Room schema check for
+ * no gain, referential integrity is handled in application logic instead.
  */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -132,6 +140,18 @@ val MIGRATION_7_8: Migration = object : Migration(7, 8) {
     }
 }
 
+@Suppress("MagicNumber") // Schema version numbers.
+val MIGRATION_8_9: Migration = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE accounts ADD COLUMN creditLimitMinor INTEGER")
+        db.execSQL("ALTER TABLE accounts ADD COLUMN statementClosingDay INTEGER")
+        db.execSQL("ALTER TABLE accounts ADD COLUMN paymentDueDay INTEGER")
+        db.execSQL("ALTER TABLE accounts ADD COLUMN linkedAccountId INTEGER")
+        db.execSQL("ALTER TABLE accounts ADD COLUMN statementAutoPost INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE accounts ADD COLUMN lastSettledClosingEpochDay INTEGER")
+    }
+}
+
 /** All migrations, applied in order by Room. */
 val ALL_MIGRATIONS: Array<Migration> =
     arrayOf(
@@ -142,4 +162,5 @@ val ALL_MIGRATIONS: Array<Migration> =
         MIGRATION_5_6,
         MIGRATION_6_7,
         MIGRATION_7_8,
+        MIGRATION_8_9,
     )

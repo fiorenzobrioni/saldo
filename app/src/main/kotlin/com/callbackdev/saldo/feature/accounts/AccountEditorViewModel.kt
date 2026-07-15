@@ -7,6 +7,8 @@ import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.money.MoneyInput
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
+import com.callbackdev.saldo.core.domain.model.CreditCardConfig
+import com.callbackdev.saldo.core.domain.creditcard.BillingCycleCalculator
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
@@ -31,6 +33,7 @@ import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
+import java.time.LocalDate
 import java.util.Currency
 
 /** Immutable UI state of the account editor form. */
@@ -47,11 +50,24 @@ data class AccountEditorUiState(
     val icon: String,
     val isIncludedInTotal: Boolean = true,
     val isIncludedInBudget: Boolean = true,
+    // --- Credit card configuration (shown only when [type] is CREDIT_CARD) ---
+    val statementClosingDay: Int = DEFAULT_CLOSING_DAY,
+    val paymentDueDay: Int = DEFAULT_DUE_DAY,
+    /** Account charged for the statement; null until the user picks one. */
+    val linkedAccountId: Long? = null,
+    val creditLimitInput: String = "",
+    /** True auto-posts the statement; false waits for confirmation (default). */
+    val statementAutoPost: Boolean = false,
     /** Set on a failed save attempt to surface field errors. */
     val showValidation: Boolean = false,
 ) {
     val isNameValid: Boolean get() = name.isNotBlank()
+    val isCreditCard: Boolean get() = type == AccountType.CREDIT_CARD
 }
+
+/** Default billing cycle days for a freshly configured credit card. */
+const val DEFAULT_CLOSING_DAY = 31
+const val DEFAULT_DUE_DAY = 15
 
 /** One-shot events consumed by the editor screen. */
 sealed interface AccountEditorEvent {
@@ -91,6 +107,23 @@ class AccountEditorViewModel @AssistedInject constructor(
         ),
     )
     val uiState: StateFlow<AccountEditorUiState> = _uiState.asStateFlow()
+
+    /**
+     * Accounts eligible as the statement's linked account: same currency as the
+     * card, not archived, not the card itself, and not another credit card
+     * (a card cannot pay a card). Updates as the chosen currency changes.
+     */
+    val linkedAccountCandidates: StateFlow<List<Account>> = combine(
+        accountRepository.observeAccountsWithBalance(),
+        _uiState,
+    ) { accounts, state ->
+        accounts.map { it.account }.filter { candidate ->
+            !candidate.isArchived &&
+                candidate.id != route.accountId &&
+                candidate.type != AccountType.CREDIT_CARD &&
+                candidate.currency == state.currency
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), emptyList())
 
     private val _events = Channel<AccountEditorEvent>(Channel.BUFFERED)
     val events: Flow<AccountEditorEvent> = _events.receiveAsFlow()
@@ -142,6 +175,12 @@ class AccountEditorViewModel @AssistedInject constructor(
                     icon = account.icon ?: AccountVisuals.defaultIconFor(account.type),
                     isIncludedInTotal = account.isIncludedInTotal,
                     isIncludedInBudget = account.isIncludedInBudget,
+                    statementClosingDay = account.creditCard?.statementClosingDay ?: DEFAULT_CLOSING_DAY,
+                    paymentDueDay = account.creditCard?.paymentDueDay ?: DEFAULT_DUE_DAY,
+                    linkedAccountId = account.creditCard?.linkedAccountId,
+                    creditLimitInput = account.creditCard?.creditLimit
+                        ?.stripTrailingZeros()?.toPlainString().orEmpty(),
+                    statementAutoPost = account.creditCard?.autoPost ?: false,
                 )
             }
             captureBaseline()
@@ -174,7 +213,9 @@ class AccountEditorViewModel @AssistedInject constructor(
             } else {
                 state.initialBalanceInput
             }
-            state.copy(currency = currency, initialBalanceInput = input)
+            // The linked account must share the card currency; a currency change
+            // can invalidate the current choice, so clear it and let the user re-pick.
+            state.copy(currency = currency, initialBalanceInput = input, linkedAccountId = null)
         }
     }
 
@@ -206,6 +247,28 @@ class AccountEditorViewModel @AssistedInject constructor(
         _uiState.update { it.copy(isIncludedInBudget = included) }
     }
 
+    fun onStatementClosingDayChanged(day: Int) {
+        _uiState.update { it.copy(statementClosingDay = day.coerceIn(MIN_DAY, MAX_DAY)) }
+    }
+
+    fun onPaymentDueDayChanged(day: Int) {
+        _uiState.update { it.copy(paymentDueDay = day.coerceIn(MIN_DAY, MAX_DAY)) }
+    }
+
+    fun onLinkedAccountChanged(accountId: Long?) {
+        _uiState.update { it.copy(linkedAccountId = accountId) }
+    }
+
+    fun onCreditLimitChanged(raw: String) {
+        _uiState.update {
+            it.copy(creditLimitInput = MoneyInput.sanitize(raw, MoneyMapper.fractionDigits(it.currency)))
+        }
+    }
+
+    fun onStatementAutoPostChanged(autoPost: Boolean) {
+        _uiState.update { it.copy(statementAutoPost = autoPost) }
+    }
+
     fun save() {
         val state = _uiState.value
         if (state.isLoading || isSaving) return
@@ -228,6 +291,7 @@ class AccountEditorViewModel @AssistedInject constructor(
             isArchived = base?.isArchived ?: false,
             sortOrder = base?.sortOrder ?: 0,
             createdAt = base?.createdAt ?: clock.instant(),
+            creditCard = state.toCreditCardConfig(base),
         )
         isSaving = true
         viewModelScope.launch {
@@ -237,6 +301,28 @@ class AccountEditorViewModel @AssistedInject constructor(
                 if (result.isSuccess) AccountEditorEvent.Saved else AccountEditorEvent.WriteFailed,
             )
         }
+    }
+
+    /**
+     * Builds the [CreditCardConfig] from the form when the type is a credit
+     * card, preserving the settlement watermark across edits so an edit never
+     * re-charges an already-settled cycle; null for any other type.
+     */
+    private fun AccountEditorUiState.toCreditCardConfig(base: Account?): CreditCardConfig? {
+        if (type != AccountType.CREDIT_CARD) return null
+        // A freshly configured card seeds its watermark at the last closing before
+        // today, so pre-existing history is never back-charged: only cycles that
+        // close from now on produce a statement. An edit keeps the real watermark.
+        val watermark = base?.creditCard?.lastSettledClosing
+            ?: BillingCycleCalculator.closingOnOrBefore(LocalDate.now(clock), statementClosingDay)
+        return CreditCardConfig(
+            statementClosingDay = statementClosingDay,
+            paymentDueDay = paymentDueDay,
+            linkedAccountId = linkedAccountId,
+            creditLimit = MoneyInput.parse(creditLimitInput)?.takeIf { it.signum() > 0 },
+            autoPost = statementAutoPost,
+            lastSettledClosing = watermark,
+        )
     }
 
     /** Records the current form as the baseline to detect later edits against. */
@@ -254,6 +340,11 @@ class AccountEditorViewModel @AssistedInject constructor(
         val icon: String,
         val isIncludedInTotal: Boolean,
         val isIncludedInBudget: Boolean,
+        val statementClosingDay: Int,
+        val paymentDueDay: Int,
+        val linkedAccountId: Long?,
+        val creditLimitInput: String,
+        val statementAutoPost: Boolean,
     )
 
     private fun AccountEditorUiState.snapshot() = FormSnapshot(
@@ -265,9 +356,16 @@ class AccountEditorViewModel @AssistedInject constructor(
         icon = icon,
         isIncludedInTotal = isIncludedInTotal,
         isIncludedInBudget = isIncludedInBudget,
+        statementClosingDay = statementClosingDay,
+        paymentDueDay = paymentDueDay,
+        linkedAccountId = linkedAccountId,
+        creditLimitInput = creditLimitInput,
+        statementAutoPost = statementAutoPost,
     )
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+        const val MIN_DAY = 1
+        const val MAX_DAY = 31
     }
 }

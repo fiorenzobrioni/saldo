@@ -9,6 +9,8 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.AdjustBalanceUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
+import com.callbackdev.saldo.core.domain.usecase.SettleCreditCardStatementUseCase
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -32,6 +34,8 @@ class AccountsViewModelTest {
     private val transactionRepository = mockk<TransactionRepository>()
     private val recurringRuleRepository = mockk<RecurringRuleRepository>()
     private val adjustBalance = mockk<AdjustBalanceUseCase>()
+    private val observeDueStatements = mockk<ObserveDueStatementsUseCase>()
+    private val settleStatement = mockk<SettleCreditCardStatementUseCase>()
 
     private fun account(
         id: Long = 1L,
@@ -51,11 +55,14 @@ class AccountsViewModelTest {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         coEvery { accountRepository.upsert(any()) } returns 1L
         coEvery { recurringRuleRepository.countForAccount(any()) } returns 0
+        every { observeDueStatements() } returns flowOf(emptyList())
         return AccountsViewModel(
             accountRepository,
             transactionRepository,
             recurringRuleRepository,
             adjustBalance,
+            observeDueStatements,
+            settleStatement,
         )
     }
 

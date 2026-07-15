@@ -44,6 +44,12 @@ fun AccountEntity.toBackup(): AccountBackup = AccountBackup(
     isArchived = isArchived,
     sortOrder = sortOrder,
     createdAtEpochMilli = createdAtEpochMilli,
+    creditLimitMinor = creditLimitMinor,
+    statementClosingDay = statementClosingDay,
+    paymentDueDay = paymentDueDay,
+    linkedAccountId = linkedAccountId,
+    statementAutoPost = statementAutoPost,
+    lastSettledClosingEpochDay = lastSettledClosingEpochDay,
 )
 
 fun AccountBackup.toEntity(): AccountEntity = AccountEntity(
@@ -59,6 +65,12 @@ fun AccountBackup.toEntity(): AccountEntity = AccountEntity(
     isArchived = isArchived,
     sortOrder = sortOrder,
     createdAtEpochMilli = createdAtEpochMilli,
+    creditLimitMinor = creditLimitMinor,
+    statementClosingDay = statementClosingDay,
+    paymentDueDay = paymentDueDay,
+    linkedAccountId = linkedAccountId,
+    statementAutoPost = statementAutoPost,
+    lastSettledClosingEpochDay = lastSettledClosingEpochDay,
 )
 
 fun CategoryEntity.toBackup(): CategoryBackup = CategoryBackup(
