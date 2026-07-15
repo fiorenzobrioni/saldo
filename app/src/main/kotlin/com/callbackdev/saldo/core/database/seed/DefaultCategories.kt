@@ -51,7 +51,12 @@ internal object DefaultCategories {
     /** Number of default categories, exposed for tests. */
     val count: Int get() = seeds.size
 
-    /** Builds the localized default category rows. [sortOrder] follows list order. */
+    /**
+     * Builds the localized default category rows. Both sort keys follow list
+     * order; the income tab filters to income-usable rows and reads
+     * [CategoryEntity.sortOrderIncome], so mirroring the index preserves the
+     * seeded order in each tab.
+     */
     fun build(context: Context): List<CategoryEntity> = seeds.mapIndexed { index, seed ->
         CategoryEntity(
             name = context.getString(seed.nameRes),
@@ -59,6 +64,7 @@ internal object DefaultCategories {
             color = seed.color,
             icon = seed.icon,
             sortOrder = index,
+            sortOrderIncome = index,
             isDefault = true,
         )
     }

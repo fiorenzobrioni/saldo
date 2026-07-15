@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-15 - Uniformità UI: menu FAB a pillole, elimina in barra del titolo, sortOrder categorie per tipo
+
+**Fatto:** tre interventi di consistenza UI/UX (versionCode 56 -> 57, versionName 0.9.17 -> 0.9.18).
+
+- **Menu FAB (dashboard):** lo speed-dial rende ogni azione rapida (spesa/entrata/trasferimento) come un'unica pillola (icona + etichetta nello stesso contenitore arrotondato) invece della coppia staccata etichetta + mini-FAB. Colori dalla palette dell'app (`secondaryContainer`/`onSecondaryContainer`), `CircleShape`. Nessuna nuova libreria. File: `feature/dashboard/DashboardFab.kt`.
+- **Elimina in barra del titolo:** gli editor Budget, Movimenti ricorrenti e Categorie spostano l'azione elimina dal bottone in fondo alla schermata a un'icona cestino tra le `actions` della `TopAppBar`, come già faceva l'editor Movimento (niente più scroll per eliminare). La logica di eliminazione (dialog di conferma/riassegnazione) era già nei rispettivi ViewModel: spostato solo il trigger. L'editor Conto resta invariato: non ha infrastruttura di delete nel suo ViewModel e l'eliminazione è già raggiungibile dal menu azioni del conto (Modifica/Rettifica/Archivia/Elimina); portarla nell'editor avrebbe duplicato il flusso di guard/riassegnazione/archivia-invece. File: `feature/{budgets,recurring,categories}/*EditorScreen.kt`.
+- **sortOrder categorie per tipo:** risolto il bug noto per cui il `sortOrder` globale accoppiava i tab. Aggiunta la colonna `sortOrderIncome` (ordine manuale del tab Entrate; `sortOrder` resta quello del tab Spese). I due tab ora si riordinano in modo indipendente e una categoria "entrambi" tiene una posizione distinta in ciascuno.
+
+**Decisioni:** per il sortOrder per tipo, una categoria "entrambi" compare in due tab e serviva una posizione per ciascuno, quindi una seconda chiave d'ordinamento invece di una sola globale. `observeByType` ordina con `CASE WHEN :type = 'INCOME' THEN sortOrderIncome ELSE sortOrder END`; `reorder` diventa per tipo e riscrive solo la chiave del tab toccato (l'update full-row porta invariata l'altra posizione); `nextSortOrder(type)` appende in coda al tab giusto; l'editor assegna la posizione del tab in cui una categoria entra (nuova o per cambio tipo). Migration 6→7: `ALTER TABLE categories ADD COLUMN sortOrderIncome INTEGER NOT NULL DEFAULT 0` + `UPDATE categories SET sortOrderIncome = sortOrder` (preserva l'ordine Entrate esistente) + indice. Backup: `CategoryBackup.sortOrderIncome` nullable, in import fallback a `sortOrder` per i backup vecchi.
+
+**Problemi:** `assembleDebug testDebugUnitTest lint detekt` verdi; schema Room v7 esportato. Test unitari aggiornati (CategoriesViewModel decoupling per tab, editor per-type, round-trip e fallback backup). Il test di migration 6→7 e i test strumentati non girano senza emulatore, non disponibile in questo ambiente; la correttezza della migration è nel DDL (stesso pattern delle migration precedenti) e nella copia `sortOrderIncome = sortOrder`.
+
+**Prossimo:** verifica su device del menu FAB e del riordino indipendente dei due tab quando ci sarà un emulatore.
+
+---
+
 ## 2026-07-14 - Fix riordino categorie: gesto di drag cancellato al primo scambio
 
 **Fatto:** corretto il drag-to-reorder in Impostazioni - Categorie, rotto su entrambi i tab (Spese ed Entrate). Trascinando una categoria, al primo scambio restava sospesa sopra le altre e non rispondeva più al dito. `versionCode` 55 -> 56, `versionName` 0.9.16 -> 0.9.17.

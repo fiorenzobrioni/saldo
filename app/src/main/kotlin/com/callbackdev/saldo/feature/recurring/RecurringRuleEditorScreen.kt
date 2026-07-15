@@ -24,7 +24,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -114,6 +113,16 @@ fun RecurringRuleEditorScreen(
                             imageVector = Icons.Outlined.Close,
                             contentDescription = stringResource(R.string.action_close),
                         )
+                    }
+                },
+                actions = {
+                    if (!uiState.isNew) {
+                        IconButton(onClick = viewModel::requestDelete) {
+                            Icon(
+                                imageVector = Icons.Outlined.DeleteOutline,
+                                contentDescription = stringResource(editorDeleteRes(uiState.type)),
+                            )
+                        }
                     }
                 },
             )
@@ -291,10 +300,6 @@ private fun EditorForm(
             selectedColor = uiState.color,
             onIconSelected = viewModel::onIconSelected,
         )
-        if (!uiState.isNew) {
-            Spacer(Modifier.height(32.dp))
-            DeleteButton(type = uiState.type, onDelete = viewModel::requestDelete)
-        }
         Spacer(Modifier.height(32.dp))
     }
 }
@@ -458,22 +463,6 @@ private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.primary,
         modifier = modifier.padding(top = 24.dp, bottom = 12.dp),
     )
-}
-
-@Composable
-private fun DeleteButton(type: TransactionType, onDelete: () -> Unit, modifier: Modifier = Modifier) {
-    OutlinedButton(onClick = onDelete, modifier = modifier.fillMaxWidth()) {
-        Icon(
-            imageVector = Icons.Outlined.DeleteOutline,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.error,
-        )
-        Spacer(Modifier.size(8.dp))
-        Text(
-            text = stringResource(editorDeleteRes(type)),
-            color = MaterialTheme.colorScheme.error,
-        )
-    }
 }
 
 @Composable

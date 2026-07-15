@@ -30,6 +30,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * row with NULL categoryId plus per-category caps, unique index on categoryId)
  * with the per-threshold notification watermarks. DDL copied verbatim from the
  * schema Room exports for version 6, so validation matches byte for byte.
+ *
+ * v6 -> v7: adds `sortOrderIncome` to `categories`, the income tab's own manual
+ * order, so reordering the expense tab no longer disturbs BOTH categories in the
+ * income tab. Seeded from the existing `sortOrder` so the current income
+ * ordering is preserved, with a matching index.
  */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -97,6 +102,28 @@ val MIGRATION_5_6: Migration = object : Migration(5, 6) {
     }
 }
 
+@Suppress("MagicNumber") // Schema version numbers.
+val MIGRATION_6_7: Migration = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE categories ADD COLUMN sortOrderIncome INTEGER NOT NULL DEFAULT 0",
+        )
+        // Preserve the current income ordering, which was driven by sortOrder.
+        db.execSQL("UPDATE categories SET sortOrderIncome = sortOrder")
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_categories_sortOrderIncome` " +
+                "ON `categories` (`sortOrderIncome`)",
+        )
+    }
+}
+
 /** All migrations, applied in order by Room. */
 val ALL_MIGRATIONS: Array<Migration> =
-    arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+    arrayOf(
+        MIGRATION_1_2,
+        MIGRATION_2_3,
+        MIGRATION_3_4,
+        MIGRATION_4_5,
+        MIGRATION_5_6,
+        MIGRATION_6_7,
+    )

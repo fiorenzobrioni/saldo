@@ -75,6 +75,11 @@ data class CategoryBackup(
     val color: Int,
     val icon: String,
     val sortOrder: Int = 0,
+    /**
+     * Income tab's manual order. Null on backups written before per-tab
+     * ordering: on import it falls back to [sortOrder], which was the shared key.
+     */
+    val sortOrderIncome: Int? = null,
     val isDefault: Boolean = false,
 )
 

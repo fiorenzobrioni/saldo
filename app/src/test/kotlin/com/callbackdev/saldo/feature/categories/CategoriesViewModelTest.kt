@@ -25,6 +25,7 @@ class CategoriesViewModelTest {
         id: Long,
         type: CategoryType,
         sortOrder: Int,
+        sortOrderIncome: Int = sortOrder,
     ) = Category(
         name = "cat-$id",
         type = type,
@@ -32,6 +33,7 @@ class CategoriesViewModelTest {
         icon = "category",
         id = id,
         sortOrder = sortOrder,
+        sortOrderIncome = sortOrderIncome,
     )
 
     private fun viewModel(categories: List<Category>): CategoriesViewModel {
@@ -61,7 +63,7 @@ class CategoriesViewModelTest {
     }
 
     @Test
-    fun `reordering a tab rewrites only that tab's slots in the global order`() = runTest {
+    fun `reordering a tab persists only that tab's categories under its type`() = runTest {
         val a = category(1L, CategoryType.EXPENSE, 0)
         val b = category(2L, CategoryType.EXPENSE, 1)
         val c = category(3L, CategoryType.INCOME, 2)
@@ -74,9 +76,32 @@ class CategoriesViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        coVerify { categoryRepository.reorder(capture(persisted)) }
-        // Expense slots (positions 0 and 1) get the new order; the income keeps its slot.
-        assertEquals(listOf(2L, 1L, 3L), persisted.captured.map { it.id })
+        coVerify { categoryRepository.reorder(CategoryType.EXPENSE, capture(persisted)) }
+        // Only the expense tab's categories are handed to the repository, in the
+        // new order; the income category is untouched.
+        assertEquals(listOf(2L, 1L), persisted.captured.map { it.id })
+    }
+
+    @Test
+    fun `reordering one tab leaves the other tab's order untouched`() = runTest {
+        // A BOTH category sits in both tabs; reordering incomes must not move it
+        // in the expense tab.
+        val expense = category(1L, CategoryType.EXPENSE, sortOrder = 0)
+        val both = category(2L, CategoryType.BOTH, sortOrder = 1, sortOrderIncome = 1)
+        val income = category(3L, CategoryType.INCOME, sortOrder = 2, sortOrderIncome = 0)
+        val viewModel = viewModel(listOf(expense, both, income))
+        val persisted = slot<List<Category>>()
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            // Income tab is ordered by sortOrderIncome: income(0) then both(1).
+            assertEquals(listOf(3L, 2L), state.incomes.map { it.id })
+            viewModel.persistOrder(CategoryType.INCOME, listOf(2L, 3L))
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify { categoryRepository.reorder(CategoryType.INCOME, capture(persisted)) }
+        assertEquals(listOf(2L, 3L), persisted.captured.map { it.id })
     }
 
     @Test
@@ -91,7 +116,7 @@ class CategoriesViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        coVerify(exactly = 0) { categoryRepository.reorder(any()) }
+        coVerify(exactly = 0) { categoryRepository.reorder(any(), any()) }
     }
 
     @Test
@@ -106,6 +131,6 @@ class CategoriesViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        coVerify(exactly = 0) { categoryRepository.reorder(any()) }
+        coVerify(exactly = 0) { categoryRepository.reorder(any(), any()) }
     }
 }

@@ -24,7 +24,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -112,6 +111,16 @@ fun BudgetEditorScreen(
                         )
                     }
                 },
+                actions = {
+                    if (!uiState.isNew) {
+                        IconButton(onClick = viewModel::requestDelete) {
+                            Icon(
+                                imageVector = Icons.Outlined.DeleteOutline,
+                                contentDescription = stringResource(R.string.budgets_editor_delete),
+                            )
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
@@ -138,7 +147,6 @@ fun BudgetEditorScreen(
                 uiState = uiState,
                 onScopeSelected = viewModel::onScopeSelected,
                 onAmountChanged = viewModel::onAmountChanged,
-                onDelete = viewModel::requestDelete,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
@@ -154,7 +162,6 @@ private fun EditorForm(
     uiState: BudgetEditorUiState,
     onScopeSelected: (BudgetScope) -> Unit,
     onAmountChanged: (String) -> Unit,
-    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -189,18 +196,6 @@ private fun EditorForm(
             uiState = uiState,
             onAmountChanged = onAmountChanged,
         )
-        if (!uiState.isNew) {
-            Spacer(Modifier.height(32.dp))
-            OutlinedButton(onClick = onDelete, modifier = Modifier.fillMaxWidth()) {
-                Icon(
-                    imageVector = Icons.Outlined.DeleteOutline,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.size(8.dp))
-                Text(stringResource(R.string.budgets_editor_delete))
-            }
-        }
         Spacer(Modifier.height(32.dp))
     }
 }

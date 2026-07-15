@@ -63,7 +63,7 @@ class CategoryEditorViewModelTest {
 
     @Test
     fun `saving a new category appends it at the next sort order`() = runTest {
-        coEvery { categoryRepository.nextSortOrder() } returns 7
+        coEvery { categoryRepository.nextSortOrder(CategoryType.EXPENSE) } returns 7
         val saved = slot<Category>()
         coEvery { categoryRepository.upsert(capture(saved)) } returns 1L
         val viewModel = viewModel()
@@ -86,6 +86,30 @@ class CategoryEditorViewModelTest {
             assertEquals("local_cafe", icon)
             assertEquals(7, sortOrder)
             assertFalse(isDefault)
+        }
+        // An expense-only category needs no income slot; the income key is never queried.
+        coVerify(exactly = 0) { categoryRepository.nextSortOrder(CategoryType.INCOME) }
+    }
+
+    @Test
+    fun `saving a new BOTH category appends in both tabs`() = runTest {
+        coEvery { categoryRepository.nextSortOrder(CategoryType.EXPENSE) } returns 7
+        coEvery { categoryRepository.nextSortOrder(CategoryType.INCOME) } returns 3
+        val saved = slot<Category>()
+        coEvery { categoryRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel()
+
+        viewModel.onNameChanged("Gifts")
+        viewModel.onTypeChanged(CategoryType.BOTH)
+        viewModel.save()
+
+        viewModel.events.test {
+            assertEquals(CategoryEditorEvent.Saved, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        with(saved.captured) {
+            assertEquals(7, sortOrder)
+            assertEquals(3, sortOrderIncome)
         }
     }
 
@@ -117,7 +141,7 @@ class CategoryEditorViewModelTest {
             assertEquals(4, sortOrder)
             assertTrue(isDefault)
         }
-        coVerify(exactly = 0) { categoryRepository.nextSortOrder() }
+        coVerify(exactly = 0) { categoryRepository.nextSortOrder(any()) }
     }
 
     @Test

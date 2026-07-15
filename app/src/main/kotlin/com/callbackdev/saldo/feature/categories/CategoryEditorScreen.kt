@@ -22,7 +22,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -105,6 +104,16 @@ fun CategoryEditorScreen(
                         )
                     }
                 },
+                actions = {
+                    if (!uiState.isNew) {
+                        IconButton(onClick = viewModel::requestDelete) {
+                            Icon(
+                                imageVector = Icons.Outlined.DeleteOutline,
+                                contentDescription = stringResource(R.string.category_editor_delete),
+                            )
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
@@ -133,7 +142,6 @@ fun CategoryEditorScreen(
                 onTypeChanged = viewModel::onTypeChanged,
                 onColorSelected = viewModel::onColorSelected,
                 onIconSelected = viewModel::onIconSelected,
-                onDelete = viewModel::requestDelete,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
@@ -160,7 +168,6 @@ private fun EditorForm(
     onTypeChanged: (CategoryType) -> Unit,
     onColorSelected: (Int) -> Unit,
     onIconSelected: (String) -> Unit,
-    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -182,24 +189,6 @@ private fun EditorForm(
             selectedColor = uiState.color,
             onIconSelected = onIconSelected,
         )
-        if (!uiState.isNew) {
-            Spacer(Modifier.height(32.dp))
-            OutlinedButton(
-                onClick = onDelete,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.DeleteOutline,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error,
-                )
-                Spacer(Modifier.size(8.dp))
-                Text(
-                    text = stringResource(R.string.category_editor_delete),
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-        }
         Spacer(Modifier.height(32.dp))
     }
 }

@@ -10,6 +10,7 @@ import com.callbackdev.saldo.core.database.migration.MIGRATION_2_3
 import com.callbackdev.saldo.core.database.migration.MIGRATION_3_4
 import com.callbackdev.saldo.core.database.migration.MIGRATION_4_5
 import com.callbackdev.saldo.core.database.migration.MIGRATION_5_6
+import com.callbackdev.saldo.core.database.migration.MIGRATION_6_7
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -237,6 +238,44 @@ class RecurringRuleMigrationTest {
         db.query(
             "SELECT COUNT(*) FROM sqlite_master " +
                 "WHERE type = 'index' AND name = 'index_budgets_categoryId'",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1, cursor.getInt(0))
+        }
+    }
+
+    @Test
+    fun migrate6To7_addsIncomeOrder_seededFromSortOrder() {
+        val dbName = "migration-test-6-7"
+
+        helper.createDatabase(dbName, 6).use { db ->
+            db.insert(
+                "categories",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("id", 10L)
+                    put("name", "Gifts")
+                    put("type", "BOTH")
+                    put("color", 0xF06292)
+                    put("icon", "redeem")
+                    put("sortOrder", 4)
+                    put("isDefault", 0)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 7, true, MIGRATION_6_7)
+
+        db.query("SELECT sortOrder, sortOrderIncome FROM categories").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            // The new income key is seeded from the old shared sortOrder.
+            assertEquals(4, cursor.getInt(0))
+            assertEquals(4, cursor.getInt(1))
+        }
+        // The income-order index is in place.
+        db.query(
+            "SELECT COUNT(*) FROM sqlite_master " +
+                "WHERE type = 'index' AND name = 'index_categories_sortOrderIncome'",
         ).use { cursor ->
             assertTrue(cursor.moveToFirst())
             assertEquals(1, cursor.getInt(0))

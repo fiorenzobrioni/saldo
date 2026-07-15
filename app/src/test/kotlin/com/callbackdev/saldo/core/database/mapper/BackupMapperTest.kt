@@ -7,6 +7,7 @@ import com.callbackdev.saldo.core.database.entity.RecurringRuleEntity
 import com.callbackdev.saldo.core.database.entity.TagEntity
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
 import com.callbackdev.saldo.core.database.entity.TransactionTagCrossRef
+import com.callbackdev.saldo.core.domain.backup.CategoryBackup
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
@@ -50,10 +51,29 @@ class BackupMapperTest {
             color = 0xFFAA00,
             icon = "flight",
             sortOrder = 9,
+            sortOrderIncome = 5,
             isDefault = true,
         )
 
         assertEquals(entity, entity.toBackup().toEntity())
+    }
+
+    @Test
+    fun `a pre-per-tab backup inherits the income order from sortOrder`() {
+        // Older backups carry no income key: the income position must fall back
+        // to the shared sortOrder so the restored order matches the old app.
+        val legacy = CategoryBackup(
+            id = 3L,
+            name = "Viaggi",
+            type = "BOTH",
+            color = 0xFFAA00,
+            icon = "flight",
+            sortOrder = 9,
+            sortOrderIncome = null,
+            isDefault = true,
+        )
+
+        assertEquals(9, legacy.toEntity().sortOrderIncome)
     }
 
     @Test

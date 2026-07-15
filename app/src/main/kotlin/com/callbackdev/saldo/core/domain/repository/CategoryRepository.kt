@@ -15,14 +15,22 @@ interface CategoryRepository {
 
     suspend fun getCategory(id: Long): Category?
 
-    /** Next free sort position, so a freshly created category appends to the end. */
-    suspend fun nextSortOrder(): Int
+    /**
+     * Next free sort position in the [type] tab, so a freshly created category
+     * appends to the end of the tab it belongs to (the income tab tracks its own
+     * sequence).
+     */
+    suspend fun nextSortOrder(type: CategoryType): Int
 
     /** Inserts a new category (id == 0) or updates an existing one. Returns its id. */
     suspend fun upsert(category: Category): Long
 
-    /** Persists a manual reorder: each category's sort position becomes its index. */
-    suspend fun reorder(categories: List<Category>)
+    /**
+     * Persists a manual reorder performed inside the [type] tab: each category's
+     * position in that tab's sort key becomes its index, leaving the other tab's
+     * ordering untouched.
+     */
+    suspend fun reorder(type: CategoryType, categories: List<Category>)
 
     suspend fun delete(category: Category)
 
