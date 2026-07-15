@@ -65,6 +65,7 @@ sealed interface AccountEditorEvent {
 }
 
 @HiltViewModel(assistedFactory = AccountEditorViewModel.Factory::class)
+@Suppress("TooManyFunctions") // One handler per form field plus the unsaved-changes baseline helpers.
 class AccountEditorViewModel @AssistedInject constructor(
     @Assisted private val route: AccountEditorRoute,
     private val accountRepository: AccountRepository,
