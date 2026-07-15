@@ -167,7 +167,22 @@ class CategoryEditorViewModel @AssistedInject constructor(
                     type = state.type,
                     color = state.color,
                     icon = state.icon,
-                    sortOrder = base?.sortOrder ?: categoryRepository.nextSortOrder(),
+                    // Each tab keeps its own position. A category keeps its slot
+                    // while it stays in a tab, and appends to the end of a tab it
+                    // newly enters (a fresh category, or a type change that adds it
+                    // to a tab it wasn't in before).
+                    sortOrder = sortPositionFor(
+                        CategoryType.EXPENSE,
+                        keptWhen = base?.type?.usableForExpenses == true,
+                        current = base?.sortOrder,
+                        isUsable = state.type.usableForExpenses,
+                    ),
+                    sortOrderIncome = sortPositionFor(
+                        CategoryType.INCOME,
+                        keptWhen = base?.type?.usableForIncomes == true,
+                        current = base?.sortOrderIncome,
+                        isUsable = state.type.usableForIncomes,
+                    ),
                     isDefault = base?.isDefault ?: false,
                 )
                 categoryRepository.upsert(category)
@@ -177,6 +192,24 @@ class CategoryEditorViewModel @AssistedInject constructor(
                 if (result.isSuccess) CategoryEditorEvent.Saved else CategoryEditorEvent.WriteFailed,
             )
         }
+    }
+
+    /**
+     * The position to store for one tab's sort key. A category keeps [current]
+     * while it stays usable in the tab; it appends to the tab's end when it
+     * newly enters it (a brand-new category, or a type change that adds it to a
+     * tab it wasn't in before). When it is not usable in the tab the stored
+     * value is inert, so the previous one is preserved.
+     */
+    private suspend fun sortPositionFor(
+        type: CategoryType,
+        keptWhen: Boolean,
+        current: Int?,
+        isUsable: Boolean,
+    ): Int = when {
+        isUsable && keptWhen -> current ?: categoryRepository.nextSortOrder(type)
+        isUsable -> categoryRepository.nextSortOrder(type)
+        else -> current ?: 0
     }
 
     /** Opens the appropriate deletion flow for the category being edited. */

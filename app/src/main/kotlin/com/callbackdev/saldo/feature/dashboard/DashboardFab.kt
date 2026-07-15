@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
@@ -18,7 +20,6 @@ import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -98,6 +99,11 @@ internal fun DashboardSpeedDial(
     }
 }
 
+/**
+ * One quick action rendered as a single pill (leading icon + label in one
+ * rounded container), so the dial reads as a compact stack of pills rather than
+ * detached label/button pairs. Colours come from the app palette.
+ */
 @Composable
 private fun SpeedDialAction(
     label: String,
@@ -105,29 +111,25 @@ private fun SpeedDialAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        shadowElevation = 3.dp,
         modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Surface(
-            onClick = onClick,
-            shape = MaterialTheme.shapes.small,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = 3.dp,
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(start = 20.dp, end = 24.dp, top = 14.dp, bottom = 14.dp),
         ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
             )
-        }
-        SmallFloatingActionButton(
-            onClick = onClick,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        ) {
-            Icon(imageVector = icon, contentDescription = label)
+            Text(text = label, style = MaterialTheme.typography.titleSmall)
         }
     }
 }

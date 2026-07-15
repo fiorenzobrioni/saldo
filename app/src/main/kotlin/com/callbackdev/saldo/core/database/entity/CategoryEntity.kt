@@ -13,7 +13,7 @@ import com.callbackdev.saldo.core.domain.model.CategoryType
  */
 @Entity(
     tableName = "categories",
-    indices = [Index("type"), Index("sortOrder")],
+    indices = [Index("type"), Index("sortOrder"), Index("sortOrderIncome")],
 )
 data class CategoryEntity(
     @PrimaryKey(autoGenerate = true)
@@ -23,5 +23,6 @@ data class CategoryEntity(
     val color: Int,
     val icon: String,
     val sortOrder: Int = 0,
+    val sortOrderIncome: Int = 0,
     val isDefault: Boolean = false,
 )

@@ -22,7 +22,12 @@ class RoomCategoryRepository @Inject constructor(
 
     override suspend fun getCategory(id: Long): Category? = categoryDao.getById(id)?.toDomain()
 
-    override suspend fun nextSortOrder(): Int = categoryDao.maxSortOrder() + 1
+    override suspend fun nextSortOrder(type: CategoryType): Int =
+        if (type == CategoryType.INCOME) {
+            categoryDao.maxSortOrderIncome() + 1
+        } else {
+            categoryDao.maxSortOrder() + 1
+        }
 
     override suspend fun upsert(category: Category): Long {
         val entity = category.toEntity()
@@ -34,9 +39,16 @@ class RoomCategoryRepository @Inject constructor(
         }
     }
 
-    override suspend fun reorder(categories: List<Category>) {
+    override suspend fun reorder(type: CategoryType, categories: List<Category>) {
+        // Rewrite only the reordered tab's sort key; the full-row update carries
+        // each category's other-tab position through unchanged.
         val reordered = categories.mapIndexed { index, category ->
-            category.toEntity().copy(sortOrder = index)
+            val entity = category.toEntity()
+            if (type == CategoryType.INCOME) {
+                entity.copy(sortOrderIncome = index)
+            } else {
+                entity.copy(sortOrder = index)
+            }
         }
         categoryDao.updateAll(reordered)
     }

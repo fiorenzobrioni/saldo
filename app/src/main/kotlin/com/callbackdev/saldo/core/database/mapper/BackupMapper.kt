@@ -66,6 +66,7 @@ fun CategoryEntity.toBackup(): CategoryBackup = CategoryBackup(
     color = color,
     icon = icon,
     sortOrder = sortOrder,
+    sortOrderIncome = sortOrderIncome,
     isDefault = isDefault,
 )
 
@@ -76,6 +77,8 @@ fun CategoryBackup.toEntity(): CategoryEntity = CategoryEntity(
     color = color,
     icon = icon,
     sortOrder = sortOrder,
+    // Pre-per-tab backups have no income key: fall back to the old shared one.
+    sortOrderIncome = sortOrderIncome ?: sortOrder,
     isDefault = isDefault,
 )
 

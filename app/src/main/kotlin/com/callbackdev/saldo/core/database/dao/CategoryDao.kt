@@ -33,11 +33,16 @@ interface CategoryDao {
     @Query("SELECT * FROM categories ORDER BY sortOrder ASC, id ASC")
     fun observeAll(): Flow<List<CategoryEntity>>
 
+    /**
+     * Categories usable in the [type] tab, ordered by that tab's own sort key:
+     * the income tab reads `sortOrderIncome`, every other tab `sortOrder`. Each
+     * tab therefore reorders independently even for BOTH categories.
+     */
     @Query(
         """
         SELECT * FROM categories
         WHERE type = :type OR type = 'BOTH'
-        ORDER BY sortOrder ASC, id ASC
+        ORDER BY (CASE WHEN :type = 'INCOME' THEN sortOrderIncome ELSE sortOrder END) ASC, id ASC
         """,
     )
     fun observeByType(type: String): Flow<List<CategoryEntity>>
@@ -59,6 +64,17 @@ interface CategoryDao {
     /** Highest sortOrder in use, or -1 when the table is empty (new rows append). */
     @Query("SELECT COALESCE(MAX(sortOrder), -1) FROM categories")
     suspend fun maxSortOrder(): Int
+
+    /**
+     * Highest income sort position among income-usable categories (INCOME or
+     * BOTH), or -1 when none exist, so a new income category appends to the
+     * income tab.
+     */
+    @Query(
+        "SELECT COALESCE(MAX(sortOrderIncome), -1) FROM categories " +
+            "WHERE type = 'INCOME' OR type = 'BOTH'",
+    )
+    suspend fun maxSortOrderIncome(): Int
 
     @Query("UPDATE transactions SET categoryId = :targetId WHERE categoryId = :categoryId")
     suspend fun reassignTransactions(categoryId: Long, targetId: Long)
