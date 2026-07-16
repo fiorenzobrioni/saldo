@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "94d92807a4a8bd2ade3f07f503cc1069",
+    "identityHash": "e6c232d10b6a6e6bb03ea684f389018e",
     "entities": [
       {
         "tableName": "accounts",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `currency` TEXT NOT NULL, `initialBalanceMinor` INTEGER NOT NULL, `color` INTEGER, `icon` TEXT, `isIncludedInTotal` INTEGER NOT NULL, `isArchived` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAtEpochMilli` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `currency` TEXT NOT NULL, `initialBalanceMinor` INTEGER NOT NULL, `color` INTEGER, `icon` TEXT, `isIncludedInTotal` INTEGER NOT NULL, `isIncludedInBudget` INTEGER NOT NULL, `isArchived` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAtEpochMilli` INTEGER NOT NULL, `creditLimitMinor` INTEGER, `statementClosingDay` INTEGER, `paymentDueDay` INTEGER, `linkedAccountId` INTEGER, `statementAutoPost` INTEGER NOT NULL DEFAULT 0, `lastSettledClosingEpochDay` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -55,6 +55,12 @@
             "notNull": true
           },
           {
+            "fieldPath": "isIncludedInBudget",
+            "columnName": "isIncludedInBudget",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
             "fieldPath": "isArchived",
             "columnName": "isArchived",
             "affinity": "INTEGER",
@@ -71,6 +77,38 @@
             "columnName": "createdAtEpochMilli",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "creditLimitMinor",
+            "columnName": "creditLimitMinor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "statementClosingDay",
+            "columnName": "statementClosingDay",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "paymentDueDay",
+            "columnName": "paymentDueDay",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "linkedAccountId",
+            "columnName": "linkedAccountId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "statementAutoPost",
+            "columnName": "statementAutoPost",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "lastSettledClosingEpochDay",
+            "columnName": "lastSettledClosingEpochDay",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -102,7 +140,7 @@
       },
       {
         "tableName": "categories",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `color` INTEGER NOT NULL, `icon` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `isDefault` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `color` INTEGER NOT NULL, `icon` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `sortOrderIncome` INTEGER NOT NULL, `isDefault` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -141,6 +179,12 @@
             "notNull": true
           },
           {
+            "fieldPath": "sortOrderIncome",
+            "columnName": "sortOrderIncome",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
             "fieldPath": "isDefault",
             "columnName": "isDefault",
             "affinity": "INTEGER",
@@ -171,12 +215,21 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_categories_sortOrder` ON `${TABLE_NAME}` (`sortOrder`)"
+          },
+          {
+            "name": "index_categories_sortOrderIncome",
+            "unique": false,
+            "columnNames": [
+              "sortOrderIncome"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_categories_sortOrderIncome` ON `${TABLE_NAME}` (`sortOrderIncome`)"
           }
         ]
       },
       {
         "tableName": "transactions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `amountMinor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `accountId` INTEGER NOT NULL, `timestampEpochMilli` INTEGER NOT NULL, `zoneOffsetSeconds` INTEGER NOT NULL, `transferAccountId` INTEGER, `transferAmountMinor` INTEGER, `transferCurrency` TEXT, `categoryId` INTEGER, `description` TEXT, `note` TEXT, `isExcludedFromStats` INTEGER NOT NULL, `isRefund` INTEGER NOT NULL, `recurringRuleId` INTEGER, FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`transferAccountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`recurringRuleId`) REFERENCES `recurring_rules`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `type` TEXT NOT NULL, `amountMinor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `accountId` INTEGER NOT NULL, `timestampEpochMilli` INTEGER NOT NULL, `zoneOffsetSeconds` INTEGER NOT NULL, `transferAccountId` INTEGER, `transferAmountMinor` INTEGER, `transferCurrency` TEXT, `categoryId` INTEGER, `description` TEXT, `note` TEXT, `isExcludedFromStats` INTEGER NOT NULL, `isRefund` INTEGER NOT NULL, `recurringRuleId` INTEGER, `isPending` INTEGER NOT NULL DEFAULT 0, `recurringOccurrenceEpochDay` INTEGER, FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`transferAccountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`recurringRuleId`) REFERENCES `recurring_rules`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -266,6 +319,18 @@
             "fieldPath": "recurringRuleId",
             "columnName": "recurringRuleId",
             "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "isPending",
+            "columnName": "isPending",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "recurringOccurrenceEpochDay",
+            "columnName": "recurringOccurrenceEpochDay",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -337,6 +402,16 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_transactions_currency` ON `${TABLE_NAME}` (`currency`)"
+          },
+          {
+            "name": "index_transactions_recurringRuleId_recurringOccurrenceEpochDay",
+            "unique": true,
+            "columnNames": [
+              "recurringRuleId",
+              "recurringOccurrenceEpochDay"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_transactions_recurringRuleId_recurringOccurrenceEpochDay` ON `${TABLE_NAME}` (`recurringRuleId`, `recurringOccurrenceEpochDay`)"
           }
         ],
         "foreignKeys": [
@@ -483,7 +558,7 @@
       },
       {
         "tableName": "recurring_rules",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `currency` TEXT NOT NULL, `accountId` INTEGER NOT NULL, `frequency` TEXT NOT NULL, `startDateEpochDay` INTEGER NOT NULL, `amountMinor` INTEGER, `categoryId` INTEGER, `dayOfReference` INTEGER, `endDateEpochDay` INTEGER, `mode` TEXT NOT NULL, `isVariableAmount` INTEGER NOT NULL, `lastGeneratedEpochDay` INTEGER, `note` TEXT, FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `currency` TEXT NOT NULL, `accountId` INTEGER NOT NULL, `frequency` TEXT NOT NULL, `startDateEpochDay` INTEGER NOT NULL, `amountMinor` INTEGER, `categoryId` INTEGER, `dayOfReference` INTEGER, `endDateEpochDay` INTEGER, `mode` TEXT NOT NULL, `isVariableAmount` INTEGER NOT NULL, `lastGeneratedEpochDay` INTEGER, `color` INTEGER, `icon` TEXT, `note` TEXT, `lastReminderEpochDay` INTEGER, FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -565,9 +640,24 @@
             "affinity": "INTEGER"
           },
           {
+            "fieldPath": "color",
+            "columnName": "color",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "icon",
+            "columnName": "icon",
+            "affinity": "TEXT"
+          },
+          {
             "fieldPath": "note",
             "columnName": "note",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastReminderEpochDay",
+            "columnName": "lastReminderEpochDay",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -620,11 +710,80 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "budgets",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoryId` INTEGER, `amountMinor` INTEGER NOT NULL, `currency` TEXT NOT NULL, `lastNotified80EpochMonth` INTEGER, `lastNotified100EpochMonth` INTEGER, FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoryId",
+            "columnName": "categoryId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "amountMinor",
+            "columnName": "amountMinor",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "currency",
+            "columnName": "currency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastNotified80EpochMonth",
+            "columnName": "lastNotified80EpochMonth",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "lastNotified100EpochMonth",
+            "columnName": "lastNotified100EpochMonth",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_budgets_categoryId",
+            "unique": true,
+            "columnNames": [
+              "categoryId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_budgets_categoryId` ON `${TABLE_NAME}` (`categoryId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "categories",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "categoryId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '94d92807a4a8bd2ade3f07f503cc1069')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e6c232d10b6a6e6bb03ea684f389018e')"
     ]
   }
 }

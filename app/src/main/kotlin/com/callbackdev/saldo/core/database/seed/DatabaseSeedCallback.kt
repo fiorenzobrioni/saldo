@@ -26,12 +26,16 @@ class DatabaseSeedCallback @Inject constructor(
             db.insert(
                 "categories",
                 SQLiteDatabase.CONFLICT_ABORT,
+                // Every NOT NULL column must be set here: the freshly created
+                // schema has no SQL defaults (unlike the columns added later by an
+                // ALTER TABLE migration), so an omitted column aborts onCreate.
                 ContentValues().apply {
                     put("name", category.name)
                     put("type", category.type.name)
                     put("color", category.color)
                     put("icon", category.icon)
                     put("sortOrder", category.sortOrder)
+                    put("sortOrderIncome", category.sortOrderIncome)
                     put("isDefault", if (category.isDefault) 1 else 0)
                 },
             )
