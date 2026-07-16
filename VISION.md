@@ -129,7 +129,7 @@ Esempi: Conto Corrente Intesa, Conto Fineco, Carta Visa, Carta Mastercard, PayPa
 Campi:
 
 - nome
-- tipo (conto corrente, carta di debito, carta prepagata, carta di credito, contanti, wallet digitale, altro) - a fini di icona/raggruppamento; la sola carta di credito ha comportamento proprio (ciclo di addebito differito con estratto sul conto collegato)
+- tipo (conto corrente, conto di risparmio, carta prepagata, carta di credito, contanti, wallet digitale, altro) - a fini di icona/raggruppamento, con una descrizione d'uso mostrata nell'editor; la sola carta di credito ha comportamento proprio (ciclo di addebito differito con estratto sul conto collegato). Le carte di debito non sono un tipo: spendono dal conto corrente e i loro movimenti si registrano lì
 - valuta principale dell'account
 - **saldo iniziale** (impostato alla creazione: il saldo corrente è sempre `saldo iniziale + Σ movimenti`)
 - colore e icona

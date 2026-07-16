@@ -49,7 +49,7 @@ class AccountEditorViewModelTest {
         val viewModel = viewModel()
 
         viewModel.onNameChanged("  Conto Intesa  ")
-        viewModel.onTypeChanged(AccountType.DEBIT_CARD)
+        viewModel.onTypeChanged(AccountType.PREPAID_CARD)
         viewModel.onCurrencyChanged(eur)
         viewModel.onInitialBalanceChanged("1234,56")
         viewModel.onColorSelected(AccountVisuals.colors[3])
@@ -65,7 +65,7 @@ class AccountEditorViewModelTest {
         with(saved.captured) {
             assertEquals(0L, id)
             assertEquals("Conto Intesa", name)
-            assertEquals(AccountType.DEBIT_CARD, type)
+            assertEquals(AccountType.PREPAID_CARD, type)
             assertEquals(eur, currency)
             assertEquals(BigDecimal("1234.56"), initialBalance)
             assertEquals(AccountVisuals.colors[3], color)
@@ -128,6 +128,24 @@ class AccountEditorViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
         assertEquals(null, saved.captured.creditCard)
+    }
+
+    @Test
+    fun `selecting savings presets budget exclusion until the user decides`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onTypeChanged(AccountType.SAVINGS)
+        assertFalse(viewModel.uiState.value.isIncludedInBudget)
+
+        // Switching away restores the preset for ordinary accounts.
+        viewModel.onTypeChanged(AccountType.CHECKING)
+        assertTrue(viewModel.uiState.value.isIncludedInBudget)
+
+        // An explicit user choice survives any later type change.
+        viewModel.onIncludedInBudgetChanged(false)
+        viewModel.onTypeChanged(AccountType.SAVINGS)
+        viewModel.onTypeChanged(AccountType.CHECKING)
+        assertFalse(viewModel.uiState.value.isIncludedInBudget)
     }
 
     @Test
@@ -226,7 +244,7 @@ class AccountEditorViewModelTest {
         assertEquals(AccountVisuals.defaultIconFor(AccountType.CASH), viewModel.uiState.value.icon)
 
         viewModel.onIconSelected("home")
-        viewModel.onTypeChanged(AccountType.DEBIT_CARD)
+        viewModel.onTypeChanged(AccountType.PREPAID_CARD)
         assertEquals("home", viewModel.uiState.value.icon)
     }
 

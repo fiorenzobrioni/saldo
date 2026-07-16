@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.accounts
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -63,9 +64,9 @@ internal fun CreditCardSection(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
+        // The type description under the type chips already explains what a
+        // credit card account is; this section is configuration only.
         CreditCardSectionLabel(stringResource(R.string.account_cc_section_title))
-        AccountEditorGuidance(stringResource(R.string.account_cc_guidance))
-        Spacer(Modifier.height(16.dp))
         DayStepper(
             title = stringResource(R.string.account_cc_closing_day),
             hint = stringResource(R.string.account_cc_closing_day_hint),
@@ -109,11 +110,17 @@ private fun CreditCardSectionLabel(text: String) {
     )
 }
 
-/** Contextual guidance banner of the account editor (credit card and debit card notes). */
+/**
+ * Contextual guidance banner of the account editor: describes the selected
+ * account type under the type chips. Animates its height when the text
+ * changes so switching types feels fluid instead of jumpy.
+ */
 @Composable
 internal fun AccountEditorGuidance(text: String, modifier: Modifier = Modifier) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .animateContentSize(),
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.secondaryContainer,
     ) {

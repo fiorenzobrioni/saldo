@@ -81,7 +81,7 @@ object AccountVisuals {
     /** Default icon for a freshly selected account type. */
     fun defaultIconFor(type: AccountType): String = when (type) {
         AccountType.CHECKING -> "account_balance"
-        AccountType.DEBIT_CARD -> "contactless"
+        AccountType.SAVINGS -> "savings"
         AccountType.PREPAID_CARD -> "add_card"
         AccountType.CREDIT_CARD -> "credit_card"
         AccountType.CASH -> "payments"
@@ -98,10 +98,25 @@ object AccountVisuals {
 @StringRes
 fun AccountType.labelRes(): Int = when (this) {
     AccountType.CHECKING -> R.string.account_type_checking
-    AccountType.DEBIT_CARD -> R.string.account_type_debit_card
+    AccountType.SAVINGS -> R.string.account_type_savings
     AccountType.PREPAID_CARD -> R.string.account_type_prepaid_card
     AccountType.CREDIT_CARD -> R.string.account_type_credit_card
     AccountType.CASH -> R.string.account_type_cash
     AccountType.DIGITAL_WALLET -> R.string.account_type_digital_wallet
     AccountType.OTHER -> R.string.account_type_other
+}
+
+/**
+ * Contextual description of an [AccountType], shown in the account editor
+ * under the type selector: what the type is for and how to use it.
+ */
+@StringRes
+fun AccountType.infoRes(): Int = when (this) {
+    AccountType.CHECKING -> R.string.account_type_info_checking
+    AccountType.SAVINGS -> R.string.account_type_info_savings
+    AccountType.PREPAID_CARD -> R.string.account_type_info_prepaid
+    AccountType.CREDIT_CARD -> R.string.account_type_info_credit_card
+    AccountType.CASH -> R.string.account_type_info_cash
+    AccountType.DIGITAL_WALLET -> R.string.account_type_info_wallet
+    AccountType.OTHER -> R.string.account_type_info_other
 }

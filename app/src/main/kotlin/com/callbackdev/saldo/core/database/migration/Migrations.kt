@@ -55,6 +55,13 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * DEBIT_CARD (the closest semantics; a prepaid user can switch the type in the
  * editor). No schema change. The enum value is gone from the code, so this
  * rewrite is what keeps pre-split rows decodable.
+ *
+ * v10 -> v11: data-only. DEBIT_CARD is retired one release after its
+ * introduction: a debit card spends straight from the bank account and has no
+ * balance of its own, so it never was a money container (the checking type's
+ * contextual description now explains where to record that spending). Existing
+ * DEBIT_CARD rows become CHECKING; the SAVINGS type added in the same release
+ * needs no migration. As with v10, the enum value is gone from the code.
  */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -165,6 +172,13 @@ val MIGRATION_9_10: Migration = object : Migration(9, 10) {
     }
 }
 
+@Suppress("MagicNumber") // Schema version numbers.
+val MIGRATION_10_11: Migration = object : Migration(10, 11) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("UPDATE accounts SET type = 'CHECKING' WHERE type = 'DEBIT_CARD'")
+    }
+}
+
 /** All migrations, applied in order by Room. */
 val ALL_MIGRATIONS: Array<Migration> =
     arrayOf(
@@ -177,4 +191,5 @@ val ALL_MIGRATIONS: Array<Migration> =
         MIGRATION_7_8,
         MIGRATION_8_9,
         MIGRATION_9_10,
+        MIGRATION_10_11,
     )

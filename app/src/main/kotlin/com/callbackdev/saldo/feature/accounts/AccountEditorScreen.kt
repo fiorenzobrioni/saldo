@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.accounts
 
+import com.callbackdev.saldo.core.designsystem.visuals.infoRes
 import com.callbackdev.saldo.core.designsystem.visuals.labelRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -201,10 +202,10 @@ private fun EditorForm(
         )
         SectionLabel(stringResource(R.string.account_editor_section_type))
         TypeChips(selected = uiState.type, onTypeChanged = onTypeChanged)
-        if (uiState.type == AccountType.DEBIT_CARD) {
-            Spacer(Modifier.height(12.dp))
-            AccountEditorGuidance(stringResource(R.string.account_debit_guidance))
-        }
+        Spacer(Modifier.height(12.dp))
+        // What the selected type is for and how to use it, right under the
+        // selector so the choice and its explanation read as one unit.
+        AccountEditorGuidance(stringResource(uiState.type.infoRes()))
         Spacer(Modifier.height(16.dp))
         CurrencyField(
             selected = uiState.currency,

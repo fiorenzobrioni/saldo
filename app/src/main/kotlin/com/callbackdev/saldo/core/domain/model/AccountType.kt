@@ -3,18 +3,26 @@ package com.callbackdev.saldo.core.domain.model
 /**
  * Nature of an account. Purely cosmetic (icon, label, grouping) for every type
  * except [CREDIT_CARD], which carries a [CreditCardConfig] and the deferred
- * settlement behaviour; the balance math is identical for all types.
+ * settlement behaviour; the balance math is identical for all types. The
+ * editor shows a contextual description for the selected type, so each entry
+ * documents its own usage to the user.
+ *
+ * Debit cards are deliberately not a type: they spend straight from the bank
+ * account and have no balance of their own, so their movements are recorded on
+ * the [CHECKING] account (its description says so).
  */
 enum class AccountType {
-    /** Bank current account (conto corrente). */
+    /** Bank current account (conto corrente); debit card spending is recorded here. */
     CHECKING,
 
     /**
-     * Debit card (bancomat). Spends straight from the bank account it is tied
-     * to: worth a separate account only when that bank account is not tracked
-     * in the app (the editor explains this).
+     * Savings account (conto di risparmio): money fenced off from daily
+     * spending, moved in and out via transfers. The editor defaults it to
+     * excluded from the budget, so dipping into savings never consumes the
+     * month's budget. Also covers cash parked for investments: the app tracks
+     * the amount, never quotes (investments are out of scope by VISION).
      */
-    DEBIT_CARD,
+    SAVINGS,
 
     /** Prepaid card holding its own balance, topped up via transfers (Postepay, prepaid Revolut). */
     PREPAID_CARD,

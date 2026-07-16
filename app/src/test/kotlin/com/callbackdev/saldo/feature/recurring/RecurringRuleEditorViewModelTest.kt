@@ -55,7 +55,7 @@ class RecurringRuleEditorViewModelTest {
     private fun account(id: Long, currency: Currency) = Account(
         id = id,
         name = "acc-$id",
-        type = AccountType.DEBIT_CARD,
+        type = AccountType.PREPAID_CARD,
         currency = currency,
         initialBalance = BigDecimal.ZERO,
     )

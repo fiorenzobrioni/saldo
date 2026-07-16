@@ -107,7 +107,7 @@
     <string name="accounts_excluded_from_total">Escluso dal totale</string>
     <string name="accounts_excluded_from_budget">Escluso dal budget</string>
     <string name="account_type_checking">Conto corrente</string>
-    <string name="account_type_debit_card">Carta di debito</string>
+    <string name="account_type_savings">Conto di risparmio</string>
     <string name="account_type_prepaid_card">Carta prepagata</string>
     <string name="account_type_credit_card">Carta di credito</string>
     <string name="account_type_cash">Contanti</string>
@@ -167,11 +167,17 @@
     <string name="account_editor_include_in_budget">Includi nel calcolo budget</string>
     <string name="account_editor_include_in_budget_hint">Se disattivato, le spese su questo conto non contano nel budget né nello spendibile</string>
 
-    <string name="account_debit_guidance">Una carta di debito (bancomat) spende direttamente dal conto corrente a cui è collegata. Se quel conto è già tracciato nell\'app, registra le spese lì per non contarle due volte; crea un conto separato solo se il conto collegato non è tracciato.</string>
+    <!-- Descrizioni dei tipi di conto (banner sotto il selettore) -->
+    <string name="account_type_info_checking">Il conto bancario di tutti i giorni: stipendio in entrata, pagamenti e prelievi in uscita. Registra qui anche le spese fatte con bancomat o altre carte di debito: la carta preleva direttamente da questo conto e non ha un saldo suo.</string>
+    <string name="account_type_info_savings">Il recinto dei soldi messi da parte: si alimenta e si attinge con trasferimenti dal conto principale. Conta nel saldo totale ma di default è escluso dal calcolo del budget, così attingere ai risparmi non consuma il budget del mese. Va bene anche per la liquidità destinata a investimenti o titoli: l\'app ne traccia l\'importo, non le quotazioni.</string>
+    <string name="account_type_info_prepaid">Una carta con un saldo proprio, come una Postepay: si ricarica con un trasferimento e si spende direttamente da qui.</string>
+    <string name="account_type_info_credit_card">Per le carte a saldo differito, addebitate una volta al mese sul conto collegato. Il saldo parte da zero: se hai già speso nel ciclo in corso, usa "Rettifica saldo" dopo il salvataggio e l\'importo verrà addebitato col prossimo estratto.</string>
+    <string name="account_type_info_cash">I contanti nel portafoglio. Un prelievo ATM si registra come trasferimento dal conto ai contanti: sposta soldi, non è una spesa.</string>
+    <string name="account_type_info_wallet">Un borsellino digitale con saldo proprio (PayPal, Satispay, Revolut). Se il tuo wallet si appoggia al conto senza tenere un saldo, registra le spese direttamente sul conto.</string>
+    <string name="account_type_info_other">Qualsiasi altro contenitore di denaro: buoni pasto, carte regalo, una cassa comune.</string>
 
     <!-- Configurazione carta di credito -->
     <string name="account_cc_section_title">Carta di credito</string>
-    <string name="account_cc_guidance">Usa un conto carta di credito solo per le carte a saldo differito, addebitate una volta al mese. Il saldo parte da zero: se hai già speso nel ciclo in corso, usa "Rettifica saldo" dopo il salvataggio e l\'importo verrà addebitato col prossimo estratto.</string>
     <string name="account_cc_closing_day">Giorno di chiusura estratto</string>
     <string name="account_cc_closing_day_hint">Giorno in cui chiude il ciclo (31 = ultimo giorno del mese)</string>
     <string name="account_cc_due_day">Giorno di addebito</string>

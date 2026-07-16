@@ -14,6 +14,23 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-16 - Conto di risparmio, descrizioni dei tipi, ritiro della carta di debito
+
+**Fatto:** terzo giro sui tipi di conto (versionCode 61 -> 62, versionName 0.9.22 -> 0.9.23). Design: ADR 22. App in beta su un solo device: nessun codice legacy.
+
+- **`DEBIT_CARD` ritirato dopo una sola release:** ammissione onesta emersa dal confronto con l'utente: un tipo la cui guida dice "probabilmente non usarmi" è un errore di tassonomia. Una carta di debito non è un contenitore di denaro (spende dal conto corrente) e nessuna app premium la modella come conto. Migration dati 10->11: le righe DEBIT_CARD diventano CHECKING; l'enum non ha più il valore. L'educazione passa alla descrizione del tipo Conto corrente ("registra qui anche le spese col bancomat...").
+- **Descrizione d'uso per ogni tipo:** banner informativo sotto il selettore dei tipi, che cambia col tipo selezionato (altezza animata con `animateContentSize`). Sostituisce le due guide sparse di prima e risolve anche il difetto di layout segnalato dall'utente: la guida della carta di credito compariva sotto la valuta (viveva dentro la sezione di configurazione), ora sta sotto i Tipi dove uno la cerca. Testi per tutti e sette i tipi, IT + EN, con note operative: prelievo ATM = trasferimento (contanti), wallet senza saldo = registra sul conto, prepagata = si ricarica con trasferimenti.
+- **Nuovo tipo `SAVINGS` (Conto di risparmio):** il "recinto" per i soldi messi da parte, alimentato e svuotato con trasferimenti. Icona salvadanaio predefinita. Unica opzione dedicata, ed è un default non un campo nuovo: alla selezione l'editor pre-imposta "Includi nel budget" su off (attingere ai risparmi non deve consumare il budget del mese: è il caso d'uso per cui il flag era nato, Fase 9.8). Il preset non tocca mai una scelta esplicita: toggle toccato dall'utente o valore salvato vincono sempre (`userToggledBudget`, stesso pattern di `userPickedIcon`). Niente campo "obiettivo": gli Obiettivi di risparmio restano in v2.0.
+- **Investimenti / titoli: niente tipo dedicato.** VISION li esclude (quotazioni = rete, contro l'offline-first). La liquidità destinata a investimenti si traccia col Conto di risparmio e la sua descrizione lo dice. Prestiti/Mutui annotati in Note e appunti come valutazione futura (richiederebbero una revisione di VISION, che oggi li esclude per scelta).
+
+**Decisioni:** mapping delle righe DEBIT_CARD esistenti su CHECKING (il conto corrente è la semantica reale di una carta di debito); "Conto di risparmio" come nome del tipo (standard; "Salvadanaio" resta nel lessico della descrizione). Ordine dei chip: corrente, risparmio, prepagata, credito, contanti, wallet, altro.
+
+**Problemi:** nessuno.
+
+**Prossimo:** verifica su device: il conto ex-bancomat deve comparire come Conto corrente dopo la migrazione; creazione di un Conto di risparmio (toggle budget pre-spento); banner descrizione che cambia con i tipi.
+
+---
+
 ## 2026-07-16 - Tassonomia carte e review delle carte di credito
 
 **Fatto:** secondo giro sulla gestione carte (versionCode 60 -> 61, versionName 0.9.21 -> 0.9.22): review della feature carte di credito con tre fix, saldo iniziale rimosso dalle carte di credito, tipi carta espliciti al posto di "Carta" generica. Design: ADR 21. App in test su un solo device: su indicazione dell'utente, implementazione pulita senza strati di retrocompatibilità.

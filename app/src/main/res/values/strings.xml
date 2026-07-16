@@ -108,7 +108,7 @@
     <string name="accounts_excluded_from_total">Excluded from total</string>
     <string name="accounts_excluded_from_budget">Excluded from budget</string>
     <string name="account_type_checking">Bank account</string>
-    <string name="account_type_debit_card">Debit card</string>
+    <string name="account_type_savings">Savings account</string>
     <string name="account_type_prepaid_card">Prepaid card</string>
     <string name="account_type_credit_card">Credit card</string>
     <string name="account_type_cash">Cash</string>
@@ -166,11 +166,17 @@
     <string name="account_editor_include_in_budget">Include in budget calculation</string>
     <string name="account_editor_include_in_budget_hint">If off, spending on this account does not count towards the budget or safe-to-spend</string>
 
-    <string name="account_debit_guidance">A debit card spends straight from the bank account it is tied to. If you already track that account, record the spending there to avoid counting it twice; create a separate account only if you do not track the linked one.</string>
+    <!-- Account type descriptions (banner under the type selector) -->
+    <string name="account_type_info_checking">Your everyday bank account: salary in, payments and withdrawals out. Record here the spending made with your debit or ATM card too: it draws straight from this account and has no balance of its own.</string>
+    <string name="account_type_info_savings">A fence around the money you set aside: fill it and dip into it with transfers from your main account. It counts toward the total balance but is excluded from the budget by default, so drawing on savings never consumes the month\'s budget. It also fits cash parked for investments: the app tracks the amount, not the quotes.</string>
+    <string name="account_type_info_prepaid">A card with its own balance, like a prepaid card: top it up with a transfer and spend straight from it.</string>
+    <string name="account_type_info_credit_card">For deferred cards charged once a month to the linked account. The balance starts at zero: if you already owe something on the current cycle, use "Adjust balance" after saving and it will be charged with the next statement.</string>
+    <string name="account_type_info_cash">The cash in your wallet. An ATM withdrawal is recorded as a transfer from the account to cash: it moves money, it is not an expense.</string>
+    <string name="account_type_info_wallet">A digital wallet with its own balance (PayPal, Satispay, Revolut). If your wallet draws from your bank account without holding a balance, record the spending on the account instead.</string>
+    <string name="account_type_info_other">Any other money container: meal vouchers, gift cards, a shared kitty.</string>
 
     <!-- Credit card configuration -->
     <string name="account_cc_section_title">Credit card</string>
-    <string name="account_cc_guidance">Use a credit card account only for deferred cards charged monthly. The balance starts at zero: if you already owe something on the current cycle, use "Adjust balance" after saving and it will be charged with the next statement.</string>
     <string name="account_cc_closing_day">Statement closing day</string>
     <string name="account_cc_closing_day_hint">Day the billing cycle closes (31 = last day of the month)</string>
     <string name="account_cc_due_day">Payment day</string>

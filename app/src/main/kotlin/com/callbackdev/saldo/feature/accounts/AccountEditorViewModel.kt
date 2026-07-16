@@ -148,6 +148,9 @@ class AccountEditorViewModel @AssistedInject constructor(
     /** True once the user picks an icon: type changes stop updating it. */
     private var userPickedIcon = false
 
+    /** True once the user touches the budget toggle: type changes stop presetting it. */
+    private var userToggledBudget = false
+
     init {
         val accountId = route.accountId
         if (accountId == null) captureBaseline() else loadAccount(accountId)
@@ -162,6 +165,8 @@ class AccountEditorViewModel @AssistedInject constructor(
             }
             existing = account
             userPickedIcon = true
+            // A persisted inclusion choice is the user's: never preset over it.
+            userToggledBudget = true
             val movementCount = transactionRepository.countForAccount(accountId)
             _uiState.update {
                 it.copy(
@@ -199,6 +204,14 @@ class AccountEditorViewModel @AssistedInject constructor(
             it.copy(
                 type = type,
                 icon = if (userPickedIcon) it.icon else AccountVisuals.defaultIconFor(type),
+                // Savings default to excluded from the budget (dipping into
+                // savings should not consume the month's budget); an explicit
+                // user choice always wins over the preset.
+                isIncludedInBudget = if (userToggledBudget) {
+                    it.isIncludedInBudget
+                } else {
+                    type != AccountType.SAVINGS
+                },
             )
         }
     }
@@ -247,6 +260,7 @@ class AccountEditorViewModel @AssistedInject constructor(
     }
 
     fun onIncludedInBudgetChanged(included: Boolean) {
+        userToggledBudget = true
         _uiState.update { it.copy(isIncludedInBudget = included) }
     }
 

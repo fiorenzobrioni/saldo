@@ -13,6 +13,7 @@ import com.callbackdev.saldo.core.database.migration.MIGRATION_5_6
 import com.callbackdev.saldo.core.database.migration.MIGRATION_6_7
 import com.callbackdev.saldo.core.database.migration.MIGRATION_7_8
 import com.callbackdev.saldo.core.database.migration.MIGRATION_8_9
+import com.callbackdev.saldo.core.database.migration.MIGRATION_10_11
 import com.callbackdev.saldo.core.database.migration.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -391,6 +392,43 @@ class RecurringRuleMigrationTest {
             assertTrue(cursor.moveToNext())
             assertEquals("Checking", cursor.getString(0))
             assertEquals("CHECKING", cursor.getString(1))
+        }
+    }
+
+    @Test
+    fun migrate10To11_rewritesDebitCardToChecking_leavingOtherTypesAlone() {
+        val dbName = "migration-test-10-11"
+
+        helper.createDatabase(dbName, 10).use { db ->
+            listOf("DEBIT_CARD" to "Bancomat", "PREPAID_CARD" to "Postepay").forEach { (type, name) ->
+                db.insert(
+                    "accounts",
+                    android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                    ContentValues().apply {
+                        put("name", name)
+                        put("type", type)
+                        put("currency", "EUR")
+                        put("initialBalanceMinor", 0L)
+                        put("isIncludedInTotal", 1)
+                        put("isIncludedInBudget", 1)
+                        put("isArchived", 0)
+                        put("sortOrder", 0)
+                        put("createdAtEpochMilli", 0L)
+                        put("statementAutoPost", 0)
+                    },
+                )
+            }
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 11, true, MIGRATION_10_11)
+
+        db.query("SELECT name, type FROM accounts ORDER BY id").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Bancomat", cursor.getString(0))
+            assertEquals("CHECKING", cursor.getString(1))
+            assertTrue(cursor.moveToNext())
+            assertEquals("Postepay", cursor.getString(0))
+            assertEquals("PREPAID_CARD", cursor.getString(1))
         }
     }
 
