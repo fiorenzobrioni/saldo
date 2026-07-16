@@ -14,6 +14,24 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-16 - Reset della storia delle migration a un baseline v1
+
+**Fatto:** azzerata la storia delle migration Room in un unico schema baseline v1, intervento una tantum possibile perché l'app non è ancora pubblicata (versionCode 65 -> 66, versionName 0.9.26 -> 0.9.27). Nuovo ADR 23.
+
+- **Rimosso:** gli 11 oggetti `Migration` (1->2 ... 11->12) in `Migrations.kt`, gli schemi esportati storici (`2.json` ... `12.json`), il migration test `RecurringRuleMigrationTest`. `SaldoDatabase.version` torna da 12 a 1; `1.json` rigenerato da KSP dalle entità correnti (7 tabelle: accounts, categories, transactions, tags, transaction_tag_cross_ref, recurring_rules, budgets).
+- **Mantenuto:** la policy ADR (migration esplicite, versionate e testate; mai `fallbackToDestructiveMigration`) resta vincolante dai prossimi giri, e con essa l'infrastruttura: `Migrations.kt` conserva `ALL_MIGRATIONS` (ora `emptyArray()`) con il commento che spiega come aggiungere la prossima migration, `DatabaseModule` continua a iterare l'array (vuoto = nessuna migration), l'export schema (`room.schemaLocation`) e gli assets `MigrationTestHelper` restano in `build.gradle.kts`. Il test di creazione da zero `DatabaseCreationTest` (aggiunto col fix del crash) copre il percorso `onCreate` + seed.
+- **Motivazione:** le vecchie migration esistevano solo per portare avanti i device di test dello sviluppatore (gli ADR 20/21/22 citano quelle trasformazioni dati). Nessun DB in produzione, quindi nessuna storia da preservare: erano solo debito. Il baseline unico elimina anche la divergenza fra schema creato da zero e schema migrato (colonne con `DEFAULT` solo via `ALTER TABLE`) che aveva già causato il crash all'avvio su installazione pulita.
+
+**Decisioni:** baseline a version 1 (non "12 senza migration") come richiesto: numerazione pulita da capo, coerente con un progetto senza storia da mantenere. Gli ADR storici che citano le migration rimosse NON sono stati riscritti: restano registro delle decisioni prese.
+
+**Problemi:** nessuno. Vincolo operativo noto: dopo il reset l'app apre solo su DB creato da zero; un device con un DB v2-v12 va reinstallato o svuotato. L'unico device di test era già stato azzerato (era la causa del crash originale).
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint` verde; `compileDebugAndroidTestKotlin` verde dopo la rimozione del migration test; `1.json` ispezionato (version 1, `categories` con `sortOrderIncome`).
+
+**Prossimo:** alla prossima modifica di schema, ripristinare la trafila completa (Migration + bump + test strumentato) partendo da v1.
+
+---
+
 ## 2026-07-16 - Fix crash all'avvio su installazione pulita
 
 **Fatto:** risolto un crash allo splash che colpiva solo le installazioni da zero (installazione pulita, disinstalla/reinstalla, o "cancella dati"); gli aggiornamenti in-place non erano toccati (versionCode 64 -> 65, versionName 0.9.25 -> 0.9.26).
