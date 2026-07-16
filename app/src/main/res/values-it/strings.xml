@@ -22,11 +22,15 @@
     <!-- Saluti mostrati nell'header della dashboard; uno scelto a caso a ogni apertura. -->
     <string-array name="dashboard_greetings_night">
         <item>Un\'occhiata e poi a letto.</item>
-        <item>Notte fonda? Occhiata veloce.</item>
+        <item>Notte fonda? Solo un attimo.</item>
         <item>I risparmi non dormono mai.</item>
-        <item>Un momento per i conti.</item>
+        <item>Prima di dormire, due conti.</item>
         <item>Un ultimo controllo?</item>
         <item>Buonanotte.</item>
+        <item>Solo tu e i conti.</item>
+        <item>Due conti e sogni sereni.</item>
+        <item>Ancora in piedi? Uno sguardo veloce.</item>
+        <item>Chiudiamo la giornata.</item>
     </string-array>
     <string-array name="dashboard_greetings_morning">
         <item>Buongiorno!</item>
@@ -35,14 +39,22 @@
         <item>Caffè e conti?</item>
         <item>Buona giornata!</item>
         <item>Teniamo d\'occhio le spese.</item>
+        <item>Si comincia: due conti.</item>
+        <item>Colazione fatta, conti dopo.</item>
+        <item>Che si mette in conto oggi?</item>
+        <item>Un buon inizio parte dai conti.</item>
     </string-array>
     <string-array name="dashboard_greetings_afternoon">
         <item>Buon pomeriggio!</item>
         <item>Come procede la giornata?</item>
         <item>Tutto sotto controllo?</item>
-        <item>Controllo di metà giornata.</item>
+        <item>Pausa e due conti?</item>
         <item>Le piccole spese contano.</item>
         <item>Conti in ordine?</item>
+        <item>Metà giornata, tutto a posto?</item>
+        <item>Una pausa per i conti.</item>
+        <item>A che punto sei coi conti?</item>
+        <item>Segna le spese al volo?</item>
     </string-array>
     <string-array name="dashboard_greetings_evening">
         <item>Buonasera!</item>
@@ -51,6 +63,10 @@
         <item>Registra le ultime spese?</item>
         <item>Fine giornata: tutto ok?</item>
         <item>Un minuto ai conti.</item>
+        <item>Come va la serata?</item>
+        <item>Bilancio di fine giornata?</item>
+        <item>Cena e due conti?</item>
+        <item>La serata è tua, i conti pure.</item>
     </string-array>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d conto</item>

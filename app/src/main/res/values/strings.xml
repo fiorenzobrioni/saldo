@@ -26,9 +26,13 @@
         <item>Still up? A quick look.</item>
         <item>Night owl? Welcome back.</item>
         <item>Savings never sleep.</item>
-        <item>A calm look at the books.</item>
+        <item>Two quick sums, then rest.</item>
         <item>One last check before bed?</item>
         <item>Good night.</item>
+        <item>Just you and the numbers.</item>
+        <item>Quiet hours, tidy accounts.</item>
+        <item>Wide awake? A quick glance.</item>
+        <item>Let\'s close out the day.</item>
     </string-array>
     <string-array name="dashboard_greetings_morning">
         <item>Good morning!</item>
@@ -37,6 +41,10 @@
         <item>Coffee and accounts?</item>
         <item>Have a great day!</item>
         <item>Morning! Let\'s track today.</item>
+        <item>Let\'s start with the numbers.</item>
+        <item>Coffee first, then accounts.</item>
+        <item>What\'s on the books today?</item>
+        <item>A good day starts here.</item>
     </string-array>
     <string-array name="dashboard_greetings_afternoon">
         <item>Good afternoon!</item>
@@ -45,6 +53,10 @@
         <item>A quick midday check-in.</item>
         <item>Small expenses count too.</item>
         <item>Afternoon! All in order?</item>
+        <item>Midday, all on track?</item>
+        <item>Take a break for the numbers.</item>
+        <item>Where are you with the books?</item>
+        <item>Log those expenses on the go?</item>
     </string-array>
     <string-array name="dashboard_greetings_evening">
         <item>Good evening!</item>
@@ -53,6 +65,10 @@
         <item>Any expenses to log?</item>
         <item>End of the day: all set?</item>
         <item>A minute for the numbers.</item>
+        <item>How\'s the evening going?</item>
+        <item>Evening tally?</item>
+        <item>Dinner and a quick check?</item>
+        <item>The evening\'s yours - and the books.</item>
     </string-array>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d account</item>

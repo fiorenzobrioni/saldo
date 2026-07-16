@@ -14,6 +14,21 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-16 - Revisione ed espansione dei messaggi di benvenuto della dashboard
+
+**Fatto:** revisione dei saluti a tempo del `DashboardHeader` (array `dashboard_greetings_*` in `values` e `values-it`) e ampliamento da 6 a 10 varianti per fascia. Solo stringhe, nessuna modifica al codice (versionCode 66 -> 67, versionName 0.9.27 -> 0.9.28).
+
+- **Modificate:** notte var. 2 e 4 (rimossa la ripetizione di "occhiata" e il doppione "conti" con la sera), pomeriggio var. 4 (da "Controllo di metà giornata." a "Pausa e due conti?", meno meccanico), notte EN var. 4 (da "A calm look at the books." a "Two quick sums, then rest.").
+- **Aggiunte:** 4 nuove varianti per ciascuna delle 4 fasce (notte, mattina, pomeriggio, sera), sia IT che EN. Registro invariato: brevi (<= ~35 caratteri, compatibili con l'header a due righe), cordiali, neutre rispetto al genere (evitati aggettivi/participi con genere).
+
+**Decisioni:** portate a 10 varianti perché il `greetingRoll` è fissato una volta per apertura app: con 6 sole frasi un utente che apre più volte al giorno rivede in fretta le stesse. La selezione in `DashboardCards.kt` usa già `(roll * greetings.size).toInt()` con `size` letto a runtime dall'array, quindi le nuove stringhe entrano nel pool senza toccare il codice.
+
+**Problemi:** il wrapper Gradle non ha potuto scaricare la distribuzione da github.com (403 di policy egress); usato il Gradle di sistema `/opt/gradle` (stessa versione 8.14.3) per la verifica.
+
+**Verifica:** `gradle testDebugUnitTest lint` verde. `GreetingBandTest` verifica solo la mappatura fascia->ora, nessuna assunzione sul numero di stringhe.
+
+---
+
 ## 2026-07-16 - Reset della storia delle migration a un baseline v1
 
 **Fatto:** azzerata la storia delle migration Room in un unico schema baseline v1, intervento una tantum possibile perché l'app non è ancora pubblicata (versionCode 65 -> 66, versionName 0.9.26 -> 0.9.27). Nuovo ADR 23.
