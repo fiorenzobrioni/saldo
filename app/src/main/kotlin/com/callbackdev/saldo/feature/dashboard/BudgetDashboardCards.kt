@@ -1,5 +1,7 @@
 package com.callbackdev.saldo.feature.dashboard
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,17 +12,27 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Savings
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,18 +53,27 @@ import kotlin.math.roundToInt
  * today while staying on the monthly plan (budget minus spend, pending and
  * upcoming recurring charges, spread over the days left). Turns alarming when
  * the plan is blown, with an explicit icon and wording, never color alone.
- * Rendered only when an overall budget exists; navigates to the budgets screen.
+ * Rendered only when an overall budget exists. Tapping the card expands the
+ * math behind the figure (the only composite number of the app whose formula
+ * is not visible anywhere else); the budgets screen stays one tap away via
+ * the link inside the breakdown.
  */
 @Composable
 internal fun SafeToSpendCard(
     safeToSpend: SafeToSpend,
     currency: Currency,
-    onClick: () -> Unit,
+    onManageBudgets: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val over = safeToSpend.remaining.signum() < 0
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    val contentColor = if (over) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
     Card(
-        onClick = onClick,
+        onClick = { expanded = !expanded },
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(
             containerColor = if (over) {
@@ -64,10 +85,12 @@ internal fun SafeToSpendCard(
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(
-                horizontal = SaldoDimens.cardPaddingLarge,
-                vertical = SaldoDimens.cardPaddingVertical,
-            ),
+            modifier = Modifier
+                .animateContentSize()
+                .padding(
+                    horizontal = SaldoDimens.cardPaddingLarge,
+                    vertical = SaldoDimens.cardPaddingVertical,
+                ),
         ) {
             DashboardCardHeader(
                 icon = Icons.Outlined.Payments,
@@ -76,6 +99,20 @@ internal fun SafeToSpendCard(
                     MaterialTheme.colorScheme.onErrorContainer
                 } else {
                     MaterialTheme.colorScheme.primary
+                },
+                trailingContent = {
+                    val rotation by animateFloatAsState(
+                        targetValue = if (expanded) CHEVRON_EXPANDED_DEGREES else 0f,
+                        label = "stsChevron",
+                    )
+                    Icon(
+                        imageVector = Icons.Outlined.ExpandMore,
+                        contentDescription = stringResource(
+                            if (expanded) R.string.dashboard_sts_collapse else R.string.dashboard_sts_expand,
+                        ),
+                        tint = contentColor,
+                        modifier = Modifier.rotate(rotation),
+                    )
                 },
             )
             Spacer(Modifier.height(8.dp))
@@ -89,7 +126,116 @@ internal fun SafeToSpendCard(
 
                 else -> SafeToSpendContent(safeToSpend, currency)
             }
+            if (expanded) {
+                SafeToSpendBreakdown(
+                    safeToSpend = safeToSpend,
+                    currency = currency,
+                    contentColor = contentColor,
+                    onManageBudgets = onManageBudgets,
+                )
+            }
         }
+    }
+}
+
+/**
+ * The math behind the safe-to-spend figure, one row per leg: the month's
+ * budget minus what is already spent, committed (pending confirmations) and
+ * still due (fixed recurring charges before month end). Legs at zero are
+ * omitted; the remainder row closes the sum. Ends with the link to the
+ * budgets screen, which the card's tap no longer opens directly.
+ */
+@Composable
+private fun SafeToSpendBreakdown(
+    safeToSpend: SafeToSpend,
+    currency: Currency,
+    contentColor: Color,
+    onManageBudgets: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(12.dp))
+        HorizontalDivider(color = contentColor.copy(alpha = DIVIDER_ALPHA))
+        Spacer(Modifier.height(12.dp))
+        BreakdownRow(
+            label = stringResource(R.string.dashboard_sts_detail_budget),
+            amount = MoneyFormatter.format(safeToSpend.budget, currency),
+            contentColor = contentColor,
+        )
+        BreakdownRow(
+            label = stringResource(R.string.dashboard_sts_detail_spent),
+            amount = MoneyFormatter.formatSigned(safeToSpend.spent.negate(), currency),
+            contentColor = contentColor,
+        )
+        if (safeToSpend.pendingCommitted.signum() > 0) {
+            BreakdownRow(
+                label = stringResource(R.string.dashboard_sts_detail_pending),
+                amount = MoneyFormatter.formatSigned(safeToSpend.pendingCommitted.negate(), currency),
+                contentColor = contentColor,
+            )
+        }
+        if (safeToSpend.upcomingRecurring.signum() > 0) {
+            BreakdownRow(
+                label = stringResource(R.string.dashboard_sts_detail_upcoming),
+                amount = MoneyFormatter.formatSigned(safeToSpend.upcomingRecurring.negate(), currency),
+                contentColor = contentColor,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        HorizontalDivider(color = contentColor.copy(alpha = DIVIDER_ALPHA))
+        Spacer(Modifier.height(6.dp))
+        BreakdownRow(
+            label = stringResource(R.string.dashboard_sts_detail_remaining),
+            amount = MoneyFormatter.format(safeToSpend.remaining, currency),
+            contentColor = contentColor,
+            emphasized = true,
+        )
+        Spacer(Modifier.height(4.dp))
+        TextButton(
+            onClick = onManageBudgets,
+            colors = ButtonDefaults.textButtonColors(contentColor = contentColor),
+            modifier = Modifier.align(Alignment.End),
+        ) {
+            Text(stringResource(R.string.dashboard_sts_manage_budgets))
+        }
+    }
+}
+
+@Composable
+private fun BreakdownRow(
+    label: String,
+    amount: String,
+    contentColor: Color,
+    modifier: Modifier = Modifier,
+    emphasized: Boolean = false,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = if (emphasized) {
+                MaterialTheme.typography.bodyMedium
+            } else {
+                MaterialTheme.typography.bodySmall
+            },
+            fontWeight = if (emphasized) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (emphasized) contentColor else contentColor.copy(alpha = LABEL_ALPHA),
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = amount,
+            style = if (emphasized) {
+                MaterialTheme.typography.bodyMedium.tabularNumbers()
+            } else {
+                MaterialTheme.typography.bodySmall.tabularNumbers()
+            },
+            fontWeight = if (emphasized) FontWeight.SemiBold else FontWeight.Medium,
+            color = contentColor,
+        )
     }
 }
 
@@ -320,3 +466,6 @@ private fun PercentLabel(progress: BudgetProgress, modifier: Modifier = Modifier
 
 private const val CATEGORY_PREVIEW_COUNT = 3
 private const val PERCENT = 100
+private const val CHEVRON_EXPANDED_DEGREES = 180f
+private const val DIVIDER_ALPHA = 0.25f
+private const val LABEL_ALPHA = 0.75f

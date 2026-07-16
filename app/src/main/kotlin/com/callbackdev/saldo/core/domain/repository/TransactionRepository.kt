@@ -123,6 +123,18 @@ interface TransactionRepository {
     /** Number of movements that touch [accountId] as source or transfer destination. */
     suspend fun countForAccount(accountId: Long): Int
 
+    /**
+     * Signed sum of an account's own movements (source side only) in
+     * `[start, end)`, in [currency], confirmed movements only. The credit card
+     * statement amount owed for a closed cycle is the negation of this sum.
+     */
+    suspend fun sumOwnMovements(
+        accountId: Long,
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): BigDecimal
+
     /** Number of movements labelled with [categoryId]. */
     suspend fun countForCategory(categoryId: Long): Int
 

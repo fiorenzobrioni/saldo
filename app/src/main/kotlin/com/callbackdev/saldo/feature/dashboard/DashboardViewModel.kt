@@ -21,7 +21,9 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
 import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
@@ -113,6 +115,8 @@ data class DashboardUiState(
     val recurring: RecurringSummary = RecurringSummary(),
     /** Number of recurring movements awaiting confirmation. */
     val pendingCount: Int = 0,
+    /** Confirm-mode credit card statements waiting to be paid (primary currency shown). */
+    val dueStatements: List<DueStatement> = emptyList(),
     val recent: List<TransactionListItem> = emptyList(),
     /** Budget progress in the primary currency, overall first (empty: no budgets set). */
     val budgets: List<BudgetProgress> = emptyList(),
@@ -136,6 +140,7 @@ class DashboardViewModel @Inject constructor(
     private val recurringRuleRepository: RecurringRuleRepository,
     private val observeBudgetProgress: ObserveBudgetProgressUseCase,
     private val observeSafeToSpend: ObserveSafeToSpendUseCase,
+    private val observeDueStatements: ObserveDueStatementsUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -190,7 +195,8 @@ class DashboardViewModel @Inject constructor(
                 observeBudgetProgress(primary),
                 observeSafeToSpend(primary),
                 userPreferences.dashboardCardPreferences,
-            ) { collapsed, budgets, safeToSpend, cardPrefs ->
+                observeDueStatements(),
+            ) { collapsed, budgets, safeToSpend, cardPrefs, dueStatements ->
                 buildState(
                     accounts = accounts,
                     primary = primary,
@@ -199,6 +205,7 @@ class DashboardViewModel @Inject constructor(
                     budgets = budgets,
                     safeToSpend = safeToSpend,
                     cardPrefs = cardPrefs,
+                    dueStatements = dueStatements.filter { it.currency == primary },
                 )
             }
         }
@@ -220,6 +227,7 @@ class DashboardViewModel @Inject constructor(
         budgets: List<BudgetProgress>,
         safeToSpend: SafeToSpend?,
         cardPrefs: DashboardCardPreferences,
+        dueStatements: List<DueStatement>,
     ): DashboardUiState {
         val active = accounts.filter { !it.account.isArchived }
         val totalBalance = active
@@ -256,6 +264,7 @@ class DashboardViewModel @Inject constructor(
             spentMoreThanLastMonth = spentMore,
             recurring = recurringSummary(sources.rules, primary, today),
             pendingCount = sources.pendingCount,
+            dueStatements = dueStatements,
             recent = recent,
             budgets = budgets,
             safeToSpend = safeToSpend,

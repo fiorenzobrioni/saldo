@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.MoneyOff
 import androidx.compose.material.icons.outlined.NotificationsActive
@@ -539,6 +540,77 @@ internal fun PendingConfirmationCard(
                 )
                 Text(
                     text = stringResource(R.string.dashboard_pending_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Dashboard card for credit card statements waiting to be paid (confirm mode):
+ * the amount owed and a tap-through to the accounts screen, where the statement
+ * is settled. Auto-post cards never appear here (they are charged on their own).
+ */
+@Composable
+internal fun StatementDueCard(
+    statements: List<com.callbackdev.saldo.core.domain.usecase.DueStatement>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (statements.isEmpty()) return
+    val single = statements.singleOrNull()
+    val total = statements.fold(java.math.BigDecimal.ZERO) { acc, statement -> acc.add(statement.amount) }
+    val currency = statements.first().currency
+    Card(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(
+                horizontal = SaldoDimens.cardPadding,
+                vertical = SaldoDimens.cardPaddingVertical,
+            ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(AvatarShape)
+                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.CreditCard,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 16.dp),
+            ) {
+                Text(
+                    text = if (single != null) {
+                        stringResource(R.string.dashboard_statement_title_single, single.cardName)
+                    } else {
+                        pluralStringResource(R.plurals.dashboard_statement_title, statements.size, statements.size)
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                Text(
+                    text = stringResource(
+                        R.string.dashboard_statement_subtitle,
+                        MoneyFormatter.format(total, currency),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                 )

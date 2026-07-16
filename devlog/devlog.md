@@ -14,6 +14,95 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-16 - Dettaglio del calcolo nella card Spendibile oggi
+
+**Fatto:** la card "Spendibile oggi" ora si espande con un tap e mostra il calcolo dietro la cifra (versionCode 63 -> 64, versionName 0.9.24 -> 0.9.25). Era l'unica cifra composita dell'app la cui formula non era visibile da nessuna parte.
+
+- **Espansione inline nella card**, non una finestra separata (decisione condivisa con l'utente): il gesto è già nel vocabolario della Dashboard e quattro righe non giustificano un bottom sheet che porti via dalla schermata. Chevron rotante nell'header, altezza animata con `animateContentSize`, stato in `rememberSaveable` (sopravvive alla rotazione, riparte chiusa a ogni apertura).
+- **Scomposizione**: budget del mese, speso finora (negativo esplicito via `formatSigned`), da confermare e ricorrenze entro fine mese (righe mostrate solo se maggiori di zero: a zero non cambiano la somma), divisore e riga "Rimane per il mese" in evidenza. Numeri tabulari; nella variante rossa di superamento tutte le righe usano `onErrorContainer`.
+- **Navigazione preservata**: il tap della card ora apre/chiude il dettaglio invece di andare ai budget; il percorso resta col link "Gestisci budget" in fondo al dettaglio (e la card Budget continua a navigare come prima). Nessuna modifica a dominio o ViewModel: `SafeToSpend` esponeva già tutte le gambe del calcolo.
+
+**Decisioni:** righe a zero omesse; stato di espansione non persistito su DataStore (è curiosità momentanea, non una preferenza).
+
+**Problemi:** nessuno.
+
+**Prossimo:** verifica su device: espansione su entrambe le varianti (normale e superamento), rotazione a card aperta, link "Gestisci budget".
+
+---
+
+## 2026-07-16 - Categoria Prestiti & Finanziamenti, info budget e chiusura del filone tipi di conto
+
+**Fatto:** chiusura del filone tipi di conto (versionCode 62 -> 63, versionName 0.9.23 -> 0.9.24), con due decisioni di prodotto condivise con l'utente.
+
+- **Prestiti/Mutui: nessuna feature dedicata.** La rata di un prestito o di un mutuo è un movimento ricorrente in uscita, e il piano di ammortamento (quota capitale/interessi, debito residuo) è esattamente ciò che VISION esclude ("prestiti e ammortamenti"). Il caso si copre con le ricorrenze esistenti più la categoria giusta: "Affitto/Mutuo" c'era già per la rata del mutuo, e ora si aggiunge **"Prestiti & Finanziamenti"** (EN "Loans & Financing", icona `request_quote` nuova nel set, colore ciano) tra le categorie di spesa predefinite, per prestiti personali e acquisti a rate. Per i prestiti fatti da noi ad altri, i rientri usano la categoria Entrate "Rimborsi" già esistente: una categoria Entrate "Prestiti" avrebbe creato solo ambiguità.
+- **Backfill sul device esistente:** il seed delle categorie gira solo alla prima apertura, quindi la nuova categoria arriva alle installazioni esistenti con la migration dati 11->12 (INSERT con guardia anti-duplicato sul nome e sortOrder in coda; nome italiano hardcoded nella migration: gli unici DB pre-v12 sono i device di test italiani dello sviluppatore, le installazioni nuove ricevono il seed localizzato).
+- **Note e appunti ripulite** su richiesta: rimosse le voci Investimenti/titoli (decisione già registrata nell'ADR 22: mai un tipo di conto, la liquidità destinata a investire si traccia col Conto di risparmio, la cui descrizione in-app lo dice) e Prestiti/Mutui (coperti come sopra, nessuna feature futura). La documentazione di progetto non contiene più riferimenti a lavori che si è deciso di non fare.
+- **Info "come funziona il budget" nell'editor budget:** il banner delle descrizioni dei tipi di conto è stato promosso a componente condiviso `InfoBanner` in `core/designsystem/component` e usato in fondo alla schermata Nuovo/Modifica budget. Tre frasi sulle regole altrimenti invisibili dal form: mese di calendario, spesa effettiva con rimborsi a ridurre, trasferimenti/rettifiche/conti esclusi mai contati, notifiche 80%/100%. È la feature con più regole implicite dell'app, e questa è la schermata in cui l'utente definisce il tetto: il posto giusto per spiegarle.
+
+**Decisioni:** nome "Prestiti & Finanziamenti" nello stile dell'elenco esistente ("Bollette & Utenze"); posizione dopo "Tasse" e prima di "Altro" nel seed (in coda sul device migrato, riordinabile col drag).
+
+**Problemi:** nessuno.
+
+**Prossimo:** verifica su device: la categoria deve comparire nell'elenco dopo l'aggiornamento; creare una ricorrenza in uscita con la nuova categoria per una rata.
+
+---
+
+## 2026-07-16 - Conto di risparmio, descrizioni dei tipi, ritiro della carta di debito
+
+**Fatto:** terzo giro sui tipi di conto (versionCode 61 -> 62, versionName 0.9.22 -> 0.9.23). Design: ADR 22. App in beta su un solo device: nessun codice legacy.
+
+- **`DEBIT_CARD` ritirato dopo una sola release:** ammissione onesta emersa dal confronto con l'utente: un tipo la cui guida dice "probabilmente non usarmi" è un errore di tassonomia. Una carta di debito non è un contenitore di denaro (spende dal conto corrente) e nessuna app premium la modella come conto. Migration dati 10->11: le righe DEBIT_CARD diventano CHECKING; l'enum non ha più il valore. L'educazione passa alla descrizione del tipo Conto corrente ("registra qui anche le spese col bancomat...").
+- **Descrizione d'uso per ogni tipo:** banner informativo sotto il selettore dei tipi, che cambia col tipo selezionato (altezza animata con `animateContentSize`). Sostituisce le due guide sparse di prima e risolve anche il difetto di layout segnalato dall'utente: la guida della carta di credito compariva sotto la valuta (viveva dentro la sezione di configurazione), ora sta sotto i Tipi dove uno la cerca. Testi per tutti e sette i tipi, IT + EN, con note operative: prelievo ATM = trasferimento (contanti), wallet senza saldo = registra sul conto, prepagata = si ricarica con trasferimenti.
+- **Nuovo tipo `SAVINGS` (Conto di risparmio):** il "recinto" per i soldi messi da parte, alimentato e svuotato con trasferimenti. Icona salvadanaio predefinita. Unica opzione dedicata, ed è un default non un campo nuovo: alla selezione l'editor pre-imposta "Includi nel budget" su off (attingere ai risparmi non deve consumare il budget del mese: è il caso d'uso per cui il flag era nato, Fase 9.8). Il preset non tocca mai una scelta esplicita: toggle toccato dall'utente o valore salvato vincono sempre (`userToggledBudget`, stesso pattern di `userPickedIcon`). Niente campo "obiettivo": gli Obiettivi di risparmio restano in v2.0.
+- **Investimenti / titoli: niente tipo dedicato.** VISION li esclude (quotazioni = rete, contro l'offline-first). La liquidità destinata a investimenti si traccia col Conto di risparmio e la sua descrizione lo dice. Prestiti/Mutui annotati in Note e appunti come valutazione futura (richiederebbero una revisione di VISION, che oggi li esclude per scelta).
+
+**Decisioni:** mapping delle righe DEBIT_CARD esistenti su CHECKING (il conto corrente è la semantica reale di una carta di debito); "Conto di risparmio" come nome del tipo (standard; "Salvadanaio" resta nel lessico della descrizione). Ordine dei chip: corrente, risparmio, prepagata, credito, contanti, wallet, altro.
+
+**Problemi:** nessuno.
+
+**Prossimo:** verifica su device: il conto ex-bancomat deve comparire come Conto corrente dopo la migrazione; creazione di un Conto di risparmio (toggle budget pre-spento); banner descrizione che cambia con i tipi.
+
+---
+
+## 2026-07-16 - Tassonomia carte e review delle carte di credito
+
+**Fatto:** secondo giro sulla gestione carte (versionCode 60 -> 61, versionName 0.9.21 -> 0.9.22): review della feature carte di credito con tre fix, saldo iniziale rimosso dalle carte di credito, tipi carta espliciti al posto di "Carta" generica. Design: ADR 21. App in test su un solo device: su indicazione dell'utente, implementazione pulita senza strati di retrocompatibilità.
+
+- **Fix da review (1, il più rilevante):** la mappa degli estratti dovuti per conto teneva l'estratto *più recente* (`associateBy` sovrascrive), ma il settlement paga sempre il *più vecchio*: con più cicli arretrati (device spento a lungo) la CTA "Paga X" avrebbe mostrato l'importo di un ciclo pagandone un altro. Ora tiene il primo (più vecchio) per conto, con test.
+- **Fix da review (2):** barra di utilizzo e CTA non compaiono più sui conti archiviati (la riga archiviata è storia, non uno strumento operativo).
+- **Fix da review (3):** se il conto di addebito veniva archiviato dopo la selezione, il selettore lo escludeva e il campo si svuotava visivamente pur avendo l'id salvato. Il conto referenziato resta selezionabile anche se archiviato (stessa regola introdotta in Fase 9.7 per l'editor ricorrenze).
+- **Saldo iniziale via dalle carte di credito:** il campo è nascosto nell'editor e il salvataggio forza zero. Motivo: l'importo dell'estratto somma i *movimenti* del ciclo, e il saldo iniziale non è un movimento; un "debito iniziale" sarebbe debito fantasma che nessun estratto potrebbe mai addebitare (dopo ogni saldo la carta tornerebbe al valore iniziale invece che a zero). Il percorso giusto per "ora sono a -1000" è la rettifica saldo: crea un ADJUSTMENT datato oggi, che entra nel ciclo corrente e viene addebitato col prossimo estratto. La guida nell'editor ora lo spiega.
+- **Tipi carta espliciti:** rimosso il tipo generico CARD dall'enum (attrito: "la Postepay è Carta o Altro?"); aggiunti `DEBIT_CARD` (guida contestuale nell'editor: una carta di debito spende direttamente dal conto corrente, registra lì se il conto è già tracciato, conto separato solo in caso contrario) e `PREPAID_CARD` (contenitore autonomo che si ricarica con trasferimenti, il caso Postepay, modello standard delle app premium). Migration dati 9->10: `UPDATE accounts SET type = 'DEBIT_CARD' WHERE type = 'CARD'` (necessaria comunque per i conti già presenti sul device di test, l'enum non ha più il valore). Icone dedicate nel picker: `contactless` (default debito) e `add_card` (default prepagata). Banner guida generalizzato (`AccountEditorGuidance`) e riusato da credito e debito.
+- **Idea annotata, non implementata** (Note e appunti): carta di debito come *alias* di un conto tracciato (registrare sulla carta registra sul conto collegato). Eliminerebbe il rischio di doppio conteggio alla radice; nessuna app premium mainstream lo fa; complica editor/filtri/statistiche, da valutare.
+
+**Decisioni:** niente valore legacy CARD nell'enum né mapping di compatibilità nel backup (richiesta esplicita dell'utente: solo lui usa l'app, in test). La migration dati resta perché le migration esplicite sono regola di progetto e i dati sul device di test vanno preservati. Onboarding non toccato: il primo conto è sempre un conto corrente.
+
+**Problemi:** nessuno di rilievo; il fix (1) è emerso proprio dalla review richiesta prima di iniziare le nuove implementazioni.
+
+**Prossimo:** verifica manuale su device: migrazione dei conti esistenti di tipo Carta (devono comparire come Carta di debito), creazione carta prepagata, rettifica saldo su carta di credito e addebito col ciclo successivo.
+
+---
+
+## 2026-07-15 - Carte di credito a saldo (addebito differito)
+
+**Fatto:** nuovo tipo di conto `CREDIT_CARD` per le carte ad addebito differito, con ciclo di fatturazione configurabile, addebito automatico o con conferma, indicatore di utilizzo e "paga estratto" da Dashboard/Conti. versionCode 59 -> 60, versionName 0.9.20 -> 0.9.21. Bancomat deliberatamente escluso (si registra sul conto corrente). Design: ADR 20.
+
+- **Modello di dominio:** aggiunto `AccountType.CREDIT_CARD` e `CreditCardConfig` (giorno di chiusura estratto, giorno di addebito, conto collegato, fido opzionale, modalità auto/conferma, watermark `lastSettledClosing`). Colonne additive su `accounts` (migration 8->9, schema v9): tutte null/false per i conti esistenti. Nessuna FK su `linkedAccountId` (self-reference sulla stessa tabella: integrità gestita in logica applicativa, migrazione con sole `ADD COLUMN`). Backup: campi additivi, versione del file invariata; validazione del payload estesa ai giorni 1..31.
+- **`BillingCycleCalculator` (puro):** date di chiusura/addebito con clamp sui mesi corti (chiusura 31 = ultimo giorno del mese), finestra di ciclo `[start, closing]`, rilevamento estratti scaduti (`paymentDue <= today` e non ancora saldati). Il rilevamento parte dal ciclo più recente e scorre all'indietro (il ciclo appena chiuso spesso non è ancora scaduto: si salta, non si ferma), fermandosi al primo ciclo già saldato e limitato a 24 cicli. Unit test dedicati.
+- **Modellazione contabile (nessun doppio conteggio):** le spese sulla carta sono EXPENSE che portano il saldo del conto carta in negativo (il debito del ciclo) e contano nelle statistiche/budget alla data d'acquisto. L'addebito dell'estratto è **un singolo TRANSFER** dal conto collegato alla carta, che azzera il ciclo ed è escluso dalle statistiche come ogni trasferimento (ADR 8). Il saldo totale riflette il debito come patrimonio reale. L'importo dell'estratto è la negazione della somma dei soli movimenti propri del conto carta nella finestra del ciclo (nuova query DAO `sumOwnMovementsInWindow`, che esclude la gamba entrante del trasferimento di saldo).
+- **Settlement:** `SettleCreditCardStatementUseCase` salda il ciclo scaduto più vecchio (trasferimento se dovuto > 0, avanzamento del watermark in un'unica transazione, mutex a livello di processo, idempotente). `ProcessDueCreditCardStatementsUseCase` auto-posta i cicli scaduti delle carte in modalità automatica e segnala (senza scrivere) quelli in modalità conferma; agganciato al worker giornaliero delle ricorrenze e al catch-up all'avvio (stessa infrastruttura, ADR 4). `CreditCardNotifier` con canale dedicato (estratto addebitato / estratto da pagare). `ObserveDueStatementsUseCase` reattivo (si ricalcola sui cambi di conti/movimenti) alimenta le CTA.
+- **Watermark seminato alla creazione:** una carta appena configurata imposta `lastSettledClosing` alla chiusura precedente a oggi, così la storia pregressa non viene mai riaddebitata; solo i cicli che chiudono da lì in poi generano un estratto.
+- **UI:** editor conto con sezione carta di credito (guida bancomat-vs-credito, stepper giorni, selettore conto collegato limitato alla stessa valuta e non-carta, fido opzionale, selettore modalità di addebito con segmented button); schermata Conti con barra di utilizzo (`ThresholdProgressBar`, soglia ambra all'80%, rosso oltre il fido) e CTA "Paga estratto" con importo e data; scheda Dashboard "Estratto pronto" che porta ai Conti (pattern della card "da confermare").
+- **Spendibile oggi / budget:** nessuna modifica. Modellando la carta come conto a saldo negativo, gli acquisti pesano già come "speso" alla data d'acquisto e il saldo totale mostra già il debito; sottrarre di nuovo il debito dallo spendibile sarebbe stato un doppio conteggio. La visibilità dell'addebito imminente è resa dalla scheda Dashboard, non da una modifica al calcolo.
+
+**Decisioni:** ciclo con giorno di chiusura configurabile (non solo mese di calendario) e doppia modalità di addebito (auto/conferma) selezionabile per conto, come richiesto dall'utente. Nessuna FK sul conto collegato per non complicare la migrazione self-reference. Bancomat fuori dall'app: è uno strumento che preleva subito dal conto corrente, non un contenitore di denaro (si registra direttamente sul conto).
+
+**Problemi:** wrapper Gradle bloccato dal proxy, usata `/opt/gradle/bin/gradle`. Nessun emulatore: migration 8->9 aggiunta come test strumentato (da eseguire su device), verifica via `assembleDebug testDebugUnitTest lint detekt` (verdi) e unit test su calcolo ciclo, settlement e round-trip del mapper. Attenzione risolta in fase di test: con watermark null il calcolatore risale fino a 24 cicli storici (per questo il watermark è seminato alla creazione).
+
+**Prossimo:** verifica manuale su device (setup carta, spesa, addebito auto/conferma, utilizzo, mesi corti). Valutabile in seguito: rilevamento automatico dell'estratto reale via import, promemoria pre-scadenza dedicato.
+
+---
+
 ## 2026-07-15 - Avviso modifiche non salvate sul back negli editor
 
 **Fatto:** dialog di conferma a due opzioni quando si esce da un editor con modifiche non salvate, su tutti e cinque gli editor (Conto, Movimento, Movimento ricorrente, Budget, Categoria). versionCode 58 -> 59, versionName 0.9.19 -> 0.9.20.

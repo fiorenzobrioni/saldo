@@ -21,6 +21,7 @@ import com.callbackdev.saldo.core.domain.model.BudgetProgress
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
 import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.testing.MainDispatcherExtension
@@ -62,6 +63,7 @@ class DashboardViewModelTest {
     private val recurringRuleRepository = mockk<RecurringRuleRepository>()
     private val observeBudgetProgress = mockk<ObserveBudgetProgressUseCase>()
     private val observeSafeToSpend = mockk<ObserveSafeToSpendUseCase>()
+    private val observeDueStatements = mockk<ObserveDueStatementsUseCase>()
 
     private fun account(
         id: Long,
@@ -117,6 +119,7 @@ class DashboardViewModelTest {
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
         every { observeBudgetProgress(any()) } returns flowOf(budgets)
         every { observeSafeToSpend(any()) } returns flowOf(safeToSpend)
+        every { observeDueStatements() } returns flowOf(emptyList())
         return DashboardViewModel(
             accountRepository,
             userPreferences,
@@ -125,6 +128,7 @@ class DashboardViewModelTest {
             recurringRuleRepository,
             observeBudgetProgress,
             observeSafeToSpend,
+            observeDueStatements,
             clock,
         )
     }
@@ -236,6 +240,7 @@ class DashboardViewModelTest {
         every { recurringRuleRepository.observeRules() } returns flowOf(emptyList())
         every { observeBudgetProgress(any()) } returns flowOf(emptyList())
         every { observeSafeToSpend(any()) } returns flowOf(null)
+        every { observeDueStatements() } returns flowOf(emptyList())
         val viewModel = DashboardViewModel(
             accountRepository,
             userPreferences,
@@ -244,6 +249,7 @@ class DashboardViewModelTest {
             recurringRuleRepository,
             observeBudgetProgress,
             observeSafeToSpend,
+            observeDueStatements,
             clock,
         )
 

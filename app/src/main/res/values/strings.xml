@@ -108,7 +108,9 @@
     <string name="accounts_excluded_from_total">Excluded from total</string>
     <string name="accounts_excluded_from_budget">Excluded from budget</string>
     <string name="account_type_checking">Bank account</string>
-    <string name="account_type_card">Card</string>
+    <string name="account_type_savings">Savings account</string>
+    <string name="account_type_prepaid_card">Prepaid card</string>
+    <string name="account_type_credit_card">Credit card</string>
     <string name="account_type_cash">Cash</string>
     <string name="account_type_digital_wallet">Digital wallet</string>
     <string name="account_type_other">Other</string>
@@ -120,6 +122,13 @@
     <string name="accounts_snackbar_archived">"%1$s" archived</string>
     <string name="accounts_snackbar_deleted">Account deleted</string>
     <string name="accounts_snackbar_adjusted">Adjustment of %1$s recorded</string>
+    <string name="accounts_snackbar_statement_settled">Statement paid: %1$s transferred</string>
+    <!-- Credit card row extras -->
+    <string name="account_cc_utilisation_title">Utilisation</string>
+    <string name="account_cc_utilisation_value">%1$s / %2$s · %3$d%%</string>
+    <string name="account_cc_statement_due">Statement ready to pay</string>
+    <string name="account_cc_statement_charge_date">Charged on %1$s</string>
+    <string name="account_cc_pay_statement">Pay %1$s</string>
     <string name="accounts_adjust_title">Adjust balance</string>
     <string name="accounts_adjust_current">Current balance: %1$s</string>
     <string name="accounts_adjust_real_balance">Actual balance</string>
@@ -156,6 +165,35 @@
     <string name="account_editor_include_in_total_hint">If off, the account is tracked but does not count towards the total</string>
     <string name="account_editor_include_in_budget">Include in budget calculation</string>
     <string name="account_editor_include_in_budget_hint">If off, spending on this account does not count towards the budget or safe-to-spend</string>
+
+    <!-- Account type descriptions (banner under the type selector) -->
+    <string name="account_type_info_checking">Your everyday bank account: salary in, payments and withdrawals out. Record here the spending made with your debit or ATM card too: it draws straight from this account and has no balance of its own.</string>
+    <string name="account_type_info_savings">A fence around the money you set aside: fill it and dip into it with transfers from your main account. It counts toward the total balance but is excluded from the budget by default, so drawing on savings never consumes the month\'s budget. It also fits cash parked for investments: the app tracks the amount, not the quotes.</string>
+    <string name="account_type_info_prepaid">A card with its own balance, like a prepaid card: top it up with a transfer and spend straight from it.</string>
+    <string name="account_type_info_credit_card">For deferred cards charged once a month to the linked account. The balance starts at zero: if you already owe something on the current cycle, use "Adjust balance" after saving and it will be charged with the next statement.</string>
+    <string name="account_type_info_cash">The cash in your wallet. An ATM withdrawal is recorded as a transfer from the account to cash: it moves money, it is not an expense.</string>
+    <string name="account_type_info_wallet">A digital wallet with its own balance (PayPal, Satispay, Revolut). If your wallet draws from your bank account without holding a balance, record the spending on the account instead.</string>
+    <string name="account_type_info_other">Any other money container: meal vouchers, gift cards, a shared kitty.</string>
+
+    <!-- Credit card configuration -->
+    <string name="account_cc_section_title">Credit card</string>
+    <string name="account_cc_closing_day">Statement closing day</string>
+    <string name="account_cc_closing_day_hint">Day the billing cycle closes (31 = last day of the month)</string>
+    <string name="account_cc_due_day">Payment day</string>
+    <string name="account_cc_due_day_hint">Day of the following month the statement is charged</string>
+    <string name="account_cc_day_decrease">Decrease day</string>
+    <string name="account_cc_day_increase">Increase day</string>
+    <string name="account_cc_linked_account">Linked account</string>
+    <string name="account_cc_linked_account_hint">The account charged for the statement</string>
+    <string name="account_cc_linked_account_none">Choose an account</string>
+    <string name="account_cc_linked_account_empty">No account with this currency</string>
+    <string name="account_cc_limit">Credit limit (optional)</string>
+    <string name="account_cc_limit_hint">Shows a utilisation bar on the account</string>
+    <string name="account_cc_mode_title">Statement charge</string>
+    <string name="account_cc_mode_confirm">Ask to confirm</string>
+    <string name="account_cc_mode_confirm_hint">On the payment day you get a notification; you confirm to record the transfer.</string>
+    <string name="account_cc_mode_auto">Automatic</string>
+    <string name="account_cc_mode_auto_hint">The transfer is recorded automatically on the payment day.</string>
 
     <!-- Transactions (Phase 3) -->
     <string name="transactions_new">New transaction</string>
@@ -398,6 +436,12 @@
         <item quantity="other">%1$d charges to confirm</item>
     </plurals>
     <string name="dashboard_pending_subtitle">Tap to confirm or skip</string>
+    <string name="dashboard_statement_title_single">%1$s statement ready</string>
+    <plurals name="dashboard_statement_title">
+        <item quantity="one">%1$d statement to pay</item>
+        <item quantity="other">%1$d statements to pay</item>
+    </plurals>
+    <string name="dashboard_statement_subtitle">%1$s · tap to pay</string>
     <string name="notif_channel_activity_name">Recurring transactions</string>
     <string name="notif_channel_confirm_name">Recurring charge confirmations</string>
     <plurals name="notif_activity_title">
@@ -443,6 +487,7 @@
     <string name="seed_category_education">Education</string>
     <string name="seed_category_gifts_given">Gifts given</string>
     <string name="seed_category_taxes">Taxes</string>
+    <string name="seed_category_loans">Loans &amp; Financing</string>
     <string name="seed_category_other_expense">Other</string>
     <string name="seed_category_salary">Salary</string>
     <string name="seed_category_freelance">Freelance</string>
@@ -624,6 +669,7 @@
     <string name="budgets_editor_no_scopes">The monthly budget and every expense category already have one. Edit them from the list.</string>
     <string name="budgets_editor_amount">Monthly limit</string>
     <string name="budgets_editor_amount_hint">Budgets use the primary currency.</string>
+    <string name="budgets_editor_info" formatted="false">A budget covers the calendar month and resets on the 1st. It measures actual spending: refunds reduce it, while transfers, balance adjustments and accounts excluded from the budget never count. At 80% and past the limit you get a notification.</string>
     <string name="budgets_editor_amount_error">Enter an amount greater than zero.</string>
     <string name="budgets_editor_delete">Delete budget</string>
     <string name="budgets_delete_dialog_title">Delete this budget?</string>
@@ -647,6 +693,21 @@
         <item quantity="other">%d budgets exceeded</item>
     </plurals>
 
+    <!-- Credit card statement notifications -->
+    <string name="notif_channel_statement_name">Credit card statements</string>
+    <string name="notif_statement_posted_title">%1$s statement charged</string>
+    <string name="notif_statement_posted_body">%1$s was transferred to cover the statement</string>
+    <string name="notif_statement_confirm_title">%1$s statement ready</string>
+    <string name="notif_statement_confirm_body">%1$s to pay · tap to settle</string>
+    <plurals name="notif_statement_posted_summary_title">
+        <item quantity="one">%d statement charged</item>
+        <item quantity="other">%d statements charged</item>
+    </plurals>
+    <plurals name="notif_statement_confirm_summary_title">
+        <item quantity="one">%d statement to pay</item>
+        <item quantity="other">%d statements to pay</item>
+    </plurals>
+
     <!-- Safe to spend -->
     <string name="dashboard_sts_title">Safe to spend today</string>
     <plurals name="dashboard_sts_month_left">
@@ -656,6 +717,14 @@
     <string name="dashboard_sts_upcoming">Already committed before month end: %1$s</string>
     <string name="dashboard_sts_exhausted">This month\'s budget is used up</string>
     <string name="dashboard_sts_over_hint">Spending and upcoming charges exceed the monthly budget.</string>
+    <string name="dashboard_sts_expand">Show the math</string>
+    <string name="dashboard_sts_collapse">Hide the math</string>
+    <string name="dashboard_sts_detail_budget">Month\'s budget</string>
+    <string name="dashboard_sts_detail_spent">Spent so far</string>
+    <string name="dashboard_sts_detail_pending">Awaiting confirmation</string>
+    <string name="dashboard_sts_detail_upcoming">Recurring due by month end</string>
+    <string name="dashboard_sts_detail_remaining">Left for the month</string>
+    <string name="dashboard_sts_manage_budgets">Manage budgets</string>
 
     <!-- Dashboard visibility settings -->
     <string name="settings_section_dashboard">Dashboard</string>

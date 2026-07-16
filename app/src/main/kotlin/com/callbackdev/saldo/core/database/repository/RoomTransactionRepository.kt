@@ -149,6 +149,16 @@ class RoomTransactionRepository @Inject constructor(
     override suspend fun countForCategory(categoryId: Long): Int =
         transactionDao.countForCategory(categoryId)
 
+    override suspend fun sumOwnMovements(
+        accountId: Long,
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): BigDecimal = MoneyMapper.toAmount(
+        transactionDao.sumOwnMovementsInWindow(accountId, start.toEpochMilli(), end.toEpochMilli()),
+        currency,
+    )
+
     override suspend fun upsert(transaction: Transaction): Long {
         val entity = transaction.toEntity()
         return if (entity.id == 0L) {

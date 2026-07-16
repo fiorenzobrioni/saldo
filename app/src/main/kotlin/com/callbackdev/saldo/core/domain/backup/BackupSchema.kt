@@ -66,6 +66,14 @@ data class AccountBackup(
     val isArchived: Boolean = false,
     val sortOrder: Int = 0,
     val createdAtEpochMilli: Long = 0L,
+    // Credit card fields, added with the credit card feature; older files and
+    // non-credit-card accounts leave them null/false.
+    val creditLimitMinor: Long? = null,
+    val statementClosingDay: Int? = null,
+    val paymentDueDay: Int? = null,
+    val linkedAccountId: Long? = null,
+    val statementAutoPost: Boolean = false,
+    val lastSettledClosingEpochDay: Long? = null,
 )
 
 @Serializable

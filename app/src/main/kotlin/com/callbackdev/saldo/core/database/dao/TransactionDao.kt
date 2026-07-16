@@ -366,4 +366,20 @@ interface TransactionDao {
 
     @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId")
     suspend fun countForCategory(categoryId: Long): Int
+
+    /**
+     * Signed sum of a single account's own movements in `[startMilli, endMilli)`,
+     * confirmed only, in minor units. Only movements whose source is the account
+     * count (`accountId`), so incoming transfer legs (the statement settlement
+     * itself) are excluded. Drives the credit card statement amount: the amount
+     * owed for a closed cycle is the negation of this sum. Zero when none match.
+     */
+    @Query(
+        """
+        SELECT COALESCE(SUM(amountMinor), 0) FROM transactions
+        WHERE accountId = :accountId AND isPending = 0
+            AND timestampEpochMilli >= :startMilli AND timestampEpochMilli < :endMilli
+        """,
+    )
+    suspend fun sumOwnMovementsInWindow(accountId: Long, startMilli: Long, endMilli: Long): Long
 }

@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.accounts
 
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import java.math.BigDecimal
 import java.util.Currency
 
@@ -13,8 +14,13 @@ data class AccountsUiState(
     /** Account whose quick-actions sheet is open, or null. */
     val selected: AccountWithBalance? = null,
     val dialog: AccountsDialog? = null,
+    /** Credit card statements waiting to be paid, keyed by account id. */
+    val dueStatements: Map<Long, DueStatement> = emptyMap(),
 ) {
     val isEmpty: Boolean get() = !isLoading && active.isEmpty() && archived.isEmpty()
+
+    /** The statement due for [accountId], or null. */
+    fun dueStatement(accountId: Long): DueStatement? = dueStatements[accountId]
 }
 
 /** Modal flows on top of the accounts list. */
@@ -52,6 +58,9 @@ sealed interface AccountsEvent {
     data class AccountArchived(val account: Account) : AccountsEvent
 
     data class BalanceAdjusted(val delta: BigDecimal, val currency: Currency) : AccountsEvent
+
+    /** A credit card statement was paid: the transfer covered [amount]. */
+    data class StatementSettled(val amount: BigDecimal, val currency: Currency) : AccountsEvent
 
     data object AccountDeleted : AccountsEvent
 

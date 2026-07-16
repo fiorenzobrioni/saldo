@@ -4,6 +4,7 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.Currency
 
 /** Read/write access to accounts and their computed balances. */
@@ -35,6 +36,12 @@ interface AccountRepository {
 
     /** Inserts a new account (id == 0) or updates an existing one. Returns its id. */
     suspend fun upsert(account: Account): Long
+
+    /**
+     * Advances the credit card settlement watermark to [closing] without
+     * touching the rest of the account row (safe against a concurrent edit).
+     */
+    suspend fun updateSettlementWatermark(accountId: Long, closing: LocalDate)
 
     suspend fun delete(account: Account)
 }

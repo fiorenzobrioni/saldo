@@ -7,7 +7,7 @@ class DefaultCategoriesTest {
 
     @Test
     fun `default set matches the vision list`() {
-        // 16 expense + 5 income categories (see VISION.md).
-        assertEquals(21, DefaultCategories.count)
+        // 17 expense + 5 income categories (see VISION.md).
+        assertEquals(22, DefaultCategories.count)
     }
 }

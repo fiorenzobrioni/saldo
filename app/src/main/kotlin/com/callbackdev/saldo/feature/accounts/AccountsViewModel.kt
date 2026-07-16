@@ -11,6 +11,9 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.AdjustBalanceUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
+import com.callbackdev.saldo.core.domain.usecase.SettleCreditCardStatementUseCase
+import com.callbackdev.saldo.core.domain.usecase.StatementSettlement
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -25,11 +28,14 @@ import java.math.RoundingMode
 import javax.inject.Inject
 
 @HiltViewModel
+@Suppress("TooManyFunctions") // One handler per account action, including the statement settlement.
 class AccountsViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
     private val recurringRuleRepository: RecurringRuleRepository,
     private val adjustBalance: AdjustBalanceUseCase,
+    private val observeDueStatements: ObserveDueStatementsUseCase,
+    private val settleStatement: SettleCreditCardStatementUseCase,
 ) : ViewModel() {
 
     private val dialog = MutableStateFlow<AccountsDialog?>(null)
@@ -39,13 +45,19 @@ class AccountsViewModel @Inject constructor(
         accountRepository.observeAccountsWithBalance(),
         dialog,
         selectedAccountId,
-    ) { accounts, currentDialog, selectedId ->
+        observeDueStatements(),
+    ) { accounts, currentDialog, selectedId, due ->
         AccountsUiState(
             isLoading = false,
             active = accounts.filter { !it.account.isArchived },
             archived = accounts.filter { it.account.isArchived },
             selected = accounts.firstOrNull { it.account.id == selectedId },
             dialog = currentDialog,
+            // Oldest due statement per card: settlement always pays the oldest
+            // cycle first, so the CTA must show that cycle's amount, not the
+            // newest one's (they differ only after a multi-cycle catch-up).
+            dueStatements = due.groupBy { it.accountId }
+                .mapValues { (_, statements) -> statements.first() },
         )
     }.stateIn(
         scope = viewModelScope,
@@ -135,6 +147,23 @@ class AccountsViewModel @Inject constructor(
                     if (result is AdjustBalanceUseCase.Result.Adjusted) {
                         _events.send(
                             AccountsEvent.BalanceAdjusted(result.delta, current.account.currency),
+                        )
+                    }
+                }
+                .onFailure { _events.send(AccountsEvent.WriteFailed) }
+        }
+    }
+
+    /** Pays the oldest due statement of a credit card (confirm-mode action). */
+    fun settleStatement(accountId: Long) {
+        selectedAccountId.value = null
+        viewModelScope.launch {
+            suspendRunCatching { settleStatement.invoke(accountId) }
+                .onSuccess { result ->
+                    if (result is StatementSettlement.Settled && result.amount.signum() > 0) {
+                        val account = accountRepository.getAccount(accountId) ?: return@onSuccess
+                        _events.send(
+                            AccountsEvent.StatementSettled(result.amount, account.currency),
                         )
                     }
                 }

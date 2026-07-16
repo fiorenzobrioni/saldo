@@ -20,6 +20,7 @@ import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.designsystem.theme.SaldoTheme
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
+import com.callbackdev.saldo.core.domain.usecase.ProcessDueCreditCardStatementsUseCase
 import com.callbackdev.saldo.feature.onboarding.OnboardingScreen
 import com.callbackdev.saldo.navigation.SaldoApp
 import dagger.hilt.android.AndroidEntryPoint
@@ -33,6 +34,9 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var generateRecurringMovements: GenerateRecurringMovementsUseCase
+
+    @Inject
+    lateinit var processDueStatements: ProcessDueCreditCardStatementsUseCase
 
     @Inject
     @ApplicationScope
@@ -63,6 +67,10 @@ class MainActivity : ComponentActivity() {
             // is not opened. Launched in the application scope so a configuration
             // change cannot cancel it mid-run.
             applicationScope.launch { runCatching { generateRecurringMovements() } }
+            // Same catch-up rationale for auto-post credit card statements: settle
+            // the cycles that came due while the app was closed. Idempotent, so
+            // overlapping with the periodic worker is harmless.
+            applicationScope.launch { runCatching { processDueStatements() } }
             pendingQuickAction.value = quickActionFrom(intent)
         }
         setContent {

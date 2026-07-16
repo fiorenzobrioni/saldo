@@ -12,6 +12,10 @@ import com.callbackdev.saldo.core.database.migration.MIGRATION_4_5
 import com.callbackdev.saldo.core.database.migration.MIGRATION_5_6
 import com.callbackdev.saldo.core.database.migration.MIGRATION_6_7
 import com.callbackdev.saldo.core.database.migration.MIGRATION_7_8
+import com.callbackdev.saldo.core.database.migration.MIGRATION_8_9
+import com.callbackdev.saldo.core.database.migration.MIGRATION_10_11
+import com.callbackdev.saldo.core.database.migration.MIGRATION_11_12
+import com.callbackdev.saldo.core.database.migration.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -311,6 +315,186 @@ class RecurringRuleMigrationTest {
             assertEquals("Savings", cursor.getString(0))
             // Existing accounts keep counting toward the budget.
             assertEquals(1, cursor.getInt(1))
+        }
+    }
+
+    @Test
+    fun migrate8To9_addsCreditCardColumns_defaultingToPlainAccount() {
+        val dbName = "migration-test-8-9"
+
+        helper.createDatabase(dbName, 8).use { db ->
+            db.insert(
+                "accounts",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("name", "Checking")
+                    put("type", "CHECKING")
+                    put("currency", "EUR")
+                    put("initialBalanceMinor", 0L)
+                    put("isIncludedInTotal", 1)
+                    put("isIncludedInBudget", 1)
+                    put("isArchived", 0)
+                    put("sortOrder", 0)
+                    put("createdAtEpochMilli", 0L)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 9, true, MIGRATION_8_9)
+
+        db.query(
+            "SELECT name, creditLimitMinor, statementClosingDay, paymentDueDay, " +
+                "linkedAccountId, statementAutoPost, lastSettledClosingEpochDay FROM accounts",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Checking", cursor.getString(0))
+            // Every credit card column is null for a pre-existing plain account,
+            // except the NOT NULL auto-post flag, which defaults to 0 (confirm).
+            assertTrue(cursor.isNull(1))
+            assertTrue(cursor.isNull(2))
+            assertTrue(cursor.isNull(3))
+            assertTrue(cursor.isNull(4))
+            assertEquals(0, cursor.getInt(5))
+            assertTrue(cursor.isNull(6))
+        }
+    }
+
+    @Test
+    fun migrate9To10_rewritesGenericCardToDebitCard_leavingOtherTypesAlone() {
+        val dbName = "migration-test-9-10"
+
+        helper.createDatabase(dbName, 9).use { db ->
+            listOf("CARD" to "Postepay", "CHECKING" to "Checking").forEach { (type, name) ->
+                db.insert(
+                    "accounts",
+                    android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                    ContentValues().apply {
+                        put("name", name)
+                        put("type", type)
+                        put("currency", "EUR")
+                        put("initialBalanceMinor", 0L)
+                        put("isIncludedInTotal", 1)
+                        put("isIncludedInBudget", 1)
+                        put("isArchived", 0)
+                        put("sortOrder", 0)
+                        put("createdAtEpochMilli", 0L)
+                        put("statementAutoPost", 0)
+                    },
+                )
+            }
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 10, true, MIGRATION_9_10)
+
+        db.query("SELECT name, type FROM accounts ORDER BY id").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Postepay", cursor.getString(0))
+            assertEquals("DEBIT_CARD", cursor.getString(1))
+            assertTrue(cursor.moveToNext())
+            assertEquals("Checking", cursor.getString(0))
+            assertEquals("CHECKING", cursor.getString(1))
+        }
+    }
+
+    @Test
+    fun migrate10To11_rewritesDebitCardToChecking_leavingOtherTypesAlone() {
+        val dbName = "migration-test-10-11"
+
+        helper.createDatabase(dbName, 10).use { db ->
+            listOf("DEBIT_CARD" to "Bancomat", "PREPAID_CARD" to "Postepay").forEach { (type, name) ->
+                db.insert(
+                    "accounts",
+                    android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                    ContentValues().apply {
+                        put("name", name)
+                        put("type", type)
+                        put("currency", "EUR")
+                        put("initialBalanceMinor", 0L)
+                        put("isIncludedInTotal", 1)
+                        put("isIncludedInBudget", 1)
+                        put("isArchived", 0)
+                        put("sortOrder", 0)
+                        put("createdAtEpochMilli", 0L)
+                        put("statementAutoPost", 0)
+                    },
+                )
+            }
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 11, true, MIGRATION_10_11)
+
+        db.query("SELECT name, type FROM accounts ORDER BY id").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Bancomat", cursor.getString(0))
+            assertEquals("CHECKING", cursor.getString(1))
+            assertTrue(cursor.moveToNext())
+            assertEquals("Postepay", cursor.getString(0))
+            assertEquals("PREPAID_CARD", cursor.getString(1))
+        }
+    }
+
+    @Test
+    fun migrate11To12_backfillsLoansCategory_afterExistingOnes() {
+        val dbName = "migration-test-11-12"
+
+        helper.createDatabase(dbName, 11).use { db ->
+            db.insert(
+                "categories",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("name", "Tasse")
+                    put("type", "EXPENSE")
+                    put("color", 0xFF7043)
+                    put("icon", "account_balance")
+                    put("sortOrder", 7)
+                    put("sortOrderIncome", 7)
+                    put("isDefault", 1)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 12, true, MIGRATION_11_12)
+
+        db.query(
+            "SELECT name, type, icon, sortOrder, isDefault FROM categories " +
+                "WHERE name = 'Prestiti & Finanziamenti'",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("EXPENSE", cursor.getString(1))
+            assertEquals("request_quote", cursor.getString(2))
+            // Appended after the existing categories.
+            assertEquals(8, cursor.getInt(3))
+            assertEquals(1, cursor.getInt(4))
+        }
+    }
+
+    @Test
+    fun migrate11To12_skipsBackfill_whenTheCategoryAlreadyExists() {
+        val dbName = "migration-test-11-12-existing"
+
+        helper.createDatabase(dbName, 11).use { db ->
+            db.insert(
+                "categories",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("name", "Prestiti & Finanziamenti")
+                    put("type", "EXPENSE")
+                    put("color", 0x26C6DA)
+                    put("icon", "request_quote")
+                    put("sortOrder", 0)
+                    put("sortOrderIncome", 0)
+                    put("isDefault", 0)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 12, true, MIGRATION_11_12)
+
+        db.query(
+            "SELECT COUNT(*) FROM categories WHERE name = 'Prestiti & Finanziamenti'",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1, cursor.getInt(0))
         }
     }
 
