@@ -110,39 +110,6 @@ private fun CreditCardSectionLabel(text: String) {
     )
 }
 
-/**
- * Contextual guidance banner of the account editor: describes the selected
- * account type under the type chips. Animates its height when the text
- * changes so switching types feels fluid instead of jumpy.
- */
-@Composable
-internal fun AccountEditorGuidance(text: String, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .animateContentSize(),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Info,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(20.dp),
-            )
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
-        }
-    }
-}
-
 @Composable
 private fun DayStepper(
     title: String,

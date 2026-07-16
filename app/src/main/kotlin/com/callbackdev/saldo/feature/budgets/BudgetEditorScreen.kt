@@ -46,6 +46,7 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
+import com.callbackdev.saldo.core.designsystem.component.InfoBanner
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.navigation.BudgetEditorRoute
 
@@ -202,6 +203,10 @@ private fun EditorForm(
             uiState = uiState,
             onAmountChanged = onAmountChanged,
         )
+        Spacer(Modifier.height(24.dp))
+        // How the budget measures spending: the rules are not visible from
+        // the two fields above, so they are spelled out where the cap is set.
+        InfoBanner(stringResource(R.string.budgets_editor_info))
         Spacer(Modifier.height(32.dp))
     }
 }

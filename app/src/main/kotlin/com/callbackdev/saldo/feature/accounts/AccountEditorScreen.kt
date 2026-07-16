@@ -56,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
+import com.callbackdev.saldo.core.designsystem.component.InfoBanner
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.core.domain.model.Account
@@ -205,7 +206,7 @@ private fun EditorForm(
         Spacer(Modifier.height(12.dp))
         // What the selected type is for and how to use it, right under the
         // selector so the choice and its explanation read as one unit.
-        AccountEditorGuidance(stringResource(uiState.type.infoRes()))
+        InfoBanner(stringResource(uiState.type.infoRes()))
         Spacer(Modifier.height(16.dp))
         CurrencyField(
             selected = uiState.currency,

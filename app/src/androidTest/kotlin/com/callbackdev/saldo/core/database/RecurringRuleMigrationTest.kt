@@ -14,6 +14,7 @@ import com.callbackdev.saldo.core.database.migration.MIGRATION_6_7
 import com.callbackdev.saldo.core.database.migration.MIGRATION_7_8
 import com.callbackdev.saldo.core.database.migration.MIGRATION_8_9
 import com.callbackdev.saldo.core.database.migration.MIGRATION_10_11
+import com.callbackdev.saldo.core.database.migration.MIGRATION_11_12
 import com.callbackdev.saldo.core.database.migration.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -429,6 +430,71 @@ class RecurringRuleMigrationTest {
             assertTrue(cursor.moveToNext())
             assertEquals("Postepay", cursor.getString(0))
             assertEquals("PREPAID_CARD", cursor.getString(1))
+        }
+    }
+
+    @Test
+    fun migrate11To12_backfillsLoansCategory_afterExistingOnes() {
+        val dbName = "migration-test-11-12"
+
+        helper.createDatabase(dbName, 11).use { db ->
+            db.insert(
+                "categories",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("name", "Tasse")
+                    put("type", "EXPENSE")
+                    put("color", 0xFF7043)
+                    put("icon", "account_balance")
+                    put("sortOrder", 7)
+                    put("sortOrderIncome", 7)
+                    put("isDefault", 1)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 12, true, MIGRATION_11_12)
+
+        db.query(
+            "SELECT name, type, icon, sortOrder, isDefault FROM categories " +
+                "WHERE name = 'Prestiti & Finanziamenti'",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("EXPENSE", cursor.getString(1))
+            assertEquals("request_quote", cursor.getString(2))
+            // Appended after the existing categories.
+            assertEquals(8, cursor.getInt(3))
+            assertEquals(1, cursor.getInt(4))
+        }
+    }
+
+    @Test
+    fun migrate11To12_skipsBackfill_whenTheCategoryAlreadyExists() {
+        val dbName = "migration-test-11-12-existing"
+
+        helper.createDatabase(dbName, 11).use { db ->
+            db.insert(
+                "categories",
+                android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                ContentValues().apply {
+                    put("name", "Prestiti & Finanziamenti")
+                    put("type", "EXPENSE")
+                    put("color", 0x26C6DA)
+                    put("icon", "request_quote")
+                    put("sortOrder", 0)
+                    put("sortOrderIncome", 0)
+                    put("isDefault", 0)
+                },
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 12, true, MIGRATION_11_12)
+
+        db.query(
+            "SELECT COUNT(*) FROM categories WHERE name = 'Prestiti & Finanziamenti'",
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1, cursor.getInt(0))
         }
     }
 

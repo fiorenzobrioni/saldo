@@ -14,6 +14,23 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-16 - Categoria Prestiti & Finanziamenti, info budget e chiusura del filone tipi di conto
+
+**Fatto:** chiusura del filone tipi di conto (versionCode 62 -> 63, versionName 0.9.23 -> 0.9.24), con due decisioni di prodotto condivise con l'utente.
+
+- **Prestiti/Mutui: nessuna feature dedicata.** La rata di un prestito o di un mutuo è un movimento ricorrente in uscita, e il piano di ammortamento (quota capitale/interessi, debito residuo) è esattamente ciò che VISION esclude ("prestiti e ammortamenti"). Il caso si copre con le ricorrenze esistenti più la categoria giusta: "Affitto/Mutuo" c'era già per la rata del mutuo, e ora si aggiunge **"Prestiti & Finanziamenti"** (EN "Loans & Financing", icona `request_quote` nuova nel set, colore ciano) tra le categorie di spesa predefinite, per prestiti personali e acquisti a rate. Per i prestiti fatti da noi ad altri, i rientri usano la categoria Entrate "Rimborsi" già esistente: una categoria Entrate "Prestiti" avrebbe creato solo ambiguità.
+- **Backfill sul device esistente:** il seed delle categorie gira solo alla prima apertura, quindi la nuova categoria arriva alle installazioni esistenti con la migration dati 11->12 (INSERT con guardia anti-duplicato sul nome e sortOrder in coda; nome italiano hardcoded nella migration: gli unici DB pre-v12 sono i device di test italiani dello sviluppatore, le installazioni nuove ricevono il seed localizzato).
+- **Note e appunti ripulite** su richiesta: rimosse le voci Investimenti/titoli (decisione già registrata nell'ADR 22: mai un tipo di conto, la liquidità destinata a investire si traccia col Conto di risparmio, la cui descrizione in-app lo dice) e Prestiti/Mutui (coperti come sopra, nessuna feature futura). La documentazione di progetto non contiene più riferimenti a lavori che si è deciso di non fare.
+- **Info "come funziona il budget" nell'editor budget:** il banner delle descrizioni dei tipi di conto è stato promosso a componente condiviso `InfoBanner` in `core/designsystem/component` e usato in fondo alla schermata Nuovo/Modifica budget. Tre frasi sulle regole altrimenti invisibili dal form: mese di calendario, spesa effettiva con rimborsi a ridurre, trasferimenti/rettifiche/conti esclusi mai contati, notifiche 80%/100%. È la feature con più regole implicite dell'app, e questa è la schermata in cui l'utente definisce il tetto: il posto giusto per spiegarle.
+
+**Decisioni:** nome "Prestiti & Finanziamenti" nello stile dell'elenco esistente ("Bollette & Utenze"); posizione dopo "Tasse" e prima di "Altro" nel seed (in coda sul device migrato, riordinabile col drag).
+
+**Problemi:** nessuno.
+
+**Prossimo:** verifica su device: la categoria deve comparire nell'elenco dopo l'aggiornamento; creare una ricorrenza in uscita con la nuova categoria per una rata.
+
+---
+
 ## 2026-07-16 - Conto di risparmio, descrizioni dei tipi, ritiro della carta di debito
 
 **Fatto:** terzo giro sui tipi di conto (versionCode 61 -> 62, versionName 0.9.22 -> 0.9.23). Design: ADR 22. App in beta su un solo device: nessun codice legacy.

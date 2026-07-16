@@ -498,6 +498,7 @@
     <string name="seed_category_education">Istruzione</string>
     <string name="seed_category_gifts_given">Regali fatti</string>
     <string name="seed_category_taxes">Tasse</string>
+    <string name="seed_category_loans">Prestiti &amp; Finanziamenti</string>
     <string name="seed_category_other_expense">Altro</string>
     <string name="seed_category_salary">Stipendio</string>
     <string name="seed_category_freelance">Freelance</string>
@@ -673,6 +674,7 @@
     <string name="budgets_editor_no_scopes">Il budget mensile e tutte le categorie di spesa ne hanno già uno. Modificali dalla lista.</string>
     <string name="budgets_editor_amount">Limite mensile</string>
     <string name="budgets_editor_amount_hint">I budget usano la valuta principale.</string>
+    <string name="budgets_editor_info" formatted="false">Il budget vale per il mese di calendario e riparte il giorno 1. Misura la spesa effettiva: i rimborsi la riducono, mentre trasferimenti, rettifiche saldo e conti esclusi dal budget non contano mai. All\'80% e al superamento del limite ricevi una notifica.</string>
     <string name="budgets_editor_amount_error">Inserisci un importo maggiore di zero.</string>
     <string name="budgets_editor_delete">Elimina budget</string>
     <string name="budgets_delete_dialog_title">Eliminare questo budget?</string>

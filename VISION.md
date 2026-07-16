@@ -173,7 +173,7 @@ Questo richiede supporto architetturale già in fase iniziale (è nel data model
 
 Set predefinito alla prima apertura (personalizzabile e cancellabile):
 
-**Spese:** Casa, Affitto/Mutuo, Spesa alimentare, Ristoranti & Bar, Trasporti, Auto & Carburante, Salute, Shopping, Viaggi, Intrattenimento, Abbonamenti, Bollette & Utenze, Istruzione, Regali fatti, Tasse, Altro
+**Spese:** Casa, Affitto/Mutuo, Spesa alimentare, Ristoranti & Bar, Trasporti, Auto & Carburante, Salute, Shopping, Viaggi, Intrattenimento, Abbonamenti, Bollette & Utenze, Istruzione, Regali fatti, Tasse, Prestiti & Finanziamenti, Altro
 
 **Entrate:** Stipendio, Freelance, Regali ricevuti, Rimborsi, Altro
 

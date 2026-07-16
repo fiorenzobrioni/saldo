@@ -268,6 +268,15 @@
 - [x] Descrizioni: conto corrente (con la nota su bancomat/carte di debito), risparmio (con la nota su liquidità per investimenti: l'app traccia l'importo, non le quotazioni), prepagata, carta di credito (saldo zero + rettifica), contanti (prelievo ATM = trasferimento), wallet digitale, altro; IT + EN
 - [x] Test: preset budget del risparmio (selezione, ritorno, override utente), editor aggiornati; migration 10->11 strumentata (da eseguire su device)
 
+## Fase 9.13 - Categoria Prestiti & Finanziamenti, info budget e pulizia note (luglio 2026)
+
+> Chiusura del filone tipi di conto (versionCode 62 -> 63, versionName 0.9.23 -> 0.9.24). Decisione di prodotto: prestiti e mutui NON diventano una feature dedicata (VISION li esclude), si gestiscono con i movimenti ricorrenti in uscita e la categoria giusta; i rimborsi di denaro prestato usano la categoria Entrate "Rimborsi" già esistente.
+
+- [x] Nuova categoria di spesa predefinita "Prestiti & Finanziamenti" (icona request_quote, EN "Loans & Financing"): copre rate di prestiti personali e finanziamenti; "Affitto/Mutuo" resta per la rata del mutuo
+- [x] Backfill sulle installazioni esistenti con migration dati 11->12 (guardia anti-duplicato se una categoria omonima esiste già); le installazioni nuove la ricevono dal seed localizzato
+- [x] Note e appunti ripulite: rimosse le voci Investimenti/titoli (decisione registrata nell'ADR 22: la liquidità si traccia col Conto di risparmio) e Prestiti/Mutui (coperti da ricorrenze + categoria, nessuna feature futura)
+- [x] Banner informativo promosso a componente condiviso `InfoBanner` (`core/designsystem/component`) e usato in fondo all'editor budget: spiega in tre frasi come il budget misura la spesa (mese di calendario, rimborsi a ridurre, trasferimenti/rettifiche/conti esclusi mai contati, notifiche 80%/100%), regole altrimenti invisibili dai campi del form
+
 ## Fase 10 - Release v1.0
 
 - [ ] Baseline profile (spostato dalla Fase 9: richiede modulo macrobenchmark e generazione su device/emulatore)
@@ -343,9 +352,6 @@
   - Recap mensile condivisibile (stile Wrapped): report generato sul device, esportabile come immagine, zero dati che escono.
   - Quick-add ovunque: widget home (già in v1.5), ~~app shortcut statici~~ (implementati in Fase 9.6), Quick Settings tile: spesa registrata in 2 tap senza aprire l'app.
   - Quick entry testuale: parser offline di "12,50 pizza" → importo + categoria suggerita.
-  - ~~Carta di debito come alias~~ (idea emersa con la tassonomia carte, luglio 2026): superata dal ritiro del tipo DEBIT_CARD (ADR 22): le spese con carta di debito si registrano direttamente sul conto corrente, come spiega la descrizione del tipo.
-  - Prestiti / Mutui (richiesta utente, luglio 2026): tipo di conto passività con piano di rimborso (rata ricorrente che spacca quota capitale / interessi, saldo residuo che scende). Da valutare in una fase futura: oggi VISION esclude esplicitamente "prestiti e ammortamenti", quindi implementarlo richiede prima una revisione condivisa di VISION. Il motore ricorrenze e il modello a saldo negativo della carta di credito sono basi riusabili.
-  - Investimenti / portafoglio titoli: deciso di NON farne un tipo di conto (luglio 2026, ADR 22): quotazioni = rete, contro l'offline-first, e VISION li esclude. La liquidità destinata a investimenti si traccia col Conto di risparmio (la sua descrizione nell'editor lo dice). Da rivalutare solo con una revisione di VISION.
 
 # Bug conosciuti
 

@@ -62,6 +62,13 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * contextual description now explains where to record that spending). Existing
  * DEBIT_CARD rows become CHECKING; the SAVINGS type added in the same release
  * needs no migration. As with v10, the enum value is gone from the code.
+ *
+ * v11 -> v12: data-only. Backfills the "Prestiti & Finanziamenti" default
+ * expense category (loan and financing instalments, tracked as recurring
+ * expenses) into databases seeded before it joined the default set. The name
+ * is Italian on purpose: the seed localizes on first launch, but the only
+ * pre-v12 installs are the developer's Italian test devices. Guarded so it
+ * never duplicates a category the user already created with that name.
  */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -179,6 +186,24 @@ val MIGRATION_10_11: Migration = object : Migration(10, 11) {
     }
 }
 
+@Suppress("MagicNumber") // Schema version numbers.
+val MIGRATION_11_12: Migration = object : Migration(11, 12) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            INSERT INTO categories (name, type, color, icon, sortOrder, sortOrderIncome, isDefault)
+            SELECT 'Prestiti & Finanziamenti', 'EXPENSE', 2541274, 'request_quote',
+                (SELECT COALESCE(MAX(sortOrder), -1) + 1 FROM categories),
+                (SELECT COALESCE(MAX(sortOrderIncome), -1) + 1 FROM categories),
+                1
+            WHERE NOT EXISTS (
+                SELECT 1 FROM categories WHERE name = 'Prestiti & Finanziamenti'
+            )
+            """.trimIndent(),
+        )
+    }
+}
+
 /** All migrations, applied in order by Room. */
 val ALL_MIGRATIONS: Array<Migration> =
     arrayOf(
@@ -192,4 +217,5 @@ val ALL_MIGRATIONS: Array<Migration> =
         MIGRATION_8_9,
         MIGRATION_9_10,
         MIGRATION_10_11,
+        MIGRATION_11_12,
     )

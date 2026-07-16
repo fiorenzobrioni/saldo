@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.Pets
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Redeem
+import androidx.compose.material.icons.outlined.RequestQuote
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.School
@@ -93,6 +94,7 @@ object CategoryVisuals {
         "school" to Icons.Outlined.School,
         "card_giftcard" to Icons.Outlined.CardGiftcard,
         "account_balance" to Icons.Outlined.AccountBalance,
+        "request_quote" to Icons.Outlined.RequestQuote,
         "payments" to Icons.Outlined.Payments,
         "work" to Icons.Outlined.Work,
         "redeem" to Icons.Outlined.Redeem,
