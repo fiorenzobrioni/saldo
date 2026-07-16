@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-16 - Fix crash all'avvio su installazione pulita
+
+**Fatto:** risolto un crash allo splash che colpiva solo le installazioni da zero (installazione pulita, disinstalla/reinstalla, o "cancella dati"); gli aggiornamenti in-place non erano toccati (versionCode 64 -> 65, versionName 0.9.25 -> 0.9.26).
+
+- **Causa:** `DatabaseSeedCallback.onCreate` inserisce le categorie predefinite via SQL raw (`ContentValues`) e non valorizzava la colonna `sortOrderIncome`. Quella colonna è stata introdotta con la migration 6->7 come `ALTER TABLE categories ADD COLUMN sortOrderIncome INTEGER NOT NULL DEFAULT 0`: sui DB aggiornati in-place la colonna porta con sé il `DEFAULT 0`, quindi un insert che la omette regge. Su uno schema creato da zero, invece, Room genera il `CREATE TABLE` dall'entità senza clausole `DEFAULT` (`sortOrderIncome INTEGER NOT NULL`, verificato in `schemas/.../12.json`): l'insert del seed falliva con `SQLiteConstraintException`, abortendo `onCreate`. La creazione veniva rollbackata e ritentata a ogni avvio, con crash immediato. Il bug era latente da quando `sortOrderIncome` è stata aggiunta (v0.9.18) ma invisibile perché il device di test veniva sempre aggiornato in-place.
+- **Fix:** il seed valorizza `sortOrderIncome` (`put("sortOrderIncome", category.sortOrderIncome)`), con un commento che ricorda che nel percorso di creazione da zero ogni colonna NOT NULL va impostata esplicitamente (niente default SQL, a differenza delle colonne aggiunte poi via ALTER TABLE).
+- **Verifica:** aggiunto il test strumentato `DatabaseCreationTest` che costruisce il `SaldoDatabase` reale con il seed callback ed esercita `onCreate` (percorso prima non coperto: i test di migrazione coprivano solo gli upgrade ALTER TABLE). Verifica che tutte le categorie predefinite siano seminate e che `sortOrderIncome` sia popolato. `./gradlew assembleDebug testDebugUnitTest lint` verde.
+
+**Decisioni:** fix mirato sull'insert del seed invece di aggiungere `@ColumnInfo(defaultValue = "0")` all'entità: quest'ultima strada avrebbe cambiato lo schema esportato v12 (e l'identity hash) senza bump di versione, o richiesto una v13 con migration no-op, per eliminare un disallineamento di default che Room tollera. Il percorso di creazione da zero già costruisce l'intero `CategoryEntity`: valorizzare tutte le sue colonne è la correzione onesta della svista.
+
+**Problemi:** nessuno oltre alla diagnosi.
+
+**Prossimo:** verifica su device di un ciclo "cancella dati" -> riapertura, che ora deve arrivare all'onboarding/app invece di chiudersi.
+
+---
+
 ## 2026-07-16 - Dettaglio del calcolo nella card Spendibile oggi
 
 **Fatto:** la card "Spendibile oggi" ora si espande con un tap e mostra il calcolo dietro la cifra (versionCode 63 -> 64, versionName 0.9.24 -> 0.9.25). Era l'unica cifra composita dell'app la cui formula non era visibile da nessuna parte.

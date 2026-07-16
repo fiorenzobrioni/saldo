@@ -399,3 +399,7 @@ Trovati dalla terza review completa di luglio 2026 (fix nella Fase 9.7):
 - [x] Insets di sistema applicati due volte nell'onboarding (padding dello Scaffold + statusBars/navigationBars espliciti). Fix: insets consumati una volta sola (commit a3fb9a9)
 - [x] Cambio tab distruggeva i ViewModel (skeleton, ri-query e perdita di scroll/ricerca/periodo a ogni rientro). Fix: back stack per tab (commit 436d8cd)
 - [x] Icona bianca sui colori chiari della palette (~1.6-2.5:1 di contrasto su lime, verde chiaro, ambra, azzurro). Fix: `contentColorOn` per luminanza (commit ecc2d1c)
+
+Trovati a luglio 2026:
+
+- [x] Crash all'avvio su installazione pulita o dopo "cancella dati": lo splash appariva e l'app si chiudeva subito. Causa: `DatabaseSeedCallback` inseriva le categorie predefinite omettendo la colonna `sortOrderIncome`. Sui DB aggiornati in-place la colonna esiste con `DEFAULT 0` (aggiunta via `ALTER TABLE` nella migration 6→7), quindi l'insert reggeva; su uno schema creato da zero Room non genera default, la colonna è `NOT NULL` senza default e l'insert falliva con constraint violation, abortendo `onCreate` a ogni avvio. Non era visibile finché si aggiornava sempre in-place senza reinstallare. Fix: il seed valorizza `sortOrderIncome`; aggiunto test strumentato `DatabaseCreationTest` che esercita il percorso di creazione da zero, prima non coperto (v0.9.26)
