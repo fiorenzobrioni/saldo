@@ -717,6 +717,14 @@
     <string name="dashboard_sts_upcoming">Already committed before month end: %1$s</string>
     <string name="dashboard_sts_exhausted">This month\'s budget is used up</string>
     <string name="dashboard_sts_over_hint">Spending and upcoming charges exceed the monthly budget.</string>
+    <string name="dashboard_sts_expand">Show the math</string>
+    <string name="dashboard_sts_collapse">Hide the math</string>
+    <string name="dashboard_sts_detail_budget">Month\'s budget</string>
+    <string name="dashboard_sts_detail_spent">Spent so far</string>
+    <string name="dashboard_sts_detail_pending">Awaiting confirmation</string>
+    <string name="dashboard_sts_detail_upcoming">Recurring due by month end</string>
+    <string name="dashboard_sts_detail_remaining">Left for the month</string>
+    <string name="dashboard_sts_manage_budgets">Manage budgets</string>
 
     <!-- Dashboard visibility settings -->
     <string name="settings_section_dashboard">Dashboard</string>

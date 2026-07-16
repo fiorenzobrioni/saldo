@@ -277,6 +277,15 @@
 - [x] Note e appunti ripulite: rimosse le voci Investimenti/titoli (decisione registrata nell'ADR 22: la liquidità si traccia col Conto di risparmio) e Prestiti/Mutui (coperti da ricorrenze + categoria, nessuna feature futura)
 - [x] Banner informativo promosso a componente condiviso `InfoBanner` (`core/designsystem/component`) e usato in fondo all'editor budget: spiega in tre frasi come il budget misura la spesa (mese di calendario, rimborsi a ridurre, trasferimenti/rettifiche/conti esclusi mai contati, notifiche 80%/100%), regole altrimenti invisibili dai campi del form
 
+## Fase 9.14 - Dettaglio del calcolo nella card Spendibile oggi (luglio 2026)
+
+> Micro-feature su richiesta utente (versionCode 63 -> 64, versionName 0.9.24 -> 0.9.25): la cifra "Spendibile oggi" è l'unica dell'app con una formula composita non visibile altrove; ora il tap sulla card la spiega.
+
+- [x] Card espandibile inline (pattern già nel vocabolario della Dashboard, nessuna finestra separata): tap per aprire/chiudere, chevron rotante nell'header, altezza animata; stato non persistito (si riapre chiusa)
+- [x] Scomposizione riga per riga: budget del mese, speso finora (negativo), da confermare e ricorrenze entro fine mese (mostrate solo se maggiori di zero), divisore e riga "Rimane per il mese" in evidenza; numeri tabulari, colori corretti anche nella variante rossa di superamento
+- [x] Il tap della card non naviga più ai budget: il percorso resta col link "Gestisci budget" in fondo al dettaglio (la card Budget continua a navigare come prima)
+- [x] Accessibilità: chevron con contentDescription esplicita ("Mostra/Nascondi il calcolo"); nessuna informazione affidata al solo colore
+
 ## Fase 10 - Release v1.0
 
 - [ ] Baseline profile (spostato dalla Fase 9: richiede modulo macrobenchmark e generazione su device/emulatore)

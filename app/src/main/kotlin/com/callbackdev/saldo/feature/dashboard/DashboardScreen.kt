@@ -160,7 +160,7 @@ private fun DashboardContent(
                 SafeToSpendCard(
                     safeToSpend = safeToSpend,
                     currency = uiState.primaryCurrency,
-                    onClick = onBudgetsClick,
+                    onManageBudgets = onBudgetsClick,
                 )
             }
         }

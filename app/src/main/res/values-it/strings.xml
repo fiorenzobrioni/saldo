@@ -727,6 +727,14 @@
     <string name="dashboard_sts_upcoming">Già impegnati entro fine mese: %1$s</string>
     <string name="dashboard_sts_exhausted">Budget del mese esaurito</string>
     <string name="dashboard_sts_over_hint">Spese e addebiti in arrivo superano il budget mensile.</string>
+    <string name="dashboard_sts_expand">Mostra il calcolo</string>
+    <string name="dashboard_sts_collapse">Nascondi il calcolo</string>
+    <string name="dashboard_sts_detail_budget">Budget del mese</string>
+    <string name="dashboard_sts_detail_spent">Speso finora</string>
+    <string name="dashboard_sts_detail_pending">Da confermare</string>
+    <string name="dashboard_sts_detail_upcoming">Ricorrenze entro fine mese</string>
+    <string name="dashboard_sts_detail_remaining">Rimane per il mese</string>
+    <string name="dashboard_sts_manage_budgets">Gestisci budget</string>
 
     <!-- Dashboard visibility settings -->
     <string name="settings_section_dashboard">Dashboard</string>

@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-16 - Dettaglio del calcolo nella card Spendibile oggi
+
+**Fatto:** la card "Spendibile oggi" ora si espande con un tap e mostra il calcolo dietro la cifra (versionCode 63 -> 64, versionName 0.9.24 -> 0.9.25). Era l'unica cifra composita dell'app la cui formula non era visibile da nessuna parte.
+
+- **Espansione inline nella card**, non una finestra separata (decisione condivisa con l'utente): il gesto è già nel vocabolario della Dashboard e quattro righe non giustificano un bottom sheet che porti via dalla schermata. Chevron rotante nell'header, altezza animata con `animateContentSize`, stato in `rememberSaveable` (sopravvive alla rotazione, riparte chiusa a ogni apertura).
+- **Scomposizione**: budget del mese, speso finora (negativo esplicito via `formatSigned`), da confermare e ricorrenze entro fine mese (righe mostrate solo se maggiori di zero: a zero non cambiano la somma), divisore e riga "Rimane per il mese" in evidenza. Numeri tabulari; nella variante rossa di superamento tutte le righe usano `onErrorContainer`.
+- **Navigazione preservata**: il tap della card ora apre/chiude il dettaglio invece di andare ai budget; il percorso resta col link "Gestisci budget" in fondo al dettaglio (e la card Budget continua a navigare come prima). Nessuna modifica a dominio o ViewModel: `SafeToSpend` esponeva già tutte le gambe del calcolo.
+
+**Decisioni:** righe a zero omesse; stato di espansione non persistito su DataStore (è curiosità momentanea, non una preferenza).
+
+**Problemi:** nessuno.
+
+**Prossimo:** verifica su device: espansione su entrambe le varianti (normale e superamento), rotazione a card aperta, link "Gestisci budget".
+
+---
+
 ## 2026-07-16 - Categoria Prestiti & Finanziamenti, info budget e chiusura del filone tipi di conto
 
 **Fatto:** chiusura del filone tipi di conto (versionCode 62 -> 63, versionName 0.9.23 -> 0.9.24), con due decisioni di prodotto condivise con l'utente.
