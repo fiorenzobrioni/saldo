@@ -201,6 +201,10 @@ private fun EditorForm(
         )
         SectionLabel(stringResource(R.string.account_editor_section_type))
         TypeChips(selected = uiState.type, onTypeChanged = onTypeChanged)
+        if (uiState.type == AccountType.DEBIT_CARD) {
+            Spacer(Modifier.height(12.dp))
+            AccountEditorGuidance(stringResource(R.string.account_debit_guidance))
+        }
         Spacer(Modifier.height(16.dp))
         CurrencyField(
             selected = uiState.currency,
@@ -209,11 +213,16 @@ private fun EditorForm(
             onCurrencyChanged = onCurrencyChanged,
         )
         Spacer(Modifier.height(16.dp))
-        InitialBalanceField(
-            input = uiState.initialBalanceInput,
-            currency = uiState.currency,
-            onChanged = onInitialBalanceChanged,
-        )
+        // A credit card has no initial balance: it always starts at zero and
+        // pre-existing debt is entered via a balance adjustment (see the
+        // guidance in the credit card section).
+        if (!uiState.isCreditCard) {
+            InitialBalanceField(
+                input = uiState.initialBalanceInput,
+                currency = uiState.currency,
+                onChanged = onInitialBalanceChanged,
+            )
+        }
         if (uiState.isCreditCard) {
             CreditCardSection(
                 uiState = uiState,

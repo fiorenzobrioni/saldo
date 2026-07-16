@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Currency
 
@@ -48,7 +49,7 @@ class AccountEditorViewModelTest {
         val viewModel = viewModel()
 
         viewModel.onNameChanged("  Conto Intesa  ")
-        viewModel.onTypeChanged(AccountType.CARD)
+        viewModel.onTypeChanged(AccountType.DEBIT_CARD)
         viewModel.onCurrencyChanged(eur)
         viewModel.onInitialBalanceChanged("1234,56")
         viewModel.onColorSelected(AccountVisuals.colors[3])
@@ -64,7 +65,7 @@ class AccountEditorViewModelTest {
         with(saved.captured) {
             assertEquals(0L, id)
             assertEquals("Conto Intesa", name)
-            assertEquals(AccountType.CARD, type)
+            assertEquals(AccountType.DEBIT_CARD, type)
             assertEquals(eur, currency)
             assertEquals(BigDecimal("1234.56"), initialBalance)
             assertEquals(AccountVisuals.colors[3], color)
@@ -74,6 +75,59 @@ class AccountEditorViewModelTest {
             assertFalse(isArchived)
             assertEquals(fixedInstant, createdAt)
         }
+    }
+
+    @Test
+    fun `a credit card saves with zero balance, its config and a seeded watermark`() = runTest {
+        val saved = slot<Account>()
+        coEvery { accountRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel()
+
+        viewModel.onNameChanged("Carta di credito")
+        viewModel.onTypeChanged(AccountType.CREDIT_CARD)
+        // Typed before switching type, or by any stale state: must be ignored.
+        viewModel.onInitialBalanceChanged("999")
+        viewModel.onStatementClosingDayChanged(20)
+        viewModel.onPaymentDueDayChanged(5)
+        viewModel.onLinkedAccountChanged(2L)
+        viewModel.onCreditLimitChanged("1500")
+        viewModel.onStatementAutoPostChanged(true)
+        viewModel.save()
+
+        viewModel.events.test {
+            assertEquals(AccountEditorEvent.Saved, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        with(saved.captured) {
+            // No initial debt: a credit card always starts from zero.
+            assertEquals(BigDecimal.ZERO, initialBalance)
+            val config = creditCard!!
+            assertEquals(20, config.statementClosingDay)
+            assertEquals(5, config.paymentDueDay)
+            assertEquals(2L, config.linkedAccountId)
+            assertEquals(BigDecimal("1500"), config.creditLimit)
+            assertTrue(config.autoPost)
+            // Watermark seeded at the last closing before today (clock is
+            // 2026-07-08, closing day 20): history is never back-charged.
+            assertEquals(LocalDate.of(2026, 6, 20), config.lastSettledClosing)
+        }
+    }
+
+    @Test
+    fun `a non credit card saves without a credit card config`() = runTest {
+        val saved = slot<Account>()
+        coEvery { accountRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel()
+
+        viewModel.onNameChanged("Postepay")
+        viewModel.onTypeChanged(AccountType.PREPAID_CARD)
+        viewModel.save()
+
+        viewModel.events.test {
+            assertEquals(AccountEditorEvent.Saved, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(null, saved.captured.creditCard)
     }
 
     @Test
@@ -172,7 +226,7 @@ class AccountEditorViewModelTest {
         assertEquals(AccountVisuals.defaultIconFor(AccountType.CASH), viewModel.uiState.value.icon)
 
         viewModel.onIconSelected("home")
-        viewModel.onTypeChanged(AccountType.CARD)
+        viewModel.onTypeChanged(AccountType.DEBIT_CARD)
         assertEquals("home", viewModel.uiState.value.icon)
     }
 

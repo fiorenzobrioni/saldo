@@ -64,7 +64,7 @@ internal fun CreditCardSection(
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         CreditCardSectionLabel(stringResource(R.string.account_cc_section_title))
-        GuidanceCard()
+        AccountEditorGuidance(stringResource(R.string.account_cc_guidance))
         Spacer(Modifier.height(16.dp))
         DayStepper(
             title = stringResource(R.string.account_cc_closing_day),
@@ -109,8 +109,9 @@ private fun CreditCardSectionLabel(text: String) {
     )
 }
 
+/** Contextual guidance banner of the account editor (credit card and debit card notes). */
 @Composable
-private fun GuidanceCard(modifier: Modifier = Modifier) {
+internal fun AccountEditorGuidance(text: String, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
@@ -127,7 +128,7 @@ private fun GuidanceCard(modifier: Modifier = Modifier) {
                 modifier = Modifier.size(20.dp),
             )
             Text(
-                text = stringResource(R.string.account_cc_guidance),
+                text = text,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )

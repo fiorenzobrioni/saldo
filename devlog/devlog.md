@@ -14,6 +14,25 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-16 - Tassonomia carte e review delle carte di credito
+
+**Fatto:** secondo giro sulla gestione carte (versionCode 60 -> 61, versionName 0.9.21 -> 0.9.22): review della feature carte di credito con tre fix, saldo iniziale rimosso dalle carte di credito, tipi carta espliciti al posto di "Carta" generica. Design: ADR 21. App in test su un solo device: su indicazione dell'utente, implementazione pulita senza strati di retrocompatibilità.
+
+- **Fix da review (1, il più rilevante):** la mappa degli estratti dovuti per conto teneva l'estratto *più recente* (`associateBy` sovrascrive), ma il settlement paga sempre il *più vecchio*: con più cicli arretrati (device spento a lungo) la CTA "Paga X" avrebbe mostrato l'importo di un ciclo pagandone un altro. Ora tiene il primo (più vecchio) per conto, con test.
+- **Fix da review (2):** barra di utilizzo e CTA non compaiono più sui conti archiviati (la riga archiviata è storia, non uno strumento operativo).
+- **Fix da review (3):** se il conto di addebito veniva archiviato dopo la selezione, il selettore lo escludeva e il campo si svuotava visivamente pur avendo l'id salvato. Il conto referenziato resta selezionabile anche se archiviato (stessa regola introdotta in Fase 9.7 per l'editor ricorrenze).
+- **Saldo iniziale via dalle carte di credito:** il campo è nascosto nell'editor e il salvataggio forza zero. Motivo: l'importo dell'estratto somma i *movimenti* del ciclo, e il saldo iniziale non è un movimento; un "debito iniziale" sarebbe debito fantasma che nessun estratto potrebbe mai addebitare (dopo ogni saldo la carta tornerebbe al valore iniziale invece che a zero). Il percorso giusto per "ora sono a -1000" è la rettifica saldo: crea un ADJUSTMENT datato oggi, che entra nel ciclo corrente e viene addebitato col prossimo estratto. La guida nell'editor ora lo spiega.
+- **Tipi carta espliciti:** rimosso il tipo generico CARD dall'enum (attrito: "la Postepay è Carta o Altro?"); aggiunti `DEBIT_CARD` (guida contestuale nell'editor: una carta di debito spende direttamente dal conto corrente, registra lì se il conto è già tracciato, conto separato solo in caso contrario) e `PREPAID_CARD` (contenitore autonomo che si ricarica con trasferimenti, il caso Postepay, modello standard delle app premium). Migration dati 9->10: `UPDATE accounts SET type = 'DEBIT_CARD' WHERE type = 'CARD'` (necessaria comunque per i conti già presenti sul device di test, l'enum non ha più il valore). Icone dedicate nel picker: `contactless` (default debito) e `add_card` (default prepagata). Banner guida generalizzato (`AccountEditorGuidance`) e riusato da credito e debito.
+- **Idea annotata, non implementata** (Note e appunti): carta di debito come *alias* di un conto tracciato (registrare sulla carta registra sul conto collegato). Eliminerebbe il rischio di doppio conteggio alla radice; nessuna app premium mainstream lo fa; complica editor/filtri/statistiche, da valutare.
+
+**Decisioni:** niente valore legacy CARD nell'enum né mapping di compatibilità nel backup (richiesta esplicita dell'utente: solo lui usa l'app, in test). La migration dati resta perché le migration esplicite sono regola di progetto e i dati sul device di test vanno preservati. Onboarding non toccato: il primo conto è sempre un conto corrente.
+
+**Problemi:** nessuno di rilievo; il fix (1) è emerso proprio dalla review richiesta prima di iniziare le nuove implementazioni.
+
+**Prossimo:** verifica manuale su device: migrazione dei conti esistenti di tipo Carta (devono comparire come Carta di debito), creazione carta prepagata, rettifica saldo su carta di credito e addebito col ciclo successivo.
+
+---
+
 ## 2026-07-15 - Carte di credito a saldo (addebito differito)
 
 **Fatto:** nuovo tipo di conto `CREDIT_CARD` per le carte ad addebito differito, con ciclo di fatturazione configurabile, addebito automatico o con conferma, indicatore di utilizzo e "paga estratto" da Dashboard/Conti. versionCode 59 -> 60, versionName 0.9.20 -> 0.9.21. Bancomat deliberatamente escluso (si registra sul conto corrente). Design: ADR 20.

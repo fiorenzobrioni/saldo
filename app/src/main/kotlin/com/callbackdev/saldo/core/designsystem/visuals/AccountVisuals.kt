@@ -5,7 +5,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.AddCard
 import androidx.compose.material.icons.outlined.CardGiftcard
+import androidx.compose.material.icons.outlined.Contactless
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.DirectionsCar
@@ -52,6 +54,8 @@ object AccountVisuals {
     private val icons: Map<String, ImageVector> = linkedMapOf(
         "account_balance" to Icons.Outlined.AccountBalance,
         "credit_card" to Icons.Outlined.CreditCard,
+        "contactless" to Icons.Outlined.Contactless,
+        "add_card" to Icons.Outlined.AddCard,
         "payments" to Icons.Outlined.Payments,
         "wallet" to Icons.Outlined.Wallet,
         "account_balance_wallet" to Icons.Outlined.AccountBalanceWallet,
@@ -77,7 +81,8 @@ object AccountVisuals {
     /** Default icon for a freshly selected account type. */
     fun defaultIconFor(type: AccountType): String = when (type) {
         AccountType.CHECKING -> "account_balance"
-        AccountType.CARD -> "wallet"
+        AccountType.DEBIT_CARD -> "contactless"
+        AccountType.PREPAID_CARD -> "add_card"
         AccountType.CREDIT_CARD -> "credit_card"
         AccountType.CASH -> "payments"
         AccountType.DIGITAL_WALLET -> "wallet"
@@ -93,7 +98,8 @@ object AccountVisuals {
 @StringRes
 fun AccountType.labelRes(): Int = when (this) {
     AccountType.CHECKING -> R.string.account_type_checking
-    AccountType.CARD -> R.string.account_type_card
+    AccountType.DEBIT_CARD -> R.string.account_type_debit_card
+    AccountType.PREPAID_CARD -> R.string.account_type_prepaid_card
     AccountType.CREDIT_CARD -> R.string.account_type_credit_card
     AccountType.CASH -> R.string.account_type_cash
     AccountType.DIGITAL_WALLET -> R.string.account_type_digital_wallet

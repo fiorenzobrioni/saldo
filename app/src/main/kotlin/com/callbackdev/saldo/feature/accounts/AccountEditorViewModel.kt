@@ -111,14 +111,17 @@ class AccountEditorViewModel @AssistedInject constructor(
     /**
      * Accounts eligible as the statement's linked account: same currency as the
      * card, not archived, not the card itself, and not another credit card
-     * (a card cannot pay a card). Updates as the chosen currency changes.
+     * (a card cannot pay a card). Updates as the chosen currency changes. The
+     * account currently referenced stays selectable even if archived, so an
+     * archival elsewhere never blanks the field (same rule as the recurring
+     * rule editor, Fase 9.7).
      */
     val linkedAccountCandidates: StateFlow<List<Account>> = combine(
         accountRepository.observeAccountsWithBalance(),
         _uiState,
     ) { accounts, state ->
         accounts.map { it.account }.filter { candidate ->
-            !candidate.isArchived &&
+            (!candidate.isArchived || candidate.id == state.linkedAccountId) &&
                 candidate.id != route.accountId &&
                 candidate.type != AccountType.CREDIT_CARD &&
                 candidate.currency == state.currency
@@ -276,7 +279,16 @@ class AccountEditorViewModel @AssistedInject constructor(
             _uiState.update { it.copy(showValidation = true) }
             return
         }
-        val initialBalance = MoneyInput.parse(state.initialBalanceInput) ?: BigDecimal.ZERO
+        // A credit card's balance always starts from zero: an "initial debt"
+        // would be phantom debt no statement could ever settle (the statement
+        // amount sums the cycle's movements, and the initial balance is not a
+        // movement). Pre-existing debt is recorded via a balance adjustment,
+        // which is a movement and gets charged with the next statement.
+        val initialBalance = if (state.isCreditCard) {
+            BigDecimal.ZERO
+        } else {
+            MoneyInput.parse(state.initialBalanceInput) ?: BigDecimal.ZERO
+        }
         val base = existing
         val account = Account(
             id = base?.id ?: 0L,

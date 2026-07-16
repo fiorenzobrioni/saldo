@@ -108,7 +108,8 @@
     <string name="accounts_excluded_from_total">Excluded from total</string>
     <string name="accounts_excluded_from_budget">Excluded from budget</string>
     <string name="account_type_checking">Bank account</string>
-    <string name="account_type_card">Card</string>
+    <string name="account_type_debit_card">Debit card</string>
+    <string name="account_type_prepaid_card">Prepaid card</string>
     <string name="account_type_credit_card">Credit card</string>
     <string name="account_type_cash">Cash</string>
     <string name="account_type_digital_wallet">Digital wallet</string>
@@ -165,9 +166,11 @@
     <string name="account_editor_include_in_budget">Include in budget calculation</string>
     <string name="account_editor_include_in_budget_hint">If off, spending on this account does not count towards the budget or safe-to-spend</string>
 
+    <string name="account_debit_guidance">A debit card spends straight from the bank account it is tied to. If you already track that account, record the spending there to avoid counting it twice; create a separate account only if you do not track the linked one.</string>
+
     <!-- Credit card configuration -->
     <string name="account_cc_section_title">Credit card</string>
-    <string name="account_cc_guidance">Use a credit card account only for deferred cards charged monthly. Debit and ATM cards spend straight from the bank account, so record them there instead.</string>
+    <string name="account_cc_guidance">Use a credit card account only for deferred cards charged monthly. The balance starts at zero: if you already owe something on the current cycle, use "Adjust balance" after saving and it will be charged with the next statement.</string>
     <string name="account_cc_closing_day">Statement closing day</string>
     <string name="account_cc_closing_day_hint">Day the billing cycle closes (31 = last day of the month)</string>
     <string name="account_cc_due_day">Payment day</string>

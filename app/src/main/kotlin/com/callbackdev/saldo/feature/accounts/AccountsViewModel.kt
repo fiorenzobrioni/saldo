@@ -53,7 +53,11 @@ class AccountsViewModel @Inject constructor(
             archived = accounts.filter { it.account.isArchived },
             selected = accounts.firstOrNull { it.account.id == selectedId },
             dialog = currentDialog,
-            dueStatements = due.associateBy { it.accountId },
+            // Oldest due statement per card: settlement always pays the oldest
+            // cycle first, so the CTA must show that cycle's amount, not the
+            // newest one's (they differ only after a multi-cycle catch-up).
+            dueStatements = due.groupBy { it.accountId }
+                .mapValues { (_, statements) -> statements.first() },
         )
     }.stateIn(
         scope = viewModelScope,

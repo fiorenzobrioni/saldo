@@ -13,6 +13,7 @@ import com.callbackdev.saldo.core.database.migration.MIGRATION_5_6
 import com.callbackdev.saldo.core.database.migration.MIGRATION_6_7
 import com.callbackdev.saldo.core.database.migration.MIGRATION_7_8
 import com.callbackdev.saldo.core.database.migration.MIGRATION_8_9
+import com.callbackdev.saldo.core.database.migration.MIGRATION_9_10
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -353,6 +354,43 @@ class RecurringRuleMigrationTest {
             assertTrue(cursor.isNull(4))
             assertEquals(0, cursor.getInt(5))
             assertTrue(cursor.isNull(6))
+        }
+    }
+
+    @Test
+    fun migrate9To10_rewritesGenericCardToDebitCard_leavingOtherTypesAlone() {
+        val dbName = "migration-test-9-10"
+
+        helper.createDatabase(dbName, 9).use { db ->
+            listOf("CARD" to "Postepay", "CHECKING" to "Checking").forEach { (type, name) ->
+                db.insert(
+                    "accounts",
+                    android.database.sqlite.SQLiteDatabase.CONFLICT_ABORT,
+                    ContentValues().apply {
+                        put("name", name)
+                        put("type", type)
+                        put("currency", "EUR")
+                        put("initialBalanceMinor", 0L)
+                        put("isIncludedInTotal", 1)
+                        put("isIncludedInBudget", 1)
+                        put("isArchived", 0)
+                        put("sortOrder", 0)
+                        put("createdAtEpochMilli", 0L)
+                        put("statementAutoPost", 0)
+                    },
+                )
+            }
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 10, true, MIGRATION_9_10)
+
+        db.query("SELECT name, type FROM accounts ORDER BY id").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals("Postepay", cursor.getString(0))
+            assertEquals("DEBIT_CARD", cursor.getString(1))
+            assertTrue(cursor.moveToNext())
+            assertEquals("Checking", cursor.getString(0))
+            assertEquals("CHECKING", cursor.getString(1))
         }
     }
 

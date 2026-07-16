@@ -55,9 +55,11 @@ internal fun CreditCardRowExtras(
     onSettleStatement: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val config = item.account.creditCard ?: return
-    val limit = config.creditLimit
-    if (limit == null && dueStatement == null) return
+    // Archived cards get no operational extras (the row is history, not a
+    // tool); anything else needs a config and at least one thing to show.
+    val config = item.account.creditCard.takeUnless { item.account.isArchived }
+    val limit = config?.creditLimit
+    if (config == null || (limit == null && dueStatement == null)) return
 
     Column(
         modifier = modifier

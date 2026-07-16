@@ -49,6 +49,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * plain account. No foreign key on `linkedAccountId` on purpose: a self-reference
  * added via ALTER TABLE would complicate the migration and Room schema check for
  * no gain, referential integrity is handled in application logic instead.
+ *
+ * v9 -> v10: data-only. The generic CARD account type is removed in favour of
+ * the explicit DEBIT_CARD and PREPAID_CARD: existing CARD rows become
+ * DEBIT_CARD (the closest semantics; a prepaid user can switch the type in the
+ * editor). No schema change. The enum value is gone from the code, so this
+ * rewrite is what keeps pre-split rows decodable.
  */
 val MIGRATION_1_2: Migration = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -152,6 +158,13 @@ val MIGRATION_8_9: Migration = object : Migration(8, 9) {
     }
 }
 
+@Suppress("MagicNumber") // Schema version numbers.
+val MIGRATION_9_10: Migration = object : Migration(9, 10) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("UPDATE accounts SET type = 'DEBIT_CARD' WHERE type = 'CARD'")
+    }
+}
+
 /** All migrations, applied in order by Room. */
 val ALL_MIGRATIONS: Array<Migration> =
     arrayOf(
@@ -163,4 +176,5 @@ val ALL_MIGRATIONS: Array<Migration> =
         MIGRATION_6_7,
         MIGRATION_7_8,
         MIGRATION_8_9,
+        MIGRATION_9_10,
     )

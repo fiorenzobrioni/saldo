@@ -107,7 +107,8 @@
     <string name="accounts_excluded_from_total">Escluso dal totale</string>
     <string name="accounts_excluded_from_budget">Escluso dal budget</string>
     <string name="account_type_checking">Conto corrente</string>
-    <string name="account_type_card">Carta</string>
+    <string name="account_type_debit_card">Carta di debito</string>
+    <string name="account_type_prepaid_card">Carta prepagata</string>
     <string name="account_type_credit_card">Carta di credito</string>
     <string name="account_type_cash">Contanti</string>
     <string name="account_type_digital_wallet">Wallet digitale</string>
@@ -166,9 +167,11 @@
     <string name="account_editor_include_in_budget">Includi nel calcolo budget</string>
     <string name="account_editor_include_in_budget_hint">Se disattivato, le spese su questo conto non contano nel budget né nello spendibile</string>
 
+    <string name="account_debit_guidance">Una carta di debito (bancomat) spende direttamente dal conto corrente a cui è collegata. Se quel conto è già tracciato nell\'app, registra le spese lì per non contarle due volte; crea un conto separato solo se il conto collegato non è tracciato.</string>
+
     <!-- Configurazione carta di credito -->
     <string name="account_cc_section_title">Carta di credito</string>
-    <string name="account_cc_guidance">Usa un conto carta di credito solo per le carte a saldo differito, addebitate una volta al mese. Bancomat e carte di debito prelevano subito dal conto corrente: registrali direttamente lì.</string>
+    <string name="account_cc_guidance">Usa un conto carta di credito solo per le carte a saldo differito, addebitate una volta al mese. Il saldo parte da zero: se hai già speso nel ciclo in corso, usa "Rettifica saldo" dopo il salvataggio e l\'importo verrà addebitato col prossimo estratto.</string>
     <string name="account_cc_closing_day">Giorno di chiusura estratto</string>
     <string name="account_cc_closing_day_hint">Giorno in cui chiude il ciclo (31 = ultimo giorno del mese)</string>
     <string name="account_cc_due_day">Giorno di addebito</string>
