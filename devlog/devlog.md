@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Letter spacing ri-tarato per Inter
+
+**Fatto:** ritaratura del tracking della type scale per il font Inter (versionCode 73 -> 74, versionName 0.9.34 -> 0.9.35). Solo `Type.kt`.
+
+- **Schema:** display/headline/title a `-0.01em` (`TightTracking`), body/label a `0` (`NeutralTracking`). Applicato via `TextStyle.inter(tracking)` che ora imposta anche `letterSpacing` oltre a `fontFamily`. Il tracking di M3 è tarato su Roboto e su Inter risultava "arioso", soprattutto su body/label che portano il tracking positivo più alto; azzerarlo lo toglie senza stringere i testi piccoli, mentre il lieve negativo sui grandi compatta titoli e cifre.
+
+**Decisioni:** è una deviazione consapevole dalla type scale M3, giustificata dalla sostituzione del typeface (ri-tarare il tracking quando si cambia font è prassi), non una scelta arbitraria. Scelta l'opzione conservativa (-0.01em) invece del -0.02em globale proposto inizialmente, che stringeva troppo i label piccoli. Se non convince, il commit è isolato e revertibile senza toccare dimensioni/auto-size.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** verifica su device del tracking (testo di corpo e titoli, chiaro e scuro).
+
+---
+
 ## 2026-07-17 - Dashboard: importi hero auto-dimensionanti e gerarchia ridotta
 
 **Fatto:** rivisti gli importi principali della dashboard perché non si troncassero più con cifre alte e si differenziassero dal saldo (versionCode 72 -> 73, versionName 0.9.33 -> 0.9.34). Toccati `DashboardCards.kt` e `BudgetDashboardCards.kt`.

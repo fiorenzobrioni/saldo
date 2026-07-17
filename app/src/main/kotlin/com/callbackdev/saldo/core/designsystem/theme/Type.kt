@@ -5,6 +5,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.em
 import com.callbackdev.saldo.R
 
 /**
@@ -27,28 +29,40 @@ private val InterFamily = FontFamily(
 )
 
 /**
+ * Letter spacing re-tuned for Inter. Material 3's baseline tracking is tuned for
+ * Roboto and reads a touch loose on Inter, most of all on the body/label styles
+ * that carry the largest positive tracking. Large styles get a slight negative
+ * tracking so titles and figures read tighter; body and label are set to zero to
+ * drop the Roboto-era positive tracking without cramping small text. This is a
+ * deliberate adaptation of the scale to the substituted typeface, not the M3
+ * default.
+ */
+private val TightTracking: TextUnit = (-0.01).em
+private val NeutralTracking: TextUnit = 0.0.em
+
+/**
  * Material 3 type scale on the Inter family, with the app's adjustments:
  * headline and title styles carry more weight so figures and section titles
  * read crisper, without touching the body/label styles.
  */
 val SaldoTypography: Typography = Typography().let { base ->
-    fun TextStyle.inter() = copy(fontFamily = InterFamily)
+    fun TextStyle.inter(tracking: TextUnit) = copy(fontFamily = InterFamily, letterSpacing = tracking)
     base.copy(
-        displayLarge = base.displayLarge.inter(),
-        displayMedium = base.displayMedium.inter(),
-        displaySmall = base.displaySmall.inter(),
-        headlineLarge = base.headlineLarge.inter().copy(fontWeight = FontWeight.SemiBold),
-        headlineMedium = base.headlineMedium.inter().copy(fontWeight = FontWeight.SemiBold),
-        headlineSmall = base.headlineSmall.inter().copy(fontWeight = FontWeight.SemiBold),
-        titleLarge = base.titleLarge.inter().copy(fontWeight = FontWeight.SemiBold),
-        titleMedium = base.titleMedium.inter().copy(fontWeight = FontWeight.SemiBold),
-        titleSmall = base.titleSmall.inter(),
-        bodyLarge = base.bodyLarge.inter(),
-        bodyMedium = base.bodyMedium.inter(),
-        bodySmall = base.bodySmall.inter(),
-        labelLarge = base.labelLarge.inter(),
-        labelMedium = base.labelMedium.inter(),
-        labelSmall = base.labelSmall.inter(),
+        displayLarge = base.displayLarge.inter(TightTracking),
+        displayMedium = base.displayMedium.inter(TightTracking),
+        displaySmall = base.displaySmall.inter(TightTracking),
+        headlineLarge = base.headlineLarge.inter(TightTracking).copy(fontWeight = FontWeight.SemiBold),
+        headlineMedium = base.headlineMedium.inter(TightTracking).copy(fontWeight = FontWeight.SemiBold),
+        headlineSmall = base.headlineSmall.inter(TightTracking).copy(fontWeight = FontWeight.SemiBold),
+        titleLarge = base.titleLarge.inter(TightTracking).copy(fontWeight = FontWeight.SemiBold),
+        titleMedium = base.titleMedium.inter(TightTracking).copy(fontWeight = FontWeight.SemiBold),
+        titleSmall = base.titleSmall.inter(TightTracking),
+        bodyLarge = base.bodyLarge.inter(NeutralTracking),
+        bodyMedium = base.bodyMedium.inter(NeutralTracking),
+        bodySmall = base.bodySmall.inter(NeutralTracking),
+        labelLarge = base.labelLarge.inter(NeutralTracking),
+        labelMedium = base.labelMedium.inter(NeutralTracking),
+        labelSmall = base.labelSmall.inter(NeutralTracking),
     )
 }
 
