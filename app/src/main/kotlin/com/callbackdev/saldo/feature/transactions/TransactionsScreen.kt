@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -28,7 +29,6 @@ import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -62,7 +62,9 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
+import com.callbackdev.saldo.core.designsystem.component.SaldoCardDefaults
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
+import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.feature.transactions.export.CsvExportSheet
 import java.time.LocalDate
@@ -107,6 +109,7 @@ fun TransactionsScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.saldoSurfaces.canvas,
         topBar = {
             // A brief crossfade instead of a hard swap: the only bar change
             // in the app that would otherwise cut without a transition.
@@ -368,18 +371,17 @@ private fun TransactionSegment(
         isLast -> cardShape.copy(topStart = square, topEnd = square)
         else -> RectangleShape
     }
+    // White fill on the grey canvas with a hairline frame, matching SaldoCard.
+    // The per-segment border also draws the line between consecutive rows, so no
+    // separate divider is needed; the flat per-row lazy layout (kept for
+    // recycling) still reads as one grouped card per day.
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceContainer),
+            .background(SaldoCardDefaults.containerColor)
+            .border(SaldoCardDefaults.BorderWidth, MaterialTheme.saldoSurfaces.cardBorder, shape),
     ) {
-        if (!isFirst) {
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
-        }
         SwipeableTransactionRow(
             item = item,
             onClick = onClick,

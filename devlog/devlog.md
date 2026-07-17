@@ -14,6 +14,25 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Card bianche su canvas grigio estese a tutta l'app
+
+**Fatto:** rollout del nuovo linguaggio card (prototipato sulla Dashboard nel commit precedente) a tutte le schermate a pannelli (versionCode 76 -> 77, versionName 0.9.37 -> 0.9.38). Introdotti il componente condiviso `SaldoCard`/`SaldoCardDefaults` e i token theme-aware `SaldoSurfaces` (`canvas`/`card`/`cardBorder`), agganciati al tema come `MoneyColors`.
+
+- **Schema:** canvas schermata grigio chiaro (`surfaceContainerLow`, `#F4F7F6`) con card bianche (`surfaceContainerLowest`, `#FFFFFF`) e hairline `outlineVariant` da 1dp, zero ombra (look "flat, border-led"). In dark la relazione resta corretta (card raised sul background). Le card semantiche mantengono il fondo (`errorContainer`, `tertiaryContainer`, `primaryContainer`) e prendono un bordo in tinta derivato dal loro `onXxxContainer` al 15%.
+- **Schermate convertite:** Statistiche (shell `StatsCard`), Budget, Ricorrenze, Movimenti in sospeso, Backup, About, Transazioni filtrate, Conti. Transazioni: i "segment" per giorno (fatti a mano con `clip`+`background`) portati a bianco con bordo per segmento, che sostituisce il divider interno mantenendo il layout a righe flat per il riciclo. Categorie: righe `Surface` a bianco + bordo (ombra mantenuta durante il drag). `TransactionListRow`: la `Surface` interna della riga swipe-to-delete portata al bianco della card, altrimenti coprirebbe il bianco del segmento.
+- **Impostazioni:** erano una lista piatta senza card (raggruppata solo da intestazioni). Rifatte con card raggruppate per sezione (helper `SettingsGroup`) su canvas grigio: ogni sezione è ora un pannello bianco. Le righe `ListItem` restano a container trasparente ed ereditano il bianco della card.
+- **Fuori scope (canvas bianco invariato):** editor (transazione, conto, categoria, ricorrenza, budget) e onboarding, che sono form senza card. Renderli grigi è una decisione separata, non un effetto collaterale del rollout card. Top bar e bottom nav bar lasciate ai colori di default: su canvas grigio la barra chiara legge come header/barra distinta.
+
+**Decisioni:** centralizzazione in un unico componente per evitare la deriva `surfaceContainer` vs `surfaceContainerHigh` che c'era prima (ogni schermata ridefiniva `CardDefaults.cardColors` inline). La scelta canvas/card è per tema (non da una singola scala fissa) perché in Material 3 la scala dei container va verso il grigio in light e verso il chiaro in dark: il default M3 in light è proprio "card grigia su bianco", quindi l'inversione voluta riguarda soprattutto il tema chiaro. Bordo in tinta sulle card semantiche scelto rispetto a "nessun bordo" per coerenza di sistema (stessa hairline ovunque), tenuto a bassa opacità per non incorniciare.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` e `gradle detekt` verdi.
+
+**Prossimo:** verifica su device di tutte le schermate convertite (chiaro e scuro), taratura eventuale della forza della hairline neutra e dell'alpha del bordo in tinta; decisione su editor/onboarding (restano bianchi o adottano anch'essi il canvas grigio).
+
+---
+
 ## 2026-07-17 - Letter spacing ri-tarato per Inter
 
 **Fatto:** ritaratura del tracking della type scale per il font Inter (versionCode 73 -> 74, versionName 0.9.34 -> 0.9.35). Solo `Type.kt`.

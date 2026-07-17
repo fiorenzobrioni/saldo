@@ -21,8 +21,6 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.Savings
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -49,9 +47,11 @@ import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
+import com.callbackdev.saldo.core.designsystem.component.SaldoCard
 import com.callbackdev.saldo.core.designsystem.component.ThresholdProgressBar
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
+import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
@@ -81,6 +81,7 @@ fun BudgetsScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.saldoSurfaces.canvas,
         topBar = {
             TopAppBar(
                 scrollBehavior = scrollBehavior,
@@ -178,12 +179,9 @@ private fun OverallBudgetCard(
 ) {
     val currency = progress.budget.currency
     val remaining = progress.budget.amount.subtract(progress.spent)
-    Card(
+    SaldoCard(
         onClick = onClick,
         shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
@@ -266,12 +264,9 @@ private fun OverallBudgetCard(
 /** Hero-slot call to action shown while no overall budget exists. */
 @Composable
 private fun SetOverallBudgetCard(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Card(
+    SaldoCard(
         onClick = onClick,
         shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
@@ -303,12 +298,8 @@ private fun CategoryBudgetCard(
     modifier: Modifier = Modifier,
 ) {
     val category = progress.category ?: return
-    Card(
+    SaldoCard(
         onClick = onClick,
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
         modifier = modifier.fillMaxWidth(),
     ) {
         Row(

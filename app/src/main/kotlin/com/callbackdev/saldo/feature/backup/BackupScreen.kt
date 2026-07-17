@@ -24,8 +24,6 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -55,8 +53,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
+import com.callbackdev.saldo.core.designsystem.component.SaldoCard
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
+import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.backup.BackupSummary
 import com.callbackdev.saldo.core.domain.usecase.ImportBackupUseCase
 import java.time.Instant
@@ -124,6 +124,7 @@ fun BackupScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.saldoSurfaces.canvas,
         topBar = {
             TopAppBar(
                 scrollBehavior = scrollBehavior,
@@ -179,12 +180,9 @@ private fun suggestedBackupFileName(): String = "saldo-backup-${LocalDate.now()}
 /** Offline-first reassurance: what a backup is and where it lives (nowhere but the file). */
 @Composable
 private fun PrivacyHeroCard(modifier: Modifier = Modifier) {
-    Card(
+    SaldoCard(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ),
     ) {
         Row(
             modifier = Modifier.padding(SaldoDimens.cardPaddingLarge),
@@ -228,12 +226,8 @@ private fun ExportCard(
     onExport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    SaldoCard(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
     ) {
         Column(modifier = Modifier.padding(SaldoDimens.cardPadding)) {
             Text(
@@ -293,12 +287,8 @@ private fun RestoreCard(
     onRestore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    SaldoCard(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
     ) {
         Column(modifier = Modifier.padding(SaldoDimens.cardPadding)) {
             Text(
