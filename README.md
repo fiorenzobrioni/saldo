@@ -56,7 +56,7 @@ In arrivo (v1.5 / v2.0): PIN e biometria, widget, import CSV, export Google Shee
 
 ## Stack tecnico
 
-- **Kotlin** 100%, **Jetpack Compose** + Material 3 (palette brand di default, Material You/dynamic color attivabile dalle impostazioni)
+- **Kotlin** 100%, **Jetpack Compose** + Material 3 (palette brand di default, Material You/dynamic color attivabile dalle impostazioni); typeface **Inter** (variable font embeddato, figure tabulari per gli importi)
 - **Navigation 3** (`androidx.navigation3`)
 - **Room** (persistenza), **DataStore** (impostazioni), **Coroutines + Flow**
 - **MVVM + Use Cases + Repository**, **Hilt** (DI), **KSP**
@@ -123,3 +123,5 @@ app/src/main/kotlin/com/callbackdev/saldo/
 ## Licenza
 
 Distribuito sotto licenza **GNU General Public License v3.0** - vedi il file [LICENSE](./LICENSE) per i dettagli.
+
+Il font **Inter** incluso nell'app è distribuito sotto **SIL Open Font License 1.1** - vedi [licenses/inter/OFL.txt](./licenses/inter/OFL.txt).

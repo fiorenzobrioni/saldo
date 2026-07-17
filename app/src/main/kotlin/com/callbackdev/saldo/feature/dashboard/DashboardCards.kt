@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
@@ -51,6 +52,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
@@ -195,13 +197,16 @@ internal fun BalanceCard(
             Spacer(Modifier.height(4.dp))
             Text(
                 text = MoneyFormatter.format(totalBalance, currency),
-                style = MaterialTheme.typography.displaySmall.tabularNumbers(),
+                style = MaterialTheme.typography.headlineMedium.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
                 color = if (totalBalance.signum() < 0) {
                     MaterialTheme.moneyColors.negative
                 } else {
                     MaterialTheme.colorScheme.onSurface
                 },
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = HERO_MONEY_MIN, maxFontSize = HERO_MONEY_MAX),
+                modifier = Modifier.fillMaxWidth(),
             )
             if (accounts.isNotEmpty()) {
                 Spacer(Modifier.height(10.dp))
@@ -419,11 +424,13 @@ private fun PeriodCompactCard(
             Spacer(Modifier.height(4.dp))
             Text(
                 text = MoneyFormatter.formatSigned(flow.net, currency),
-                style = MaterialTheme.typography.headlineSmall.tabularNumbers(),
+                style = MaterialTheme.typography.titleLarge.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
                 color = netColor(flow.net),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                autoSize = TextAutoSize.StepBased(minFontSize = COMPACT_MONEY_MIN, maxFontSize = COMPACT_MONEY_MAX),
+                modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(10.dp))
             StatLine(
@@ -794,3 +801,12 @@ private fun netColor(value: BigDecimal): Color = when {
 }
 
 private const val AVATAR_TINT_ALPHA = 0.16f
+
+// Money figures auto-size within these bounds so large amounts shrink to fit
+// instead of truncating, while typical values keep the target size. Hero: the
+// balance and safe-to-spend figures on the full-width cards; compact: the
+// half-width Today/month and budget figures. Shared by BudgetDashboardCards.
+internal val HERO_MONEY_MIN = 20.sp
+internal val HERO_MONEY_MAX = 28.sp
+internal val COMPACT_MONEY_MIN = 14.sp
+internal val COMPACT_MONEY_MAX = 22.sp

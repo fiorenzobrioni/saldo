@@ -14,6 +14,109 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Letter spacing ri-tarato per Inter
+
+**Fatto:** ritaratura del tracking della type scale per il font Inter (versionCode 73 -> 74, versionName 0.9.34 -> 0.9.35). Solo `Type.kt`.
+
+- **Schema:** display/headline/title a `-0.01em` (`TightTracking`), body/label a `0` (`NeutralTracking`). Applicato via `TextStyle.inter(tracking)` che ora imposta anche `letterSpacing` oltre a `fontFamily`. Il tracking di M3 è tarato su Roboto e su Inter risultava "arioso", soprattutto su body/label che portano il tracking positivo più alto; azzerarlo lo toglie senza stringere i testi piccoli, mentre il lieve negativo sui grandi compatta titoli e cifre.
+
+**Decisioni:** è una deviazione consapevole dalla type scale M3, giustificata dalla sostituzione del typeface (ri-tarare il tracking quando si cambia font è prassi), non una scelta arbitraria. Scelta l'opzione conservativa (-0.01em) invece del -0.02em globale proposto inizialmente, che stringeva troppo i label piccoli. Se non convince, il commit è isolato e revertibile senza toccare dimensioni/auto-size.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3. La prima versione (versionCode 74) ha fatto fallire la CI su `detekt` (`MagicNumber` sul letterale `-0.01`, top-level val fuori da `@Composable`): la verifica locale non includeva `detekt`, che la CI invece lancia. Corretto spostando il valore in una `const` (`TIGHT_TRACKING_EM`, ignorata dalla regola) e allineata la verifica locale alla CI (`assembleDebug testDebugUnitTest lint detekt`). versionCode 74 -> 75, versionName 0.9.35 -> 0.9.36.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint detekt` verde.
+
+**Prossimo:** verifica su device del tracking (testo di corpo e titoli, chiaro e scuro).
+
+---
+
+## 2026-07-17 - Dashboard: importi hero auto-dimensionanti e gerarchia ridotta
+
+**Fatto:** rivisti gli importi principali della dashboard perché non si troncassero più con cifre alte e si differenziassero dal saldo (versionCode 72 -> 73, versionName 0.9.33 -> 0.9.34). Toccati `DashboardCards.kt` e `BudgetDashboardCards.kt`.
+
+- **Auto-size (`TextAutoSize.StepBased`, stabile da Compose 1.8):** gli importi hero ora partono alla dimensione target e si rimpiccioliscono solo quando non entrano, invece di troncare con "…". Ogni `Text` interessato ha `maxLines = 1`, un vincolo di larghezza (`fillMaxWidth` nelle Column, `weight(1f)` nelle Row con icona) e i bound sp condivisi (`HERO_MONEY_MIN/MAX = 20/28`, `COMPACT_MONEY_MIN/MAX = 14/22`, definiti in `DashboardCards.kt` e usati anche in `BudgetDashboardCards.kt`, stesso package).
+- **Gerarchia ridotta:** saldo totale e "spendibile oggi" (normale) da `displaySmall` (36sp) a `headlineMedium` (28sp, max autosize); Oggi/Mese, "Superato di…" (spendibile) e budget (Ancora/Superato) a `titleLarge` (22sp max, scendono fino a 14sp). Tutti restano token M3, cambia solo quale token usa ciascun importo (nessuna deviazione dalla type scale).
+
+**Decisioni:** l'auto-size è la soluzione al troncamento delle card Oggi/Mese (mezza larghezza): a dimensione fissa, per far entrare cifre a sei zeri servirebbe ~16sp, troppo piccolo per il valore principale. Compromesso noto: le due card Oggi/Mese si dimensionano indipendentemente, quindi con lunghezze molto diverse possono avere size leggermente diverse (solo agli estremi, comunque meglio del troncamento). Il messaggio "Esaurito" e la riga breakdown non sono toccati (non sono cifre hero). Il letter spacing app-wide è stato discusso ma lasciato in sospeso in attesa di decisione (conformità M3 vs ri-taratura per Inter).
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** verifica su device del comportamento auto-size con importi grandi e piccoli, chiaro e scuro; decisione sul letter spacing.
+
+---
+
+## 2026-07-17 - Ripristinato il peso di default M3 sui titoli delle righe impostazioni
+
+**Fatto:** annullato lo stacco a Medium introdotto poco prima sui `ListItem` delle impostazioni (versionCode 71 -> 72, versionName 0.9.32 -> 0.9.33). Solo `SettingsScreen.kt`.
+
+- **Motivo:** verifica sulla specifica M3. Il `ListItem` mappa `headlineContent` -> Body Large e `supportingContent` -> Body Medium, entrambi Regular (400) nella type scale baseline; la gerarchia titolo/descrizione è affidata a dimensione (16 vs 14sp) e colore (`onSurface` vs `onSurfaceVariant`), non al peso. Portare il titolo a Medium era una deviazione consapevole, non conforme. La conformità a Material 3 è un prerequisito di prodotto, quindi si torna al default.
+- **Come:** rimosso `fontWeight = FontWeight.Medium` dai tre `headlineContent` (`SettingsEntry`, `SettingsSwitchRow`, riga "Primo giorno della settimana") e l'import `FontWeight` diventato inutile.
+
+**Decisioni:** eventuale aumento di contrasto titolo/descrizione rimandato; se in futuro servirà, valutarlo come personalizzazione dichiarata (non come "default M3") o restando on-spec su colore/dimensione. Lo zero barrato e il resto della tipografia Inter restano invariati.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** nessuno su questo punto.
+
+---
+
+## 2026-07-17 - Rimosso l'optical size dinamico; titoli delle righe impostazioni a Medium
+
+**Fatto:** revert dell'`opsz` dinamico e stacco di peso nei `ListItem` delle impostazioni (versionCode 70 -> 71, versionName 0.9.31 -> 0.9.32).
+
+- **Rimosso `opsz` dinamico (`Type.kt`):** su device la variazione dell'ottica per dimensione cambiava pochissimo la larghezza delle cifre grandi, ma scuriva/ingrassava titolo di benvenuto e numeri eroe in modo non voluto (il saluto non deve fare da protagonista). Tornato al `FontFamily` unico con `opsz` al default del font (comportamento 0.9.30). Rimosso anche l'opt-in `@ExperimentalTextApi` che serviva solo per `FontVariation.opticalSizing`. Lo **zero barrato** resta (`tabularNumbers()` = `"tnum, zero"`).
+- **Titoli righe impostazioni a Medium (`SettingsScreen.kt`):** i `ListItem` di Material 3 rendono `headlineContent` e `supportingContent` entrambi a peso Normal (400), distinti solo da dimensione e colore; su schermata densa titolo e descrizione si confondevano. Portato il titolo a `FontWeight.Medium` (500) nei tre punti (`SettingsEntry`, `SettingsSwitchRow`, riga "Primo giorno della settimana"). Descrizione invariata (già `onSurfaceVariant`).
+
+**Decisioni:** pesi dei numeri eroe lasciati a SemiBold come nella 0.9.30, senza aumentarli: dominano già per dimensione, e spingere oltre il peso vira verso un look meno pulito. Stacco titolo/descrizione ottenuto col solo peso (Medium), non con SemiBold, per non appesantire una lista. Lo stesso pattern `ListItem` ricorre in altre schermate: non propagato in blocco in questa tornata, da valutare a vista.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** verifica su device del saluto tornato leggero e dello stacco titolo/descrizione nelle impostazioni.
+
+---
+
+## 2026-07-17 - Inter: optical size dinamico e zero barrato sugli importi
+
+**Fatto:** due rifiniture tipografiche dopo la verifica su device del cambio a Inter (versionCode 69 -> 70, versionName 0.9.30 -> 0.9.31). Unico file toccato: `Type.kt`.
+
+- **Optical size legato alla dimensione:** Inter ha, oltre a `wght`, l'asse `opsz` (14-32) che adatta le forme alla dimensione di resa (più aperte per il testo piccolo, più strette e rifinite per i titoli). Compose non fa variare `opsz` da solo, quindi ogni stile viene ora legato a un `FontFamily` il cui `opsz` combacia con il `fontSize` dello stile (`FontVariation.opticalSizing`, valore preso da `TextStyle.fontSize`, clampato a 14-32). Prima era fisso a 14 (default del font) su tutti gli stili: i numeri grandi (`displaySmall` 36sp, es. saldo e spendibile) usavano l'ottica da testo. Ora display/headline salgono verso 32, body/label restano a 14.
+- **Zero barrato sugli importi:** aggiunta la feature OpenType `zero` di Inter in `tabularNumbers()`, che ora imposta `fontFeatureSettings = "tnum, zero"`. Lo 0 non si confonde con la O. Scope invariato: la funzione è già applicata solo agli importi (e alle percentuali del budget, coerente), quindi nessun call site toccato.
+
+**Decisioni:** `opsz` implementato costruendo un `FontFamily` per stile (le variation settings vanno sul `Font`, non sul `TextStyle`), con le 4 entry di peso Regular/Medium/SemiBold/Bold che condividono lo stesso `opsz`. Clamp esplicito 14-32 invece di affidarsi al clamp implicito del sistema. Pesi non toccati (già coerenti: tutti i numeri eroe SemiBold). `zero` scopato agli importi via `tabularNumbers()` e non globale, per non avere zeri barrati nel testo in prosa. Scartate in questa tornata le forme a un piano (`ss01`, estetica più "Google Sans"): da valutare a vista, non richieste.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** verifica su device della resa dei numeri grandi con `opsz` alto e dello zero barrato negli importi.
+
+---
+
+## 2026-07-17 - Cambio typeface: da Roboto (default di sistema) a Inter
+
+**Fatto:** sostituito il font di sistema (Roboto) con Inter su tutta l'app (versionCode 68 -> 69, versionName 0.9.29 -> 0.9.30). Unico punto di codice toccato: `Type.kt`.
+
+- **Font embeddato:** aggiunto `app/src/main/res/font/inter_variable.ttf` (Inter variable, ~857 KB, dal repo `google/fonts`, SIL OFL 1.1). Un solo file: l'asse `wght` 100-900 copre Regular/Medium/SemiBold/Bold richiesti dalla type scale.
+- **`SaldoTypography`:** creato `InterFamily` (`FontFamily` con le entry di peso sul variable font) e applicato `fontFamily = InterFamily` a tutti i 15 stili della scala Material 3, mantenendo gli override SemiBold su headline/title già presenti. Material 3 non ha `defaultFontFamily` nel costruttore `Typography()` (a differenza di Material 2), quindi il font va settato per stile: esteso il blocco `base.copy(...)` esistente.
+- **Importi invariati:** verificato con fontTools che il file Inter espone la feature `tnum` (oltre a `zero`, `case`, ecc.), quindi `tabularNumbers()` (`fontFeatureSettings = "tnum"`) continua a incolonnare le cifre senza alcuna modifica ai call site.
+- **Licenza:** aggiunto `licenses/inter/OFL.txt` (testo OFL 1.1 con il copyright del progetto Inter). Citato in README (stack + sezione Licenza) e in PLANNING.
+
+**Decisioni:** scelto Inter e non "Google Sans" (pure OFL, ma rilasciato aperto solo a dicembre 2025 e con forte connotazione di brand Google): Inter è progettato per UI con numeri in lista, usa figure tabulari di default, ed è rodato su Android. Embedding come risorsa e non tramite il provider "downloadable Google Fonts": quest'ultimo richiede Play Services e rete, incompatibile con il principio offline-first. Asse `opsz` lasciato al default 14 (dimensione ottica adatta al testo UI). Non toccate line-height e letter-spacing: si usano i valori di default Material, che reggono bene con le metriche di Inter.
+
+**Problemi:** il wrapper Gradle non scarica la distribuzione (403 di policy egress, come da voci precedenti); usato `/opt/gradle/bin/gradle` 8.14.3 per la verifica. `fonttools` non preinstallato: installato via pip solo per l'ispezione del font (non è una dipendenza del progetto).
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** verifica su device della resa di Inter (testo e importi) in chiaro e scuro; valutare se aggiungere un credito font nella schermata About (oggi elenca solo le librerie), da fare solo se richiesto.
+
+---
+
 ## 2026-07-17 - Separazione tonale delle top app bar allo scroll e allineamento cifre card Oggi/Mese
 
 **Fatto:** rifiniture UI dopo una review UX (versionCode 67 -> 68, versionName 0.9.28 -> 0.9.29).
