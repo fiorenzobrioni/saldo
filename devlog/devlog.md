@@ -14,6 +14,25 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Cambio typeface: da Roboto (default di sistema) a Inter
+
+**Fatto:** sostituito il font di sistema (Roboto) con Inter su tutta l'app (versionCode 68 -> 69, versionName 0.9.29 -> 0.9.30). Unico punto di codice toccato: `Type.kt`.
+
+- **Font embeddato:** aggiunto `app/src/main/res/font/inter_variable.ttf` (Inter variable, ~857 KB, dal repo `google/fonts`, SIL OFL 1.1). Un solo file: l'asse `wght` 100-900 copre Regular/Medium/SemiBold/Bold richiesti dalla type scale.
+- **`SaldoTypography`:** creato `InterFamily` (`FontFamily` con le entry di peso sul variable font) e applicato `fontFamily = InterFamily` a tutti i 15 stili della scala Material 3, mantenendo gli override SemiBold su headline/title già presenti. Material 3 non ha `defaultFontFamily` nel costruttore `Typography()` (a differenza di Material 2), quindi il font va settato per stile: esteso il blocco `base.copy(...)` esistente.
+- **Importi invariati:** verificato con fontTools che il file Inter espone la feature `tnum` (oltre a `zero`, `case`, ecc.), quindi `tabularNumbers()` (`fontFeatureSettings = "tnum"`) continua a incolonnare le cifre senza alcuna modifica ai call site.
+- **Licenza:** aggiunto `licenses/inter/OFL.txt` (testo OFL 1.1 con il copyright del progetto Inter). Citato in README (stack + sezione Licenza) e in PLANNING.
+
+**Decisioni:** scelto Inter e non "Google Sans" (pure OFL, ma rilasciato aperto solo a dicembre 2025 e con forte connotazione di brand Google): Inter è progettato per UI con numeri in lista, usa figure tabulari di default, ed è rodato su Android. Embedding come risorsa e non tramite il provider "downloadable Google Fonts": quest'ultimo richiede Play Services e rete, incompatibile con il principio offline-first. Asse `opsz` lasciato al default 14 (dimensione ottica adatta al testo UI). Non toccate line-height e letter-spacing: si usano i valori di default Material, che reggono bene con le metriche di Inter.
+
+**Problemi:** il wrapper Gradle non scarica la distribuzione (403 di policy egress, come da voci precedenti); usato `/opt/gradle/bin/gradle` 8.14.3 per la verifica. `fonttools` non preinstallato: installato via pip solo per l'ispezione del font (non è una dipendenza del progetto).
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** verifica su device della resa di Inter (testo e importi) in chiaro e scuro; valutare se aggiungere un credito font nella schermata About (oggi elenca solo le librerie), da fare solo se richiesto.
+
+---
+
 ## 2026-07-17 - Separazione tonale delle top app bar allo scroll e allineamento cifre card Oggi/Mese
 
 **Fatto:** rifiniture UI dopo una review UX (versionCode 67 -> 68, versionName 0.9.28 -> 0.9.29).

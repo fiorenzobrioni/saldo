@@ -137,7 +137,7 @@
 > Fase intermedia nata dalla review completa dell'app (bug, refactor, omogeneità UI). Fatta prima della Fase 7 così statistiche e schermate future nascono direttamente sui componenti condivisi.
 
 - [x] Componenti condivisi `EmptyState` e `LoadingState` in `core/designsystem/component`, adottati da tutte le schermate (prima: 5 copie hand-rolled, una divergente)
-- [x] Tipografia: headline/title a peso SemiBold in `SaldoTypography`; numeri tabulari (`tabularNumbers()`) su tutti gli importi
+- [x] Tipografia: famiglia Inter (variable font OFL embeddato in `res/font`); headline/title a peso SemiBold in `SaldoTypography`; numeri tabulari (`tabularNumbers()`, feature `tnum`) su tutti gli importi
 - [x] `MoneyColors`: ruoli semantici unici per colorare il denaro (income/expense/neutral/negative) al posto di 3 regole divergenti tra dashboard, conti e registro
 - [x] Palette brand statica di default (seed teal, tertiary verde così le entrate leggono verde) + dynamic color opt-in e tema chiaro/scuro/sistema in Impostazioni, persistiti in DataStore (ADR 15)
 - [x] Avatar squircle (`AvatarShape`) uniformi: categorie ed empty state usavano `CircleShape`
