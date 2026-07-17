@@ -17,8 +17,6 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +37,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.SaldoCard
+import com.callbackdev.saldo.core.designsystem.component.SaldoCardDefaults
 import com.callbackdev.saldo.core.designsystem.component.ThresholdProgressBar
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
@@ -73,16 +73,14 @@ internal fun SafeToSpendCard(
     } else {
         MaterialTheme.colorScheme.onSurface
     }
-    Card(
+    SaldoCard(
         onClick = { expanded = !expanded },
         shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = if (over) {
-                MaterialTheme.colorScheme.errorContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainerHigh
-            },
-        ),
+        containerColor = if (over) {
+            MaterialTheme.colorScheme.errorContainer
+        } else {
+            SaldoCardDefaults.containerColor
+        },
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(
@@ -332,12 +330,8 @@ internal fun BudgetCard(
 ) {
     val overall = budgets.firstOrNull { it.budget.isOverall }
     val categories = budgets.filterNot { it.budget.isOverall }.take(CATEGORY_PREVIEW_COUNT)
-    Card(
+    SaldoCard(
         onClick = onClick,
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(

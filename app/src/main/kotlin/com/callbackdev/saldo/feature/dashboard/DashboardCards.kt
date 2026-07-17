@@ -27,8 +27,6 @@ import androidx.compose.material.icons.outlined.MoneyOff
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.Today
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -56,6 +54,7 @@ import androidx.compose.ui.unit.sp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.SaldoCard
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
@@ -166,15 +165,12 @@ internal fun BalanceCard(
     modifier: Modifier = Modifier,
 ) {
     val manageAccountsLabel = stringResource(R.string.dashboard_manage_accounts)
-    Card(
+    SaldoCard(
         onClick = onManageAccounts,
         modifier = modifier
             .fillMaxWidth()
             .semantics { onClick(label = manageAccountsLabel, action = null) },
         shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-        ),
     ) {
         Column(
             modifier = Modifier.padding(
@@ -404,13 +400,9 @@ private fun PeriodCompactCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    SaldoCard(
         onClick = onClick,
         modifier = modifier,
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
     ) {
         Column(
             modifier = Modifier
@@ -517,13 +509,10 @@ internal fun PendingConfirmationCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    SaldoCard(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-        ),
+        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
     ) {
         Row(
             modifier = Modifier.padding(
@@ -581,13 +570,10 @@ internal fun StatementDueCard(
     val single = statements.singleOrNull()
     val total = statements.fold(java.math.BigDecimal.ZERO) { acc, statement -> acc.add(statement.amount) }
     val currency = statements.first().currency
-    Card(
+    SaldoCard(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-        ),
+        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
     ) {
         Row(
             modifier = Modifier.padding(
@@ -648,13 +634,9 @@ internal fun RecurringCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    SaldoCard(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
     ) {
         Column(
             modifier = Modifier.padding(
@@ -762,12 +744,8 @@ internal fun RecentMovementsCard(
     onItemClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    SaldoCard(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
     ) {
         Column {
             items.forEachIndexed { index, item ->
