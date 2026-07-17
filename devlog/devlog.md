@@ -22,9 +22,9 @@ Formato suggerito per ogni voce:
 
 **Decisioni:** è una deviazione consapevole dalla type scale M3, giustificata dalla sostituzione del typeface (ri-tarare il tracking quando si cambia font è prassi), non una scelta arbitraria. Scelta l'opzione conservativa (-0.01em) invece del -0.02em globale proposto inizialmente, che stringeva troppo i label piccoli. Se non convince, il commit è isolato e revertibile senza toccare dimensioni/auto-size.
 
-**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3. La prima versione (versionCode 74) ha fatto fallire la CI su `detekt` (`MagicNumber` sul letterale `-0.01`, top-level val fuori da `@Composable`): la verifica locale non includeva `detekt`, che la CI invece lancia. Corretto spostando il valore in una `const` (`TIGHT_TRACKING_EM`, ignorata dalla regola) e allineata la verifica locale alla CI (`assembleDebug testDebugUnitTest lint detekt`). versionCode 74 -> 75, versionName 0.9.35 -> 0.9.36.
 
-**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint detekt` verde.
 
 **Prossimo:** verifica su device del tracking (testo di corpo e titoli, chiaro e scuro).
 

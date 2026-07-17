@@ -37,7 +37,8 @@ private val InterFamily = FontFamily(
  * deliberate adaptation of the scale to the substituted typeface, not the M3
  * default.
  */
-private val TightTracking: TextUnit = (-0.01).em
+private const val TIGHT_TRACKING_EM = -0.01
+private val TightTracking: TextUnit = TIGHT_TRACKING_EM.em
 private val NeutralTracking: TextUnit = 0.0.em
 
 /**
