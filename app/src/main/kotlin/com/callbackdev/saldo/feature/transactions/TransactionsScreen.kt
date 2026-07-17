@@ -39,6 +39,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +47,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -102,8 +104,9 @@ fun TransactionsScreen(
     }
     BackHandler(enabled = isSearching, onBack = closeSearch)
 
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             // A brief crossfade instead of a hard swap: the only bar change
             // in the app that would otherwise cut without a transition.
@@ -123,6 +126,7 @@ fun TransactionsScreen(
                     )
                 } else {
                     TopAppBar(
+                        scrollBehavior = scrollBehavior,
                         title = { Text(stringResource(R.string.nav_transactions)) },
                         actions = {
                             if (uiState.hasAnyTransactions) {
