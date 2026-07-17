@@ -14,6 +14,23 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Separazione tonale delle top app bar allo scroll e allineamento cifre card Oggi/Mese
+
+**Fatto:** rifiniture UI dopo una review UX (versionCode 67 -> 68, versionName 0.9.28 -> 0.9.29).
+
+- **Top app bar reattive allo scroll:** aggiunto `TopAppBarDefaults.pinnedScrollBehavior()` a tutte le 16 schermate con title bar (tab Movimenti/Statistiche/Impostazioni, editor e schermate di dettaglio). La barra ora vira da `surface` a `surfaceContainer` quando il contenuto le scorre sotto, il comportamento Material 3 canonico che prima mancava (0 usi di `scrollBehavior` in tutta l'app). Per ogni schermata: `val scrollBehavior = pinnedScrollBehavior()`, `Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)` sullo `Scaffold` e `scrollBehavior = scrollBehavior` sulla `TopAppBar`. La Dashboard non è toccata: non ha top bar per scelta. La `SearchTopBar` dei Movimenti resta senza behavior (è la barra di ricerca, non un title bar).
+- **Cifre Spese/Entrate incolonnate nelle card Oggi/Mese (Dashboard):** `StatLine` metteva l'importo attaccato alla label con uno spacer fisso, quindi le due righe partivano a x diverse. Ora la label prende `weight(1f)` e spinge l'importo a fine riga; le due cifre condividono il bordo destro e restano allineate. Aggiunto `tabularNumbers()` allo stile dell'importo per allineamento verticale delle cifre. La `Column` della card passa a `fillMaxWidth()` perché il `weight` abbia una larghezza su cui distribuirsi.
+
+**Decisioni:** scelto `pinnedScrollBehavior` (barra fissa, solo cambio tonale) invece di `enterAlways`/large collapsing: nessun costo di spazio verticale, coerente con l'identità compatta e densa del layout (niente large top app bar, che contraddirebbe `SaldoDimens`). Ritirato in fase di review un terzo spunto (segno delle spese): verificato che spese ed entrate hanno già il segno (`-`/`+`), l'asimmetria è solo di colore ed è voluta.
+
+**Problemi:** il wrapper Gradle non scarica la distribuzione (403 di policy egress, come da voci precedenti); usato `/opt/gradle/bin/gradle` 8.14.3 per la verifica.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde. Nessuna riga oltre i 120 caratteri (limite `.editorconfig`/detekt).
+
+**Prossimo:** verifica su device dello stacco tonale allo scroll (chiaro e scuro) e dell'allineamento nelle card Oggi/Mese.
+
+---
+
 ## 2026-07-16 - Revisione ed espansione dei messaggi di benvenuto della dashboard
 
 **Fatto:** revisione dei saluti a tempo del `DashboardHeader` (array `dashboard_greetings_*` in `values` e `values-it`) e ampliamento da 6 a 10 varianti per fascia. Solo stringhe, nessuna modifica al codice (versionCode 66 -> 67, versionName 0.9.27 -> 0.9.28).

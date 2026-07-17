@@ -408,10 +408,12 @@ private fun PeriodCompactCard(
         ),
     ) {
         Column(
-            modifier = Modifier.padding(
-                horizontal = SaldoDimens.cardPadding,
-                vertical = SaldoDimens.cardPaddingVertical,
-            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = SaldoDimens.cardPadding,
+                    vertical = SaldoDimens.cardPaddingVertical,
+                ),
         ) {
             DashboardCardHeader(icon = icon, title = title)
             Spacer(Modifier.height(4.dp))
@@ -439,16 +441,25 @@ private fun PeriodCompactCard(
 
 @Composable
 private fun StatLine(label: String, value: String, modifier: Modifier = Modifier) {
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            // Takes the leftover width so the amount is pushed to the row's end:
+            // the two stat rows share a right edge and their tabular figures
+            // stay columnar.
+            modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.size(6.dp))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodySmall.tabularNumbers(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
