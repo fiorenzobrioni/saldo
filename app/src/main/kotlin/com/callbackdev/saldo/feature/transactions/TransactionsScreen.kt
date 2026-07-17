@@ -9,8 +9,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Add
@@ -29,6 +25,7 @@ import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,8 +47,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
@@ -62,7 +57,7 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
-import com.callbackdev.saldo.core.designsystem.component.SaldoCardDefaults
+import com.callbackdev.saldo.core.designsystem.component.SaldoCard
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
@@ -303,11 +298,11 @@ private suspend fun handleTransactionsEvent(
 }
 
 /**
- * The register as flat lazy items (one per row, not one per day): with
- * thousands of movements only the visible rows compose and recycle, and the
- * day headers, rows and spacers each get a stable key and contentType. The
- * per-row segment shapes recompose the grouped-card look of the old
- * one-card-per-day layout.
+ * The register grouped by day: each day is a header plus one grouped card of its
+ * movements. Days are lazy items keyed by date, so only the visible days
+ * compose; a day's rows live inside a single card (realistic days hold few
+ * movements), which keeps the outer hairline frame and inset dividers of the
+ * dashboard's recent-movements card.
  */
 @Composable
 private fun TransactionsList(
@@ -328,17 +323,11 @@ private fun TransactionsList(
                     Spacer(Modifier.height(6.dp))
                 }
             }
-            itemsIndexed(
-                items = day.items,
-                key = { _, item -> item.id },
-                contentType = { _, _ -> "transaction" },
-            ) { index, item ->
-                TransactionSegment(
-                    item = item,
-                    isFirst = index == 0,
-                    isLast = index == day.items.lastIndex,
-                    onClick = { onItemClick(item) },
-                    onDelete = { onItemDelete(item) },
+            item(key = "card-${day.date}", contentType = "day-card") {
+                TransactionDayCard(
+                    items = day.items,
+                    onItemClick = onItemClick,
+                    onItemDelete = onItemDelete,
                     modifier = Modifier.animateItem(),
                 )
             }
@@ -350,43 +339,32 @@ private fun TransactionsList(
 }
 
 /**
- * One movement row drawn as a segment of its day's card: the first row rounds
- * the top corners, the last the bottom ones, and a hairline divider separates
- * consecutive rows. The clip also bounds the swipe-delete background.
+ * One day's movements as a single grouped card, mirroring the dashboard's recent
+ * movements: a white [SaldoCard] with the rows stacked inside and a hairline
+ * inset divider between consecutive ones. Each row stays individually
+ * swipe-to-delete; the card clip bounds the swipe-delete background.
  */
 @Composable
-private fun TransactionSegment(
-    item: TransactionListItem,
-    isFirst: Boolean,
-    isLast: Boolean,
-    onClick: () -> Unit,
-    onDelete: () -> Unit,
+private fun TransactionDayCard(
+    items: List<TransactionListItem>,
+    onItemClick: (TransactionListItem) -> Unit,
+    onItemDelete: (TransactionListItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val cardShape = MaterialTheme.shapes.large
-    val square = CornerSize(0.dp)
-    val shape = when {
-        isFirst && isLast -> cardShape
-        isFirst -> cardShape.copy(bottomStart = square, bottomEnd = square)
-        isLast -> cardShape.copy(topStart = square, topEnd = square)
-        else -> RectangleShape
-    }
-    // White fill on the grey canvas with a hairline frame, matching SaldoCard.
-    // The per-segment border also draws the line between consecutive rows, so no
-    // separate divider is needed; the flat per-row lazy layout (kept for
-    // recycling) still reads as one grouped card per day.
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(SaldoCardDefaults.containerColor)
-            .border(SaldoCardDefaults.BorderWidth, MaterialTheme.saldoSurfaces.cardBorder, shape),
-    ) {
-        SwipeableTransactionRow(
-            item = item,
-            onClick = onClick,
-            onDelete = onDelete,
-        )
+    SaldoCard(modifier = modifier.fillMaxWidth()) {
+        items.forEachIndexed { index, item ->
+            if (index > 0) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
+            SwipeableTransactionRow(
+                item = item,
+                onClick = { onItemClick(item) },
+                onDelete = { onItemDelete(item) },
+            )
+        }
     }
 }
 

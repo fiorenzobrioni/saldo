@@ -14,6 +14,24 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Transazioni: card raggruppata per giorno invece dei bordi per riga
+
+**Fatto:** rifatta la lista Transazioni per usare, per ogni giorno, una singola `SaldoCard` con divider rientrati tra le righe (come "Ultimi movimenti" in Dashboard), al posto dei bordi per-riga a tutta larghezza del commit precedente (versionCode 77 -> 78, versionName 0.9.38 -> 0.9.39). Solo `TransactionsScreen.kt`.
+
+- **Motivo:** i bordi per segmento producevano linee divisorie a tutta larghezza tra le righe, che stonavano con il resto (dove il divisore è rientrato di 16dp e il bordo è solo il perimetro esterno della card). Feedback esplicito: si vuole il divisore rientrato come in Dashboard, mantenendo il bordo esterno.
+- **Come:** rimosso `TransactionSegment` (clip+background+border per riga). Nuovo `TransactionDayCard`: una `SaldoCard` per giorno con le righe in Column e `HorizontalDivider` rientrato (`padding horizontal 16dp`, `outlineVariant`) tra le consecutive. Nella `LazyColumn` ogni giorno è un item unico (`card-<date>`) invece di un item per riga.
+- **Performance:** si passa da item lazy per riga a item lazy per giorno. Resta lazy sui giorni (solo i giorni visibili compongono); un giorno compone tutte le sue righe, accettabile perché in un finance personale un singolo giorno ha poche righe. Il commento precedente sul layout "flat per riga" per il riciclo con migliaia di movimenti è superato: il caso patologico (un giorno con centinaia di righe) è irrealistico, e la resa visiva coerente con la Dashboard ha priorità. Le righe restano singolarmente swipe-to-delete; il clip della card delimita lo sfondo rosso dello swipe.
+
+**Decisioni:** scartata l'alternativa di disegnare un bordo esterno per-segmento (verticali sempre, orizzontali solo su prima/ultima riga) via `drawBehind`: più codice e imperfezioni agli angoli arrotondati, contro una card unica che dà il risultato esatto della Dashboard senza trucchi.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint detekt` verde.
+
+**Prossimo:** verifica su device della lista Transazioni (divisori rientrati, bordo esterno, swipe-to-delete con angoli arrotondati su prima/ultima riga).
+
+---
+
 ## 2026-07-17 - Card bianche su canvas grigio estese a tutta l'app
 
 **Fatto:** rollout del nuovo linguaggio card (prototipato sulla Dashboard nel commit precedente) a tutte le schermate a pannelli (versionCode 76 -> 77, versionName 0.9.37 -> 0.9.38). Introdotti il componente condiviso `SaldoCard`/`SaldoCardDefaults` e i token theme-aware `SaldoSurfaces` (`canvas`/`card`/`cardBorder`), agganciati al tema come `MoneyColors`.
