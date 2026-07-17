@@ -14,6 +14,23 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Rimosso l'optical size dinamico; titoli delle righe impostazioni a Medium
+
+**Fatto:** revert dell'`opsz` dinamico e stacco di peso nei `ListItem` delle impostazioni (versionCode 70 -> 71, versionName 0.9.31 -> 0.9.32).
+
+- **Rimosso `opsz` dinamico (`Type.kt`):** su device la variazione dell'ottica per dimensione cambiava pochissimo la larghezza delle cifre grandi, ma scuriva/ingrassava titolo di benvenuto e numeri eroe in modo non voluto (il saluto non deve fare da protagonista). Tornato al `FontFamily` unico con `opsz` al default del font (comportamento 0.9.30). Rimosso anche l'opt-in `@ExperimentalTextApi` che serviva solo per `FontVariation.opticalSizing`. Lo **zero barrato** resta (`tabularNumbers()` = `"tnum, zero"`).
+- **Titoli righe impostazioni a Medium (`SettingsScreen.kt`):** i `ListItem` di Material 3 rendono `headlineContent` e `supportingContent` entrambi a peso Normal (400), distinti solo da dimensione e colore; su schermata densa titolo e descrizione si confondevano. Portato il titolo a `FontWeight.Medium` (500) nei tre punti (`SettingsEntry`, `SettingsSwitchRow`, riga "Primo giorno della settimana"). Descrizione invariata (già `onSurfaceVariant`).
+
+**Decisioni:** pesi dei numeri eroe lasciati a SemiBold come nella 0.9.30, senza aumentarli: dominano già per dimensione, e spingere oltre il peso vira verso un look meno pulito. Stacco titolo/descrizione ottenuto col solo peso (Medium), non con SemiBold, per non appesantire una lista. Lo stesso pattern `ListItem` ricorre in altre schermate: non propagato in blocco in questa tornata, da valutare a vista.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** verifica su device del saluto tornato leggero e dello stacco titolo/descrizione nelle impostazioni.
+
+---
+
 ## 2026-07-17 - Inter: optical size dinamico e zero barrato sugli importi
 
 **Fatto:** due rifiniture tipografiche dopo la verifica su device del cambio a Inter (versionCode 69 -> 70, versionName 0.9.30 -> 0.9.31). Unico file toccato: `Type.kt`.
