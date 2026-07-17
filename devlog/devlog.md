@@ -14,6 +14,23 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Inter: optical size dinamico e zero barrato sugli importi
+
+**Fatto:** due rifiniture tipografiche dopo la verifica su device del cambio a Inter (versionCode 69 -> 70, versionName 0.9.30 -> 0.9.31). Unico file toccato: `Type.kt`.
+
+- **Optical size legato alla dimensione:** Inter ha, oltre a `wght`, l'asse `opsz` (14-32) che adatta le forme alla dimensione di resa (più aperte per il testo piccolo, più strette e rifinite per i titoli). Compose non fa variare `opsz` da solo, quindi ogni stile viene ora legato a un `FontFamily` il cui `opsz` combacia con il `fontSize` dello stile (`FontVariation.opticalSizing`, valore preso da `TextStyle.fontSize`, clampato a 14-32). Prima era fisso a 14 (default del font) su tutti gli stili: i numeri grandi (`displaySmall` 36sp, es. saldo e spendibile) usavano l'ottica da testo. Ora display/headline salgono verso 32, body/label restano a 14.
+- **Zero barrato sugli importi:** aggiunta la feature OpenType `zero` di Inter in `tabularNumbers()`, che ora imposta `fontFeatureSettings = "tnum, zero"`. Lo 0 non si confonde con la O. Scope invariato: la funzione è già applicata solo agli importi (e alle percentuali del budget, coerente), quindi nessun call site toccato.
+
+**Decisioni:** `opsz` implementato costruendo un `FontFamily` per stile (le variation settings vanno sul `Font`, non sul `TextStyle`), con le 4 entry di peso Regular/Medium/SemiBold/Bold che condividono lo stesso `opsz`. Clamp esplicito 14-32 invece di affidarsi al clamp implicito del sistema. Pesi non toccati (già coerenti: tutti i numeri eroe SemiBold). `zero` scopato agli importi via `tabularNumbers()` e non globale, per non avere zeri barrati nel testo in prosa. Scartate in questa tornata le forme a un piano (`ss01`, estetica più "Google Sans"): da valutare a vista, non richieste.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** verifica su device della resa dei numeri grandi con `opsz` alto e dello zero barrato negli importi.
+
+---
+
 ## 2026-07-17 - Cambio typeface: da Roboto (default di sistema) a Inter
 
 **Fatto:** sostituito il font di sistema (Roboto) con Inter su tutta l'app (versionCode 68 -> 69, versionName 0.9.29 -> 0.9.30). Unico punto di codice toccato: `Type.kt`.
