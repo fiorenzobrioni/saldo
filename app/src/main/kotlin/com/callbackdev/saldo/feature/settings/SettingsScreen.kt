@@ -58,7 +58,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -125,9 +124,7 @@ fun SettingsScreen(
                 onClick = { showDefaultAccountDialog = true },
             )
             ListItem(
-                headlineContent = {
-                    Text(stringResource(R.string.settings_first_day_of_week), fontWeight = FontWeight.Medium)
-                },
+                headlineContent = { Text(stringResource(R.string.settings_first_day_of_week)) },
                 supportingContent = { Text(stringResource(R.string.settings_first_day_of_week_hint)) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
@@ -481,7 +478,7 @@ private fun SettingsEntry(
     modifier: Modifier = Modifier,
 ) {
     ListItem(
-        headlineContent = { Text(title, fontWeight = FontWeight.Medium) },
+        headlineContent = { Text(title) },
         supportingContent = { Text(hint) },
         leadingContent = {
             Icon(
@@ -516,7 +513,7 @@ private fun SettingsSwitchRow(
     modifier: Modifier = Modifier,
 ) {
     ListItem(
-        headlineContent = { Text(title, fontWeight = FontWeight.Medium) },
+        headlineContent = { Text(title) },
         supportingContent = { Text(hint) },
         trailingContent = {
             Switch(checked = checked, onCheckedChange = null)

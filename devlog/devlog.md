@@ -14,6 +14,23 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Ripristinato il peso di default M3 sui titoli delle righe impostazioni
+
+**Fatto:** annullato lo stacco a Medium introdotto poco prima sui `ListItem` delle impostazioni (versionCode 71 -> 72, versionName 0.9.32 -> 0.9.33). Solo `SettingsScreen.kt`.
+
+- **Motivo:** verifica sulla specifica M3. Il `ListItem` mappa `headlineContent` -> Body Large e `supportingContent` -> Body Medium, entrambi Regular (400) nella type scale baseline; la gerarchia titolo/descrizione è affidata a dimensione (16 vs 14sp) e colore (`onSurface` vs `onSurfaceVariant`), non al peso. Portare il titolo a Medium era una deviazione consapevole, non conforme. La conformità a Material 3 è un prerequisito di prodotto, quindi si torna al default.
+- **Come:** rimosso `fontWeight = FontWeight.Medium` dai tre `headlineContent` (`SettingsEntry`, `SettingsSwitchRow`, riga "Primo giorno della settimana") e l'import `FontWeight` diventato inutile.
+
+**Decisioni:** eventuale aumento di contrasto titolo/descrizione rimandato; se in futuro servirà, valutarlo come personalizzazione dichiarata (non come "default M3") o restando on-spec su colore/dimensione. Lo zero barrato e il resto della tipografia Inter restano invariati.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** nessuno su questo punto.
+
+---
+
 ## 2026-07-17 - Rimosso l'optical size dinamico; titoli delle righe impostazioni a Medium
 
 **Fatto:** revert dell'`opsz` dinamico e stacco di peso nei `ListItem` delle impostazioni (versionCode 70 -> 71, versionName 0.9.31 -> 0.9.32).
