@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Fix crash all'avvio: migration ripiegata nel baseline v1
+
+**Fatto:** rimossa la `MIGRATION_1_2` e ripiegate le colonne transfer nel baseline v1 (`SaldoDatabase.version` di nuovo 1, `1.json` rigenerato con colonne + indice + FK, `2.json` e `Migration1To2Test` eliminati, `ALL_MIGRATIONS` di nuovo vuoto). versionCode 79 -> 80, versionName 0.9.40 -> 0.9.41.
+
+**Decisioni:** la 0.9.40 crashava all'avvio dopo l'update in-place. Causa: `Migration(1,2)` aggiungeva le colonne con `ALTER TABLE ADD COLUMN` + indice, ma `RecurringRuleEntity` dichiara una foreign key su `transferAccountId` verso `accounts`, e in SQLite `ADD COLUMN` non puo' aggiungere una FK; lo schema migrato divergeva da `2.json` e Room lanciava `IllegalStateException` all'apertura. Il fix corretto per una migration sarebbe la ricreazione della tabella (create-copy-drop-rename) con la FK; qui invece, essendo l'app non pubblicata e su un solo device (dati gia' svuotati), si collassa nel baseline v1 come ADR 23, coerente con la richiesta dell'utente. Lo schema creato da zero (`CREATE TABLE`) include la FK correttamente. ADR 24 aggiornato di conseguenza.
+
+**Problemi:** il migration test strumentato che avevo scritto avrebbe intercettato la divergenza, ma senza emulatore in sessione non e' stato eseguito, quindi il bug e' sfuggito alla verifica basata su build. `assembleDebug testDebugUnitTest lint detekt` verdi; `1.json` verificato (version 1, FK `transferAccountId` -> `accounts` presente).
+
+**Prossimo:** verifica update in-place su device (avvio senza crash, creazione di un trasferimento ricorrente). Chi avesse ancora un DB v2 rotto deve reinstallare o svuotare (vincolo gia' previsto da ADR 23).
+
+---
+
 ## 2026-07-17 - Trasferimenti ricorrenti (Fase 9.15)
 
 **Fatto:** aggiunto il terzo tipo di ricorrenza, i trasferimenti, integrato nel motore/feature esistente (versionCode 78 -> 79, versionName 0.9.39 -> 0.9.40).

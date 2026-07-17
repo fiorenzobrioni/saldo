@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "e6c232d10b6a6e6bb03ea684f389018e",
+    "identityHash": "0ac7912de5f2d06770310aeaa095f01f",
     "entities": [
       {
         "tableName": "accounts",
@@ -558,7 +558,7 @@
       },
       {
         "tableName": "recurring_rules",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `currency` TEXT NOT NULL, `accountId` INTEGER NOT NULL, `frequency` TEXT NOT NULL, `startDateEpochDay` INTEGER NOT NULL, `amountMinor` INTEGER, `categoryId` INTEGER, `dayOfReference` INTEGER, `endDateEpochDay` INTEGER, `mode` TEXT NOT NULL, `isVariableAmount` INTEGER NOT NULL, `lastGeneratedEpochDay` INTEGER, `color` INTEGER, `icon` TEXT, `note` TEXT, `lastReminderEpochDay` INTEGER, FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `currency` TEXT NOT NULL, `accountId` INTEGER NOT NULL, `frequency` TEXT NOT NULL, `startDateEpochDay` INTEGER NOT NULL, `amountMinor` INTEGER, `categoryId` INTEGER, `dayOfReference` INTEGER, `endDateEpochDay` INTEGER, `mode` TEXT NOT NULL, `isVariableAmount` INTEGER NOT NULL, `lastGeneratedEpochDay` INTEGER, `color` INTEGER, `icon` TEXT, `note` TEXT, `lastReminderEpochDay` INTEGER, `transferAccountId` INTEGER, `transferAmountMinor` INTEGER, `transferCurrency` TEXT, FOREIGN KEY(`accountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`transferAccountId`) REFERENCES `accounts`(`id`) ON UPDATE NO ACTION ON DELETE NO ACTION , FOREIGN KEY(`categoryId`) REFERENCES `categories`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -658,6 +658,21 @@
             "fieldPath": "lastReminderEpochDay",
             "columnName": "lastReminderEpochDay",
             "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "transferAccountId",
+            "columnName": "transferAccountId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "transferAmountMinor",
+            "columnName": "transferAmountMinor",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "transferCurrency",
+            "columnName": "transferCurrency",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -684,6 +699,15 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_recurring_rules_categoryId` ON `${TABLE_NAME}` (`categoryId`)"
+          },
+          {
+            "name": "index_recurring_rules_transferAccountId",
+            "unique": false,
+            "columnNames": [
+              "transferAccountId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_recurring_rules_transferAccountId` ON `${TABLE_NAME}` (`transferAccountId`)"
           }
         ],
         "foreignKeys": [
@@ -693,6 +717,17 @@
             "onUpdate": "NO ACTION",
             "columns": [
               "accountId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "accounts",
+            "onDelete": "NO ACTION",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "transferAccountId"
             ],
             "referencedColumns": [
               "id"
@@ -783,7 +818,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e6c232d10b6a6e6bb03ea684f389018e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0ac7912de5f2d06770310aeaa095f01f')"
     ]
   }
 }
