@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.ExpandMore
@@ -248,8 +249,11 @@ private fun SafeToSpendContent(
     Column(modifier = modifier) {
         Text(
             text = MoneyFormatter.format(checkNotNull(safeToSpend.perDay), currency),
-            style = MaterialTheme.typography.displaySmall.tabularNumbers(),
+            style = MaterialTheme.typography.headlineMedium.tabularNumbers(),
             fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            autoSize = TextAutoSize.StepBased(minFontSize = HERO_MONEY_MIN, maxFontSize = HERO_MONEY_MAX),
+            modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(4.dp))
         Text(
@@ -296,9 +300,12 @@ private fun SafeToSpendOverContent(
                     R.string.budgets_overspent_by,
                     MoneyFormatter.format(safeToSpend.remaining.abs(), currency),
                 ),
-                style = MaterialTheme.typography.headlineSmall.tabularNumbers(),
+                style = MaterialTheme.typography.titleLarge.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onErrorContainer,
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = COMPACT_MONEY_MIN, maxFontSize = COMPACT_MONEY_MAX),
+                modifier = Modifier.weight(1f),
             )
         }
         Spacer(Modifier.height(4.dp))
@@ -385,6 +392,9 @@ private fun OverallBudgetSummary(progress: BudgetProgress, modifier: Modifier = 
                     style = MaterialTheme.typography.titleLarge.tabularNumbers(),
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.error,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = COMPACT_MONEY_MIN, maxFontSize = COMPACT_MONEY_MAX),
+                    modifier = Modifier.weight(1f),
                 )
             }
         } else {
@@ -395,6 +405,9 @@ private fun OverallBudgetSummary(progress: BudgetProgress, modifier: Modifier = 
                 ),
                 style = MaterialTheme.typography.titleLarge.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(minFontSize = COMPACT_MONEY_MIN, maxFontSize = COMPACT_MONEY_MAX),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         Spacer(Modifier.height(8.dp))

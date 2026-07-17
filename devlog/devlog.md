@@ -14,6 +14,23 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Dashboard: importi hero auto-dimensionanti e gerarchia ridotta
+
+**Fatto:** rivisti gli importi principali della dashboard perché non si troncassero più con cifre alte e si differenziassero dal saldo (versionCode 72 -> 73, versionName 0.9.33 -> 0.9.34). Toccati `DashboardCards.kt` e `BudgetDashboardCards.kt`.
+
+- **Auto-size (`TextAutoSize.StepBased`, stabile da Compose 1.8):** gli importi hero ora partono alla dimensione target e si rimpiccioliscono solo quando non entrano, invece di troncare con "…". Ogni `Text` interessato ha `maxLines = 1`, un vincolo di larghezza (`fillMaxWidth` nelle Column, `weight(1f)` nelle Row con icona) e i bound sp condivisi (`HERO_MONEY_MIN/MAX = 20/28`, `COMPACT_MONEY_MIN/MAX = 14/22`, definiti in `DashboardCards.kt` e usati anche in `BudgetDashboardCards.kt`, stesso package).
+- **Gerarchia ridotta:** saldo totale e "spendibile oggi" (normale) da `displaySmall` (36sp) a `headlineMedium` (28sp, max autosize); Oggi/Mese, "Superato di…" (spendibile) e budget (Ancora/Superato) a `titleLarge` (22sp max, scendono fino a 14sp). Tutti restano token M3, cambia solo quale token usa ciascun importo (nessuna deviazione dalla type scale).
+
+**Decisioni:** l'auto-size è la soluzione al troncamento delle card Oggi/Mese (mezza larghezza): a dimensione fissa, per far entrare cifre a sei zeri servirebbe ~16sp, troppo piccolo per il valore principale. Compromesso noto: le due card Oggi/Mese si dimensionano indipendentemente, quindi con lunghezze molto diverse possono avere size leggermente diverse (solo agli estremi, comunque meglio del troncamento). Il messaggio "Esaurito" e la riga breakdown non sono toccati (non sono cifre hero). Il letter spacing app-wide è stato discusso ma lasciato in sospeso in attesa di decisione (conformità M3 vs ri-taratura per Inter).
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde.
+
+**Prossimo:** verifica su device del comportamento auto-size con importi grandi e piccoli, chiaro e scuro; decisione sul letter spacing.
+
+---
+
 ## 2026-07-17 - Ripristinato il peso di default M3 sui titoli delle righe impostazioni
 
 **Fatto:** annullato lo stacco a Medium introdotto poco prima sui `ListItem` delle impostazioni (versionCode 71 -> 72, versionName 0.9.32 -> 0.9.33). Solo `SettingsScreen.kt`.
