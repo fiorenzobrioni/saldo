@@ -8,9 +8,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -67,6 +70,8 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
+import com.callbackdev.saldo.core.designsystem.component.SaldoCard
+import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
 import java.time.DayOfWeek
@@ -98,6 +103,7 @@ fun SettingsScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.saldoSurfaces.canvas,
         topBar = {
             TopAppBar(scrollBehavior = scrollBehavior, title = { Text(stringResource(R.string.nav_settings)) })
         },
@@ -109,135 +115,154 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
         ) {
             SettingsSectionHeader(stringResource(R.string.settings_section_preferences))
-            SettingsEntry(
-                title = stringResource(R.string.settings_primary_currency),
-                hint = primaryCurrency?.label()
-                    ?: stringResource(R.string.settings_primary_currency_auto),
-                icon = Icons.Outlined.Payments,
-                onClick = { showCurrencyDialog = true },
-            )
-            SettingsEntry(
-                title = stringResource(R.string.settings_default_account),
-                hint = activeAccounts.firstOrNull { it.id == defaultAccountId }?.name
-                    ?: stringResource(R.string.settings_default_account_auto),
-                icon = Icons.Outlined.AccountBalanceWallet,
-                onClick = { showDefaultAccountDialog = true },
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_first_day_of_week)) },
-                supportingContent = { Text(stringResource(R.string.settings_first_day_of_week_hint)) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            )
-            FirstDayOfWeekSelector(
-                selected = firstDayOfWeek,
-                onSelected = viewModel::onFirstDayOfWeekSelected,
-            )
-
-            SettingsSectionHeader(stringResource(R.string.settings_section_appearance))
-            ThemeModeSelector(
-                selected = themePreferences.mode,
-                onSelected = viewModel::onThemeModeSelected,
-            )
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_dynamic_color),
-                hint = stringResource(R.string.settings_dynamic_color_hint),
-                checked = themePreferences.useDynamicColor,
-                onCheckedChange = viewModel::onDynamicColorChanged,
-            )
-
-            SettingsSectionHeader(stringResource(R.string.settings_section_dashboard))
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_dashboard_show_sts),
-                hint = stringResource(R.string.settings_dashboard_show_sts_hint),
-                checked = dashboardCards.showSafeToSpend,
-                onCheckedChange = viewModel::onShowSafeToSpendChanged,
-            )
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_dashboard_show_budget),
-                hint = stringResource(R.string.settings_dashboard_show_budget_hint),
-                checked = dashboardCards.showBudget,
-                onCheckedChange = viewModel::onShowBudgetCardChanged,
-            )
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_dashboard_show_recent),
-                hint = stringResource(R.string.settings_dashboard_show_recent_hint),
-                checked = dashboardCards.showRecentTransactions,
-                onCheckedChange = viewModel::onShowRecentTransactionsChanged,
-            )
-
-            SettingsSectionHeader(stringResource(R.string.settings_section_notifications))
-            // The permission is asked contextually here (and in onboarding), never
-            // cold at launch: turning the reminder on is the moment it makes sense.
-            val context = LocalContext.current
-            val notificationPermissionLauncher = rememberLauncherForActivityResult(
-                ActivityResultContracts.RequestPermission(),
-            ) { /* the reminder stays on either way; a denial just mutes it */ }
-            SettingsSwitchRow(
-                title = stringResource(R.string.settings_renewal_reminder),
-                hint = stringResource(R.string.settings_renewal_reminder_hint),
-                checked = renewalReminder.enabled,
-                onCheckedChange = { enabled ->
-                    viewModel.onRenewalReminderChanged(enabled)
-                    if (enabled) {
-                        val granted = ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.POST_NOTIFICATIONS,
-                        ) == PackageManager.PERMISSION_GRANTED
-                        if (!granted) {
-                            notificationPermissionLauncher
-                                .launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    }
-                },
-            )
-            if (renewalReminder.enabled) {
-                RenewalLeadDaysSelector(
-                    selected = renewalReminder.leadDays,
-                    onSelected = viewModel::onRenewalLeadDaysSelected,
+            SettingsGroup {
+                SettingsEntry(
+                    title = stringResource(R.string.settings_primary_currency),
+                    hint = primaryCurrency?.label()
+                        ?: stringResource(R.string.settings_primary_currency_auto),
+                    icon = Icons.Outlined.Payments,
+                    onClick = { showCurrencyDialog = true },
+                )
+                SettingsEntry(
+                    title = stringResource(R.string.settings_default_account),
+                    hint = activeAccounts.firstOrNull { it.id == defaultAccountId }?.name
+                        ?: stringResource(R.string.settings_default_account_auto),
+                    icon = Icons.Outlined.AccountBalanceWallet,
+                    onClick = { showDefaultAccountDialog = true },
+                )
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_first_day_of_week)) },
+                    supportingContent = { Text(stringResource(R.string.settings_first_day_of_week_hint)) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+                FirstDayOfWeekSelector(
+                    selected = firstDayOfWeek,
+                    onSelected = viewModel::onFirstDayOfWeekSelected,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
                 )
             }
 
+            SettingsSectionHeader(stringResource(R.string.settings_section_appearance))
+            SettingsGroup {
+                ThemeModeSelector(
+                    selected = themePreferences.mode,
+                    onSelected = viewModel::onThemeModeSelected,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                )
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dynamic_color),
+                    hint = stringResource(R.string.settings_dynamic_color_hint),
+                    checked = themePreferences.useDynamicColor,
+                    onCheckedChange = viewModel::onDynamicColorChanged,
+                )
+            }
+
+            SettingsSectionHeader(stringResource(R.string.settings_section_dashboard))
+            SettingsGroup {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dashboard_show_sts),
+                    hint = stringResource(R.string.settings_dashboard_show_sts_hint),
+                    checked = dashboardCards.showSafeToSpend,
+                    onCheckedChange = viewModel::onShowSafeToSpendChanged,
+                )
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dashboard_show_budget),
+                    hint = stringResource(R.string.settings_dashboard_show_budget_hint),
+                    checked = dashboardCards.showBudget,
+                    onCheckedChange = viewModel::onShowBudgetCardChanged,
+                )
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dashboard_show_recent),
+                    hint = stringResource(R.string.settings_dashboard_show_recent_hint),
+                    checked = dashboardCards.showRecentTransactions,
+                    onCheckedChange = viewModel::onShowRecentTransactionsChanged,
+                )
+            }
+
+            SettingsSectionHeader(stringResource(R.string.settings_section_notifications))
+            SettingsGroup {
+                // The permission is asked contextually here (and in onboarding),
+                // never cold at launch: turning the reminder on is the moment it
+                // makes sense.
+                val context = LocalContext.current
+                val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission(),
+                ) { /* the reminder stays on either way; a denial just mutes it */ }
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_renewal_reminder),
+                    hint = stringResource(R.string.settings_renewal_reminder_hint),
+                    checked = renewalReminder.enabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.onRenewalReminderChanged(enabled)
+                        if (enabled) {
+                            val granted = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.POST_NOTIFICATIONS,
+                            ) == PackageManager.PERMISSION_GRANTED
+                            if (!granted) {
+                                notificationPermissionLauncher
+                                    .launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
+                    },
+                )
+                if (renewalReminder.enabled) {
+                    RenewalLeadDaysSelector(
+                        selected = renewalReminder.leadDays,
+                        onSelected = viewModel::onRenewalLeadDaysSelected,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+                    )
+                }
+            }
+
             SettingsSectionHeader(stringResource(R.string.settings_section_management))
-            SettingsEntry(
-                title = stringResource(R.string.settings_accounts),
-                hint = stringResource(R.string.settings_accounts_hint),
-                icon = Icons.Outlined.AccountBalanceWallet,
-                onClick = onNavigateToAccounts,
-            )
-            SettingsEntry(
-                title = stringResource(R.string.settings_recurrences),
-                hint = stringResource(R.string.settings_recurrences_hint),
-                icon = Icons.Outlined.EventRepeat,
-                onClick = onNavigateToRecurrences,
-            )
-            SettingsEntry(
-                title = stringResource(R.string.settings_budgets),
-                hint = stringResource(R.string.settings_budgets_hint),
-                icon = Icons.Outlined.Savings,
-                onClick = onNavigateToBudgets,
-            )
-            SettingsEntry(
-                title = stringResource(R.string.settings_categories),
-                hint = stringResource(R.string.settings_categories_hint),
-                icon = Icons.Outlined.Category,
-                onClick = onNavigateToCategories,
-            )
+            SettingsGroup {
+                SettingsEntry(
+                    title = stringResource(R.string.settings_accounts),
+                    hint = stringResource(R.string.settings_accounts_hint),
+                    icon = Icons.Outlined.AccountBalanceWallet,
+                    onClick = onNavigateToAccounts,
+                )
+                SettingsEntry(
+                    title = stringResource(R.string.settings_recurrences),
+                    hint = stringResource(R.string.settings_recurrences_hint),
+                    icon = Icons.Outlined.EventRepeat,
+                    onClick = onNavigateToRecurrences,
+                )
+                SettingsEntry(
+                    title = stringResource(R.string.settings_budgets),
+                    hint = stringResource(R.string.settings_budgets_hint),
+                    icon = Icons.Outlined.Savings,
+                    onClick = onNavigateToBudgets,
+                )
+                SettingsEntry(
+                    title = stringResource(R.string.settings_categories),
+                    hint = stringResource(R.string.settings_categories_hint),
+                    icon = Icons.Outlined.Category,
+                    onClick = onNavigateToCategories,
+                )
+            }
 
             SettingsSectionHeader(stringResource(R.string.settings_section_data))
-            SettingsEntry(
-                title = stringResource(R.string.settings_backup),
-                hint = stringResource(R.string.settings_backup_hint),
-                icon = Icons.Outlined.SettingsBackupRestore,
-                onClick = onNavigateToBackup,
-            )
+            SettingsGroup {
+                SettingsEntry(
+                    title = stringResource(R.string.settings_backup),
+                    hint = stringResource(R.string.settings_backup_hint),
+                    icon = Icons.Outlined.SettingsBackupRestore,
+                    onClick = onNavigateToBackup,
+                )
+            }
 
             SettingsSectionHeader(stringResource(R.string.settings_section_about))
-            SettingsEntry(
-                title = stringResource(R.string.settings_about),
-                hint = stringResource(R.string.settings_about_hint, BuildConfig.VERSION_NAME),
-                icon = Icons.Outlined.Info,
-                onClick = onNavigateToAbout,
-            )
+            SettingsGroup {
+                SettingsEntry(
+                    title = stringResource(R.string.settings_about),
+                    hint = stringResource(R.string.settings_about_hint, BuildConfig.VERSION_NAME),
+                    icon = Icons.Outlined.Info,
+                    onClick = onNavigateToAbout,
+                )
+            }
+            Spacer(Modifier.height(24.dp))
         }
     }
 
@@ -385,6 +410,26 @@ private fun SettingsSectionHeader(text: String, modifier: Modifier = Modifier) {
         color = MaterialTheme.colorScheme.primary,
         modifier = modifier.padding(start = 16.dp, top = 20.dp, end = 16.dp, bottom = 8.dp),
     )
+}
+
+/**
+ * One settings section as a grouped card: a white panel on the grey canvas that
+ * holds the section's rows, so the sections read as distinct blocks instead of a
+ * flat run of rows. The rows keep their transparent container and inherit the
+ * card fill.
+ */
+@Composable
+private fun SettingsGroup(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    SaldoCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    ) {
+        Column(modifier = Modifier.padding(vertical = 4.dp), content = content)
+    }
 }
 
 @Composable

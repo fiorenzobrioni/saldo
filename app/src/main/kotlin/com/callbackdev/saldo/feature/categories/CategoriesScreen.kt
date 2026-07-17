@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.categories
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,9 +58,11 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.component.ReorderableListState
+import com.callbackdev.saldo.core.designsystem.component.SaldoCardDefaults
 import com.callbackdev.saldo.core.designsystem.component.rememberReorderableListState
 import com.callbackdev.saldo.core.designsystem.component.reorderableHandle
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
+import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.Category
@@ -86,6 +89,7 @@ fun CategoriesScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.saldoSurfaces.canvas,
         topBar = {
             TopAppBar(
                 scrollBehavior = scrollBehavior,
@@ -234,7 +238,8 @@ private fun CategoryRow(
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = SaldoCardDefaults.containerColor,
+        border = BorderStroke(SaldoCardDefaults.BorderWidth, MaterialTheme.saldoSurfaces.cardBorder),
         shadowElevation = if (elevated) 6.dp else 0.dp,
         modifier = modifier.fillMaxWidth(),
     ) {

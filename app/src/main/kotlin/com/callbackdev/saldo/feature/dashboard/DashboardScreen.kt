@@ -35,6 +35,7 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.DashboardSkeleton
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
+import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
 
@@ -69,6 +70,7 @@ fun DashboardScreen(
 
     Scaffold(
         modifier = modifier,
+        containerColor = MaterialTheme.saldoSurfaces.canvas,
         floatingActionButton = {
             if (!uiState.isLoading && uiState.hasAccounts) {
                 DashboardSpeedDial(

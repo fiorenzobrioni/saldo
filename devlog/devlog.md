@@ -14,6 +14,43 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-17 - Transazioni: card raggruppata per giorno invece dei bordi per riga
+
+**Fatto:** rifatta la lista Transazioni per usare, per ogni giorno, una singola `SaldoCard` con divider rientrati tra le righe (come "Ultimi movimenti" in Dashboard), al posto dei bordi per-riga a tutta larghezza del commit precedente (versionCode 77 -> 78, versionName 0.9.38 -> 0.9.39). Solo `TransactionsScreen.kt`.
+
+- **Motivo:** i bordi per segmento producevano linee divisorie a tutta larghezza tra le righe, che stonavano con il resto (dove il divisore è rientrato di 16dp e il bordo è solo il perimetro esterno della card). Feedback esplicito: si vuole il divisore rientrato come in Dashboard, mantenendo il bordo esterno.
+- **Come:** rimosso `TransactionSegment` (clip+background+border per riga). Nuovo `TransactionDayCard`: una `SaldoCard` per giorno con le righe in Column e `HorizontalDivider` rientrato (`padding horizontal 16dp`, `outlineVariant`) tra le consecutive. Nella `LazyColumn` ogni giorno è un item unico (`card-<date>`) invece di un item per riga.
+- **Performance:** si passa da item lazy per riga a item lazy per giorno. Resta lazy sui giorni (solo i giorni visibili compongono); un giorno compone tutte le sue righe, accettabile perché in un finance personale un singolo giorno ha poche righe. Il commento precedente sul layout "flat per riga" per il riciclo con migliaia di movimenti è superato: il caso patologico (un giorno con centinaia di righe) è irrealistico, e la resa visiva coerente con la Dashboard ha priorità. Le righe restano singolarmente swipe-to-delete; il clip della card delimita lo sfondo rosso dello swipe.
+
+**Decisioni:** scartata l'alternativa di disegnare un bordo esterno per-segmento (verticali sempre, orizzontali solo su prima/ultima riga) via `drawBehind`: più codice e imperfezioni agli angoli arrotondati, contro una card unica che dà il risultato esatto della Dashboard senza trucchi.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint detekt` verde.
+
+**Prossimo:** verifica su device della lista Transazioni (divisori rientrati, bordo esterno, swipe-to-delete con angoli arrotondati su prima/ultima riga).
+
+---
+
+## 2026-07-17 - Card bianche su canvas grigio estese a tutta l'app
+
+**Fatto:** rollout del nuovo linguaggio card (prototipato sulla Dashboard nel commit precedente) a tutte le schermate a pannelli (versionCode 76 -> 77, versionName 0.9.37 -> 0.9.38). Introdotti il componente condiviso `SaldoCard`/`SaldoCardDefaults` e i token theme-aware `SaldoSurfaces` (`canvas`/`card`/`cardBorder`), agganciati al tema come `MoneyColors`.
+
+- **Schema:** canvas schermata grigio chiaro (`surfaceContainerLow`, `#F4F7F6`) con card bianche (`surfaceContainerLowest`, `#FFFFFF`) e hairline `outlineVariant` da 1dp, zero ombra (look "flat, border-led"). In dark la relazione resta corretta (card raised sul background). Le card semantiche mantengono il fondo (`errorContainer`, `tertiaryContainer`, `primaryContainer`) e prendono un bordo in tinta derivato dal loro `onXxxContainer` al 15%.
+- **Schermate convertite:** Statistiche (shell `StatsCard`), Budget, Ricorrenze, Movimenti in sospeso, Backup, About, Transazioni filtrate, Conti. Transazioni: i "segment" per giorno (fatti a mano con `clip`+`background`) portati a bianco con bordo per segmento, che sostituisce il divider interno mantenendo il layout a righe flat per il riciclo. Categorie: righe `Surface` a bianco + bordo (ombra mantenuta durante il drag). `TransactionListRow`: la `Surface` interna della riga swipe-to-delete portata al bianco della card, altrimenti coprirebbe il bianco del segmento.
+- **Impostazioni:** erano una lista piatta senza card (raggruppata solo da intestazioni). Rifatte con card raggruppate per sezione (helper `SettingsGroup`) su canvas grigio: ogni sezione è ora un pannello bianco. Le righe `ListItem` restano a container trasparente ed ereditano il bianco della card.
+- **Fuori scope (canvas bianco invariato):** editor (transazione, conto, categoria, ricorrenza, budget) e onboarding, che sono form senza card. Renderli grigi è una decisione separata, non un effetto collaterale del rollout card. Top bar e bottom nav bar lasciate ai colori di default: su canvas grigio la barra chiara legge come header/barra distinta.
+
+**Decisioni:** centralizzazione in un unico componente per evitare la deriva `surfaceContainer` vs `surfaceContainerHigh` che c'era prima (ogni schermata ridefiniva `CardDefaults.cardColors` inline). La scelta canvas/card è per tema (non da una singola scala fissa) perché in Material 3 la scala dei container va verso il grigio in light e verso il chiaro in dark: il default M3 in light è proprio "card grigia su bianco", quindi l'inversione voluta riguarda soprattutto il tema chiaro. Bordo in tinta sulle card semantiche scelto rispetto a "nessun bordo" per coerenza di sistema (stessa hairline ovunque), tenuto a bassa opacità per non incorniciare.
+
+**Problemi:** wrapper Gradle bloccato (403 policy egress); usato `/opt/gradle/bin/gradle` 8.14.3.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` e `gradle detekt` verdi.
+
+**Prossimo:** verifica su device di tutte le schermate convertite (chiaro e scuro), taratura eventuale della forza della hairline neutra e dell'alpha del bordo in tinta; decisione su editor/onboarding (restano bianchi o adottano anch'essi il canvas grigio).
+
+---
+
 ## 2026-07-17 - Letter spacing ri-tarato per Inter
 
 **Fatto:** ritaratura del tracking della type scale per il font Inter (versionCode 73 -> 74, versionName 0.9.34 -> 0.9.35). Solo `Type.kt`.

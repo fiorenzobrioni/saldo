@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.SaldoCardDefaults
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
@@ -96,7 +97,7 @@ internal fun SwipeableTransactionRow(
     ) {
         Surface(
             onClick = onClick,
-            color = MaterialTheme.colorScheme.surfaceContainer,
+            color = SaldoCardDefaults.containerColor,
             modifier = Modifier.fillMaxWidth(),
         ) {
             TransactionRowContent(

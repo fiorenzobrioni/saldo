@@ -48,6 +48,7 @@ import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.StatsSkeleton
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
+import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.feature.transactions.FilterDateRangePickerDialog
 import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
@@ -74,6 +75,7 @@ fun StatsScreen(
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.saldoSurfaces.canvas,
         topBar = {
             TopAppBar(scrollBehavior = scrollBehavior, title = { Text(stringResource(R.string.nav_stats)) })
         },
