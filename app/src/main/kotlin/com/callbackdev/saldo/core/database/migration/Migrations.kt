@@ -10,6 +10,8 @@ import androidx.room.migration.Migration
  * are no migrations yet. The policy is unchanged and applies from the next
  * schema change onward: add a `Migration(N, N+1)` here, append it to
  * [ALL_MIGRATIONS], bump the database version, and cover it with an instrumented
- * test that validates against the exported schema JSON.
+ * test that validates against the exported schema JSON. Note that
+ * `ALTER TABLE ADD COLUMN` cannot add a foreign key: a column carrying an FK
+ * requires the create-copy-drop-rename table recreation, not a bare add column.
  */
 val ALL_MIGRATIONS: Array<Migration> = emptyArray()

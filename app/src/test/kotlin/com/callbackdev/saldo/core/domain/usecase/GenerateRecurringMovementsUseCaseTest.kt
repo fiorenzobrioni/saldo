@@ -95,6 +95,9 @@ class GenerateRecurringMovementsUseCaseTest {
         mode: RecurrenceMode = RecurrenceMode.AUTOMATIC,
         isVariable: Boolean = false,
         categoryId: Long? = 5L,
+        transferAccountId: Long? = null,
+        transferAmount: BigDecimal? = null,
+        transferCurrency: Currency? = null,
     ) = RecurringRule(
         id = id,
         name = "Netflix",
@@ -110,6 +113,9 @@ class GenerateRecurringMovementsUseCaseTest {
         mode = mode,
         isVariableAmount = isVariable,
         lastGeneratedDate = lastGenerated,
+        transferAccountId = transferAccountId,
+        transferAmount = transferAmount,
+        transferCurrency = transferCurrency,
     )
 
     private fun Transaction.localDate(): LocalDate = timestamp.atOffset(zoneOffset).toLocalDate()
@@ -211,6 +217,67 @@ class GenerateRecurringMovementsUseCaseTest {
         assertTrue(movement.isPending)
         assertEquals(BigDecimal.ZERO.negate(), movement.amount)
         assertNull(result.single().amount)
+    }
+
+    @Test
+    fun `same-currency transfer materializes a confirmed single-record transfer`() = runTest {
+        val useCase = useCase(
+            listOf(
+                rule(
+                    type = TransactionType.TRANSFER,
+                    startDate = LocalDate.of(2026, 7, 7),
+                    amount = BigDecimal("100.00"),
+                    transferAccountId = 9L,
+                    transferAmount = BigDecimal("100.00"),
+                    transferCurrency = eur,
+                    categoryId = null,
+                ),
+            ),
+        )
+
+        val result = useCase(today)
+
+        val movement = generatedMovements.single()
+        assertFalse(movement.isPending)
+        // Source leg leaves the account (negative); destination mirrors it exactly.
+        assertEquals(BigDecimal("-100.00"), movement.amount)
+        assertEquals(3L, movement.accountId)
+        assertEquals(9L, movement.transferAccountId)
+        assertEquals(BigDecimal("100.00"), movement.transferAmount)
+        assertEquals(eur, movement.transferCurrency)
+        assertNull(movement.categoryId)
+        assertFalse(result.single().isPending)
+    }
+
+    @Test
+    fun `cross-currency transfer generates a pending movement awaiting the received amount`() = runTest {
+        val usd = Currency.getInstance("USD")
+        val useCase = useCase(
+            listOf(
+                rule(
+                    type = TransactionType.TRANSFER,
+                    startDate = LocalDate.of(2026, 7, 7),
+                    amount = BigDecimal("100.00"),
+                    mode = RecurrenceMode.CONFIRM,
+                    transferAccountId = 9L,
+                    // Cross-currency rules leave the destination amount null.
+                    transferAmount = null,
+                    transferCurrency = usd,
+                    categoryId = null,
+                ),
+            ),
+        )
+
+        val result = useCase(today)
+
+        val movement = generatedMovements.single()
+        assertTrue(movement.isPending)
+        // Source leg is fixed and known; the received amount is entered at confirmation.
+        assertEquals(BigDecimal("-100.00"), movement.amount)
+        assertEquals(9L, movement.transferAccountId)
+        assertNull(movement.transferAmount)
+        assertEquals(usd, movement.transferCurrency)
+        assertTrue(result.single().isPending)
     }
 
     @Test

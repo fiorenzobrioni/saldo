@@ -122,6 +122,9 @@ data class RecurringRuleBackup(
     val icon: String? = null,
     val note: String? = null,
     val lastReminderEpochDay: Long? = null,
+    val transferAccountId: Long? = null,
+    val transferAmountMinor: Long? = null,
+    val transferCurrency: String? = null,
 )
 
 @Serializable

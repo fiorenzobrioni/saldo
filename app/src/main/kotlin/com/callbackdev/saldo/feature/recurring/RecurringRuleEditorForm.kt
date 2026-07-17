@@ -119,6 +119,8 @@ internal fun AccountField(
     showError: Boolean,
     onSelected: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    @StringRes labelRes: Int = R.string.subscription_editor_account,
+    @StringRes errorRes: Int = R.string.subscription_editor_account_error,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = accounts.firstOrNull { it.id == selectedId }
@@ -132,7 +134,7 @@ internal fun AccountField(
             onValueChange = {},
             readOnly = true,
             isError = showError,
-            label = { Text(stringResource(R.string.subscription_editor_account)) },
+            label = { Text(stringResource(labelRes)) },
             leadingIcon = selected?.let { account ->
                 {
                     Icon(
@@ -143,7 +145,7 @@ internal fun AccountField(
                 }
             },
             supportingText = if (showError) {
-                { Text(stringResource(R.string.subscription_editor_account_error)) }
+                { Text(stringResource(errorRes)) }
             } else {
                 null
             },

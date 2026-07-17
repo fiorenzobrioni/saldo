@@ -146,15 +146,27 @@ private fun subscriptionSubtitle(item: SubscriptionItem, type: TransactionType):
     } else {
         "$frequency ${MoneyFormatter.format(rule.amount, rule.currency)}"
     }
-    val onDateRes = if (type == TransactionType.INCOME) {
-        R.string.incomes_credited_on
+    val onDateRes = when (type) {
+        TransactionType.INCOME -> R.string.incomes_credited_on
+        TransactionType.TRANSFER -> R.string.transfers_transferred_on
+        else -> R.string.subscriptions_charged_on
+    }
+    // A transfer names both legs ("From → To"); other rules name the one account.
+    val accountLabel = if (type == TransactionType.TRANSFER) {
+        val from = item.account?.name
+        val to = item.transferAccount?.name
+        if (from != null && to != null) {
+            stringResource(R.string.transfers_route, from, to)
+        } else {
+            from ?: to
+        }
     } else {
-        R.string.subscriptions_charged_on
+        item.account?.name
     }
     return buildList {
         add(leading)
         item.nextCharge?.let { add(stringResource(onDateRes, shortDate(it))) }
-        item.account?.let { add(it.name) }
+        accountLabel?.let { add(it) }
     }.joinToString(separator = " · ")
 }
 

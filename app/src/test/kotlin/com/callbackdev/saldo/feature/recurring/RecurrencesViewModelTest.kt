@@ -2,6 +2,8 @@ package com.callbackdev.saldo.feature.recurring
 
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import com.callbackdev.saldo.core.domain.model.Account
+import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
@@ -81,12 +83,42 @@ class RecurrencesViewModelTest {
         LocalDate.of(2025, 1, 1), TransactionType.INCOME, endDate = LocalDate.of(2026, 1, 1),
     )
 
+    private fun account(id: Long, type: AccountType) = Account(
+        id = id,
+        name = "acc-$id",
+        type = type,
+        currency = eur,
+        initialBalance = BigDecimal.ZERO,
+    )
+
+    private fun transfer(
+        id: Long,
+        amount: String,
+        toAccountId: Long,
+        startDate: LocalDate = LocalDate.of(2026, 7, 5),
+    ) = RecurringRule(
+        id = id,
+        name = "transfer-$id",
+        type = TransactionType.TRANSFER,
+        currency = eur,
+        accountId = 1L,
+        frequency = RecurrenceFrequency.MONTHLY,
+        startDate = startDate,
+        amount = BigDecimal(amount),
+        dayOfReference = startDate.dayOfMonth,
+        transferAccountId = toAccountId,
+        transferAmount = BigDecimal(amount),
+        transferCurrency = eur,
+    )
+
     private fun viewModel(
         rules: List<RecurringRule>,
         currencyOverride: Currency? = null,
+        accounts: List<Account> = emptyList(),
     ): RecurrencesViewModel {
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
-        every { accountRepository.observeAccountsWithBalance() } returns flowOf(emptyList<AccountWithBalance>())
+        every { accountRepository.observeAccountsWithBalance() } returns
+            flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
         every { categoryRepository.observeCategories() } returns flowOf(emptyList<Category>())
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
         return RecurrencesViewModel(
@@ -163,6 +195,49 @@ class RecurrencesViewModelTest {
             val state = awaitLoaded()
             assertEquals(listOf("Netflix"), state.expenses.items.map { it.rule.name })
             assertEquals(listOf("Stipendio"), state.incomes.items.map { it.rule.name })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `transfers section carries transfers only and planned savings sums savings destinations`() = runTest {
+        // Account 2 is a savings account; account 3 is checking.
+        val toSavings = transfer(10L, "150.00", toAccountId = 2L)
+        val toChecking = transfer(11L, "80.00", toAccountId = 3L)
+        val viewModel = viewModel(
+            rules = listOf(netflix, salary, toSavings, toChecking),
+            accounts = listOf(
+                account(1L, AccountType.CHECKING),
+                account(2L, AccountType.SAVINGS),
+                account(3L, AccountType.CHECKING),
+            ),
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(
+                listOf("transfer-10", "transfer-11"),
+                state.transfers.items.map { it.rule.name }.sorted(),
+            )
+            // Only the transfer landing in the savings account counts.
+            assertEquals(0, BigDecimal("150.00").compareTo(state.plannedMonthlySavings))
+            // Transfers never surface in the expense or income tabs.
+            assertEquals(listOf("Netflix"), state.expenses.items.map { it.rule.name })
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `planned savings is zero when no transfer targets a savings account`() = runTest {
+        val toChecking = transfer(11L, "80.00", toAccountId = 3L)
+        val viewModel = viewModel(
+            rules = listOf(toChecking),
+            accounts = listOf(account(1L, AccountType.CHECKING), account(3L, AccountType.CHECKING)),
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(0, BigDecimal.ZERO.compareTo(state.plannedMonthlySavings))
             cancelAndIgnoreRemainingEvents()
         }
     }

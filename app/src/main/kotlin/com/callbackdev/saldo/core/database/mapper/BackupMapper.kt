@@ -119,6 +119,9 @@ fun RecurringRuleEntity.toBackup(): RecurringRuleBackup = RecurringRuleBackup(
     icon = icon,
     note = note,
     lastReminderEpochDay = lastReminderEpochDay,
+    transferAccountId = transferAccountId,
+    transferAmountMinor = transferAmountMinor,
+    transferCurrency = transferCurrency,
 )
 
 fun RecurringRuleBackup.toEntity(): RecurringRuleEntity = RecurringRuleEntity(
@@ -140,6 +143,9 @@ fun RecurringRuleBackup.toEntity(): RecurringRuleEntity = RecurringRuleEntity(
     icon = icon,
     note = note,
     lastReminderEpochDay = lastReminderEpochDay,
+    transferAccountId = transferAccountId,
+    transferAmountMinor = transferAmountMinor,
+    transferCurrency = transferCurrency?.let(::validatedCurrencyCode),
 )
 
 fun TransactionEntity.toBackup(): TransactionBackup = TransactionBackup(

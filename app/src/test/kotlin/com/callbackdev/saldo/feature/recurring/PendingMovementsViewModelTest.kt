@@ -72,6 +72,56 @@ class PendingMovementsViewModelTest {
         assertFalse(saved.captured.isPending)
     }
 
+    private fun pendingTransfer(destinationCurrency: Currency) = Transaction(
+        id = 8L,
+        type = TransactionType.TRANSFER,
+        amount = BigDecimal("-100.00"),
+        currency = eur,
+        accountId = 3L,
+        timestamp = Instant.parse("2026-07-07T12:00:00Z"),
+        zoneOffset = ZoneOffset.ofHours(2),
+        transferAccountId = 5L,
+        transferAmount = null,
+        transferCurrency = destinationCurrency,
+        recurringRuleId = 1L,
+        isPending = true,
+    )
+
+    @Test
+    fun `confirming a cross-currency transfer sets the received amount and keeps the source fixed`() = runTest {
+        val usd = Currency.getInstance("USD")
+        val saved = slot<Transaction>()
+        coEvery { transactionRepository.upsert(capture(saved)) } returns 8L
+        val movement = pendingTransfer(destinationCurrency = usd)
+        val viewModel = viewModel(listOf(movement))
+
+        viewModel.confirm(movement, BigDecimal("108.50"))
+
+        with(saved.captured) {
+            // The source leg entered at generation stays untouched.
+            assertEquals(BigDecimal("-100.00"), amount)
+            assertEquals(0, transferAmount!!.compareTo(BigDecimal("108.50")))
+            assertFalse(isPending)
+        }
+    }
+
+    @Test
+    fun `confirming a same-currency transfer moves both legs by the amount`() = runTest {
+        val saved = slot<Transaction>()
+        coEvery { transactionRepository.upsert(capture(saved)) } returns 8L
+        // Same-currency transfer in confirm mode: destination equals source.
+        val movement = pendingTransfer(destinationCurrency = eur).copy(transferAmount = BigDecimal("100.00"))
+        val viewModel = viewModel(listOf(movement))
+
+        viewModel.confirm(movement, BigDecimal("120.00"))
+
+        with(saved.captured) {
+            assertEquals(BigDecimal("-120.00"), amount)
+            assertEquals(0, transferAmount!!.compareTo(BigDecimal("120.00")))
+            assertFalse(isPending)
+        }
+    }
+
     @Test
     fun `skip deletes the pending movement`() = runTest {
         val deleted = slot<Transaction>()

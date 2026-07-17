@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.recurring
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.domain.model.Account
+import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurringRule
@@ -75,7 +76,14 @@ class RecurrencesViewModel @Inject constructor(
         fun sectionFor(type: TransactionType): RecurrenceSection {
             val items = rules
                 .filter { it.type == type && it.isActiveOn(today) }
-                .map { rule -> rule.toItem(today, accountById[rule.accountId], categoryById[rule.categoryId]) }
+                .map { rule ->
+                    rule.toItem(
+                        today = today,
+                        account = accountById[rule.accountId],
+                        category = categoryById[rule.categoryId],
+                        transferAccount = accountById[rule.transferAccountId],
+                    )
+                }
                 .sortedWith(sortOrder.comparator())
 
             // The explicit Settings choice keeps section totals consistent
@@ -100,23 +108,44 @@ class RecurrencesViewModel @Inject constructor(
             )
         }
 
+        val transfers = sectionFor(TransactionType.TRANSFER)
+        // Planned savings: the monthly-equivalent of transfers landing in a
+        // savings account, the honest seed of Savings Goals (v2.0).
+        val savingsItems = transfers.items.filter {
+            accountById[it.rule.transferAccountId]?.type == AccountType.SAVINGS
+        }
+        val savingsCurrency = currencyOverride
+            ?: savingsItems.groupingBy { it.rule.currency }.eachCount().maxByOrNull { it.value }?.key
+            ?: fallbackCurrency
+        val plannedMonthlySavings = savingsItems
+            .filter { it.rule.currency == savingsCurrency }
+            .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.monthlyEquivalent) }
+
         return RecurrencesUiState(
             isLoading = false,
             expenses = sectionFor(TransactionType.EXPENSE),
             incomes = sectionFor(TransactionType.INCOME),
+            transfers = transfers,
+            plannedMonthlySavings = plannedMonthlySavings,
+            savingsCurrency = savingsCurrency,
             sort = sortOrder,
             today = today,
         )
     }
 
-    private fun RecurringRule.toItem(today: LocalDate, account: Account?, category: Category?) =
-        SubscriptionItem(
-            rule = this,
-            account = account,
-            category = category,
-            monthlyEquivalent = RecurrenceCalculator.monthlyEquivalent(this) ?: BigDecimal.ZERO,
-            nextCharge = RecurrenceCalculator.nextOccurrence(this, nextChargeFloor(today)),
-        )
+    private fun RecurringRule.toItem(
+        today: LocalDate,
+        account: Account?,
+        category: Category?,
+        transferAccount: Account?,
+    ) = SubscriptionItem(
+        rule = this,
+        account = account,
+        category = category,
+        monthlyEquivalent = RecurrenceCalculator.monthlyEquivalent(this) ?: BigDecimal.ZERO,
+        nextCharge = RecurrenceCalculator.nextOccurrence(this, nextChargeFloor(today)),
+        transferAccount = transferAccount,
+    )
 
     /**
      * Floor for the "next charge" lookup: today, or the day after the last
