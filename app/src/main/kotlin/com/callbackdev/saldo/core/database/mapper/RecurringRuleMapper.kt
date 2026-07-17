@@ -8,6 +8,7 @@ import java.util.Currency
 
 fun RecurringRuleEntity.toDomain(): RecurringRule {
     val currency = Currency.getInstance(currency)
+    val transferCurrency = transferCurrency?.let(Currency::getInstance)
     return RecurringRule(
         id = id,
         name = name,
@@ -27,6 +28,11 @@ fun RecurringRuleEntity.toDomain(): RecurringRule {
         icon = icon,
         note = note,
         lastReminderDate = lastReminderEpochDay?.let(LocalDate::ofEpochDay),
+        transferAccountId = transferAccountId,
+        transferAmount = transferAmountMinor?.let {
+            MoneyMapper.toAmount(it, transferCurrency ?: currency)
+        },
+        transferCurrency = transferCurrency,
     )
 }
 
@@ -49,4 +55,9 @@ fun RecurringRule.toEntity(): RecurringRuleEntity = RecurringRuleEntity(
     icon = icon,
     note = note,
     lastReminderEpochDay = lastReminderDate?.toEpochDay(),
+    transferAccountId = transferAccountId,
+    transferAmountMinor = transferAmount?.let {
+        MoneyMapper.toMinorUnits(it, transferCurrency ?: currency)
+    },
+    transferCurrency = transferCurrency?.currencyCode,
 )

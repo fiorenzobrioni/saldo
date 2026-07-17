@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
+import java.util.Currency
 import javax.inject.Inject
 
 /** A pending recurring movement resolved against its rule and account for display. */
@@ -29,10 +30,29 @@ data class PendingItem(
     val transaction: Transaction,
     val rule: RecurringRule?,
     val account: Account?,
+    /** Destination account of a pending transfer; null for expense/income movements. */
+    val transferAccount: Account? = null,
 ) {
     val id: Long get() = transaction.id
     val isVariable: Boolean get() = rule?.isVariableAmount == true
     val name: String get() = transaction.description ?: rule?.name.orEmpty()
+
+    val isTransfer: Boolean get() = transaction.type == TransactionType.TRANSFER
+
+    /**
+     * A transfer whose legs hold different currencies: the received amount cannot
+     * be fixed up front, so it is entered here at confirmation (PLANNING ADR 24).
+     */
+    val isCrossCurrencyTransfer: Boolean
+        get() = isTransfer && transaction.transferCurrency != null &&
+            transaction.transferCurrency != transaction.currency
+
+    /** True when the user must still type an amount before this can be recorded. */
+    val needsAmountEntry: Boolean get() = isVariable || isCrossCurrencyTransfer
+
+    /** Currency the confirmation amount is entered in (the destination leg for a transfer). */
+    val entryCurrency: Currency
+        get() = if (isTransfer) transaction.transferCurrency ?: transaction.currency else transaction.currency
 
     /** Positive charge magnitude; zero for a variable-amount movement awaiting an amount. */
     val magnitude: BigDecimal get() = transaction.amount.abs()
@@ -75,6 +95,7 @@ class PendingMovementsViewModel @Inject constructor(
                     transaction = transaction,
                     rule = transaction.recurringRuleId?.let { ruleById[it] },
                     account = accountById[transaction.accountId],
+                    transferAccount = transaction.transferAccountId?.let { accountById[it] },
                 )
             },
             today = LocalDate.now(clock),
@@ -90,11 +111,26 @@ class PendingMovementsViewModel @Inject constructor(
 
     /** Confirms [transaction] with [magnitude], applying the sign and clearing the pending flag. */
     fun confirm(transaction: Transaction, magnitude: BigDecimal) {
-        val signed = if (transaction.type == TransactionType.EXPENSE) magnitude.negate() else magnitude
+        val isCrossCurrencyTransfer = transaction.type == TransactionType.TRANSFER &&
+            transaction.transferCurrency != null &&
+            transaction.transferCurrency != transaction.currency
+        val updated = when {
+            transaction.type != TransactionType.TRANSFER -> {
+                val signed =
+                    if (transaction.type == TransactionType.EXPENSE) magnitude.negate() else magnitude
+                transaction.copy(amount = signed, isPending = false)
+            }
+            // Cross-currency: the magnitude is the received (destination) amount;
+            // the source leg was fixed at generation and stays as is.
+            isCrossCurrencyTransfer ->
+                transaction.copy(transferAmount = magnitude, isPending = false)
+            // Same-currency: both legs move by the confirmed magnitude.
+            else ->
+                transaction.copy(amount = magnitude.negate(), transferAmount = magnitude, isPending = false)
+        }
         viewModelScope.launch {
-            suspendRunCatching {
-                transactionRepository.upsert(transaction.copy(amount = signed, isPending = false))
-            }.onFailure { _events.send(PendingMovementsEvent.WriteFailed) }
+            suspendRunCatching { transactionRepository.upsert(updated) }
+                .onFailure { _events.send(PendingMovementsEvent.WriteFailed) }
         }
     }
 

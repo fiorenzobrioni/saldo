@@ -124,22 +124,20 @@ class RecurringNotifier @Inject constructor(
     }
 
     private fun UpcomingRenewal.title(): String {
-        val isIncome = type == TransactionType.INCOME
-        return when {
-            daysUntil == 0 && isIncome -> context.getString(R.string.notif_upcoming_income_today, ruleName)
-            daysUntil == 0 -> context.getString(R.string.notif_upcoming_expense_today, ruleName)
-            isIncome -> context.resources.getQuantityString(
-                R.plurals.notif_upcoming_income_title,
-                daysUntil,
-                ruleName,
-                daysUntil,
-            )
-            else -> context.resources.getQuantityString(
-                R.plurals.notif_upcoming_expense_title,
-                daysUntil,
-                ruleName,
-                daysUntil,
-            )
+        val todayRes = when (type) {
+            TransactionType.INCOME -> R.string.notif_upcoming_income_today
+            TransactionType.TRANSFER -> R.string.notif_upcoming_transfer_today
+            else -> R.string.notif_upcoming_expense_today
+        }
+        val soonRes = when (type) {
+            TransactionType.INCOME -> R.plurals.notif_upcoming_income_title
+            TransactionType.TRANSFER -> R.plurals.notif_upcoming_transfer_title
+            else -> R.plurals.notif_upcoming_expense_title
+        }
+        return if (daysUntil == 0) {
+            context.getString(todayRes, ruleName)
+        } else {
+            context.resources.getQuantityString(soonRes, daysUntil, ruleName, daysUntil)
         }
     }
 

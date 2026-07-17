@@ -211,21 +211,28 @@ private fun PendingRow(item: PendingItem, modifier: Modifier = Modifier) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            val subtitle = if (item.isTransfer && item.account != null && item.transferAccount != null) {
+                stringResource(R.string.transfers_route, item.account.name, item.transferAccount.name)
+            } else {
+                stringResource(R.string.subscriptions_charged_on, shortDate(item.date))
+                    .replaceFirstChar { it.uppercase() }
+            }
             Text(
-                text = stringResource(R.string.subscriptions_charged_on, shortDate(item.date))
-                    .replaceFirstChar { it.uppercase() },
+                text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         Text(
-            text = if (item.isVariable) {
+            text = if (item.needsAmountEntry) {
                 stringResource(R.string.pending_amount_to_enter)
             } else {
-                MoneyFormatter.format(item.magnitude, item.transaction.currency)
+                MoneyFormatter.format(item.magnitude, item.entryCurrency)
             },
             style = MaterialTheme.typography.titleMedium,
-            color = if (item.isVariable) {
+            color = if (item.needsAmountEntry) {
                 MaterialTheme.colorScheme.primary
             } else {
                 MaterialTheme.colorScheme.onSurface
@@ -242,10 +249,10 @@ private fun ConfirmSheet(
     onSkip: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val currency = item.transaction.currency
+    val currency = item.entryCurrency
     val digits = MoneyMapper.fractionDigits(currency)
     var amountInput by remember(item.id) {
-        mutableStateOf(if (item.isVariable) "" else item.magnitude.stripTrailingZeros().toPlainString())
+        mutableStateOf(if (item.needsAmountEntry) "" else item.magnitude.stripTrailingZeros().toPlainString())
     }
     val magnitude = MoneyInput.parse(amountInput)?.takeIf { it.signum() > 0 }
 
@@ -262,9 +269,19 @@ private fun ConfirmSheet(
         ) {
             Text(text = item.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(4.dp))
+            val subtitle = if (item.isCrossCurrencyTransfer && item.transferAccount != null) {
+                // Remind the user what they are sending, so they enter what arrived.
+                stringResource(
+                    R.string.transfer_pending_sending,
+                    MoneyFormatter.format(item.magnitude, item.transaction.currency),
+                    item.transferAccount.name,
+                )
+            } else {
+                stringResource(R.string.subscriptions_charged_on, shortDate(item.date))
+                    .replaceFirstChar { it.uppercase() }
+            }
             Text(
-                text = stringResource(R.string.subscriptions_charged_on, shortDate(item.date))
-                    .replaceFirstChar { it.uppercase() },
+                text = subtitle,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -272,7 +289,17 @@ private fun ConfirmSheet(
             OutlinedTextField(
                 value = amountInput,
                 onValueChange = { amountInput = MoneyInput.sanitize(it, digits, allowNegative = false) },
-                label = { Text(stringResource(R.string.subscription_editor_amount)) },
+                label = {
+                    Text(
+                        stringResource(
+                            if (item.isCrossCurrencyTransfer) {
+                                R.string.transfer_received_amount
+                            } else {
+                                R.string.subscription_editor_amount
+                            },
+                        ),
+                    )
+                },
                 placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
                 prefix = { Text(currency.symbol) },
                 singleLine = true,

@@ -373,6 +373,7 @@
     <string name="recurrences_title">Recurring transactions</string>
     <string name="recurrences_tab_subscriptions">Expenses</string>
     <string name="recurrences_tab_incomes">Income</string>
+    <string name="recurrences_tab_transfers">Transfers</string>
     <string name="subscriptions_new">New recurring expense</string>
     <string name="subscriptions_this_month">This month</string>
     <plurals name="subscriptions_active_count">
@@ -402,6 +403,20 @@
     <string name="incomes_prorated_note">Non-monthly amounts are spread over the month for the total.</string>
     <string name="incomes_empty_title">No recurring income yet</string>
     <string name="incomes_empty_body">Add your salary, rent received or other regular income to see it at a glance.</string>
+    <string name="transfers_new">New recurring transfer</string>
+    <string name="transfers_this_month">Moved this month</string>
+    <plurals name="transfers_active_count">
+        <item quantity="one">%1$d recurring transfer</item>
+        <item quantity="other">%1$d recurring transfers</item>
+    </plurals>
+    <string name="transfers_sort_next_transfer">By next transfer</string>
+    <string name="transfers_transferred_on">on %1$s</string>
+    <string name="transfers_route">%1$s → %2$s</string>
+    <string name="transfers_prorated_note">Non-monthly amounts are spread over the month for the total. Transfers are excluded from statistics.</string>
+    <string name="transfers_empty_title">No recurring transfers yet</string>
+    <string name="transfers_empty_body">Schedule a monthly move between accounts, for example setting money aside into savings.</string>
+    <string name="transfers_planned_savings">Planned savings</string>
+    <string name="transfers_planned_savings_amount">%1$s / month</string>
     <string name="subscription_editor_title_new">New recurring expense</string>
     <string name="subscription_editor_title_edit">Edit recurring expense</string>
     <string name="subscription_editor_save">Save recurring expense</string>
@@ -441,6 +456,19 @@
     <string name="income_editor_variable_amount_note">The amount will be asked when the credit is due.</string>
     <string name="income_editor_delete">Delete recurring income</string>
     <string name="income_delete_title">Delete recurring income?</string>
+    <string name="transfer_editor_title_new">New recurring transfer</string>
+    <string name="transfer_editor_title_edit">Edit recurring transfer</string>
+    <string name="transfer_editor_save">Save transfer</string>
+    <string name="transfer_editor_name_hint">Savings, allowance, shared account…</string>
+    <string name="transfer_editor_from_account">From account</string>
+    <string name="transfer_editor_to_account">To account</string>
+    <string name="transfer_editor_to_account_error">Choose a different destination account</string>
+    <string name="transfer_editor_first_transfer">First transfer</string>
+    <string name="transfer_editor_cross_currency_note">The accounts use different currencies, so you confirm the amount received at each transfer.</string>
+    <string name="transfer_editor_delete">Delete recurring transfer</string>
+    <string name="transfer_delete_title">Delete recurring transfer?</string>
+    <string name="transfer_received_amount">Amount received</string>
+    <string name="transfer_pending_sending">Sending %1$s → %2$s</string>
     <string name="pending_title">To confirm</string>
     <string name="pending_amount_to_enter">Amount to enter</string>
     <string name="pending_confirm">Confirm</string>
@@ -481,6 +509,11 @@
         <item quantity="other">%1$s arrives in %2$d days</item>
     </plurals>
     <string name="notif_upcoming_income_today">%1$s arrives today</string>
+    <plurals name="notif_upcoming_transfer_title">
+        <item quantity="one">%1$s transfers tomorrow</item>
+        <item quantity="other">%1$s transfers in %2$d days</item>
+    </plurals>
+    <string name="notif_upcoming_transfer_today">%1$s transfers today</string>
     <plurals name="notif_upcoming_summary_title">
         <item quantity="one">%1$d upcoming renewal</item>
         <item quantity="other">%1$d upcoming renewals</item>

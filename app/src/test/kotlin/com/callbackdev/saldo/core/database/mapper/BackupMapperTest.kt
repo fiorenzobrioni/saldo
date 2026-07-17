@@ -111,6 +111,28 @@ class BackupMapperTest {
     }
 
     @Test
+    fun `transfer recurring rule survives the backup round trip`() {
+        val entity = RecurringRuleEntity(
+            id = 13L,
+            name = "Savings",
+            type = TransactionType.TRANSFER,
+            currency = "EUR",
+            accountId = 7L,
+            frequency = RecurrenceFrequency.MONTHLY,
+            startDateEpochDay = 19_200L,
+            amountMinor = 15_000L,
+            categoryId = null,
+            dayOfReference = 1,
+            mode = RecurrenceMode.AUTOMATIC,
+            transferAccountId = 8L,
+            transferAmountMinor = 15_000L,
+            transferCurrency = "EUR",
+        )
+
+        assertEquals(entity, entity.toBackup().toEntity())
+    }
+
+    @Test
     fun `recurring rule with null optionals survives the backup round trip`() {
         val entity = RecurringRuleEntity(
             id = 12L,

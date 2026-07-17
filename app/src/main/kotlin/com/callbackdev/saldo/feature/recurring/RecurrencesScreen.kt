@@ -20,6 +20,8 @@ import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Savings
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -84,10 +86,18 @@ fun RecurrencesScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    val tabType = if (selectedTab == 0) TransactionType.EXPENSE else TransactionType.INCOME
+    val tabType = when (selectedTab) {
+        0 -> TransactionType.EXPENSE
+        1 -> TransactionType.INCOME
+        else -> TransactionType.TRANSFER
+    }
     val section = uiState.section(tabType)
     val newRuleLabel = stringResource(
-        if (tabType == TransactionType.INCOME) R.string.incomes_new else R.string.subscriptions_new,
+        when (tabType) {
+            TransactionType.INCOME -> R.string.incomes_new
+            TransactionType.TRANSFER -> R.string.transfers_new
+            else -> R.string.subscriptions_new
+        },
     )
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -130,6 +140,11 @@ fun RecurrencesScreen(
                     onClick = { selectedTab = 1 },
                     text = { Text(stringResource(R.string.recurrences_tab_incomes)) },
                 )
+                Tab(
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
+                    text = { Text(stringResource(R.string.recurrences_tab_transfers)) },
+                )
             }
 
             when {
@@ -147,6 +162,8 @@ fun RecurrencesScreen(
                     type = tabType,
                     sort = uiState.sort,
                     today = uiState.today,
+                    plannedSavings = uiState.plannedMonthlySavings,
+                    savingsCurrency = uiState.savingsCurrency,
                     onSortSelected = viewModel::onSortSelected,
                     onItemClick = onNavigateToEditRule,
                     modifier = Modifier.fillMaxSize(),
@@ -162,11 +179,14 @@ private fun RecurrencesContent(
     type: TransactionType,
     sort: SubscriptionSort,
     today: java.time.LocalDate,
+    plannedSavings: BigDecimal,
+    savingsCurrency: Currency,
     onSortSelected: (SubscriptionSort) -> Unit,
     onItemClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val isIncome = type == TransactionType.INCOME
+    val isTransfer = type == TransactionType.TRANSFER
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
@@ -177,25 +197,39 @@ private fun RecurrencesContent(
                 total = section.monthlyTotal,
                 currency = section.currency,
                 activeCount = section.activeCount,
-                countRes = if (isIncome) {
-                    R.plurals.incomes_active_count
-                } else {
-                    R.plurals.subscriptions_active_count
+                titleRes = when {
+                    isTransfer -> R.string.transfers_this_month
+                    else -> R.string.subscriptions_this_month
+                },
+                countRes = when {
+                    isTransfer -> R.plurals.transfers_active_count
+                    isIncome -> R.plurals.incomes_active_count
+                    else -> R.plurals.subscriptions_active_count
                 },
             )
         }
-        item {
-            AnnualProjectionCard(
-                annual = section.annualProjection,
-                currency = section.currency,
-                // The trending pair mirrors the tabs: down for expenses, up for
-                // incomes (same visual language as the dashboard comparison).
-                icon = if (isIncome) {
-                    Icons.AutoMirrored.Outlined.TrendingUp
-                } else {
-                    Icons.AutoMirrored.Outlined.TrendingDown
-                },
-            )
+        if (isTransfer) {
+            // Highlight the portion flowing into savings accounts: the seed of
+            // Savings Goals (v2.0). Only shown when there is planned saving.
+            if (plannedSavings.signum() > 0) {
+                item {
+                    PlannedSavingsCard(amount = plannedSavings, currency = savingsCurrency)
+                }
+            }
+        } else {
+            item {
+                AnnualProjectionCard(
+                    annual = section.annualProjection,
+                    currency = section.currency,
+                    // The trending pair mirrors the tabs: down for expenses, up for
+                    // incomes (same visual language as the dashboard comparison).
+                    icon = if (isIncome) {
+                        Icons.AutoMirrored.Outlined.TrendingUp
+                    } else {
+                        Icons.AutoMirrored.Outlined.TrendingDown
+                    },
+                )
+            }
         }
         item {
             SortHeader(
@@ -214,10 +248,10 @@ private fun RecurrencesContent(
         }
         item {
             FooterNote(
-                textRes = if (isIncome) {
-                    R.string.incomes_prorated_note
-                } else {
-                    R.string.subscriptions_prorated_note
+                textRes = when {
+                    isTransfer -> R.string.transfers_prorated_note
+                    isIncome -> R.string.incomes_prorated_note
+                    else -> R.string.subscriptions_prorated_note
                 },
             )
         }
@@ -230,6 +264,7 @@ private fun MonthlyTotalCard(
     total: BigDecimal,
     currency: Currency,
     activeCount: Int,
+    @StringRes titleRes: Int,
     @PluralsRes countRes: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -239,7 +274,7 @@ private fun MonthlyTotalCard(
     ) {
         Column(modifier = Modifier.padding(SaldoDimens.cardPaddingLarge)) {
             Text(
-                text = stringResource(R.string.subscriptions_this_month),
+                text = stringResource(titleRes),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -295,6 +330,50 @@ private fun AnnualProjectionCard(
                     style = MaterialTheme.typography.headlineSmall.tabularNumbers(),
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Highlighted card summing the recurring transfers that land in a savings
+ * account: "you are setting aside X/month". The honest seed of Savings Goals.
+ */
+@Composable
+private fun PlannedSavingsCard(
+    amount: BigDecimal,
+    currency: Currency,
+    modifier: Modifier = Modifier,
+) {
+    SaldoCard(
+        modifier = modifier.fillMaxWidth(),
+        containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+    ) {
+        Row(
+            modifier = Modifier.padding(SaldoDimens.cardPadding),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Savings,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.size(28.dp),
+            )
+            Column(modifier = Modifier.padding(start = 16.dp)) {
+                Text(
+                    text = stringResource(R.string.transfers_planned_savings),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                Text(
+                    text = stringResource(
+                        R.string.transfers_planned_savings_amount,
+                        MoneyFormatter.format(amount, currency),
+                    ),
+                    style = MaterialTheme.typography.headlineSmall.tabularNumbers(),
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
             }
         }
@@ -411,17 +490,26 @@ private fun RecurrencesEmptyState(
     modifier: Modifier = Modifier,
 ) {
     val isIncome = type == TransactionType.INCOME
+    val isTransfer = type == TransactionType.TRANSFER
     EmptyState(
-        icon = if (isIncome) {
-            Icons.AutoMirrored.Outlined.TrendingUp
-        } else {
-            Icons.AutoMirrored.Outlined.TrendingDown
+        icon = when {
+            isTransfer -> Icons.Outlined.SwapHoriz
+            isIncome -> Icons.AutoMirrored.Outlined.TrendingUp
+            else -> Icons.AutoMirrored.Outlined.TrendingDown
         },
         title = stringResource(
-            if (isIncome) R.string.incomes_empty_title else R.string.subscriptions_empty_title,
+            when {
+                isTransfer -> R.string.transfers_empty_title
+                isIncome -> R.string.incomes_empty_title
+                else -> R.string.subscriptions_empty_title
+            },
         ),
         body = stringResource(
-            if (isIncome) R.string.incomes_empty_body else R.string.subscriptions_empty_body,
+            when {
+                isTransfer -> R.string.transfers_empty_body
+                isIncome -> R.string.incomes_empty_body
+                else -> R.string.subscriptions_empty_body
+            },
         ),
         actionLabel = actionLabel,
         onAction = onCreate,

@@ -100,7 +100,13 @@ class GenerateRecurringMovementsUseCase @Inject constructor(
         val zoned = date.atTime(GENERATION_HOUR, 0).atZone(zone)
         // Variable amount is unknown until confirmed; store zero in the meantime.
         val magnitude = if (isVariableAmount) BigDecimal.ZERO else (amount ?: BigDecimal.ZERO)
-        val signed = if (type == TransactionType.EXPENSE) magnitude.negate() else magnitude
+        val isTransfer = type == TransactionType.TRANSFER
+        // Source-leg sign: funds leave the account for expenses and transfers.
+        val leaves = type == TransactionType.EXPENSE || isTransfer
+        val signed = if (leaves) magnitude.negate() else magnitude
+        // Destination leg: the rule's transferAmount mirrors the source magnitude
+        // for same-currency transfers; it is null for cross-currency ones, whose
+        // received amount is entered at confirmation (PLANNING ADR 24).
         return Transaction(
             type = type,
             amount = signed,
@@ -108,6 +114,9 @@ class GenerateRecurringMovementsUseCase @Inject constructor(
             accountId = accountId,
             timestamp = zoned.toInstant(),
             zoneOffset = zoned.offset,
+            transferAccountId = if (isTransfer) transferAccountId else null,
+            transferAmount = if (isTransfer) transferAmount else null,
+            transferCurrency = if (isTransfer) transferCurrency else null,
             categoryId = categoryId,
             description = name,
             recurringRuleId = id,

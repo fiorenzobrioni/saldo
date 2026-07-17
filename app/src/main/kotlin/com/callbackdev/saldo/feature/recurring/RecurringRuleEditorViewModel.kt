@@ -44,7 +44,7 @@ import java.time.LocalDate
 import java.util.Currency
 import javax.inject.Inject
 
-/** Immutable UI state of the recurring-rule (subscription or income) editor. */
+/** Immutable UI state of the recurring-rule (subscription, income or transfer) editor. */
 data class RecurringRuleEditorUiState(
     val isLoading: Boolean = true,
     val isNew: Boolean = true,
@@ -52,6 +52,7 @@ data class RecurringRuleEditorUiState(
     val name: String = "",
     val amountInput: String = "",
     val accountId: Long? = null,
+    val transferAccountId: Long? = null,
     val accounts: List<Account> = emptyList(),
     val categoryId: Long? = null,
     val categories: List<Category> = emptyList(),
@@ -68,17 +69,41 @@ data class RecurringRuleEditorUiState(
     val account: Account? get() = accounts.firstOrNull { it.id == accountId }
     val currency: Currency? get() = account?.currency
     val category: Category? get() = categories.firstOrNull { it.id == categoryId }
+    val isTransfer: Boolean get() = type == TransactionType.TRANSFER
+
+    /** Destination account of a transfer rule; null for expense/income rules. */
+    val transferAccount: Account? get() = accounts.firstOrNull { it.id == transferAccountId }
+    val transferCurrency: Currency? get() = transferAccount?.currency
+
+    /** A transfer whose source and destination accounts hold different currencies. */
+    val isCrossCurrency: Boolean
+        get() = isTransfer && currency != null && transferCurrency != null && currency != transferCurrency
+
     val isNameValid: Boolean get() = name.isNotBlank()
     val isAmountValid: Boolean get() = MoneyInput.parse(amountInput)?.let { it.signum() > 0 } == true
     val isAccountValid: Boolean get() = accountId != null
 
+    /** The destination is required and must differ from the source. */
+    val isTransferAccountValid: Boolean
+        get() = transferAccountId != null && transferAccountId != accountId
+
+    /** Transfers are never variable-amount; the source leg is always a fixed figure. */
+    val showVariableAmount: Boolean get() = !isTransfer
+
+    /** Cross-currency transfers must confirm the received amount, so the mode is fixed. */
+    val showModeSelector: Boolean get() = !isVariableAmount && !isCrossCurrency
+
     companion object {
         const val DEFAULT_ICON = "subscriptions"
         const val DEFAULT_INCOME_ICON = "payments"
+        const val DEFAULT_TRANSFER_ICON = "currency_exchange"
 
         /** The default avatar icon for a rule of [type]. */
-        fun defaultIcon(type: TransactionType): String =
-            if (type == TransactionType.INCOME) DEFAULT_INCOME_ICON else DEFAULT_ICON
+        fun defaultIcon(type: TransactionType): String = when (type) {
+            TransactionType.INCOME -> DEFAULT_INCOME_ICON
+            TransactionType.TRANSFER -> DEFAULT_TRANSFER_ICON
+            else -> DEFAULT_ICON
+        }
     }
 }
 
@@ -118,7 +143,11 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
     /** The rule type on create, taken from the hub tab the editor was opened from. */
     private val initialType: TransactionType = route.initialTypeName
         ?.let { name -> TransactionType.entries.firstOrNull { it.name == name } }
-        ?.takeIf { it == TransactionType.EXPENSE || it == TransactionType.INCOME }
+        ?.takeIf {
+            it == TransactionType.EXPENSE ||
+                it == TransactionType.INCOME ||
+                it == TransactionType.TRANSFER
+        }
         ?: TransactionType.EXPENSE
 
     private val _uiState = MutableStateFlow(
@@ -162,11 +191,18 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         val ruleId = route.ruleId
         if (ruleId == null) {
             val categories = allCategories.forRuleType(initialType)
+            val defaultAccountId = accounts.firstOrNull()?.id
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     accounts = accounts,
-                    accountId = accounts.firstOrNull()?.id,
+                    accountId = defaultAccountId,
+                    // Seed a distinct destination so a new transfer is valid out of the box.
+                    transferAccountId = if (initialType == TransactionType.TRANSFER) {
+                        accounts.firstOrNull { account -> account.id != defaultAccountId }?.id
+                    } else {
+                        null
+                    },
                     categories = categories,
                     categoryId = defaultCategoryId(categories, initialType),
                 )
@@ -182,14 +218,13 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         }
         existing = rule
         userPickedIcon = true
-        // Keep the referenced account pickable even when archived, so editing
-        // a rule tied to an archived account still resolves and saves (same
-        // pattern as the movement editor).
-        val pickableAccounts = if (accounts.any { it.id == rule.accountId }) {
-            accounts
-        } else {
-            accounts + allAccounts.filter { it.id == rule.accountId }
-        }
+        // Keep the referenced accounts pickable even when archived, so editing a
+        // rule tied to an archived account still resolves and saves (same pattern
+        // as the movement editor). Covers both the source and, for transfers, the
+        // destination account.
+        val referencedIds = listOfNotNull(rule.accountId, rule.transferAccountId)
+        val missing = allAccounts.filter { it.id in referencedIds && accounts.none { a -> a.id == it.id } }
+        val pickableAccounts = accounts + missing
         _uiState.update {
             it.copy(
                 isLoading = false,
@@ -199,6 +234,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
                 amountInput = rule.amount?.stripTrailingZeros()?.toPlainString().orEmpty(),
                 accounts = pickableAccounts,
                 accountId = rule.accountId,
+                transferAccountId = rule.transferAccountId,
                 categories = allCategories.forRuleType(rule.type),
                 categoryId = rule.categoryId,
                 frequency = rule.frequency,
@@ -215,6 +251,8 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
 
     /** Categories a rule of [type] can be filed under (its own type, plus "both"). */
     private fun List<Category>.forRuleType(type: TransactionType): List<Category> {
+        // Transfers are not categorized (they move funds between accounts, ADR 8).
+        if (type == TransactionType.TRANSFER) return emptyList()
         val own = if (type == TransactionType.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
         return filter { it.type == own || it.type == CategoryType.BOTH }
     }
@@ -238,6 +276,9 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         }
         state.copy(accountId = accountId, amountInput = input)
     }
+
+    fun onTransferAccountSelected(accountId: Long) =
+        _uiState.update { it.copy(transferAccountId = accountId) }
 
     fun onCategorySelected(categoryId: Long?) = _uiState.update { it.copy(categoryId = categoryId) }
 
@@ -327,7 +368,11 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         }
         val account = state.account
         val amountMissing = !state.isVariableAmount && amount == null
-        if (!state.isNameValid || account == null || amountMissing) return null
+        // A transfer additionally needs a distinct destination account.
+        val transferInvalid = state.isTransfer && !state.isTransferAccountValid
+        val invalid = !state.isNameValid || amountMissing || transferInvalid
+        if (invalid || account == null) return null
+        val leg = state.transferLeg(amount)
         val rule = RecurringRule(
             id = base?.id ?: 0L,
             name = state.name.trim(),
@@ -337,10 +382,11 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
             frequency = state.frequency,
             startDate = state.startDate,
             amount = amount,
-            categoryId = state.categoryId,
+            // Transfers are not categorized.
+            categoryId = if (state.isTransfer) null else state.categoryId,
             dayOfReference = state.startDate.dayOfMonth,
             endDate = state.endDate,
-            mode = if (state.isVariableAmount) RecurrenceMode.CONFIRM else state.mode,
+            mode = state.effectiveMode(),
             isVariableAmount = state.isVariableAmount,
             color = state.color,
             icon = state.icon,
@@ -348,26 +394,60 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
             // Watermarks survive an edit: losing the reminder one would
             // re-notify an occurrence that was already announced.
             lastReminderDate = base?.lastReminderDate,
+            transferAccountId = leg.accountId,
+            transferAmount = leg.amount,
+            transferCurrency = leg.currency,
         )
-        // Preserve progress on edit; on create, skip past occurrences so an
-        // existing subscription is not back-filled with history. When the
-        // schedule itself changes, the old watermark no longer lies on the new
-        // cadence: re-seed it so generation resumes aligned (and without
-        // back-filling the new schedule's past occurrences).
+        return rule.copy(lastGeneratedDate = seededWatermark(rule, base, today))
+    }
+
+    /**
+     * Preserve progress on edit; on create, skip past occurrences so an existing
+     * subscription is not back-filled with history. When the schedule itself
+     * changes, the old watermark no longer lies on the new cadence: re-seed it so
+     * generation resumes aligned (and without back-filling the new schedule's past).
+     */
+    private fun seededWatermark(rule: RecurringRule, base: RecurringRule?, today: LocalDate): LocalDate? {
         val scheduleChanged = base != null &&
             (
                 base.frequency != rule.frequency ||
                     base.startDate != rule.startDate ||
                     base.dayOfReference != rule.dayOfReference
                 )
-        return rule.copy(
-            lastGeneratedDate = if (base == null || scheduleChanged) {
-                RecurrenceCalculator.latestOccurrenceBefore(rule, today)
-            } else {
-                base.lastGeneratedDate
-            },
-        )
+        return if (base == null || scheduleChanged) {
+            RecurrenceCalculator.latestOccurrenceBefore(rule, today)
+        } else {
+            base.lastGeneratedDate
+        }
     }
+
+    /** The destination leg of the rule being built; all null for a non-transfer. */
+    private data class TransferLeg(
+        val accountId: Long?,
+        val amount: BigDecimal?,
+        val currency: Currency?,
+    )
+
+    private fun RecurringRuleEditorUiState.transferLeg(amount: BigDecimal?): TransferLeg =
+        if (!isTransfer) {
+            TransferLeg(null, null, null)
+        } else {
+            TransferLeg(
+                accountId = transferAccountId,
+                // Same-currency transfers mirror the source amount exactly; cross-currency
+                // ones leave it null (the received amount is entered at confirmation).
+                amount = if (isCrossCurrency) null else amount,
+                currency = transferCurrency,
+            )
+        }
+
+    /**
+     * The recording mode actually persisted: a variable amount or a cross-currency
+     * transfer must be confirmed at each occurrence (PLANNING ADR 24), otherwise
+     * the user's chosen [mode] stands.
+     */
+    private fun RecurringRuleEditorUiState.effectiveMode(): RecurrenceMode =
+        if (isVariableAmount || isCrossCurrency) RecurrenceMode.CONFIRM else mode
 
     /**
      * Preselects the natural category for a new rule: the seeded "Subscriptions"
@@ -388,6 +468,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         val name: String,
         val amountInput: String,
         val accountId: Long?,
+        val transferAccountId: Long?,
         val categoryId: Long?,
         val frequency: RecurrenceFrequency,
         val startDate: LocalDate,
@@ -403,6 +484,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         name = name,
         amountInput = amountInput,
         accountId = accountId,
+        transferAccountId = transferAccountId,
         categoryId = categoryId,
         frequency = frequency,
         startDate = startDate,

@@ -1,3 +1,5 @@
+@file:Suppress("TooManyFunctions") // One small composable per editor section/row/dialog.
+
 package com.callbackdev.saldo.feature.recurring
 
 import androidx.compose.foundation.background
@@ -201,30 +203,15 @@ fun RecurringRuleEditorScreen(
     }
 }
 
+/** Amount field (or variable-amount note), the variable-amount switch, and the recording mode. */
 @Composable
-private fun EditorForm(
+private fun AmountAndModeSection(
     uiState: RecurringRuleEditorUiState,
     viewModel: RecurringRuleEditorViewModel,
-    onStartDateClick: () -> Unit,
-    onEndDateClick: () -> Unit,
+    isIncome: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val isIncome = uiState.type == TransactionType.INCOME
     Column(modifier = modifier) {
-        Spacer(Modifier.height(16.dp))
-        PreviewAvatar(uiState = uiState)
-        Spacer(Modifier.height(24.dp))
-        NameField(
-            name = uiState.name,
-            placeholderRes = if (isIncome) {
-                R.string.income_editor_name_hint
-            } else {
-                R.string.subscription_editor_name_hint
-            },
-            showError = uiState.showValidation && !uiState.isNameValid,
-            onNameChanged = viewModel::onNameChanged,
-        )
-        Spacer(Modifier.height(12.dp))
         if (uiState.isVariableAmount) {
             VariableAmountNote(
                 text = stringResource(
@@ -243,36 +230,101 @@ private fun EditorForm(
                 onChanged = viewModel::onAmountChanged,
             )
         }
-        Spacer(Modifier.height(4.dp))
-        SwitchRow(
-            title = stringResource(R.string.subscription_editor_variable_amount),
-            subtitle = stringResource(
-                if (isIncome) {
-                    R.string.income_editor_variable_amount_hint
-                } else {
-                    R.string.subscription_editor_variable_amount_hint
-                },
-            ),
-            checked = uiState.isVariableAmount,
-            onToggle = viewModel::onVariableAmountToggled,
-        )
-        if (!uiState.isVariableAmount) {
+        if (uiState.showVariableAmount) {
+            Spacer(Modifier.height(4.dp))
+            SwitchRow(
+                title = stringResource(R.string.subscription_editor_variable_amount),
+                subtitle = stringResource(
+                    if (isIncome) {
+                        R.string.income_editor_variable_amount_hint
+                    } else {
+                        R.string.subscription_editor_variable_amount_hint
+                    },
+                ),
+                checked = uiState.isVariableAmount,
+                onToggle = viewModel::onVariableAmountToggled,
+            )
+        }
+        if (uiState.showModeSelector) {
             SectionLabel(stringResource(R.string.subscription_editor_section_mode))
             ModeSelector(mode = uiState.mode, onModeChanged = viewModel::onModeChanged)
+        } else if (uiState.isCrossCurrency) {
+            // The received amount cannot be fixed up front (the rate drifts), so the
+            // rule confirms it at each occurrence instead of running automatically.
+            Spacer(Modifier.height(12.dp))
+            VariableAmountNote(text = stringResource(R.string.transfer_editor_cross_currency_note))
         }
-        Spacer(Modifier.height(12.dp))
+    }
+}
+
+/** Source account, plus a destination account (transfer) or a category (expense/income). */
+@Composable
+private fun AccountsSection(
+    uiState: RecurringRuleEditorUiState,
+    viewModel: RecurringRuleEditorViewModel,
+    isTransfer: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
         AccountField(
             accounts = uiState.accounts,
             selectedId = uiState.accountId,
             showError = uiState.showValidation && !uiState.isAccountValid,
             onSelected = viewModel::onAccountSelected,
+            labelRes = if (isTransfer) {
+                R.string.transfer_editor_from_account
+            } else {
+                R.string.subscription_editor_account
+            },
         )
         Spacer(Modifier.height(12.dp))
-        CategoryField(
-            categories = uiState.categories,
-            selectedId = uiState.categoryId,
-            onSelected = viewModel::onCategorySelected,
+        if (isTransfer) {
+            AccountField(
+                accounts = uiState.accounts,
+                selectedId = uiState.transferAccountId,
+                showError = uiState.showValidation && !uiState.isTransferAccountValid,
+                onSelected = viewModel::onTransferAccountSelected,
+                labelRes = R.string.transfer_editor_to_account,
+                errorRes = R.string.transfer_editor_to_account_error,
+            )
+        } else {
+            CategoryField(
+                categories = uiState.categories,
+                selectedId = uiState.categoryId,
+                onSelected = viewModel::onCategorySelected,
+            )
+        }
+    }
+}
+
+@Composable
+private fun EditorForm(
+    uiState: RecurringRuleEditorUiState,
+    viewModel: RecurringRuleEditorViewModel,
+    onStartDateClick: () -> Unit,
+    onEndDateClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isIncome = uiState.type == TransactionType.INCOME
+    val isTransfer = uiState.isTransfer
+    Column(modifier = modifier) {
+        Spacer(Modifier.height(16.dp))
+        PreviewAvatar(uiState = uiState)
+        Spacer(Modifier.height(24.dp))
+        NameField(
+            name = uiState.name,
+            placeholderRes = when {
+                isTransfer -> R.string.transfer_editor_name_hint
+                isIncome -> R.string.income_editor_name_hint
+                else -> R.string.subscription_editor_name_hint
+            },
+            showError = uiState.showValidation && !uiState.isNameValid,
+            onNameChanged = viewModel::onNameChanged,
         )
+        Spacer(Modifier.height(12.dp))
+        AmountAndModeSection(uiState = uiState, viewModel = viewModel, isIncome = isIncome)
+        Spacer(Modifier.height(12.dp))
+        AccountsSection(uiState = uiState, viewModel = viewModel, isTransfer = isTransfer)
         Spacer(Modifier.height(12.dp))
         // Frequency and first charge read as a pair: how often, starting when.
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -284,10 +336,10 @@ private fun EditorForm(
             )
             DateField(
                 label = stringResource(
-                    if (isIncome) {
-                        R.string.income_editor_first_credit
-                    } else {
-                        R.string.subscription_editor_first_charge
+                    when {
+                        isTransfer -> R.string.transfer_editor_first_transfer
+                        isIncome -> R.string.income_editor_first_credit
+                        else -> R.string.subscription_editor_first_charge
                     },
                 ),
                 date = uiState.startDate,
@@ -486,10 +538,10 @@ private fun DeleteRuleDialog(
         title = {
             Text(
                 stringResource(
-                    if (type == TransactionType.INCOME) {
-                        R.string.income_delete_title
-                    } else {
-                        R.string.subscription_delete_title
+                    when (type) {
+                        TransactionType.INCOME -> R.string.income_delete_title
+                        TransactionType.TRANSFER -> R.string.transfer_delete_title
+                        else -> R.string.subscription_delete_title
                     },
                 ),
             )

@@ -232,9 +232,10 @@ class RecurringRuleEditorViewModelTest {
     }
 
     @Test
-    fun `an unknown or missing initial type falls back to expense`() = runTest {
+    fun `an editor-invalid or missing initial type falls back to expense`() = runTest {
+        // ADJUSTMENT is a real movement type but not one the recurrence editor offers.
         val viewModel = viewModel(
-            route = RecurringRuleEditorRoute(initialTypeName = "TRANSFER"),
+            route = RecurringRuleEditorRoute(initialTypeName = "ADJUSTMENT"),
             categories = listOf(subscriptionsCategory, salaryCategory),
         )
 
@@ -242,6 +243,92 @@ class RecurringRuleEditorViewModelTest {
             assertEquals(TransactionType.EXPENSE, type)
             assertEquals(listOf(10L), categories.map { it.id })
         }
+    }
+
+    @Test
+    fun `a new transfer seeds a distinct destination and offers no categories`() = runTest {
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(initialTypeName = TransactionType.TRANSFER.name),
+            accounts = listOf(account(1L, eur), account(2L, eur)),
+            categories = listOf(subscriptionsCategory, salaryCategory, bothCategory),
+        )
+
+        with(viewModel.uiState.value) {
+            assertEquals(TransactionType.TRANSFER, type)
+            assertEquals(1L, accountId)
+            assertEquals(2L, transferAccountId)
+            assertTrue(categories.isEmpty())
+            assertNull(categoryId)
+            assertFalse(isCrossCurrency)
+            assertEquals("currency_exchange", icon)
+        }
+    }
+
+    @Test
+    fun `saving a same-currency transfer mirrors the amount on both legs`() = runTest {
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(initialTypeName = TransactionType.TRANSFER.name),
+            accounts = listOf(account(1L, eur), account(2L, eur)),
+            categories = emptyList(),
+        )
+
+        viewModel.onNameChanged("Risparmio")
+        viewModel.onAmountChanged("150")
+        viewModel.save()
+
+        with(saved.captured) {
+            assertEquals(TransactionType.TRANSFER, type)
+            assertEquals(1L, accountId)
+            assertEquals(2L, transferAccountId)
+            assertEquals(BigDecimal("150"), amount)
+            assertEquals(0, transferAmount!!.compareTo(BigDecimal("150")))
+            assertEquals(eur, transferCurrency)
+            assertNull(categoryId)
+            assertEquals(RecurrenceMode.AUTOMATIC, mode)
+        }
+    }
+
+    @Test
+    fun `a cross-currency transfer forces confirm mode and a null destination amount`() = runTest {
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(initialTypeName = TransactionType.TRANSFER.name),
+            accounts = listOf(account(1L, eur), account(2L, jpy)),
+            categories = emptyList(),
+        )
+
+        // Source EUR, destination JPY -> cross-currency.
+        assertTrue(viewModel.uiState.value.isCrossCurrency)
+
+        viewModel.onNameChanged("Conto JPY")
+        viewModel.onAmountChanged("100")
+        viewModel.save()
+
+        with(saved.captured) {
+            assertEquals(jpy, transferCurrency)
+            assertNull(transferAmount)
+            assertEquals(RecurrenceMode.CONFIRM, mode)
+        }
+    }
+
+    @Test
+    fun `a transfer to the same account fails validation`() = runTest {
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(initialTypeName = TransactionType.TRANSFER.name),
+            accounts = listOf(account(1L, eur), account(2L, eur)),
+            categories = emptyList(),
+        )
+
+        viewModel.onNameChanged("Loop")
+        viewModel.onAmountChanged("50")
+        viewModel.onTransferAccountSelected(1L) // same as source
+        viewModel.save()
+
+        assertTrue(viewModel.uiState.value.showValidation)
+        coVerify(exactly = 0) { recurringRuleRepository.upsert(any()) }
     }
 
     @Test

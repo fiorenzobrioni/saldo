@@ -375,6 +375,7 @@
     <string name="recurrences_title">Movimenti ricorrenti</string>
     <string name="recurrences_tab_subscriptions">Uscite</string>
     <string name="recurrences_tab_incomes">Entrate</string>
+    <string name="recurrences_tab_transfers">Trasferimenti</string>
     <string name="subscriptions_new">Nuova uscita ricorrente</string>
     <string name="subscriptions_this_month">Questo mese</string>
     <plurals name="subscriptions_active_count">
@@ -406,6 +407,21 @@
     <string name="incomes_prorated_note">Gli importi non mensili sono ripartiti sul mese per il totale.</string>
     <string name="incomes_empty_title">Nessuna entrata ricorrente</string>
     <string name="incomes_empty_body">Aggiungi stipendio, affitti attivi o altre entrate regolari per vederle a colpo d\'occhio.</string>
+    <string name="transfers_new">Nuovo trasferimento ricorrente</string>
+    <string name="transfers_this_month">Spostato questo mese</string>
+    <plurals name="transfers_active_count">
+        <item quantity="one">%1$d trasferimento ricorrente</item>
+        <item quantity="many">%1$d trasferimenti ricorrenti</item>
+        <item quantity="other">%1$d trasferimenti ricorrenti</item>
+    </plurals>
+    <string name="transfers_sort_next_transfer">Per prossimo trasferimento</string>
+    <string name="transfers_transferred_on">il %1$s</string>
+    <string name="transfers_route">%1$s → %2$s</string>
+    <string name="transfers_prorated_note">Gli importi non mensili sono ripartiti sul mese per il totale. I trasferimenti sono esclusi dalle statistiche.</string>
+    <string name="transfers_empty_title">Nessun trasferimento ricorrente</string>
+    <string name="transfers_empty_body">Pianifica uno spostamento mensile tra conti, ad esempio per accantonare nel conto di risparmio.</string>
+    <string name="transfers_planned_savings">Risparmio pianificato</string>
+    <string name="transfers_planned_savings_amount">%1$s / mese</string>
     <string name="subscription_editor_title_new">Nuova uscita ricorrente</string>
     <string name="subscription_editor_title_edit">Modifica uscita ricorrente</string>
     <string name="subscription_editor_save">Salva uscita ricorrente</string>
@@ -445,6 +461,19 @@
     <string name="income_editor_variable_amount_note">L\'importo verrà chiesto quando l\'accredito è previsto.</string>
     <string name="income_editor_delete">Elimina entrata ricorrente</string>
     <string name="income_delete_title">Eliminare l\'entrata ricorrente?</string>
+    <string name="transfer_editor_title_new">Nuovo trasferimento ricorrente</string>
+    <string name="transfer_editor_title_edit">Modifica trasferimento ricorrente</string>
+    <string name="transfer_editor_save">Salva trasferimento</string>
+    <string name="transfer_editor_name_hint">Risparmi, paghetta, conto condiviso…</string>
+    <string name="transfer_editor_from_account">Conto di partenza</string>
+    <string name="transfer_editor_to_account">Conto di destinazione</string>
+    <string name="transfer_editor_to_account_error">Scegli un conto di destinazione diverso</string>
+    <string name="transfer_editor_first_transfer">Primo trasferimento</string>
+    <string name="transfer_editor_cross_currency_note">I conti usano valute diverse: confermi l\'importo ricevuto a ogni trasferimento.</string>
+    <string name="transfer_editor_delete">Elimina trasferimento ricorrente</string>
+    <string name="transfer_delete_title">Eliminare il trasferimento ricorrente?</string>
+    <string name="transfer_received_amount">Importo ricevuto</string>
+    <string name="transfer_pending_sending">Invii %1$s → %2$s</string>
     <string name="pending_title">Da confermare</string>
     <string name="pending_amount_to_enter">Importo da inserire</string>
     <string name="pending_confirm">Conferma</string>
@@ -491,6 +520,12 @@
         <item quantity="other">%1$s in arrivo tra %2$d giorni</item>
     </plurals>
     <string name="notif_upcoming_income_today">%1$s in arrivo oggi</string>
+    <plurals name="notif_upcoming_transfer_title">
+        <item quantity="one">%1$s si trasferisce domani</item>
+        <item quantity="many">%1$s si trasferisce tra %2$d giorni</item>
+        <item quantity="other">%1$s si trasferisce tra %2$d giorni</item>
+    </plurals>
+    <string name="notif_upcoming_transfer_today">%1$s si trasferisce oggi</string>
     <plurals name="notif_upcoming_summary_title">
         <item quantity="one">%1$d rinnovo in arrivo</item>
         <item quantity="many">%1$d rinnovi in arrivo</item>
