@@ -54,6 +54,10 @@ internal fun BackupData.validatePayload() {
     require(budgets.count { it.categoryId == null } <= 1) {
         "More than one overall budget"
     }
+    savingsGoals.forEach { goal -> requireKnownCurrency(goal.currency) }
+    require(savingsGoals.map { it.accountId }.toSet().size == savingsGoals.size) {
+        "More than one savings goal per account"
+    }
 }
 
 private fun requireKnownCurrency(code: String) {

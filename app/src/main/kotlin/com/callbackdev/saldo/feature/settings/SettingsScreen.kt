@@ -26,6 +26,7 @@ import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.EventRepeat
+import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Savings
@@ -85,6 +86,7 @@ fun SettingsScreen(
     onNavigateToCategories: () -> Unit,
     onNavigateToRecurrences: () -> Unit,
     onNavigateToBudgets: () -> Unit,
+    onNavigateToSavingsGoals: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
@@ -172,6 +174,12 @@ fun SettingsScreen(
                     onCheckedChange = viewModel::onShowBudgetCardChanged,
                 )
                 SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dashboard_show_savings),
+                    hint = stringResource(R.string.settings_dashboard_show_savings_hint),
+                    checked = dashboardCards.showSavingsGoals,
+                    onCheckedChange = viewModel::onShowSavingsGoalsChanged,
+                )
+                SettingsSwitchRow(
                     title = stringResource(R.string.settings_dashboard_show_recent),
                     hint = stringResource(R.string.settings_dashboard_show_recent_hint),
                     checked = dashboardCards.showRecentTransactions,
@@ -234,6 +242,12 @@ fun SettingsScreen(
                     hint = stringResource(R.string.settings_budgets_hint),
                     icon = Icons.Outlined.Savings,
                     onClick = onNavigateToBudgets,
+                )
+                SettingsEntry(
+                    title = stringResource(R.string.settings_savings),
+                    hint = stringResource(R.string.settings_savings_hint),
+                    icon = Icons.Outlined.Flag,
+                    onClick = onNavigateToSavingsGoals,
                 )
                 SettingsEntry(
                     title = stringResource(R.string.settings_categories),

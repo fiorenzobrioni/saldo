@@ -38,11 +38,14 @@ import com.callbackdev.saldo.feature.dashboard.DashboardScreen
 import com.callbackdev.saldo.feature.recurring.PendingMovementsScreen
 import com.callbackdev.saldo.feature.recurring.RecurringRuleEditorScreen
 import com.callbackdev.saldo.feature.recurring.RecurrencesScreen
+import com.callbackdev.saldo.feature.savings.SavingsGoalEditorScreen
+import com.callbackdev.saldo.feature.savings.SavingsGoalsScreen
 import com.callbackdev.saldo.feature.settings.SettingsScreen
 import com.callbackdev.saldo.feature.stats.FilteredTransactionsScreen
 import com.callbackdev.saldo.feature.stats.StatsScreen
 import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
+import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.TransactionType
 
 /** Height of the Material 3 navigation bar content (excluding the system inset). */
@@ -108,6 +111,7 @@ fun SaldoApp(
                 onNavigateToRecurrences = { nav.navigate(RecurrencesRoute) },
                 onNavigateToPending = { nav.navigate(PendingMovementsRoute) },
                 onNavigateToBudgets = { nav.navigate(BudgetsRoute) },
+                onNavigateToSavingsGoals = { nav.navigate(SavingsGoalsRoute) },
                 onNavigateToFiltered = { route -> nav.navigate(route) },
             )
         }
@@ -134,6 +138,7 @@ fun SaldoApp(
                 onNavigateToCategories = { nav.navigate(CategoriesRoute) },
                 onNavigateToRecurrences = { nav.navigate(RecurrencesRoute) },
                 onNavigateToBudgets = { nav.navigate(BudgetsRoute) },
+                onNavigateToSavingsGoals = { nav.navigate(SavingsGoalsRoute) },
                 onNavigateToBackup = { nav.navigate(BackupRoute) },
                 onNavigateToAbout = { nav.navigate(AboutRoute) },
             )
@@ -204,6 +209,21 @@ fun SaldoApp(
             BudgetEditorScreen(
                 route = route,
                 onNavigateBack = { nav.goBack() },
+            )
+        }
+        entry<SavingsGoalsRoute> {
+            SavingsGoalsScreen(
+                onNavigateBack = { nav.goBack() },
+                onNavigateToEditor = { id -> nav.navigate(SavingsGoalEditorRoute(id)) },
+            )
+        }
+        entry<SavingsGoalEditorRoute> { route ->
+            SavingsGoalEditorScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
+                onNavigateToNewAccount = {
+                    nav.navigate(AccountEditorRoute(initialTypeName = AccountType.SAVINGS.name))
+                },
             )
         }
         entry<FilteredTransactionsRoute> { route ->

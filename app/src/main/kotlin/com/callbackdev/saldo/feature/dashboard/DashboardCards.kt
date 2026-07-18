@@ -672,6 +672,10 @@ internal fun RecurringCard(
                         modifier = Modifier.weight(1f),
                     )
                 }
+                if (summary.monthlyTransfersToSavings.signum() > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    RecurringSavingsLine(amount = summary.monthlyTransfersToSavings, currency = currency)
+                }
                 summary.next?.let { next ->
                     Spacer(Modifier.height(8.dp))
                     NextRecurringEventLine(next = next)
@@ -710,6 +714,25 @@ private fun RecurringMetric(
             color = color,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+/** Planned-savings line: the monthly-equivalent of recurring transfers into savings. */
+@Composable
+private fun RecurringSavingsLine(amount: BigDecimal, currency: Currency, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = stringResource(R.string.dashboard_recurring_savings_label),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = MoneyFormatter.format(amount, currency),
+            style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.moneyColors.income,
         )
     }
 }

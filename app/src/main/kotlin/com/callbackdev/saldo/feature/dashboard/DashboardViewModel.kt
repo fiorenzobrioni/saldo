@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.BudgetProgress
 import com.callbackdev.saldo.core.domain.model.Category
@@ -9,6 +10,7 @@ import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.RecurringRule
+import com.callbackdev.saldo.core.domain.model.SavingsGoalProgress
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
@@ -25,6 +27,7 @@ import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveSavingsGoalsProgressUseCase
 import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -58,6 +61,11 @@ data class RecurringSummary(
     val monthlyExpenses: BigDecimal = BigDecimal.ZERO,
     /** Positive monthly-equivalent total of active recurring incomes, in the primary currency. */
     val monthlyIncomes: BigDecimal = BigDecimal.ZERO,
+    /**
+     * Positive monthly-equivalent total of active recurring transfers landing in
+     * a savings account (planned savings), in the primary currency.
+     */
+    val monthlyTransfersToSavings: BigDecimal = BigDecimal.ZERO,
     val next: NextRecurringEvent? = null,
     /** Whether any recurring rule (either type, any currency) is active. */
     val hasRules: Boolean = false,
@@ -122,6 +130,8 @@ data class DashboardUiState(
     val budgets: List<BudgetProgress> = emptyList(),
     /** Safe-to-spend figure; null without an overall budget in the primary currency. */
     val safeToSpend: SafeToSpend? = null,
+    /** Savings goals with progress, ordered for display (empty: no goals set). */
+    val savingsGoals: List<SavingsGoalProgress> = emptyList(),
     /** Which optional cards the user keeps visible (Settings > Dashboard). */
     val cardPrefs: DashboardCardPreferences = DashboardCardPreferences(),
     val date: LocalDate = LocalDate.ofEpochDay(0),
@@ -141,6 +151,7 @@ class DashboardViewModel @Inject constructor(
     private val observeBudgetProgress: ObserveBudgetProgressUseCase,
     private val observeSafeToSpend: ObserveSafeToSpendUseCase,
     private val observeDueStatements: ObserveDueStatementsUseCase,
+    private val observeSavingsGoalsProgress: ObserveSavingsGoalsProgressUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -157,6 +168,15 @@ class DashboardViewModel @Inject constructor(
         val categories: List<Category>,
         val rules: List<RecurringRule>,
         val pendingCount: Int,
+    )
+
+    /** The budget/goal figures that join on top of the core [Sources]. */
+    private data class Extras(
+        val budgets: List<BudgetProgress>,
+        val safeToSpend: SafeToSpend?,
+        val cardPrefs: DashboardCardPreferences,
+        val dueStatements: List<DueStatement>,
+        val savingsGoals: List<SavingsGoalProgress>,
     )
 
     /**
@@ -190,22 +210,28 @@ class DashboardViewModel @Inject constructor(
             ) { totals, recent, categories, rules, pending ->
                 Sources(totals, recent, categories, rules, pending.size)
             }
-            combine(
-                sources,
+            // Budget/goal figures collapse into one bundle so the whole dashboard
+            // stays within the typed combine arity.
+            val extras = combine(
                 observeBudgetProgress(primary),
                 observeSafeToSpend(primary),
                 userPreferences.dashboardCardPreferences,
                 observeDueStatements(),
-            ) { collapsed, budgets, safeToSpend, cardPrefs, dueStatements ->
+                observeSavingsGoalsProgress(),
+            ) { budgets, safeToSpend, cardPrefs, dueStatements, savingsGoals ->
+                Extras(budgets, safeToSpend, cardPrefs, dueStatements, savingsGoals)
+            }
+            combine(sources, extras) { collapsed, bundle ->
                 buildState(
                     accounts = accounts,
                     primary = primary,
                     today = today,
                     sources = collapsed,
-                    budgets = budgets,
-                    safeToSpend = safeToSpend,
-                    cardPrefs = cardPrefs,
-                    dueStatements = dueStatements.filter { it.currency == primary },
+                    budgets = bundle.budgets,
+                    safeToSpend = bundle.safeToSpend,
+                    cardPrefs = bundle.cardPrefs,
+                    dueStatements = bundle.dueStatements.filter { it.currency == primary },
+                    savingsGoals = bundle.savingsGoals.filter { it.goal.currency == primary },
                 )
             }
         }
@@ -228,6 +254,7 @@ class DashboardViewModel @Inject constructor(
         safeToSpend: SafeToSpend?,
         cardPrefs: DashboardCardPreferences,
         dueStatements: List<DueStatement>,
+        savingsGoals: List<SavingsGoalProgress>,
     ): DashboardUiState {
         val active = accounts.filter { !it.account.isArchived }
         val totalBalance = active
@@ -262,12 +289,13 @@ class DashboardViewModel @Inject constructor(
             monthVsPreviousToDate = comparison,
             previousMonthSpendToDate = previousReference,
             spentMoreThanLastMonth = spentMore,
-            recurring = recurringSummary(sources.rules, primary, today),
+            recurring = recurringSummary(sources.rules, primary, today, savingsAccountIds(accounts)),
             pendingCount = sources.pendingCount,
             dueStatements = dueStatements,
             recent = recent,
             budgets = budgets,
             safeToSpend = safeToSpend,
+            savingsGoals = savingsGoals,
             cardPrefs = cardPrefs,
             date = today,
             greetingBand = greetingBand,
@@ -275,45 +303,70 @@ class DashboardViewModel @Inject constructor(
         )
     }
 
+    /** Ids of the active (non-archived) savings accounts, the planned-savings destinations. */
+    private fun savingsAccountIds(accounts: List<AccountWithBalance>): Set<Long> =
+        accounts
+            .filter { it.account.type == AccountType.SAVINGS && !it.account.isArchived }
+            .map { it.account.id }
+            .toSet()
+
     /**
-     * Active recurring rules of both types: normalized monthly totals per type
-     * and the next upcoming charge or credit across all of them.
+     * Active recurring rules: normalized monthly totals for expenses, incomes and
+     * transfers into savings (planned savings), plus the next upcoming charge or
+     * credit. Transfers have no meaningful "next charge" line, so they feed only
+     * the planned-savings figure.
      */
     private fun recurringSummary(
         rules: List<RecurringRule>,
         primary: Currency,
         today: LocalDate,
+        savingsAccountIds: Set<Long>,
     ): RecurringSummary {
-        val active = rules.filter {
-            (it.type == TransactionType.EXPENSE || it.type == TransactionType.INCOME) &&
-                (it.endDate == null || it.endDate >= today)
-        }
-        if (active.isEmpty()) return RecurringSummary()
+        val flows = rules.filter { it.isFlow() && it.isActiveOn(today) }
+        val plannedSavings = rules.filter { it.isPlannedSavingsInto(savingsAccountIds, primary, today) }
+        if (flows.isEmpty() && plannedSavings.isEmpty()) return RecurringSummary()
 
-        // Totals are scoped to the primary currency, so the two figures stay coherent.
-        val primaryRules = active.filter { it.currency == primary }
-        fun monthlyTotal(type: TransactionType): BigDecimal = primaryRules
-            .filter { it.type == type }
-            .fold(BigDecimal.ZERO) { acc, rule ->
-                acc.add(RecurrenceCalculator.monthlyEquivalent(rule) ?: BigDecimal.ZERO)
-            }
-        val next = active
-            .mapNotNull { rule ->
-                val amount = rule.amount ?: return@mapNotNull null
-                val signed = if (rule.type == TransactionType.EXPENSE) amount.negate() else amount
-                val floor = rule.lastGeneratedDate?.plusDays(1)?.takeIf { it > today } ?: today
-                RecurrenceCalculator.nextOccurrence(rule, floor)?.let { date ->
-                    NextRecurringEvent(rule.name, signed, rule.currency, date)
-                }
-            }
-            .minByOrNull { it.date }
+        // Totals are scoped to the primary currency, so the figures stay coherent.
+        val primaryFlows = flows.filter { it.currency == primary }
         return RecurringSummary(
-            monthlyExpenses = monthlyTotal(TransactionType.EXPENSE),
-            monthlyIncomes = monthlyTotal(TransactionType.INCOME),
-            next = next,
+            monthlyExpenses = monthlyEquivalentOf(primaryFlows, TransactionType.EXPENSE),
+            monthlyIncomes = monthlyEquivalentOf(primaryFlows, TransactionType.INCOME),
+            monthlyTransfersToSavings = plannedSavings.sumMonthlyEquivalent(),
+            next = nextRecurringEvent(flows, today),
             hasRules = true,
         )
     }
+
+    private fun RecurringRule.isActiveOn(today: LocalDate): Boolean = endDate == null || endDate >= today
+
+    private fun RecurringRule.isFlow(): Boolean =
+        type == TransactionType.EXPENSE || type == TransactionType.INCOME
+
+    /** A same-currency recurring transfer landing in a savings account (planned savings). */
+    private fun RecurringRule.isPlannedSavingsInto(
+        savingsAccountIds: Set<Long>,
+        primary: Currency,
+        today: LocalDate,
+    ): Boolean = type == TransactionType.TRANSFER && amount != null && currency == primary &&
+        transferAccountId in savingsAccountIds && isActiveOn(today)
+
+    private fun monthlyEquivalentOf(rules: List<RecurringRule>, type: TransactionType): BigDecimal =
+        rules.filter { it.type == type }.sumMonthlyEquivalent()
+
+    private fun List<RecurringRule>.sumMonthlyEquivalent(): BigDecimal = fold(BigDecimal.ZERO) { acc, rule ->
+        acc.add(RecurrenceCalculator.monthlyEquivalent(rule) ?: BigDecimal.ZERO)
+    }
+
+    /** The soonest upcoming charge or credit across the expense/income rules. */
+    private fun nextRecurringEvent(flows: List<RecurringRule>, today: LocalDate): NextRecurringEvent? =
+        flows.mapNotNull { rule ->
+            val amount = rule.amount ?: return@mapNotNull null
+            val signed = if (rule.type == TransactionType.EXPENSE) amount.negate() else amount
+            val floor = rule.lastGeneratedDate?.plusDays(1)?.takeIf { it > today } ?: today
+            RecurrenceCalculator.nextOccurrence(rule, floor)?.let { date ->
+                NextRecurringEvent(rule.name, signed, rule.currency, date)
+            }
+        }.minByOrNull { it.date }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

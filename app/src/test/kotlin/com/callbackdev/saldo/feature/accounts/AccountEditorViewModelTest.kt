@@ -310,4 +310,46 @@ class AccountEditorViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `preselecting savings seeds the type, excludes budget, and opens clean`() = runTest {
+        val viewModel = viewModel(AccountEditorRoute(initialTypeName = "SAVINGS"))
+
+        val state = viewModel.uiState.value
+        assertEquals(AccountType.SAVINGS, state.type)
+        assertFalse(state.isIncludedInBudget)
+        assertEquals(AccountVisuals.defaultIconFor(AccountType.SAVINGS), state.icon)
+
+        // The seeded state is the baseline: the shortcut must not open dirty.
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a preselected savings account saves excluded from the budget`() = runTest {
+        val saved = slot<Account>()
+        coEvery { accountRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel(AccountEditorRoute(initialTypeName = "SAVINGS"))
+
+        viewModel.onNameChanged("Risparmi")
+        viewModel.save()
+
+        viewModel.events.test {
+            assertEquals(AccountEditorEvent.Saved, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        with(saved.captured) {
+            assertEquals(AccountType.SAVINGS, type)
+            assertFalse(isIncludedInBudget)
+        }
+    }
+
+    @Test
+    fun `an unknown preselected type falls back to checking`() = runTest {
+        val viewModel = viewModel(AccountEditorRoute(initialTypeName = "NOT_A_TYPE"))
+
+        assertEquals(AccountType.CHECKING, viewModel.uiState.value.type)
+    }
 }

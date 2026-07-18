@@ -22,6 +22,7 @@ import javax.inject.Inject
 
 /** Drives the preference, theme and notification choices in Settings; values apply live app-wide. */
 @HiltViewModel
+@Suppress("TooManyFunctions") // A settings registry naturally has one setter per preference.
 class SettingsViewModel @Inject constructor(
     private val userPreferences: UserPreferencesRepository,
     accountRepository: AccountRepository,
@@ -124,6 +125,10 @@ class SettingsViewModel @Inject constructor(
 
     fun onShowRecentTransactionsChanged(shown: Boolean) {
         viewModelScope.launch { userPreferences.setShowRecentTransactions(shown) }
+    }
+
+    fun onShowSavingsGoalsChanged(shown: Boolean) {
+        viewModelScope.launch { userPreferences.setShowSavingsGoalsCard(shown) }
     }
 
     private companion object {

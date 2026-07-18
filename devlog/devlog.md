@@ -14,6 +14,50 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-18 - Fix crash aggiornamento (collapse v1) + disciplina migration + card Obiettivi sempre visibile
+
+**Fatto:** dalla prova su device, due interventi (versionCode 82 -> 83, versionName 0.9.43 -> 0.9.44).
+- Schema ripiegato nel baseline v1: `savings_goals` torna nel `1.json` (rigenerato), rimossi `MIGRATION_1_2`, `2.json` e `Migration1To2Test`; `SALDO_DATABASE_VERSION` di nuovo 1, referenziato dall'annotazione `@Database`. Ultima collapse-una-tantum (ADR 26).
+- Disciplina migration: due test generici (non uno per migrazione). `MigrationsTest` strumentato crea il baseline e applica `ALL_MIGRATIONS` fino a `SALDO_DATABASE_VERSION`, validando contro gli schemi esportati (intercetta lo schema migrato divergente). `MigrationChainTest` JVM verifica che la catena sia contigua e raggiunga la versione corrente: gira in CI senza device, intercetta il bump di versione senza migrazione.
+- Dashboard: la card Obiettivi ora è sempre visibile quando abilitata (rimosso il guard `isNotEmpty`), con messaggio di empty-state come la card Budget; funge da punto d'accesso anche senza obiettivi.
+
+**Decisioni:** ADR 26. Ogni collasso del baseline è un downgrade di versione per un device già sulla versione più alta, che Room rifiuta: è la causa dei crash "all'aggiornamento" ripetuti (serve reinstallare/svuotare). I migration test erano solo strumentati e in CI non c'è emulatore, quindi la divergenza sfuggiva alla verifica basata su build (già capitato in ADR 23/24). Il guard JVM chiude la parte strutturale in CI; lo strumentato resta da eseguire su device prima di rilasciare uno schema. Dai prossimi giri si preferisce una migrazione forward reale (niente downgrade). Robolectric per far girare anche lo strumentato in JVM/CI è una possibile aggiunta futura, ma è una dipendenza nuova: decisione separata (non presa qui, rispetto della regola "niente librerie senza chiedere").
+
+**Problemi:** non ho la logcat del crash sul device, quindi non ho isolato la causa esatta della `Migration(1,2)` (lo schema esportato combaciava con la CREATE scritta a mano): il collasso lo aggira azzerando la migrazione, coerente con la scelta dell'utente. Conseguenza da comunicare: il device attualmente su schema v2 va reinstallato/svuotato una volta (il passaggio a codice v1 è un downgrade).
+
+**Prossimo:** verifica su device dell'aggiornamento in-place dopo il collasso (partendo da un DB creato da zero con la 0.9.44), della card Obiettivi vuota in Dashboard, e - alla prossima migrazione reale - dei due test generici. Valutare Robolectric con l'utente.
+
+---
+
+## 2026-07-18 - Rifinitura: preselezione SAVINGS nella scorciatoia "crea conto"
+
+**Fatto:** la scorciatoia "crea conto" dell'editor Obiettivi ora apre l'editor conto già sul tipo SAVINGS (versionCode 81 -> 82, versionName 0.9.42 -> 0.9.43). `AccountEditorRoute` guadagna `initialTypeName` (mirror di category/recurring editor); `AccountEditorViewModel` risolve `initialType` dal route e semina lo stato iniziale con tipo, icona di default e `isIncludedInBudget = initialType != SAVINGS` (preset ADR 22 allo stato iniziale). `SaldoApp` passa `AccountType.SAVINGS.name` dalla scorciatoia. Baseline catturato sullo stato seminato: l'editor non si apre "sporco". Nuovi unit test (tipo/budget/icona seminati, apertura pulita, salvataggio con budget off, fallback a CHECKING per tipo ignoto).
+
+**Decisioni:** la decisione dell'ADR 22 non cambia (SAVINGS default budget-off, scelta esplicita vincente, edit mai sovrascritto): la preselezione applica lo stesso preset a un nuovo punto di ingresso (stato iniziale invece del solo `onTypeChanged`). Aggiunto un chiarimento di una frase all'ADR 22, nessun ADR nuovo. Il tipo `initialTypeName` è generico ma l'unico chiamante passa SAVINGS.
+
+**Problemi:** nessuno; gate `assembleDebug testDebugUnitTest lint detekt` verde.
+
+**Prossimo:** verifica su device del flusso completo (crea obiettivo -> "crea conto" -> editor già su SAVINGS con budget off -> salva -> obiettivo collegato).
+
+---
+
+## 2026-07-18 - Obiettivi di risparmio (Fase 10.0, v2.0)
+
+**Fatto:** implementata la feature Obiettivi di risparmio, prima della v2.0 (versionCode 80 -> 81, versionName 0.9.41 -> 0.9.42). Modello legato a un conto risparmio (scelta confermata con l'utente).
+- Dominio/persistenza: `SavingsGoal` + `SavingsGoalEntity` (tabella `savings_goals`, FK `accountId` -> `accounts` `ON DELETE CASCADE`, indice UNIQUE = un obiettivo per conto), mapper, `SavingsGoalRepository`/`RoomSavingsGoalRepository`, DAO e DI. `SaldoDatabase` a version 2 con `MIGRATION_1_2` (`CREATE TABLE` con FK, schema `2.json` esportato e verificato identico allo statement generato da Room).
+- Dominio: `ObserveSavingsGoalsProgressUseCase` calcola risparmiato (= saldo del conto, ADR 3), progresso, suggerimento mensile (mesi rimanenti alla data, arrotondamento per eccesso in minor units) e proiezione/verdetto "in linea" dai trasferimenti ricorrenti same-currency verso il conto (riuso di `RecurrenceCalculator.monthlyEquivalent`).
+- UI (`feature/savings`): schermata lista (hero totale + card obiettivo con barra positiva, %, riga di stato) ed editor (nome, target, conto risparmio con scorciatoia "crea conto", data opzionale, colore/icona, guardia modifiche non salvate, empty-state senza conti risparmio). Route Nav3, voce Impostazioni > Gestione.
+- Dashboard: card opzionale "Obiettivi di risparmio" (toggle in Impostazioni) e terza metrica "Risparmio / mese" sulla card "Movimenti ricorrenti".
+- Backup: campo additivo `savingsGoals` (versione invariata), mapper, validazione, conteggio nell'anteprima di ripristino.
+
+**Decisioni:** ADR 25. Account-linked e non un registro di contributi separato: unico modello onesto con single-source-of-truth (il denaro sta nei conti, il saldo è calcolato); un registro separato creerebbe "risparmiato" fantasma. Migration pulita e non collasso del baseline: la FK è ammessa in un `CREATE TABLE` nuovo (a differenza dell'`ALTER TABLE ADD COLUMN` che aveva forzato il collasso nell'ADR 24), quindi si riprende la disciplina migration dell'ADR 23. La card "Movimenti ricorrenti" ora include i trasferimenti verso il risparmio: la loro assenza in Dashboard era un'omissione della Fase 9.15, verificata su richiesta dell'utente, non una scelta di design.
+
+**Problemi:** wrapper Gradle non scaricabile dietro proxy: usato il Gradle di sistema `/opt/gradle`. Detekt: `CyclomaticComplexMethod` su `recurringSummary` risolto estraendo i predicati e `nextRecurringEvent`; `ComplexCondition`/`ReturnCount`/`MaxLineLength`/`TooManyFunctions` risolti su editor VM, use case e `SettingsViewModel`. Nessun emulatore in sessione: `Migration1To2Test` è scritto ma non eseguito; verifica affidata a `assembleDebug testDebugUnitTest lint detekt` (verdi) e ai nuovi unit test (mapper, use case, editor VM, round-trip backup).
+
+**Prossimo:** verifica su device (creazione obiettivo su un conto risparmio, trasferimento ricorrente verso il conto -> suggerimento/proiezione, card dashboard, update in-place APK, round-trip backup con obiettivi). Eventuale preselezione del tipo `SAVINGS` nell'editor conto aperto dalla scorciatoia.
+
+---
+
 ## 2026-07-17 - Fix crash all'avvio: migration ripiegata nel baseline v1
 
 **Fatto:** rimossa la `MIGRATION_1_2` e ripiegate le colonne transfer nel baseline v1 (`SaldoDatabase.version` di nuovo 1, `1.json` rigenerato con colonne + indice + FK, `2.json` e `Migration1To2Test` eliminati, `ALL_MIGRATIONS` di nuovo vuoto). versionCode 79 -> 80, versionName 0.9.40 -> 0.9.41.

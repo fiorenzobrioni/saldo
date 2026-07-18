@@ -97,13 +97,27 @@ class AccountEditorViewModel @AssistedInject constructor(
     /** Currencies offered in the picker: locale currency first, then common ones. */
     val currencies: List<Currency> = CurrencyCatalog.supportedCurrencies
 
+    /**
+     * The type a new account starts on, from the route (the savings goal
+     * "create account" shortcut passes SAVINGS). Falls back to [AccountType.CHECKING];
+     * ignored in edit mode, where [loadAccount] sets the persisted type.
+     */
+    private val initialType: AccountType = route.initialTypeName
+        ?.let { name -> AccountType.entries.firstOrNull { it.name == name } }
+        ?: AccountType.CHECKING
+
     private val _uiState = MutableStateFlow(
         AccountEditorUiState(
             isLoading = route.accountId != null,
             isNew = route.accountId == null,
+            type = initialType,
             currency = fallbackCurrency,
             color = AccountVisuals.colors.first(),
-            icon = AccountVisuals.defaultIconFor(AccountType.CHECKING),
+            icon = AccountVisuals.defaultIconFor(initialType),
+            // Apply the ADR 22 savings preset to the seeded type too, so a
+            // preselected savings account opens already excluded from the budget
+            // (an explicit toggle still wins from here on).
+            isIncludedInBudget = initialType != AccountType.SAVINGS,
         ),
     )
     val uiState: StateFlow<AccountEditorUiState> = _uiState.asStateFlow()
