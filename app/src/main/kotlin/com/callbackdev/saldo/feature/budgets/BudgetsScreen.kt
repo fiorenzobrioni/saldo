@@ -97,7 +97,7 @@ fun BudgetsScreen(
             )
         },
         floatingActionButton = {
-            if (!uiState.isLoading) {
+            if (!uiState.isLoading && !uiState.isEmpty) {
                 ExtendedFloatingActionButton(
                     text = { Text(stringResource(R.string.budgets_add)) },
                     icon = {

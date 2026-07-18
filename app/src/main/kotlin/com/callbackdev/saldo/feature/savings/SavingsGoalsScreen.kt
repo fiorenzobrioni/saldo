@@ -101,7 +101,7 @@ fun SavingsGoalsScreen(
             )
         },
         floatingActionButton = {
-            if (!uiState.isLoading) {
+            if (!uiState.isLoading && !uiState.isEmpty) {
                 ExtendedFloatingActionButton(
                     text = { Text(stringResource(R.string.savings_add)) },
                     icon = { Icon(imageVector = Icons.Outlined.Add, contentDescription = null) },

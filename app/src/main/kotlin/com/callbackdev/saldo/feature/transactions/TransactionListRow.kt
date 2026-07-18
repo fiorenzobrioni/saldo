@@ -120,6 +120,7 @@ internal fun SwipeableTransactionRow(
 internal fun TransactionRowContent(
     item: TransactionListItem,
     modifier: Modifier = Modifier,
+    dateLabel: String? = null,
 ) {
     val transaction = item.transaction
     Row(
@@ -157,11 +158,26 @@ internal fun TransactionRowContent(
                     .size(16.dp),
             )
         }
-        Text(
-            text = itemAmountText(item),
-            style = MaterialTheme.typography.titleMedium.tabularNumbers(),
-            color = itemAmountColor(item),
-        )
+        if (dateLabel != null) {
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = itemAmountText(item),
+                    style = MaterialTheme.typography.titleMedium.tabularNumbers(),
+                    color = itemAmountColor(item),
+                )
+                Text(
+                    text = dateLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        } else {
+            Text(
+                text = itemAmountText(item),
+                style = MaterialTheme.typography.titleMedium.tabularNumbers(),
+                color = itemAmountColor(item),
+            )
+        }
     }
 }
 

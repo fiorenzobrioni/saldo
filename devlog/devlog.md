@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-18 - Rifiniture Dashboard, uniformita liste vuote e copy onboarding
+
+**Fatto:** giro di polish UX (versionCode 83 -> 84, versionName 0.9.44 -> 0.9.45).
+- Card "Movimenti ricorrenti" in Dashboard: testo di empty-state accorciato e allineato alle card Budget/Obiettivi. IT "Nessun movimento · tocca per aggiungerne uno", EN "No transactions · tap to add one" (prima era piu lungo e andava a filo della card su telefono). Il separatore era gia il punto medio `·` come le altre card, nessun bullet da correggere.
+- FAB nelle liste vuote uniformato: `BudgetsScreen` e `SavingsGoalsScreen` mostravano il FAB anche a lista vuota, insieme al bottone centrale. Aggiunto `&& !uiState.isEmpty` al guard del `floatingActionButton`, come gia fanno Conti/Movimenti/Ricorrenti. A vuoto resta solo la CTA centrale; il FAB ricompare al primo elemento.
+- Data sui movimenti recenti in Dashboard: la card "Ultimi movimenti" non riportava la data. Aggiunto un parametro opzionale `dateLabel` a `TransactionRowContent` (quando presente, l'importo diventa una colonna con la data sotto in `labelSmall`); la lista Movimenti resta invariata (data negli header di giorno, `dateLabel = null`). Nuovo formatter `compactDayLabel` in `TransactionFormatters.kt`: Oggi/Ieri oppure data breve "6 lug" (skeleton dMMM/dMMMy, `withLocaleDateCasing`). `today` preso da `uiState.date` (LocalDate gia esposto dal ViewModel).
+- Copy onboarding: la Welcome citava solo "spese, entrate e abbonamenti"; ampliata a "spese, entrate, budget e obiettivi di risparmio" (IT+EN) per riflettere le feature spedite, senza aggiungere pagine e senza promettere funzioni non presenti. Ridotto l'uso dell'em dash nelle descrizioni italiane (welcome e notifiche: em dash -> virgola).
+
+**Decisioni:** valutato ma scartato (scelta utente) il default del nome conto dal tipo quando lasciato vuoto: il nome resta obbligatorio. La data sui movimenti recenti sta solo in Dashboard tramite parametro opzionale della row condivisa, per non duplicarla nella lista Movimenti dove e gia negli header di giorno. Onboarding: solo ritocco copy delle 5 pagine esistenti, niente pagina "funzionalita" aggiuntiva.
+
+**Problemi:** wrapper Gradle bloccato dal proxy (403 sul download della distribuzione da GitHub); usato il Gradle di sistema `/opt/gradle` (8.14.3, stessa versione). `assembleDebug testDebugUnitTest lint` verde. Verifica manuale su device ancora da fare (empty-state ricorrenti, FAB Budget/Obiettivi a vuoto e al primo inserimento, data sui movimenti recenti, testi onboarding IT/EN).
+
+**Prossimo:** verifica su device dei quattro interventi.
+
+---
+
 ## 2026-07-18 - Review e snellimento degli ADR in PLANNING.md
 
 **Fatto:** revisione della tabella "Decisioni architetturali chiave" di PLANNING.md. Gli ADR 16, 18-26 avevano accumulato dettagli implementativi (nomi di classe/metodo/colonna, numeri di migration e di schema, narrazione dei collassi baseline, riferimenti di commit, note operative ripetute "app su un solo device") che appartengono a fasi/devlog, non all'ADR. Trimmati mantenendo intatta la logica di validità: decisione + motivazione. Gli ADR 1-15 e 17 erano già sintetici e restano invariati; numeri ADR e riferimenti incrociati non toccati.
