@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.database.entity.AccountEntity
 import com.callbackdev.saldo.core.database.entity.BudgetEntity
 import com.callbackdev.saldo.core.database.entity.CategoryEntity
 import com.callbackdev.saldo.core.database.entity.RecurringRuleEntity
+import com.callbackdev.saldo.core.database.entity.SavingsGoalEntity
 import com.callbackdev.saldo.core.database.entity.TagEntity
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
 import com.callbackdev.saldo.core.database.entity.TransactionTagCrossRef
@@ -13,6 +14,7 @@ import com.callbackdev.saldo.core.domain.backup.AccountBackup
 import com.callbackdev.saldo.core.domain.backup.BudgetBackup
 import com.callbackdev.saldo.core.domain.backup.CategoryBackup
 import com.callbackdev.saldo.core.domain.backup.RecurringRuleBackup
+import com.callbackdev.saldo.core.domain.backup.SavingsGoalBackup
 import com.callbackdev.saldo.core.domain.backup.TagBackup
 import com.callbackdev.saldo.core.domain.backup.TransactionBackup
 import com.callbackdev.saldo.core.domain.backup.TransactionTagBackup
@@ -212,6 +214,30 @@ fun BudgetBackup.toEntity(): BudgetEntity = BudgetEntity(
     currency = validatedCurrencyCode(currency),
     lastNotified80EpochMonth = lastNotified80EpochMonth,
     lastNotified100EpochMonth = lastNotified100EpochMonth,
+)
+
+fun SavingsGoalEntity.toBackup(): SavingsGoalBackup = SavingsGoalBackup(
+    id = id,
+    name = name,
+    targetAmountMinor = targetAmountMinor,
+    currency = currency,
+    accountId = accountId,
+    targetDateEpochDay = targetDateEpochDay,
+    color = color,
+    icon = icon,
+    sortOrder = sortOrder,
+)
+
+fun SavingsGoalBackup.toEntity(): SavingsGoalEntity = SavingsGoalEntity(
+    id = id,
+    name = name,
+    targetAmountMinor = targetAmountMinor,
+    currency = validatedCurrencyCode(currency),
+    accountId = accountId,
+    targetDateEpochDay = targetDateEpochDay,
+    color = color,
+    icon = icon,
+    sortOrder = sortOrder,
 )
 
 /** Throws [IllegalArgumentException] on codes [java.util.Currency] does not know. */

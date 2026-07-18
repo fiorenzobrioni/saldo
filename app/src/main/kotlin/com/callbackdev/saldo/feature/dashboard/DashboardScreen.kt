@@ -54,6 +54,7 @@ fun DashboardScreen(
     onNavigateToRecurrences: () -> Unit,
     onNavigateToPending: () -> Unit,
     onNavigateToBudgets: () -> Unit,
+    onNavigateToSavingsGoals: () -> Unit,
     onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
@@ -100,6 +101,7 @@ fun DashboardScreen(
                     onRecurringClick = onNavigateToRecurrences,
                     onPendingClick = onNavigateToPending,
                     onBudgetsClick = onNavigateToBudgets,
+                    onSavingsGoalsClick = onNavigateToSavingsGoals,
                     onNavigateToFiltered = onNavigateToFiltered,
                 )
             }
@@ -133,6 +135,7 @@ private fun DashboardContent(
     onRecurringClick: () -> Unit,
     onPendingClick: () -> Unit,
     onBudgetsClick: () -> Unit,
+    onSavingsGoalsClick: () -> Unit,
     onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -202,6 +205,15 @@ private fun DashboardContent(
         }
         if (uiState.cardPrefs.showBudget) {
             item { BudgetCard(budgets = uiState.budgets, onClick = onBudgetsClick) }
+        }
+        if (uiState.cardPrefs.showSavingsGoals && uiState.savingsGoals.isNotEmpty()) {
+            item {
+                SavingsGoalsCard(
+                    goals = uiState.savingsGoals,
+                    currency = uiState.primaryCurrency,
+                    onClick = onSavingsGoalsClick,
+                )
+            }
         }
         if (uiState.pendingCount > 0) {
             item { PendingConfirmationCard(count = uiState.pendingCount, onClick = onPendingClick) }

@@ -302,5 +302,18 @@ internal fun fullyPopulatedBackupFile(): BackupFile = BackupFile(
                 lastNotified100EpochMonth = 24_318L,
             ),
         ),
+        savingsGoals = listOf(
+            SavingsGoalBackup(
+                id = 50L,
+                name = "Holiday",
+                targetAmountMinor = 200_000L,
+                currency = "EUR",
+                accountId = 1L,
+                targetDateEpochDay = 21_000L,
+                color = 0x66BB6A,
+                icon = "savings",
+                sortOrder = 0,
+            ),
+        ),
     ),
 )

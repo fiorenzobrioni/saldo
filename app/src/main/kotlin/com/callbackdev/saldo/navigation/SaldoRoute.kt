@@ -84,6 +84,14 @@ data object BudgetsRoute : NavKey
 @Serializable
 data class BudgetEditorRoute(val budgetId: Long? = null) : NavKey
 
+/** Savings goals list, reached from the dashboard card and Settings. */
+@Serializable
+data object SavingsGoalsRoute : NavKey
+
+/** Savings goal editor: create mode when [goalId] is null, edit mode otherwise. */
+@Serializable
+data class SavingsGoalEditorRoute(val goalId: Long? = null) : NavKey
+
 /** Manual file backup and guided restore, reached from Settings. */
 @Serializable
 data object BackupRoute : NavKey

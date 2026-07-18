@@ -618,7 +618,7 @@
     <string name="backup_restore_dialog_title">Ripristinare questo backup?</string>
     <string name="backup_restore_dialog_metadata">Backup del %1$s</string>
     <string name="backup_restore_dialog_metadata_versioned">Backup del %1$s (Saldo %2$s)</string>
-    <string name="backup_restore_dialog_counts">Conti: %1$d\nMovimenti: %2$d\nCategorie: %3$d\nRicorrenze: %4$d\nTag: %5$d\nBudget: %6$d</string>
+    <string name="backup_restore_dialog_counts">Conti: %1$d\nMovimenti: %2$d\nCategorie: %3$d\nRicorrenze: %4$d\nTag: %5$d\nBudget: %6$d\nObiettivi di risparmio: %7$d</string>
     <string name="backup_restore_dialog_warning">Tutti i dati attuali verranno sostituiti. L\'operazione non si può annullare.</string>
     <string name="backup_restore_confirm">Ripristina</string>
     <string name="backup_snackbar_exported">Backup salvato (%1$d movimenti)</string>
@@ -795,4 +795,54 @@
     <string name="settings_dashboard_show_budget_hint">Mostra i progressi dei budget del mese</string>
     <string name="settings_dashboard_show_recent">Scheda ultimi movimenti</string>
     <string name="settings_dashboard_show_recent_hint">Mostra i movimenti più recenti in fondo</string>
+    <string name="settings_dashboard_show_savings">Scheda obiettivi di risparmio</string>
+    <string name="settings_dashboard_show_savings_hint">Mostra i progressi verso i tuoi obiettivi di risparmio</string>
+
+    <!-- Obiettivi di risparmio -->
+    <string name="settings_savings">Obiettivi di risparmio</string>
+    <string name="settings_savings_hint">Traguardi alimentati dai conti di risparmio</string>
+    <string name="savings_title">Obiettivi di risparmio</string>
+    <string name="savings_add">Nuovo obiettivo</string>
+    <string name="savings_empty_title">Ancora nessun obiettivo</string>
+    <string name="savings_empty_body">Fissa un traguardo su un conto di risparmio e guardalo crescere a ogni trasferimento.</string>
+    <string name="savings_empty_cta">Crea un obiettivo</string>
+    <string name="savings_summary_title">Totale risparmiato</string>
+    <string name="savings_saved_of">%1$s su %2$s</string>
+    <string name="savings_other_currencies">Gli obiettivi in altre valute sono elencati sotto, fuori da questo totale.</string>
+    <string name="savings_reached">Obiettivo raggiunto</string>
+    <string name="savings_by_date">Entro %1$s</string>
+    <string name="savings_by_date_suggestion">Entro %1$s · metti da parte %2$s/mese</string>
+    <string name="savings_projected">A questo ritmo, pronto entro %1$s</string>
+    <string name="savings_remaining">Mancano %1$s</string>
+
+    <!-- Editor obiettivo di risparmio -->
+    <string name="savings_editor_title_new">Nuovo obiettivo</string>
+    <string name="savings_editor_title_edit">Modifica obiettivo</string>
+    <string name="savings_editor_save">Salva obiettivo</string>
+    <string name="savings_editor_name">Nome</string>
+    <string name="savings_editor_name_hint">Es. Vacanze, Fondo emergenze</string>
+    <string name="savings_editor_name_error">Inserisci un nome</string>
+    <string name="savings_editor_target">Obiettivo</string>
+    <string name="savings_editor_target_error">Inserisci un importo</string>
+    <string name="savings_editor_account">Conto di risparmio</string>
+    <string name="savings_editor_account_error">Scegli un conto</string>
+    <string name="savings_editor_account_create">Crea un nuovo conto di risparmio</string>
+    <string name="savings_editor_already_saved">Su questo conto ci sono già %1$s, conteggiati nell\'obiettivo</string>
+    <string name="savings_editor_has_target_date">Data obiettivo</string>
+    <string name="savings_editor_has_target_date_hint">Per il suggerimento di risparmio mensile</string>
+    <string name="savings_editor_target_date">Data obiettivo</string>
+    <string name="savings_editor_section_color">Colore</string>
+    <string name="savings_editor_section_icon">Icona</string>
+    <string name="savings_editor_no_account_title">Serve un conto di risparmio</string>
+    <string name="savings_editor_no_account_body">Un obiettivo si appoggia a un conto di tipo Risparmio, che alimenti con i trasferimenti. Creane uno per iniziare.</string>
+    <string name="savings_editor_no_account_cta">Crea conto di risparmio</string>
+    <string name="savings_delete_title">Eliminare l\'obiettivo?</string>
+    <string name="savings_delete_body">L\'obiettivo viene rimosso. Il conto di risparmio collegato e i suoi movimenti restano.</string>
+    <string name="savings_delete_action">Elimina</string>
+
+    <!-- Scheda dashboard obiettivi di risparmio -->
+    <string name="dashboard_savings_title">Obiettivi di risparmio</string>
+    <string name="dashboard_savings_saved_of">%1$s su %2$s</string>
+    <string name="dashboard_savings_more">+%1$d altri</string>
+    <string name="dashboard_recurring_savings_label">Risparmio / mese</string>
 </resources>

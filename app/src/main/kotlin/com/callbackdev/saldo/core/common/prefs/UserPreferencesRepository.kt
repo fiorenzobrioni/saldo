@@ -52,6 +52,7 @@ data class DashboardCardPreferences(
     val showBudget: Boolean = true,
     val showSafeToSpend: Boolean = true,
     val showRecentTransactions: Boolean = true,
+    val showSavingsGoals: Boolean = true,
 )
 
 /**
@@ -220,6 +221,7 @@ class UserPreferencesRepository @Inject constructor(
             showBudget = preferences[DASHBOARD_SHOW_BUDGET_CARD] ?: true,
             showSafeToSpend = preferences[DASHBOARD_SHOW_SAFE_TO_SPEND] ?: true,
             showRecentTransactions = preferences[DASHBOARD_SHOW_RECENT_TRANSACTIONS] ?: true,
+            showSavingsGoals = preferences[DASHBOARD_SHOW_SAVINGS_GOALS] ?: true,
         )
     }.distinctUntilChanged()
 
@@ -233,6 +235,10 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setShowRecentTransactions(shown: Boolean) {
         dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_RECENT_TRANSACTIONS] = shown }
+    }
+
+    suspend fun setShowSavingsGoalsCard(shown: Boolean) {
+        dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_SAVINGS_GOALS] = shown }
     }
 
     /** Column separator of the CSV export; semicolon by default (Excel friendly). */
@@ -267,5 +273,6 @@ class UserPreferencesRepository @Inject constructor(
         val DASHBOARD_SHOW_SAFE_TO_SPEND = booleanPreferencesKey("dashboard_show_safe_to_spend")
         val DASHBOARD_SHOW_RECENT_TRANSACTIONS =
             booleanPreferencesKey("dashboard_show_recent_transactions")
+        val DASHBOARD_SHOW_SAVINGS_GOALS = booleanPreferencesKey("dashboard_show_savings_goals")
     }
 }

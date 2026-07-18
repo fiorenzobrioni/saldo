@@ -14,6 +14,23 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-18 - Obiettivi di risparmio (Fase 10.0, v2.0)
+
+**Fatto:** implementata la feature Obiettivi di risparmio, prima della v2.0 (versionCode 80 -> 81, versionName 0.9.41 -> 0.9.42). Modello legato a un conto risparmio (scelta confermata con l'utente).
+- Dominio/persistenza: `SavingsGoal` + `SavingsGoalEntity` (tabella `savings_goals`, FK `accountId` -> `accounts` `ON DELETE CASCADE`, indice UNIQUE = un obiettivo per conto), mapper, `SavingsGoalRepository`/`RoomSavingsGoalRepository`, DAO e DI. `SaldoDatabase` a version 2 con `MIGRATION_1_2` (`CREATE TABLE` con FK, schema `2.json` esportato e verificato identico allo statement generato da Room).
+- Dominio: `ObserveSavingsGoalsProgressUseCase` calcola risparmiato (= saldo del conto, ADR 3), progresso, suggerimento mensile (mesi rimanenti alla data, arrotondamento per eccesso in minor units) e proiezione/verdetto "in linea" dai trasferimenti ricorrenti same-currency verso il conto (riuso di `RecurrenceCalculator.monthlyEquivalent`).
+- UI (`feature/savings`): schermata lista (hero totale + card obiettivo con barra positiva, %, riga di stato) ed editor (nome, target, conto risparmio con scorciatoia "crea conto", data opzionale, colore/icona, guardia modifiche non salvate, empty-state senza conti risparmio). Route Nav3, voce Impostazioni > Gestione.
+- Dashboard: card opzionale "Obiettivi di risparmio" (toggle in Impostazioni) e terza metrica "Risparmio / mese" sulla card "Movimenti ricorrenti".
+- Backup: campo additivo `savingsGoals` (versione invariata), mapper, validazione, conteggio nell'anteprima di ripristino.
+
+**Decisioni:** ADR 25. Account-linked e non un registro di contributi separato: unico modello onesto con single-source-of-truth (il denaro sta nei conti, il saldo è calcolato); un registro separato creerebbe "risparmiato" fantasma. Migration pulita e non collasso del baseline: la FK è ammessa in un `CREATE TABLE` nuovo (a differenza dell'`ALTER TABLE ADD COLUMN` che aveva forzato il collasso nell'ADR 24), quindi si riprende la disciplina migration dell'ADR 23. La card "Movimenti ricorrenti" ora include i trasferimenti verso il risparmio: la loro assenza in Dashboard era un'omissione della Fase 9.15, verificata su richiesta dell'utente, non una scelta di design.
+
+**Problemi:** wrapper Gradle non scaricabile dietro proxy: usato il Gradle di sistema `/opt/gradle`. Detekt: `CyclomaticComplexMethod` su `recurringSummary` risolto estraendo i predicati e `nextRecurringEvent`; `ComplexCondition`/`ReturnCount`/`MaxLineLength`/`TooManyFunctions` risolti su editor VM, use case e `SettingsViewModel`. Nessun emulatore in sessione: `Migration1To2Test` è scritto ma non eseguito; verifica affidata a `assembleDebug testDebugUnitTest lint detekt` (verdi) e ai nuovi unit test (mapper, use case, editor VM, round-trip backup).
+
+**Prossimo:** verifica su device (creazione obiettivo su un conto risparmio, trasferimento ricorrente verso il conto -> suggerimento/proiezione, card dashboard, update in-place APK, round-trip backup con obiettivi). Eventuale preselezione del tipo `SAVINGS` nell'editor conto aperto dalla scorciatoia.
+
+---
+
 ## 2026-07-17 - Fix crash all'avvio: migration ripiegata nel baseline v1
 
 **Fatto:** rimossa la `MIGRATION_1_2` e ripiegate le colonne transfer nel baseline v1 (`SaldoDatabase.version` di nuovo 1, `1.json` rigenerato con colonne + indice + FK, `2.json` e `Migration1To2Test` eliminati, `ALL_MIGRATIONS` di nuovo vuoto). versionCode 79 -> 80, versionName 0.9.40 -> 0.9.41.

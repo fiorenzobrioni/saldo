@@ -47,6 +47,8 @@ data class BackupData(
     val transactionTags: List<TransactionTagBackup> = emptyList(),
     /** Added with the budgets feature; older files simply restore none. */
     val budgets: List<BudgetBackup> = emptyList(),
+    /** Added with the savings goals feature; older files simply restore none. */
+    val savingsGoals: List<SavingsGoalBackup> = emptyList(),
 )
 
 @Serializable
@@ -169,6 +171,20 @@ data class BudgetBackup(
     val lastNotified100EpochMonth: Long? = null,
 )
 
+@Serializable
+data class SavingsGoalBackup(
+    val id: Long,
+    val name: String,
+    val targetAmountMinor: Long,
+    /** ISO 4217 code (matches the linked account's currency). */
+    val currency: String,
+    val accountId: Long,
+    val targetDateEpochDay: Long? = null,
+    val color: Int? = null,
+    val icon: String? = null,
+    val sortOrder: Int = 0,
+)
+
 /** What a backup contains, for the export confirmation and the guided restore. */
 data class BackupSummary(
     val exportedAt: Instant,
@@ -179,6 +195,7 @@ data class BackupSummary(
     val recurringRules: Int,
     val tags: Int,
     val budgets: Int = 0,
+    val savingsGoals: Int = 0,
 )
 
 fun BackupFile.summary(): BackupSummary = BackupSummary(
@@ -190,4 +207,5 @@ fun BackupFile.summary(): BackupSummary = BackupSummary(
     recurringRules = data.recurringRules.size,
     tags = data.tags.size,
     budgets = data.budgets.size,
+    savingsGoals = data.savingsGoals.size,
 )

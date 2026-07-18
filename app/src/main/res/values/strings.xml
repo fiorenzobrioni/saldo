@@ -605,7 +605,7 @@
     <string name="backup_restore_dialog_title">Restore this backup?</string>
     <string name="backup_restore_dialog_metadata">Backup from %1$s</string>
     <string name="backup_restore_dialog_metadata_versioned">Backup from %1$s (Saldo %2$s)</string>
-    <string name="backup_restore_dialog_counts">Accounts: %1$d\nTransactions: %2$d\nCategories: %3$d\nRecurring rules: %4$d\nTags: %5$d\nBudgets: %6$d</string>
+    <string name="backup_restore_dialog_counts">Accounts: %1$d\nTransactions: %2$d\nCategories: %3$d\nRecurring rules: %4$d\nTags: %5$d\nBudgets: %6$d\nSavings goals: %7$d</string>
     <string name="backup_restore_dialog_warning">All current data will be replaced. This cannot be undone.</string>
     <string name="backup_restore_confirm">Restore</string>
     <string name="backup_snackbar_exported">Backup saved (%1$d transactions)</string>
@@ -783,4 +783,54 @@
     <string name="settings_dashboard_show_budget_hint">Show the month\'s budget progress</string>
     <string name="settings_dashboard_show_recent">Latest transactions card</string>
     <string name="settings_dashboard_show_recent_hint">Show the most recent transactions at the bottom</string>
+    <string name="settings_dashboard_show_savings">Savings goals card</string>
+    <string name="settings_dashboard_show_savings_hint">Show progress toward your savings goals</string>
+
+    <!-- Savings goals -->
+    <string name="settings_savings">Savings goals</string>
+    <string name="settings_savings_hint">Targets fed by your savings accounts</string>
+    <string name="savings_title">Savings goals</string>
+    <string name="savings_add">New goal</string>
+    <string name="savings_empty_title">No savings goals yet</string>
+    <string name="savings_empty_body">Set a target on a savings account and watch it fill up with every transfer in.</string>
+    <string name="savings_empty_cta">Create a goal</string>
+    <string name="savings_summary_title">Total saved</string>
+    <string name="savings_saved_of">%1$s of %2$s</string>
+    <string name="savings_other_currencies">Goals in other currencies are listed below, out of this total.</string>
+    <string name="savings_reached">Goal reached</string>
+    <string name="savings_by_date">By %1$s</string>
+    <string name="savings_by_date_suggestion">By %1$s · set aside %2$s/month</string>
+    <string name="savings_projected">At the current pace, ready by %1$s</string>
+    <string name="savings_remaining">%1$s to go</string>
+
+    <!-- Savings goal editor -->
+    <string name="savings_editor_title_new">New goal</string>
+    <string name="savings_editor_title_edit">Edit goal</string>
+    <string name="savings_editor_save">Save goal</string>
+    <string name="savings_editor_name">Name</string>
+    <string name="savings_editor_name_hint">e.g. Holiday, Emergency fund</string>
+    <string name="savings_editor_name_error">Enter a name</string>
+    <string name="savings_editor_target">Target</string>
+    <string name="savings_editor_target_error">Enter an amount</string>
+    <string name="savings_editor_account">Savings account</string>
+    <string name="savings_editor_account_error">Pick an account</string>
+    <string name="savings_editor_account_create">Create a new savings account</string>
+    <string name="savings_editor_already_saved">This account already holds %1$s, counted toward the goal</string>
+    <string name="savings_editor_has_target_date">Target date</string>
+    <string name="savings_editor_has_target_date_hint">For the monthly saving suggestion</string>
+    <string name="savings_editor_target_date">Target date</string>
+    <string name="savings_editor_section_color">Color</string>
+    <string name="savings_editor_section_icon">Icon</string>
+    <string name="savings_editor_no_account_title">A savings account is needed</string>
+    <string name="savings_editor_no_account_body">A goal sits on a Savings account, which you feed with transfers. Create one to get started.</string>
+    <string name="savings_editor_no_account_cta">Create savings account</string>
+    <string name="savings_delete_title">Delete this goal?</string>
+    <string name="savings_delete_body">The goal is removed. The linked savings account and its transactions stay.</string>
+    <string name="savings_delete_action">Delete</string>
+
+    <!-- Savings goals dashboard card -->
+    <string name="dashboard_savings_title">Savings goals</string>
+    <string name="dashboard_savings_saved_of">%1$s of %2$s</string>
+    <string name="dashboard_savings_more">+%1$d more</string>
+    <string name="dashboard_recurring_savings_label">Savings / month</string>
 </resources>

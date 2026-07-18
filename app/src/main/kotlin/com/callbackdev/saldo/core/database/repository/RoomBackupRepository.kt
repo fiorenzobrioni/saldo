@@ -4,6 +4,7 @@ import com.callbackdev.saldo.core.database.dao.AccountDao
 import com.callbackdev.saldo.core.database.dao.BudgetDao
 import com.callbackdev.saldo.core.database.dao.CategoryDao
 import com.callbackdev.saldo.core.database.dao.RecurringRuleDao
+import com.callbackdev.saldo.core.database.dao.SavingsGoalDao
 import com.callbackdev.saldo.core.database.dao.TagDao
 import com.callbackdev.saldo.core.database.dao.TransactionDao
 import com.callbackdev.saldo.core.database.mapper.toBackup
@@ -32,6 +33,7 @@ class RoomBackupRepository @Inject constructor(
     private val recurringRuleDao: RecurringRuleDao,
     private val transactionDao: TransactionDao,
     private val budgetDao: BudgetDao,
+    private val savingsGoalDao: SavingsGoalDao,
     private val transactionRunner: TransactionRunner,
 ) : BackupRepository {
 
@@ -44,6 +46,7 @@ class RoomBackupRepository @Inject constructor(
             transactions = transactionDao.getAll().map { it.toBackup() },
             transactionTags = tagDao.getAllCrossRefs().map { it.toBackup() },
             budgets = budgetDao.getAll().map { it.toBackup() },
+            savingsGoals = savingsGoalDao.getAll().map { it.toBackup() },
         )
     }
 
@@ -53,6 +56,7 @@ class RoomBackupRepository @Inject constructor(
             transactionDao.deleteAll()
             recurringRuleDao.deleteAll()
             budgetDao.deleteAll()
+            savingsGoalDao.deleteAll()
             tagDao.deleteAll()
             categoryDao.deleteAll()
             accountDao.deleteAll()
@@ -64,6 +68,7 @@ class RoomBackupRepository @Inject constructor(
             transactionDao.insertAll(data.transactions.map { it.toEntity() })
             tagDao.insertCrossRefs(data.transactionTags.map { it.toEntity() })
             budgetDao.insertAll(data.budgets.map { it.toEntity() })
+            savingsGoalDao.insertAll(data.savingsGoals.map { it.toEntity() })
         }
     }
 }
