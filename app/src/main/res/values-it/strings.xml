@@ -844,5 +844,6 @@
     <string name="dashboard_savings_title">Obiettivi di risparmio</string>
     <string name="dashboard_savings_saved_of">%1$s su %2$s</string>
     <string name="dashboard_savings_more">+%1$d altri</string>
+    <string name="dashboard_savings_empty">Nessun obiettivo · tocca per aggiungerne uno</string>
     <string name="dashboard_recurring_savings_label">Risparmio / mese</string>
 </resources>

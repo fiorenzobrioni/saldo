@@ -832,5 +832,6 @@
     <string name="dashboard_savings_title">Savings goals</string>
     <string name="dashboard_savings_saved_of">%1$s of %2$s</string>
     <string name="dashboard_savings_more">+%1$d more</string>
+    <string name="dashboard_savings_empty">No savings goals yet · tap to add one</string>
     <string name="dashboard_recurring_savings_label">Savings / month</string>
 </resources>

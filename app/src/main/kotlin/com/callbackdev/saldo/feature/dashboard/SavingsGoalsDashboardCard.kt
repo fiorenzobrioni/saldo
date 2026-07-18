@@ -35,8 +35,10 @@ private const val PREVIEW_GOALS = 3
 
 /**
  * Dashboard card for savings goals: the total saved across the primary-currency
- * goals with an overall bar, then the goals closest to completion. Tap opens the
- * savings goals screen. Shown only when at least one goal exists (caller guards).
+ * goals with an overall bar, then the goals closest to completion. With no goals
+ * it shows an invitation to create one (like the budget card), so it doubles as
+ * an entry point. Tap opens the savings goals screen. Shown whenever the card is
+ * enabled in Settings (caller guards on the preference only).
  */
 @Composable
 internal fun SavingsGoalsCard(
@@ -59,6 +61,15 @@ internal fun SavingsGoalsCard(
                 icon = Icons.Outlined.Flag,
                 title = stringResource(R.string.dashboard_savings_title),
             )
+            if (goals.isEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.dashboard_savings_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                return@Column
+            }
             Spacer(Modifier.height(10.dp))
             Text(
                 text = stringResource(

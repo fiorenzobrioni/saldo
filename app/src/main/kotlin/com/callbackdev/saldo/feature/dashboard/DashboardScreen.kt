@@ -206,7 +206,7 @@ private fun DashboardContent(
         if (uiState.cardPrefs.showBudget) {
             item { BudgetCard(budgets = uiState.budgets, onClick = onBudgetsClick) }
         }
-        if (uiState.cardPrefs.showSavingsGoals && uiState.savingsGoals.isNotEmpty()) {
+        if (uiState.cardPrefs.showSavingsGoals) {
             item {
                 SavingsGoalsCard(
                     goals = uiState.savingsGoals,

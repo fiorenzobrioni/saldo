@@ -14,6 +14,21 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-18 - Fix crash aggiornamento (collapse v1) + disciplina migration + card Obiettivi sempre visibile
+
+**Fatto:** dalla prova su device, due interventi (versionCode 82 -> 83, versionName 0.9.43 -> 0.9.44).
+- Schema ripiegato nel baseline v1: `savings_goals` torna nel `1.json` (rigenerato), rimossi `MIGRATION_1_2`, `2.json` e `Migration1To2Test`; `SALDO_DATABASE_VERSION` di nuovo 1, referenziato dall'annotazione `@Database`. Ultima collapse-una-tantum (ADR 26).
+- Disciplina migration: due test generici (non uno per migrazione). `MigrationsTest` strumentato crea il baseline e applica `ALL_MIGRATIONS` fino a `SALDO_DATABASE_VERSION`, validando contro gli schemi esportati (intercetta lo schema migrato divergente). `MigrationChainTest` JVM verifica che la catena sia contigua e raggiunga la versione corrente: gira in CI senza device, intercetta il bump di versione senza migrazione.
+- Dashboard: la card Obiettivi ora è sempre visibile quando abilitata (rimosso il guard `isNotEmpty`), con messaggio di empty-state come la card Budget; funge da punto d'accesso anche senza obiettivi.
+
+**Decisioni:** ADR 26. Ogni collasso del baseline è un downgrade di versione per un device già sulla versione più alta, che Room rifiuta: è la causa dei crash "all'aggiornamento" ripetuti (serve reinstallare/svuotare). I migration test erano solo strumentati e in CI non c'è emulatore, quindi la divergenza sfuggiva alla verifica basata su build (già capitato in ADR 23/24). Il guard JVM chiude la parte strutturale in CI; lo strumentato resta da eseguire su device prima di rilasciare uno schema. Dai prossimi giri si preferisce una migrazione forward reale (niente downgrade). Robolectric per far girare anche lo strumentato in JVM/CI è una possibile aggiunta futura, ma è una dipendenza nuova: decisione separata (non presa qui, rispetto della regola "niente librerie senza chiedere").
+
+**Problemi:** non ho la logcat del crash sul device, quindi non ho isolato la causa esatta della `Migration(1,2)` (lo schema esportato combaciava con la CREATE scritta a mano): il collasso lo aggira azzerando la migrazione, coerente con la scelta dell'utente. Conseguenza da comunicare: il device attualmente su schema v2 va reinstallato/svuotato una volta (il passaggio a codice v1 è un downgrade).
+
+**Prossimo:** verifica su device dell'aggiornamento in-place dopo il collasso (partendo da un DB creato da zero con la 0.9.44), della card Obiettivi vuota in Dashboard, e - alla prossima migrazione reale - dei due test generici. Valutare Robolectric con l'utente.
+
+---
+
 ## 2026-07-18 - Rifinitura: preselezione SAVINGS nella scorciatoia "crea conto"
 
 **Fatto:** la scorciatoia "crea conto" dell'editor Obiettivi ora apre l'editor conto già sul tipo SAVINGS (versionCode 81 -> 82, versionName 0.9.42 -> 0.9.43). `AccountEditorRoute` guadagna `initialTypeName` (mirror di category/recurring editor); `AccountEditorViewModel` risolve `initialType` dal route e semina lo stato iniziale con tipo, icona di default e `isIncludedInBudget = initialType != SAVINGS` (preset ADR 22 allo stato iniziale). `SaldoApp` passa `AccountType.SAVINGS.name` dalla scorciatoia. Baseline catturato sullo stato seminato: l'editor non si apre "sporco". Nuovi unit test (tipo/budget/icona seminati, apertura pulita, salvataggio con budget off, fallback a CHECKING per tipo ignoto).
