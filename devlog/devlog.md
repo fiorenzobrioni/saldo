@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-18 - Rifinitura: preselezione SAVINGS nella scorciatoia "crea conto"
+
+**Fatto:** la scorciatoia "crea conto" dell'editor Obiettivi ora apre l'editor conto già sul tipo SAVINGS (versionCode 81 -> 82, versionName 0.9.42 -> 0.9.43). `AccountEditorRoute` guadagna `initialTypeName` (mirror di category/recurring editor); `AccountEditorViewModel` risolve `initialType` dal route e semina lo stato iniziale con tipo, icona di default e `isIncludedInBudget = initialType != SAVINGS` (preset ADR 22 allo stato iniziale). `SaldoApp` passa `AccountType.SAVINGS.name` dalla scorciatoia. Baseline catturato sullo stato seminato: l'editor non si apre "sporco". Nuovi unit test (tipo/budget/icona seminati, apertura pulita, salvataggio con budget off, fallback a CHECKING per tipo ignoto).
+
+**Decisioni:** la decisione dell'ADR 22 non cambia (SAVINGS default budget-off, scelta esplicita vincente, edit mai sovrascritto): la preselezione applica lo stesso preset a un nuovo punto di ingresso (stato iniziale invece del solo `onTypeChanged`). Aggiunto un chiarimento di una frase all'ADR 22, nessun ADR nuovo. Il tipo `initialTypeName` è generico ma l'unico chiamante passa SAVINGS.
+
+**Problemi:** nessuno; gate `assembleDebug testDebugUnitTest lint detekt` verde.
+
+**Prossimo:** verifica su device del flusso completo (crea obiettivo -> "crea conto" -> editor già su SAVINGS con budget off -> salva -> obiettivo collegato).
+
+---
+
 ## 2026-07-18 - Obiettivi di risparmio (Fase 10.0, v2.0)
 
 **Fatto:** implementata la feature Obiettivi di risparmio, prima della v2.0 (versionCode 80 -> 81, versionName 0.9.41 -> 0.9.42). Modello legato a un conto risparmio (scelta confermata con l'utente).

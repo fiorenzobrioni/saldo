@@ -24,9 +24,17 @@ data object SettingsRoute : NavKey
 @Serializable
 data object AccountsRoute : NavKey
 
-/** Account editor: create mode when [accountId] is null, edit mode otherwise. */
+/**
+ * Account editor: create mode when [accountId] is null, edit mode otherwise.
+ * [initialTypeName] preselects the account type on creation (used by the savings
+ * goal "create account" shortcut); it is an
+ * [com.callbackdev.saldo.core.domain.model.AccountType] name, ignored in edit mode.
+ */
 @Serializable
-data class AccountEditorRoute(val accountId: Long? = null) : NavKey
+data class AccountEditorRoute(
+    val accountId: Long? = null,
+    val initialTypeName: String? = null,
+) : NavKey
 
 /** Category list, reached from Settings. */
 @Serializable

@@ -45,6 +45,7 @@ import com.callbackdev.saldo.feature.stats.FilteredTransactionsScreen
 import com.callbackdev.saldo.feature.stats.StatsScreen
 import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
+import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.TransactionType
 
 /** Height of the Material 3 navigation bar content (excluding the system inset). */
@@ -220,7 +221,9 @@ fun SaldoApp(
             SavingsGoalEditorScreen(
                 route = route,
                 onNavigateBack = { nav.goBack() },
-                onNavigateToNewAccount = { nav.navigate(AccountEditorRoute()) },
+                onNavigateToNewAccount = {
+                    nav.navigate(AccountEditorRoute(initialTypeName = AccountType.SAVINGS.name))
+                },
             )
         }
         entry<FilteredTransactionsRoute> { route ->
