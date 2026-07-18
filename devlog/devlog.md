@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-18 - Review e snellimento degli ADR in PLANNING.md
+
+**Fatto:** revisione della tabella "Decisioni architetturali chiave" di PLANNING.md. Gli ADR 16, 18-26 avevano accumulato dettagli implementativi (nomi di classe/metodo/colonna, numeri di migration e di schema, narrazione dei collassi baseline, riferimenti di commit, note operative ripetute "app su un solo device") che appartengono a fasi/devlog, non all'ADR. Trimmati mantenendo intatta la logica di validità: decisione + motivazione. Gli ADR 1-15 e 17 erano già sintetici e restano invariati; numeri ADR e riferimenti incrociati non toccati.
+
+**Decisioni:** solo prosa, nessuna modifica a codice, schema o dominio (nessun bump di versione). Rimossi in particolare: dettagli tipografici delle soglie (emoji), nomi di campo watermark, elenco degli oggetti di infrastruttura migration, la nota "Chiarimento Fase 10.0" dell'ADR 22, la narrazione del collasso baseline duplicata in 24/25 (resta in 23/26 dove è la decisione). Nessun ADR rimosso: valutata la sovrapposizione della tripletta migration 23/24/26, ma ognuno porta una decisione distinta ed è referenziato per numero, quindi consolidata solo la narrazione ripetuta invece di eliminare righe.
+
+**Problemi:** nessuno. L'ordine delle righe in tabella resta 23, 26, 25, 24 (non numerico) come nell'originale: riordinare esulava dal task "togliere il superfluo" e i riferimenti sono per numero.
+
+**Prossimo:** applicare lo stesso stile sintetico ai prossimi ADR fin dalla stesura.
+
+---
+
 ## 2026-07-18 - Fix crash aggiornamento (collapse v1) + disciplina migration + card Obiettivi sempre visibile
 
 **Fatto:** dalla prova su device, due interventi (versionCode 82 -> 83, versionName 0.9.43 -> 0.9.44).
