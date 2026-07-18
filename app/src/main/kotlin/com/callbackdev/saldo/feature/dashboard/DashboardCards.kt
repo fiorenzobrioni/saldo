@@ -64,6 +64,8 @@ import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import com.callbackdev.saldo.feature.transactions.TransactionRowContent
+import com.callbackdev.saldo.feature.transactions.compactDayLabel
+import com.callbackdev.saldo.feature.transactions.localDate
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -765,6 +767,7 @@ private fun NextRecurringEventLine(next: NextRecurringEvent, modifier: Modifier 
 internal fun RecentMovementsCard(
     items: List<TransactionListItem>,
     onItemClick: (Long) -> Unit,
+    today: LocalDate,
     modifier: Modifier = Modifier,
 ) {
     SaldoCard(
@@ -788,6 +791,7 @@ internal fun RecentMovementsCard(
                             horizontal = SaldoDimens.rowPaddingHorizontal,
                             vertical = SaldoDimens.rowPaddingVertical,
                         ),
+                        dateLabel = compactDayLabel(item.transaction.localDate, today),
                     )
                 }
             }

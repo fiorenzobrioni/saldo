@@ -249,6 +249,7 @@ private fun DashboardContent(
                     RecentMovementsCard(
                         items = uiState.recent,
                         onItemClick = onTransactionClick,
+                        today = uiState.date,
                     )
                 }
             }

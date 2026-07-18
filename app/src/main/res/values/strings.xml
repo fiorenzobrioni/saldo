@@ -92,7 +92,7 @@
     <string name="dashboard_recurring_expenses_label">Expenses / month</string>
     <string name="dashboard_recurring_incomes_label">Income / month</string>
     <string name="dashboard_recurring_next">Next: %1$s %2$s · %3$s</string>
-    <string name="dashboard_recurring_empty">No recurring transactions yet · tap to add one</string>
+    <string name="dashboard_recurring_empty">No transactions · tap to add one</string>
     <string name="dashboard_recent_title">Recent transactions</string>
     <string name="dashboard_recent_see_all">See all</string>
     <string name="dashboard_recent_empty">No transactions yet</string>
@@ -667,7 +667,7 @@
 
     <!-- Onboarding (Phase 9) -->
     <string name="onboarding_welcome_title">Hi! I\'m Saldo</string>
-    <string name="onboarding_welcome_body">Your money, finally clear. Expenses, income and subscriptions under control in a few taps — no bank logins, no sign-up, no fuss.</string>
+    <string name="onboarding_welcome_body">Your money, finally clear. Expenses, income, budgets and savings goals under control in a few taps — no bank logins, no sign-up, no fuss.</string>
     <string name="onboarding_welcome_cta">Let\'s get started</string>
     <string name="onboarding_privacy_title">Your data stays with you</string>
     <string name="onboarding_privacy_body">Everything lives on your phone and nowhere else. No cloud, no tracking — Saldo works even in airplane mode. Want a copy? You can export a backup whenever you like.</string>

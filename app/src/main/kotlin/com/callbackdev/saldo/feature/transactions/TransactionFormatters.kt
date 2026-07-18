@@ -39,6 +39,27 @@ fun chipDayLabel(date: LocalDate, today: LocalDate): String {
 }
 
 /**
+ * Very compact day label for a trailing slot (e.g. the dashboard's recent
+ * movements): "Today" / "Yesterday", otherwise a short date "6 Jul" (with the
+ * year only when it differs). Shorter than [chipDayLabel], which also appends
+ * the date to the "Today"/"Yesterday" cases.
+ */
+@Composable
+fun compactDayLabel(date: LocalDate, today: LocalDate): String = when (date) {
+    today -> stringResource(R.string.date_today)
+    today.minusDays(1) -> stringResource(R.string.date_yesterday)
+    else -> {
+        val locale = currentLocale()
+        remember(date, today, locale) {
+            val skeleton = if (date.year == today.year) "dMMM" else "dMMMy"
+            val pattern = DateFormat.getBestDateTimePattern(locale, skeleton)
+            date.format(DateTimeFormatter.ofPattern(pattern, locale))
+                .withLocaleDateCasing(locale)
+        }
+    }
+}
+
+/**
  * Human day label: "Today", "Yesterday", then a localized weekday + date
  * (with the year only when it differs from the current one). Casing is
  * normalized per locale: lowercase in Italian even on OEM ICU builds that
