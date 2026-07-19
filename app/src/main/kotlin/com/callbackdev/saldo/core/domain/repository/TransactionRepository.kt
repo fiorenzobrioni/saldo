@@ -2,14 +2,18 @@ package com.callbackdev.saldo.core.domain.repository
 
 import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
+import com.callbackdev.saldo.core.domain.model.DailyActivity
+import com.callbackdev.saldo.core.domain.model.DailyNet
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
+import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
 import java.util.Currency
 
 /** Read/write access to movements and their statistical aggregates. */
@@ -104,6 +108,73 @@ interface TransactionRepository {
      * excluded-from-stats movements still count), across the whole ledger.
      */
     fun observeMonthlyNetChanges(currency: Currency): Flow<List<MonthlyNet>>
+
+    /**
+     * Net effect per local day (ADR 7) on the balance of the included accounts,
+     * limited to days in `[start, endExclusive)`. Same rules as
+     * [observeMonthlyNetChanges]; days without movements are absent.
+     */
+    fun observeDailyNetChanges(
+        currency: Currency,
+        start: LocalDate,
+        endExclusive: LocalDate,
+    ): Flow<List<DailyNet>>
+
+    /**
+     * Net effect of every movement whose local day precedes [start] on the
+     * balance of the included accounts, same rules as
+     * [observeMonthlyNetChanges]. Zero when nothing matches.
+     */
+    fun observeNetChangeBefore(currency: Currency, start: LocalDate): Flow<BigDecimal>
+
+    /**
+     * One-shot statistics totals of `[start, end)` in [currency]: same rules
+     * as [observeMonthlyTotals], without the per-month grouping. Zeros when
+     * nothing matches. Feeds the monthly recap.
+     */
+    suspend fun getStatsPeriodTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): StatsPeriodTotals
+
+    /** One-shot twin of [observeCategoryTotals], for the monthly recap. */
+    suspend fun getCategoryTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): List<CategoryTotal>
+
+    /**
+     * The single biggest expense of `[start, end)` in [currency] under
+     * statistics rules; null when the period has no expenses.
+     */
+    suspend fun getBiggestExpense(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Transaction?
+
+    /**
+     * Per-local-day movement count and signed spend (statistics rules) in
+     * `[start, end)`, days without movements absent. Feeds the recap's
+     * busiest-day figure.
+     */
+    suspend fun getDailyActivity(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): List<DailyActivity>
+
+    /**
+     * Signed total of the period's rule-generated expenses under statistics
+     * rules; zero when none. Feeds the monthly recap.
+     */
+    suspend fun getRecurringSpendTotal(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): BigDecimal
 
     /** The latest confirmed movements, capped in SQL. */
     fun observeRecentTransactions(limit: Int): Flow<List<Transaction>>

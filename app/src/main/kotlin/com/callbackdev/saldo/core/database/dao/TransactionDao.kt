@@ -9,9 +9,12 @@ import androidx.room.Update
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
 import com.callbackdev.saldo.core.database.relation.AccountTotalRow
 import com.callbackdev.saldo.core.database.relation.CategoryTotalRow
+import com.callbackdev.saldo.core.database.relation.DailyNetRow
 import com.callbackdev.saldo.core.database.relation.DashboardTotalsRow
+import com.callbackdev.saldo.core.database.relation.DailyActivityRow
 import com.callbackdev.saldo.core.database.relation.MonthlyNetRow
 import com.callbackdev.saldo.core.database.relation.MonthlyTotalRow
+import com.callbackdev.saldo.core.database.relation.StatsPeriodTotalsRow
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -295,6 +298,74 @@ interface TransactionDao {
     )
     fun observeMonthlyNetChanges(currency: String): Flow<List<MonthlyNetRow>>
 
+    /**
+     * Net effect per local day on the balance of the accounts included in the
+     * total, limited to days in `[startEpochDay, endEpochDayExclusive)`. Same
+     * rules as [observeMonthlyNetChanges]: every type counts, transfer legs
+     * included, cash figure (excluded-from-stats movements still count),
+     * pending never does. Days are the movement's own local day (ADR 7),
+     * expressed as days since the epoch. Feeds the dashboard sparkline.
+     */
+    @Query(
+        """
+        SELECT epochDay, SUM(deltaMinor) AS netMinor FROM (
+            SELECT
+                (t.timestampEpochMilli / 1000 + t.zoneOffsetSeconds) / 86400 AS epochDay,
+                t.amountMinor AS deltaMinor
+            FROM transactions t
+            INNER JOIN accounts a ON a.id = t.accountId
+            WHERE t.isPending = 0
+                AND a.isIncludedInTotal = 1 AND a.isArchived = 0 AND a.currency = :currency
+            UNION ALL
+            SELECT
+                (t.timestampEpochMilli / 1000 + t.zoneOffsetSeconds) / 86400 AS epochDay,
+                t.transferAmountMinor AS deltaMinor
+            FROM transactions t
+            INNER JOIN accounts a ON a.id = t.transferAccountId
+            WHERE t.type = 'TRANSFER' AND t.isPending = 0
+                AND a.isIncludedInTotal = 1 AND a.isArchived = 0 AND a.currency = :currency
+        )
+        WHERE epochDay >= :startEpochDay AND epochDay < :endEpochDayExclusive
+        GROUP BY epochDay
+        ORDER BY epochDay
+        """,
+    )
+    fun observeDailyNetChanges(
+        startEpochDay: Long,
+        endEpochDayExclusive: Long,
+        currency: String,
+    ): Flow<List<DailyNetRow>>
+
+    /**
+     * Net effect of every movement strictly before [startEpochDay] (local day,
+     * ADR 7) on the balance of the included accounts, same rules as
+     * [observeDailyNetChanges]. NULL when nothing matches. Seeds the starting
+     * level of the daily balance series.
+     */
+    @Query(
+        """
+        SELECT SUM(deltaMinor) FROM (
+            SELECT
+                (t.timestampEpochMilli / 1000 + t.zoneOffsetSeconds) / 86400 AS epochDay,
+                t.amountMinor AS deltaMinor
+            FROM transactions t
+            INNER JOIN accounts a ON a.id = t.accountId
+            WHERE t.isPending = 0
+                AND a.isIncludedInTotal = 1 AND a.isArchived = 0 AND a.currency = :currency
+            UNION ALL
+            SELECT
+                (t.timestampEpochMilli / 1000 + t.zoneOffsetSeconds) / 86400 AS epochDay,
+                t.transferAmountMinor AS deltaMinor
+            FROM transactions t
+            INNER JOIN accounts a ON a.id = t.transferAccountId
+            WHERE t.type = 'TRANSFER' AND t.isPending = 0
+                AND a.isIncludedInTotal = 1 AND a.isArchived = 0 AND a.currency = :currency
+        )
+        WHERE epochDay < :startEpochDay
+        """,
+    )
+    fun observeNetChangeBefore(startEpochDay: Long, currency: String): Flow<Long?>
+
     /** The latest confirmed movements, capped in SQL so the dashboard never loads the full ledger. */
     @Query(
         """
@@ -360,6 +431,131 @@ interface TransactionDao {
         previousToDateEnd: Long,
         currency: String,
     ): Flow<DashboardTotalsRow>
+
+    /**
+     * One-shot statistics totals of `[startMillis, endMillis)` in a single
+     * row: same filters and refund treatment as [observeMonthlyTotals], without
+     * the per-month grouping. Feeds the monthly recap.
+     */
+    @Query(
+        """
+        SELECT
+            SUM(
+                CASE WHEN type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1)
+                THEN amountMinor ELSE NULL END
+            ) AS expenseMinor,
+            SUM(
+                CASE WHEN type = 'INCOME' AND isRefund = 0
+                THEN amountMinor ELSE NULL END
+            ) AS incomeMinor
+        FROM transactions
+        WHERE type IN ('EXPENSE', 'INCOME')
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        """,
+    )
+    suspend fun getStatsPeriodTotals(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): StatsPeriodTotalsRow
+
+    /** One-shot twin of [observeCategoryTotals], for the monthly recap. */
+    @Query(
+        """
+        SELECT categoryId AS categoryId, SUM(amountMinor) AS totalMinor, COUNT(*) AS count
+        FROM transactions
+        WHERE type IN ('EXPENSE', 'INCOME')
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        GROUP BY categoryId
+        """,
+    )
+    suspend fun getCategoryTotals(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): List<CategoryTotalRow>
+
+    /**
+     * The single biggest expense of the period under statistics rules
+     * (excluded-from-stats and pending never count). Expense amounts are
+     * negative, so the minimum signed amount is the biggest expense; ties
+     * break on the earliest id for determinism.
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE type = 'EXPENSE'
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        ORDER BY amountMinor ASC, id ASC
+        LIMIT 1
+        """,
+    )
+    suspend fun getBiggestExpense(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): TransactionEntity?
+
+    /**
+     * Per-local-day movement count and signed spend total (same statistics
+     * rules as [observeMonthlyTotals]) in `[startMillis, endMillis)`. Feeds
+     * the recap's busiest-day figure; days without movements are absent.
+     */
+    @Query(
+        """
+        SELECT
+            (timestampEpochMilli / 1000 + zoneOffsetSeconds) / 86400 AS epochDay,
+            COUNT(*) AS count,
+            SUM(
+                CASE WHEN type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1)
+                THEN amountMinor ELSE 0 END
+            ) AS spendMinor
+        FROM transactions
+        WHERE type IN ('EXPENSE', 'INCOME')
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        GROUP BY epochDay
+        ORDER BY epochDay
+        """,
+    )
+    suspend fun getDailyActivity(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): List<DailyActivityRow>
+
+    /**
+     * Signed total of the period's rule-generated expenses under statistics
+     * rules: what subscriptions and recurring charges actually cost in the
+     * window. NULL when none. Feeds the monthly recap.
+     */
+    @Query(
+        """
+        SELECT SUM(amountMinor) FROM transactions
+        WHERE recurringRuleId IS NOT NULL
+            AND type = 'EXPENSE'
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency = :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        """,
+    )
+    suspend fun getRecurringSpendTotal(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): Long?
 
     @Query("SELECT COUNT(*) FROM transactions WHERE accountId = :accountId OR transferAccountId = :accountId")
     suspend fun countForAccount(accountId: Long): Int

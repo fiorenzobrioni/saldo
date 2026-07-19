@@ -38,6 +38,7 @@ import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
+import java.time.YearMonth
 
 /**
  * The "Today" home screen: a single glance at total balance, today's and this
@@ -56,6 +57,7 @@ fun DashboardScreen(
     onNavigateToBudgets: () -> Unit,
     onNavigateToSavingsGoals: () -> Unit,
     onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
+    onNavigateToRecap: (YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -103,6 +105,8 @@ fun DashboardScreen(
                     onBudgetsClick = onNavigateToBudgets,
                     onSavingsGoalsClick = onNavigateToSavingsGoals,
                     onNavigateToFiltered = onNavigateToFiltered,
+                    onRecapClick = onNavigateToRecap,
+                    onRecapDismiss = viewModel::dismissRecapTeaser,
                 )
             }
 
@@ -137,6 +141,8 @@ private fun DashboardContent(
     onBudgetsClick: () -> Unit,
     onSavingsGoalsClick: () -> Unit,
     onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
+    onRecapClick: (YearMonth) -> Unit,
+    onRecapDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -156,6 +162,8 @@ private fun DashboardContent(
                 totalBalance = uiState.totalBalance,
                 currency = uiState.primaryCurrency,
                 accounts = uiState.accounts,
+                history = uiState.balanceHistory,
+                trend = uiState.balanceTrend,
                 date = uiState.date,
                 onManageAccounts = onManageAccounts,
             )
@@ -200,6 +208,15 @@ private fun DashboardContent(
                     previousSpend = previousSpend,
                     spentMore = uiState.spentMoreThanLastMonth,
                     currency = uiState.primaryCurrency,
+                )
+            }
+        }
+        uiState.recapTeaserMonth?.let { teaserMonth ->
+            item {
+                RecapTeaserCard(
+                    month = teaserMonth,
+                    onClick = { onRecapClick(teaserMonth) },
+                    onDismiss = onRecapDismiss,
                 )
             }
         }

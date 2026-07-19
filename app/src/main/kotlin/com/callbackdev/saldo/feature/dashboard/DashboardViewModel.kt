@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.BudgetProgress
 import com.callbackdev.saldo.core.domain.model.Category
+import com.callbackdev.saldo.core.domain.model.DailyBalance
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.PeriodTotals
@@ -25,6 +26,7 @@ import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveDailyBalanceHistoryUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSavingsGoalsProgressUseCase
@@ -32,15 +34,19 @@ import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.YearMonth
 import java.util.Currency
 import java.util.Locale
 import javax.inject.Inject
@@ -104,6 +110,16 @@ data class DashboardUiState(
     val totalBalance: BigDecimal = BigDecimal.ZERO,
     /** Active (non-archived) accounts with balances, for the expandable detail. */
     val accounts: List<AccountWithBalance> = emptyList(),
+    /**
+     * End-of-day total balance over the sparkline window (ascending, last
+     * point = [totalBalance]); empty while loading or without accounts.
+     */
+    val balanceHistory: List<DailyBalance> = emptyList(),
+    /**
+     * Signed change of the total balance across [balanceHistory] (last minus
+     * first point); null when the sparkline window has fewer than two points.
+     */
+    val balanceTrend: BigDecimal? = null,
     val today: PeriodTotals = PeriodTotals(),
     val month: PeriodTotals = PeriodTotals(),
     /**
@@ -134,6 +150,11 @@ data class DashboardUiState(
     val savingsGoals: List<SavingsGoalProgress> = emptyList(),
     /** Which optional cards the user keeps visible (Settings > Dashboard). */
     val cardPrefs: DashboardCardPreferences = DashboardCardPreferences(),
+    /**
+     * The completed month whose recap teaser is shown; null when outside the
+     * first week of the month, without data, or after a dismissal.
+     */
+    val recapTeaserMonth: YearMonth? = null,
     val date: LocalDate = LocalDate.ofEpochDay(0),
     /** Greeting band and a stable [0,1) roll, both fixed once per app-open. */
     val greetingBand: GreetingBand = GreetingBand.MORNING,
@@ -144,7 +165,7 @@ data class DashboardUiState(
 @Suppress("LongParameterList") // The dashboard aggregates one source per card, all Hilt-injected.
 class DashboardViewModel @Inject constructor(
     accountRepository: AccountRepository,
-    userPreferences: UserPreferencesRepository,
+    private val userPreferences: UserPreferencesRepository,
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val recurringRuleRepository: RecurringRuleRepository,
@@ -152,6 +173,7 @@ class DashboardViewModel @Inject constructor(
     private val observeSafeToSpend: ObserveSafeToSpendUseCase,
     private val observeDueStatements: ObserveDueStatementsUseCase,
     private val observeSavingsGoalsProgress: ObserveSavingsGoalsProgressUseCase,
+    private val observeDailyBalanceHistory: ObserveDailyBalanceHistoryUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -221,12 +243,20 @@ class DashboardViewModel @Inject constructor(
             ) { budgets, safeToSpend, cardPrefs, dueStatements, savingsGoals ->
                 Extras(budgets, safeToSpend, cardPrefs, dueStatements, savingsGoals)
             }
-            combine(sources, extras) { collapsed, bundle ->
+            val sparklineDays = List(SPARKLINE_DAYS) { today.minusDays(SPARKLINE_DAYS - 1L - it) }
+            combine(
+                sources,
+                extras,
+                observeDailyBalanceHistory(primary, sparklineDays),
+                recapTeaserMonth(today, primary),
+            ) { collapsed, bundle, balanceHistory, recapTeaserMonth ->
                 buildState(
                     accounts = accounts,
                     primary = primary,
                     today = today,
                     sources = collapsed,
+                    balanceHistory = balanceHistory,
+                    recapTeaserMonth = recapTeaserMonth,
                     budgets = bundle.budgets,
                     safeToSpend = bundle.safeToSpend,
                     cardPrefs = bundle.cardPrefs,
@@ -245,11 +275,43 @@ class DashboardViewModel @Inject constructor(
             ),
         )
 
+    /**
+     * The recap teaser month: the just-completed month, only during the first
+     * [RECAP_TEASER_MAX_DAY] days of the new one, only when that month has
+     * statistics movements, and only until the user dismisses it.
+     */
+    private fun recapTeaserMonth(
+        today: LocalDate,
+        primary: Currency,
+    ): Flow<YearMonth?> {
+        if (today.dayOfMonth > RECAP_TEASER_MAX_DAY) return flowOf(null)
+        val previousMonth = YearMonth.from(today).minusMonths(1)
+        return combine(
+            userPreferences.dismissedRecapMonth,
+            transactionRepository.observeMonthlyTotals(
+                start = previousMonth.atDay(1).atStartOfDay(clock.zone).toInstant(),
+                end = YearMonth.from(today).atDay(1).atStartOfDay(clock.zone).toInstant(),
+                currency = primary,
+            ),
+        ) { dismissed, previousTotals ->
+            previousMonth.takeIf { previousTotals.isNotEmpty() && dismissed != previousMonth }
+        }
+    }
+
+    /** Persists the dismissal of the current teaser month. */
+    fun dismissRecapTeaser() {
+        val month = uiState.value.recapTeaserMonth ?: return
+        viewModelScope.launch { userPreferences.setDismissedRecapMonth(month) }
+    }
+
+    @Suppress("LongParameterList") // One argument per collapsed bundle field.
     private fun buildState(
         accounts: List<AccountWithBalance>,
         primary: Currency,
         today: LocalDate,
         sources: Sources,
+        balanceHistory: List<DailyBalance>,
+        recapTeaserMonth: YearMonth?,
         budgets: List<BudgetProgress>,
         safeToSpend: SafeToSpend?,
         cardPrefs: DashboardCardPreferences,
@@ -284,6 +346,9 @@ class DashboardViewModel @Inject constructor(
             primaryCurrency = primary,
             totalBalance = totalBalance,
             accounts = active,
+            balanceHistory = balanceHistory,
+            balanceTrend = balanceHistory.takeIf { it.size > 1 }
+                ?.let { it.last().balance.subtract(it.first().balance) },
             today = totals.today,
             month = totals.month,
             monthVsPreviousToDate = comparison,
@@ -297,6 +362,7 @@ class DashboardViewModel @Inject constructor(
             safeToSpend = safeToSpend,
             savingsGoals = savingsGoals,
             cardPrefs = cardPrefs,
+            recapTeaserMonth = recapTeaserMonth,
             date = today,
             greetingBand = greetingBand,
             greetingRoll = greetingRoll,
@@ -329,8 +395,12 @@ class DashboardViewModel @Inject constructor(
         // Totals are scoped to the primary currency, so the figures stay coherent.
         val primaryFlows = flows.filter { it.currency == primary }
         return RecurringSummary(
-            monthlyExpenses = monthlyEquivalentOf(primaryFlows, TransactionType.EXPENSE),
-            monthlyIncomes = monthlyEquivalentOf(primaryFlows, TransactionType.INCOME),
+            monthlyExpenses = primaryFlows
+                .filter { it.type == TransactionType.EXPENSE }
+                .sumMonthlyEquivalent(),
+            monthlyIncomes = primaryFlows
+                .filter { it.type == TransactionType.INCOME }
+                .sumMonthlyEquivalent(),
             monthlyTransfersToSavings = plannedSavings.sumMonthlyEquivalent(),
             next = nextRecurringEvent(flows, today),
             hasRules = true,
@@ -350,9 +420,6 @@ class DashboardViewModel @Inject constructor(
     ): Boolean = type == TransactionType.TRANSFER && amount != null && currency == primary &&
         transferAccountId in savingsAccountIds && isActiveOn(today)
 
-    private fun monthlyEquivalentOf(rules: List<RecurringRule>, type: TransactionType): BigDecimal =
-        rules.filter { it.type == type }.sumMonthlyEquivalent()
-
     private fun List<RecurringRule>.sumMonthlyEquivalent(): BigDecimal = fold(BigDecimal.ZERO) { acc, rule ->
         acc.add(RecurrenceCalculator.monthlyEquivalent(rule) ?: BigDecimal.ZERO)
     }
@@ -371,5 +438,11 @@ class DashboardViewModel @Inject constructor(
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val RECENT_COUNT = 7
+
+        /** Window of the balance sparkline on the hero card, today included. */
+        const val SPARKLINE_DAYS = 30
+
+        /** Last day of the month on which the recap teaser is offered. */
+        const val RECAP_TEASER_MAX_DAY = 7
     }
 }

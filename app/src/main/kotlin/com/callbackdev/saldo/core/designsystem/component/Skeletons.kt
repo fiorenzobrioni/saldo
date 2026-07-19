@@ -84,7 +84,9 @@ fun DashboardSkeleton(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
         SkeletonBlock(color, Modifier.padding(start = 4.dp).width(200.dp).height(28.dp))
-        SkeletonBlock(color, Modifier.fillMaxWidth().height(150.dp), shape = CardShape)
+        // Matches the hero balance card: header, amount, sparkline + caption
+        // and a couple of breakdown rows.
+        SkeletonBlock(color, Modifier.fillMaxWidth().height(224.dp), shape = CardShape)
         Row(horizontalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing)) {
             SkeletonBlock(color, Modifier.weight(1f).height(96.dp), shape = CardShape)
             SkeletonBlock(color, Modifier.weight(1f).height(96.dp), shape = CardShape)

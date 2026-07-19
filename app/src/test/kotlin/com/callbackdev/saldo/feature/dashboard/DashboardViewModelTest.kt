@@ -21,7 +21,9 @@ import com.callbackdev.saldo.core.domain.model.BudgetProgress
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.model.DailyBalance
 import com.callbackdev.saldo.core.domain.model.SavingsGoalProgress
+import com.callbackdev.saldo.core.domain.usecase.ObserveDailyBalanceHistoryUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSavingsGoalsProgressUseCase
@@ -67,6 +69,7 @@ class DashboardViewModelTest {
     private val observeSafeToSpend = mockk<ObserveSafeToSpendUseCase>()
     private val observeDueStatements = mockk<ObserveDueStatementsUseCase>()
     private val observeSavingsGoalsProgress = mockk<ObserveSavingsGoalsProgressUseCase>()
+    private val observeDailyBalanceHistory = mockk<ObserveDailyBalanceHistoryUseCase>()
 
     private fun account(
         id: Long,
@@ -112,10 +115,18 @@ class DashboardViewModelTest {
         safeToSpend: SafeToSpend? = null,
         cardPrefs: DashboardCardPreferences = DashboardCardPreferences(),
         savingsGoals: List<SavingsGoalProgress> = emptyList(),
+        balanceHistory: List<DailyBalance> = emptyList(),
+        clock: Clock = this.clock,
+        dismissedRecapMonth: java.time.YearMonth? = null,
+        previousMonthTotals: List<com.callbackdev.saldo.core.domain.model.MonthlyTotal> = emptyList(),
     ): DashboardViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
         every { userPreferences.dashboardCardPreferences } returns flowOf(cardPrefs)
+        every { userPreferences.dismissedRecapMonth } returns flowOf(dismissedRecapMonth)
+        every {
+            transactionRepository.observeMonthlyTotals(any(), any(), any())
+        } returns flowOf(previousMonthTotals)
         every { transactionRepository.observeDashboardTotals(any(), any()) } returns flowOf(totals)
         every { transactionRepository.observeRecentTransactions(any()) } returns flowOf(recent)
         every { transactionRepository.observePendingTransactions() } returns flowOf(emptyList<Transaction>())
@@ -125,6 +136,7 @@ class DashboardViewModelTest {
         every { observeSafeToSpend(any()) } returns flowOf(safeToSpend)
         every { observeDueStatements() } returns flowOf(emptyList())
         every { observeSavingsGoalsProgress() } returns flowOf(savingsGoals)
+        every { observeDailyBalanceHistory(any(), any()) } returns flowOf(balanceHistory)
         return DashboardViewModel(
             accountRepository,
             userPreferences,
@@ -135,6 +147,7 @@ class DashboardViewModelTest {
             observeSafeToSpend,
             observeDueStatements,
             observeSavingsGoalsProgress,
+            observeDailyBalanceHistory,
             clock,
         )
     }
@@ -163,6 +176,134 @@ class DashboardViewModelTest {
             assertEquals(BigDecimal("120.00"), state.totalBalance)
             // Active accounts (archived excluded) are exposed for the breakdown.
             assertEquals(4, state.accounts.size)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `sparkline window covers the last thirty days anchored to today`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+        )
+        // Stubbed after the helper so this capture wins over its any() stub.
+        val days = slot<List<LocalDate>>()
+        every { observeDailyBalanceHistory(eur, capture(days)) } returns flowOf(emptyList())
+
+        viewModel.uiState.test {
+            awaitLoaded()
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val today = LocalDate.of(2026, 7, 8)
+        assertEquals(30, days.captured.size)
+        assertEquals(today.minusDays(29), days.captured.first())
+        assertEquals(today, days.captured.last())
+    }
+
+    @Test
+    fun `balance history and trend flow into the ui state`() = runTest {
+        val history = listOf(
+            DailyBalance(LocalDate.of(2026, 7, 6), BigDecimal("100.00")),
+            DailyBalance(LocalDate.of(2026, 7, 7), BigDecimal("80.00")),
+            DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal("120.00")),
+        )
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            balanceHistory = history,
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(history, state.balanceHistory)
+            assertEquals(BigDecimal("20.00"), state.balanceTrend)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `recap teaser shows the previous month during the first week with data`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            clock = Clock.fixed(Instant.parse("2026-07-03T10:00:00Z"), zone),
+            previousMonthTotals = listOf(
+                com.callbackdev.saldo.core.domain.model.MonthlyTotal(
+                    month = java.time.YearMonth.of(2026, 6),
+                    expense = BigDecimal("-10.00"),
+                    income = BigDecimal.ZERO,
+                ),
+            ),
+        )
+
+        viewModel.uiState.test {
+            assertEquals(java.time.YearMonth.of(2026, 6), awaitLoaded().recapTeaserMonth)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `recap teaser is hidden after the first week`() = runTest {
+        // Fixed clock is 8 July: past the teaser window.
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            previousMonthTotals = listOf(
+                com.callbackdev.saldo.core.domain.model.MonthlyTotal(
+                    month = java.time.YearMonth.of(2026, 6),
+                    expense = BigDecimal("-10.00"),
+                    income = BigDecimal.ZERO,
+                ),
+            ),
+        )
+
+        viewModel.uiState.test {
+            assertNull(awaitLoaded().recapTeaserMonth)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `recap teaser is hidden without previous month data`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            clock = Clock.fixed(Instant.parse("2026-07-03T10:00:00Z"), zone),
+            previousMonthTotals = emptyList(),
+        )
+
+        viewModel.uiState.test {
+            assertNull(awaitLoaded().recapTeaserMonth)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `recap teaser is hidden after dismissal`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            clock = Clock.fixed(Instant.parse("2026-07-03T10:00:00Z"), zone),
+            dismissedRecapMonth = java.time.YearMonth.of(2026, 6),
+            previousMonthTotals = listOf(
+                com.callbackdev.saldo.core.domain.model.MonthlyTotal(
+                    month = java.time.YearMonth.of(2026, 6),
+                    expense = BigDecimal("-10.00"),
+                    income = BigDecimal.ZERO,
+                ),
+            ),
+        )
+
+        viewModel.uiState.test {
+            assertNull(awaitLoaded().recapTeaserMonth)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `balance trend is null with fewer than two points`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            balanceHistory = listOf(DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal.TEN)),
+        )
+
+        viewModel.uiState.test {
+            assertNull(awaitLoaded().balanceTrend)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -248,6 +389,7 @@ class DashboardViewModelTest {
         every { observeSafeToSpend(any()) } returns flowOf(null)
         every { observeDueStatements() } returns flowOf(emptyList())
         every { observeSavingsGoalsProgress() } returns flowOf(emptyList())
+        every { observeDailyBalanceHistory(any(), any()) } returns flowOf(emptyList())
         val viewModel = DashboardViewModel(
             accountRepository,
             userPreferences,
@@ -258,6 +400,7 @@ class DashboardViewModelTest {
             observeSafeToSpend,
             observeDueStatements,
             observeSavingsGoalsProgress,
+            observeDailyBalanceHistory,
             clock,
         )
 

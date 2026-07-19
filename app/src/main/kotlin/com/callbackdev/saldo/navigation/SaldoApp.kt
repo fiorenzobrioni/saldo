@@ -35,6 +35,7 @@ import com.callbackdev.saldo.feature.budgets.BudgetsScreen
 import com.callbackdev.saldo.feature.categories.CategoriesScreen
 import com.callbackdev.saldo.feature.categories.CategoryEditorScreen
 import com.callbackdev.saldo.feature.dashboard.DashboardScreen
+import com.callbackdev.saldo.feature.recap.MonthlyRecapScreen
 import com.callbackdev.saldo.feature.recurring.PendingMovementsScreen
 import com.callbackdev.saldo.feature.recurring.RecurringRuleEditorScreen
 import com.callbackdev.saldo.feature.recurring.RecurrencesScreen
@@ -113,6 +114,9 @@ fun SaldoApp(
                 onNavigateToBudgets = { nav.navigate(BudgetsRoute) },
                 onNavigateToSavingsGoals = { nav.navigate(SavingsGoalsRoute) },
                 onNavigateToFiltered = { route -> nav.navigate(route) },
+                onNavigateToRecap = { month ->
+                    nav.navigate(MonthlyRecapRoute(month.year, month.monthValue))
+                },
             )
         }
         entry<TransactionsRoute> {
@@ -129,6 +133,9 @@ fun SaldoApp(
             StatsScreen(
                 modifier = topLevelModifier,
                 onNavigateToFiltered = { route -> nav.navigate(route) },
+                onNavigateToRecap = { month ->
+                    nav.navigate(MonthlyRecapRoute(month.year, month.monthValue))
+                },
             )
         }
         entry<SettingsRoute> {
@@ -233,6 +240,12 @@ fun SaldoApp(
                 onNavigateToTransaction = { id ->
                     nav.navigate(TransactionEditorRoute(id))
                 },
+            )
+        }
+        entry<MonthlyRecapRoute> { route ->
+            MonthlyRecapScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
             )
         }
         entry<BackupRoute> {

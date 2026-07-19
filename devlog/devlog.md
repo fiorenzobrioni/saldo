@@ -14,6 +14,24 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Hero saldo con sparkline e recap mensile "Saldo Wrapped" (Fase 10.1)
+
+**Fatto:** due feature premium dalla review completa dell'app (versionCode 84 -> 85, versionName 0.9.45 -> 0.9.46). Design: ADR 27 e 28. Nessun cambio di schema.
+- Hero card Dashboard: count-up presentazionale del saldo (interpolazione sui minor units, frame finale esatto), sparkline 30 giorni disegnata in Canvas (interpolazione monotona Fritsch-Carlson, riempimento sfumato, reveal d'ingresso, punto sull'oggi), gradiente tonale nella card, caption "Ultimi 30 giorni" con delta a segno esplicito. Dati da due query nuove (`observeDailyNetChanges`, `observeNetChangeBefore`, stesse regole del saldo totale con entrambe le gambe dei trasferimenti) cumulate in `ObserveDailyBalanceHistoryUseCase` (zero-fill; invariante testata: ultimo punto = saldo in card). Skeleton dashboard ricalibrato. Canvas muto per TalkBack con riassunto del trend formattato.
+- Nuovo helper `rememberMotionEnabled()` nel design system (`ValueAnimator.areAnimatorsEnabled()`): count-up, reveal sparkline e reveal delle pagine recap si disattivano con le animazioni di sistema spente. Prima non c'era alcuna gestione reduced-motion.
+- Recap mensile (`feature/recap`, route `MonthlyRecapRoute`): schermata full-screen a tema scuro brand forzato con `HorizontalPager` a pagine-storia (hero col netto, spese + delta vs mese precedente, top 5 categorie con barre, record, entrate vs uscite con savings rate, ricorrenti addebitati, chiusura con riga privacy), pillole di progresso, tap zone + swipe, empty state per mese vuoto. Dati da `GetMonthlyRecapUseCase` su cinque query one-shot nuove con la semantica esatta delle statistiche (rimborsi nettati, esclusi/pending mai contati): le cifre coincidono con la schermata Statistiche.
+- Condivisione: card riassuntiva 360x640dp composta off-screen a densita 3x e registrata con `GraphicsLayer` -> `toImageBitmap()` -> PNG in `cache/exports` via FileProvider esistente -> share sheet. Zero permessi, zero rete.
+- Punti d'accesso: teaser dismissibile in Dashboard nei primi 7 giorni del mese (dismiss persistito per mese in DataStore, auto-espirante) e azione `AutoAwesome` nella toolbar Statistiche (mese visualizzato se concluso, altrimenti l'ultimo concluso).
+- PLANNING: Fase 10.1, ADR 27/28, Note e appunti aggiornate (Wrapped implementato, rilevamento ricorrenze promosso), 4 voci nuove in Roadmap v2.0 (rilevamento automatico ricorrenze, proiezione saldo a fine mese, gestione tag dedicata, ricerca con suggerimenti). README aggiornato.
+
+**Decisioni:** sparkline in Canvas e non Vico (ADR 27: componente decorativo, Vico resta nelle statistiche); recap solo per mesi conclusi (i numeri del mese corrente derivano ogni giorno); un'unica immagine riassuntiva condivisibile invece di un'immagine per pagina (un solo code path, artefatto piu curato); il teaser non entra nelle preferenze card della Dashboard perche si auto-rimuove.
+
+**Problemi:** wrapper Gradle bloccato dal proxy, usato `/opt/gradle`. La registrazione off-screen della share card (dietro lo sfondo opaco, niente alpha 0 che salterebbe il draw) e da verificare su device: fallback previsto con `android.graphics.Picture`. Test strumentati `TransactionDaoRecapTest` scritti ma non eseguiti (nessun emulatore).
+
+**Prossimo:** verifica su device: sparkline e count-up (anche con animazioni di sistema spente), skeleton senza salto, teaser a inizio mese, recap da Statistiche, condivisione immagine (qualita PNG e temi), TalkBack su sparkline e pagine.
+
+---
+
 ## 2026-07-18 - Rifiniture Dashboard, uniformita liste vuote e copy onboarding
 
 **Fatto:** giro di polish UX (versionCode 83 -> 84, versionName 0.9.44 -> 0.9.45).

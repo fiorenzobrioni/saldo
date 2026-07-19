@@ -3,11 +3,15 @@ package com.callbackdev.saldo.core.database.mapper
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
 import com.callbackdev.saldo.core.database.relation.AccountTotalRow
 import com.callbackdev.saldo.core.database.relation.CategoryTotalRow
+import com.callbackdev.saldo.core.database.relation.DailyActivityRow
+import com.callbackdev.saldo.core.database.relation.DailyNetRow
 import com.callbackdev.saldo.core.database.relation.DashboardTotalsRow
 import com.callbackdev.saldo.core.database.relation.MonthlyNetRow
 import com.callbackdev.saldo.core.database.relation.MonthlyTotalRow
 import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
+import com.callbackdev.saldo.core.domain.model.DailyActivity
+import com.callbackdev.saldo.core.domain.model.DailyNet
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
@@ -105,4 +109,15 @@ fun AccountTotalRow.toDomain(currency: Currency): AccountTotal = AccountTotal(
 fun MonthlyNetRow.toDomain(currency: Currency): MonthlyNet = MonthlyNet(
     month = YearMonth.parse(month),
     net = MoneyMapper.toAmount(netMinor, currency),
+)
+
+fun DailyNetRow.toDomain(currency: Currency): DailyNet = DailyNet(
+    date = LocalDate.ofEpochDay(epochDay),
+    net = MoneyMapper.toAmount(netMinor, currency),
+)
+
+fun DailyActivityRow.toDomain(currency: Currency): DailyActivity = DailyActivity(
+    date = LocalDate.ofEpochDay(epochDay),
+    count = count,
+    spend = MoneyMapper.toAmount(spendMinor ?: 0L, currency),
 )

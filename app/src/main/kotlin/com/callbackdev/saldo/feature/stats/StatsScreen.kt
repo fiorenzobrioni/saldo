@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -66,6 +67,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun StatsScreen(
     onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
+    onNavigateToRecap: (YearMonth) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: StatsViewModel = hiltViewModel(),
 ) {
@@ -77,7 +79,18 @@ fun StatsScreen(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.saldoSurfaces.canvas,
         topBar = {
-            TopAppBar(scrollBehavior = scrollBehavior, title = { Text(stringResource(R.string.nav_stats)) })
+            TopAppBar(
+                scrollBehavior = scrollBehavior,
+                title = { Text(stringResource(R.string.nav_stats)) },
+                actions = {
+                    IconButton(onClick = { onNavigateToRecap(recapMonthFor(uiState)) }) {
+                        Icon(
+                            imageVector = Icons.Outlined.AutoAwesome,
+                            contentDescription = stringResource(R.string.stats_recap_action),
+                        )
+                    }
+                },
+            )
         },
     ) { innerPadding ->
         when {
@@ -248,6 +261,18 @@ private fun IncomeExpenseCard(
             onNavigateToFiltered = onNavigateToFiltered,
         )
     }
+}
+
+/**
+ * The month the recap toolbar action opens: the displayed month when the
+ * period selector sits on a completed month, otherwise the last completed
+ * one. The current month is never offered (its figures still change daily),
+ * so any past month is reachable by paging the selector first.
+ */
+private fun recapMonthFor(uiState: StatsUiState): YearMonth {
+    val currentMonth = YearMonth.from(uiState.today)
+    val selected = (uiState.period as? StatsPeriod.Month)?.month
+    return if (selected != null && selected < currentMonth) selected else currentMonth.minusMonths(1)
 }
 
 /**
