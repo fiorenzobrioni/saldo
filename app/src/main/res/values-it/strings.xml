@@ -799,6 +799,8 @@
     <string name="settings_dashboard_show_budget_hint">Mostra i progressi dei budget del mese</string>
     <string name="settings_dashboard_show_recent">Scheda ultimi movimenti</string>
     <string name="settings_dashboard_show_recent_hint">Mostra i movimenti più recenti in fondo</string>
+    <string name="settings_dashboard_show_recap_teaser">Invito al recap mensile</string>
+    <string name="settings_dashboard_show_recap_teaser_hint">Nei primi giorni del mese, invita al recap del mese concluso</string>
     <string name="settings_dashboard_show_savings">Scheda obiettivi di risparmio</string>
     <string name="settings_dashboard_show_savings_hint">Mostra i progressi verso i tuoi obiettivi di risparmio</string>
 

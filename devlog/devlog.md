@@ -14,6 +14,21 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Toggle teaser recap e grafici Statistiche premium (Fase 10.2)
+
+**Fatto:** follow-up della Fase 10.1 (versionCode 85 -> 86, versionName 0.9.46 -> 0.9.47). Design: ADR 29.
+- Impostazioni > Dashboard: nuovo switch "Invito al recap mensile" (default attivo). `showRecapTeaser` in `DashboardCardPreferences`, gate in `buildState` del `DashboardViewModel`: lo switch silenzia il teaser senza toccare il flusso di dismiss per mese.
+- Donut categorie riscritto in Canvas al posto dell'API pie di Vico (sperimentale nella 3.x): geometria pura in `DonutGeometry.kt` (fette proporzionali con gap clampato, partenza a ore 12, hit-test dell'angolo) coperta da `DonutGeometryTest`; fette con cap arrotondati, sweep-in d'ingresso orario (saltato a reduced motion), tap sulla fetta che apre lo stesso drill-down delle righe sottostanti (inclusa la fetta "Senza categoria"). Overlay centrale e riassunto TalkBack invariati.
+- Restyling cartesiani dentro Vico 3.2.3, con le firme verificate sui binari in cache Gradle (`javap` su Fill, CartesianChartHost, AreaFill/LineFill, ColumnProvider) e non a memoria: colonne a pillola da 16dp (`CircleShape`), area sotto la linea del saldo con sfumatura verticale (`Fill(Brush)`), `animateIn` su barre e linea agganciato a `rememberMotionEnabled()`. Marker, listener del drill-down e scroll a fine serie non toccati.
+
+**Decisioni:** l'evidenza della colonna del mese corrente e il punto sull'ultimo valore della linea sono stati rimandati di proposito: richiederebbero provider per-entry custom su interfacce Vico con overload multipli (rischio di regressione per un dettaglio); il piano prevedeva esplicitamente questi fallback. Le cifre delle statistiche non cambiano: nessuna query o ViewModel toccati.
+
+**Problemi:** nessuno; gate `assembleDebug testDebugUnitTest lint detekt` verde con `/opt/gradle`.
+
+**Prossimo:** verifica su device: switch teaser on/off, donut animato e tap fetta -> lista filtrata coerente con la fetta, resa di colonne a pillola e area sfumata, marker e "Vedi i movimenti di <mese>" invariati, animazioni di sistema spente.
+
+---
+
 ## 2026-07-19 - Hero saldo con sparkline e recap mensile "Saldo Wrapped" (Fase 10.1)
 
 **Fatto:** due feature premium dalla review completa dell'app (versionCode 84 -> 85, versionName 0.9.45 -> 0.9.46). Design: ADR 27 e 28. Nessun cambio di schema.

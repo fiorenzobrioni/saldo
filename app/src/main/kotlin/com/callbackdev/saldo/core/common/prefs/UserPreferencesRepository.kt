@@ -54,6 +54,8 @@ data class DashboardCardPreferences(
     val showSafeToSpend: Boolean = true,
     val showRecentTransactions: Boolean = true,
     val showSavingsGoals: Boolean = true,
+    /** The self-expiring monthly recap teaser; off silences it for good. */
+    val showRecapTeaser: Boolean = true,
 )
 
 /**
@@ -223,6 +225,7 @@ class UserPreferencesRepository @Inject constructor(
             showSafeToSpend = preferences[DASHBOARD_SHOW_SAFE_TO_SPEND] ?: true,
             showRecentTransactions = preferences[DASHBOARD_SHOW_RECENT_TRANSACTIONS] ?: true,
             showSavingsGoals = preferences[DASHBOARD_SHOW_SAVINGS_GOALS] ?: true,
+            showRecapTeaser = preferences[DASHBOARD_SHOW_RECAP_TEASER] ?: true,
         )
     }.distinctUntilChanged()
 
@@ -240,6 +243,10 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setShowSavingsGoalsCard(shown: Boolean) {
         dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_SAVINGS_GOALS] = shown }
+    }
+
+    suspend fun setShowRecapTeaser(shown: Boolean) {
+        dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_RECAP_TEASER] = shown }
     }
 
     /** Column separator of the CSV export; semicolon by default (Excel friendly). */
@@ -291,6 +298,7 @@ class UserPreferencesRepository @Inject constructor(
         val DASHBOARD_SHOW_RECENT_TRANSACTIONS =
             booleanPreferencesKey("dashboard_show_recent_transactions")
         val DASHBOARD_SHOW_SAVINGS_GOALS = booleanPreferencesKey("dashboard_show_savings_goals")
+        val DASHBOARD_SHOW_RECAP_TEASER = booleanPreferencesKey("dashboard_show_recap_teaser")
         val DISMISSED_RECAP_MONTH = stringPreferencesKey("recap_dismissed_month")
     }
 }

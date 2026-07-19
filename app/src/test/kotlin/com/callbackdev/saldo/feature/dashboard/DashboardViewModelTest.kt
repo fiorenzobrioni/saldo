@@ -275,6 +275,27 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `recap teaser is hidden when the settings switch is off`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            clock = Clock.fixed(Instant.parse("2026-07-03T10:00:00Z"), zone),
+            cardPrefs = DashboardCardPreferences(showRecapTeaser = false),
+            previousMonthTotals = listOf(
+                com.callbackdev.saldo.core.domain.model.MonthlyTotal(
+                    month = java.time.YearMonth.of(2026, 6),
+                    expense = BigDecimal("-10.00"),
+                    income = BigDecimal.ZERO,
+                ),
+            ),
+        )
+
+        viewModel.uiState.test {
+            assertNull(awaitLoaded().recapTeaserMonth)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `recap teaser is hidden after dismissal`() = runTest {
         val viewModel = viewModel(
             accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),

@@ -133,6 +133,16 @@ fun StatsScreen(
                                 ),
                                 centerLabel = stringResource(R.string.stats_total_spent_label),
                                 chartDescription = stringResource(R.string.stats_chart_ring_a11y),
+                                // Same drill-down as the share rows below.
+                                onSliceClick = { slice ->
+                                    onNavigateToFiltered(
+                                        periodRoute(
+                                            period = uiState.period,
+                                            categoryId = slice.category?.id,
+                                            uncategorizedOnly = slice.category == null,
+                                        ),
+                                    )
+                                },
                             )
                         },
                         onSliceClick = { slice ->

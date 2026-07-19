@@ -362,7 +362,9 @@ class DashboardViewModel @Inject constructor(
             safeToSpend = safeToSpend,
             savingsGoals = savingsGoals,
             cardPrefs = cardPrefs,
-            recapTeaserMonth = recapTeaserMonth,
+            // The Settings switch silences the teaser without touching the
+            // per-month dismissal flow.
+            recapTeaserMonth = recapTeaserMonth.takeIf { cardPrefs.showRecapTeaser },
             date = today,
             greetingBand = greetingBand,
             greetingRoll = greetingRoll,
