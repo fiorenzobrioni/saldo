@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Avviata la guida utente, prima pagina sui movimenti ricorrenti
+
+**Fatto:** creata la cartella `docs/guida-utente/` come manuale d'uso incrementale (una pagina per funzionalità), con indice `README.md` e prima pagina `movimenti-ricorrenti.md`. La pagina copre: le tre tipologie (uscite, entrate, trasferimenti), frequenze e giorno di riferimento con clamp sui mesi corti, data di fine, le modalità di registrazione (automatica, con conferma, importo variabile e conferma per i trasferimenti cross-currency), il comportamento del motore (nessun recupero dello storico alla creazione, catch-up all'apertura e in background, assenza di doppioni), notifiche, modifica/eliminazione regola ed effetto su saldi/budget/spendibile. Aggiunto il puntatore alla guida nella tabella "Documentazione di progetto" del README.
+
+**Decisioni:** nome cartella `guida-utente`, allineato all'italiano usato in README/PLANNING/devlog. Taglio orientato all'utente (cosa fa e cosa aspettarsi), non al codice: nessun riferimento a classi o ADR. Contenuto derivato dalla lettura del motore (`GenerateRecurringMovementsUseCase`, `RecurrenceCalculator`, `RecurringRuleEditorViewModel`, worker e catch-up in `MainActivity`) e dalla terminologia UI reale (`strings.xml` values-it).
+
+**Problemi:** nessuno; modifica di sola documentazione, nessun bump di versione.
+
+**Prossimo:** aggiungere le pagine successive del manuale (conti, movimenti singoli, budget, statistiche) man mano.
+
+---
+
 ## 2026-07-19 - Rimosso il delta a 30 giorni dalla didascalia della sparkline (Fase 10.4)
 
 **Fatto:** rimozione del numero di variazione a 30 giorni a destra della didascalia della sparkline (versionCode 89 -> 90, versionName 0.9.50 -> 0.9.51), su feedback utente.
