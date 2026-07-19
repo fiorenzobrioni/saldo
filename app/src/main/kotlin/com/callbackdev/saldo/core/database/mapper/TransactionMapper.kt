@@ -91,6 +91,8 @@ fun DashboardTotalsRow.toDomain(currency: Currency): DashboardTotals = Dashboard
     ),
     // Expense sums are negative; the to-date figures are positive magnitudes.
     monthToDateSpend = MoneyMapper.toAmount(monthToDateSpendMinor ?: 0L, currency).negate(),
+    monthToDateNonRecurringSpend =
+        MoneyMapper.toAmount(monthToDateNonRecurringSpendMinor ?: 0L, currency).negate(),
     previousMonthToDateSpend = MoneyMapper.toAmount(previousToDateSpendMinor ?: 0L, currency).negate(),
 )
 

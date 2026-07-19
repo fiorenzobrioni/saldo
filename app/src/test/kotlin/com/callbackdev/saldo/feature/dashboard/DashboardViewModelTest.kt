@@ -201,7 +201,7 @@ class DashboardViewModelTest {
     }
 
     @Test
-    fun `balance history and trend flow into the ui state`() = runTest {
+    fun `balance history flows into the ui state`() = runTest {
         val history = listOf(
             DailyBalance(LocalDate.of(2026, 7, 6), BigDecimal("100.00")),
             DailyBalance(LocalDate.of(2026, 7, 7), BigDecimal("80.00")),
@@ -213,9 +213,7 @@ class DashboardViewModelTest {
         )
 
         viewModel.uiState.test {
-            val state = awaitLoaded()
-            assertEquals(history, state.balanceHistory)
-            assertEquals(BigDecimal("20.00"), state.balanceTrend)
+            assertEquals(history, awaitLoaded().balanceHistory)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -317,14 +315,86 @@ class DashboardViewModelTest {
     }
 
     @Test
-    fun `balance trend is null with fewer than two points`() = runTest {
+    fun `balance forecast walks from the headline balance with spend average and recurring charges`() = runTest {
+        val history = listOf(
+            DailyBalance(LocalDate.of(2026, 7, 7), BigDecimal("110.00")),
+            DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal("100.00")),
+        )
+        val rules = listOf(
+            RecurringRule(
+                id = 1L, name = "Netflix", type = TransactionType.EXPENSE, currency = eur, accountId = 1L,
+                frequency = com.callbackdev.saldo.core.domain.model.RecurrenceFrequency.MONTHLY,
+                startDate = LocalDate.of(2026, 1, 20), amount = BigDecimal("10.00"), dayOfReference = 20,
+            ),
+        )
         val viewModel = viewModel(
-            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("100.00"))),
+            // The daily average is built from non-recurring spend only: 80.00 in
+            // 8 days = 10.00/day for the 23 remaining days.
+            totals = DashboardTotals(
+                monthToDateSpend = BigDecimal("100.00"),
+                monthToDateNonRecurringSpend = BigDecimal("80.00"),
+            ),
+            rules = rules,
+            balanceHistory = history,
+        )
+
+        viewModel.uiState.test {
+            val forecast = awaitLoaded().balanceForecast
+            assertEquals(LocalDate.of(2026, 7, 9), forecast.first().date)
+            assertEquals(LocalDate.of(2026, 7, 31), forecast.last().date)
+            // The walk starts from the headline balance (100.00), not the history.
+            assertEquals(BigDecimal("90.00"), forecast.first().balance)
+            // 100.00 - 23 x 10.00 - 10.00 (Netflix on the 20th).
+            assertEquals(BigDecimal("-140.00"), forecast.last().balance)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `balance forecast excludes recurring spend from the daily average`() = runTest {
+        // A monthly rule already charged this month sits in monthToDateSpend but
+        // not in the non-recurring base, so it must not bend the tail: no other
+        // spend and no future occurrence this month leaves the forecast flat.
+        val rules = listOf(
+            RecurringRule(
+                id = 1L, name = "Rent", type = TransactionType.EXPENSE, currency = eur, accountId = 1L,
+                frequency = com.callbackdev.saldo.core.domain.model.RecurrenceFrequency.MONTHLY,
+                startDate = LocalDate.of(2026, 1, 1), amount = BigDecimal("1.00"), dayOfReference = 1,
+                lastGeneratedDate = LocalDate.of(2026, 7, 1),
+            ),
+        )
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("100.00"))),
+            totals = DashboardTotals(
+                monthToDateSpend = BigDecimal("1.00"),
+                monthToDateNonRecurringSpend = BigDecimal.ZERO,
+            ),
+            rules = rules,
+            balanceHistory = listOf(
+                DailyBalance(LocalDate.of(2026, 7, 7), BigDecimal("100.00")),
+                DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal("100.00")),
+            ),
+        )
+
+        viewModel.uiState.test {
+            val forecast = awaitLoaded().balanceForecast
+            assertEquals(BigDecimal("100.00"), forecast.first().balance)
+            assertEquals(BigDecimal("100.00"), forecast.last().balance)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `balance forecast is empty when the sparkline is hidden`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.TEN)),
+            totals = DashboardTotals(monthToDateSpend = BigDecimal("80.00")),
             balanceHistory = listOf(DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal.TEN)),
         )
 
         viewModel.uiState.test {
-            assertNull(awaitLoaded().balanceTrend)
+            assertTrue(awaitLoaded().balanceForecast.isEmpty())
             cancelAndIgnoreRemainingEvents()
         }
     }

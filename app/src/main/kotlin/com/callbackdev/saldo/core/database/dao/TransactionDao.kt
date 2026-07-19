@@ -414,6 +414,11 @@ interface TransactionDao {
                 THEN amountMinor ELSE 0 END
             ) AS monthToDateSpendMinor,
             SUM(
+                CASE WHEN type = 'EXPENSE' AND recurringRuleId IS NULL
+                    AND timestampEpochMilli >= :monthStart AND timestampEpochMilli < :todayEnd
+                THEN amountMinor ELSE 0 END
+            ) AS monthToDateNonRecurringSpendMinor,
+            SUM(
                 CASE WHEN type = 'EXPENSE'
                     AND timestampEpochMilli >= :previousStart AND timestampEpochMilli < :previousToDateEnd
                 THEN amountMinor ELSE 0 END

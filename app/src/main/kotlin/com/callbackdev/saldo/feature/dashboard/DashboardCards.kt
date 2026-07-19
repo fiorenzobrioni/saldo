@@ -166,7 +166,8 @@ private fun fullWeekdayDate(date: LocalDate): String {
 
 /**
  * Hero card: the total balance with the per-account breakdown always in view,
- * a 30-day balance sparkline and a decorative tonal gradient. The whole card
+ * a balance sparkline (30 days of history plus a dashed end-of-month forecast
+ * tail) and a decorative tonal gradient. The whole card
  * is tappable and opens account management, with
  * [R.string.dashboard_manage_accounts] as the spoken affordance. The higher
  * tonal color and the larger shape single it out as the screen's primary
@@ -178,7 +179,7 @@ internal fun BalanceCard(
     currency: Currency,
     accounts: List<AccountWithBalance>,
     history: List<DailyBalance>,
-    trend: BigDecimal?,
+    forecast: List<DailyBalance>,
     date: LocalDate,
     onManageAccounts: () -> Unit,
     modifier: Modifier = Modifier,
@@ -236,13 +237,14 @@ internal fun BalanceCard(
                 Spacer(Modifier.height(8.dp))
                 BalanceSparkline(
                     history = history,
+                    forecast = forecast,
                     currency = currency,
                     lineColor = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(SPARKLINE_HEIGHT.dp),
                 )
-                SparklineCaption(trend = trend, currency = currency)
+                SparklineCaption(hasForecast = forecast.isNotEmpty())
             }
             if (accounts.isNotEmpty()) {
                 Spacer(Modifier.height(10.dp))
@@ -314,31 +316,24 @@ internal fun RecapTeaserCard(
 }
 
 /**
- * The sparkline's legend line: the window label on the left, the signed 30-day
- * change on the right. Direction is carried by the explicit sign, not only by
- * the money color.
+ * The sparkline's legend line: the window label, naming the end-of-month
+ * estimate when the dashed tail is shown. The dashed tail carries its own
+ * "≈ amount" pill, so no figure is repeated here.
  */
 @Composable
-private fun SparklineCaption(trend: BigDecimal?, currency: Currency, modifier: Modifier = Modifier) {
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = stringResource(R.string.dashboard_sparkline_caption),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        if (trend != null) {
-            Text(
-                text = MoneyFormatter.formatSigned(trend, currency),
-                style = MaterialTheme.typography.labelSmall.tabularNumbers(),
-                color = when {
-                    trend.signum() > 0 -> MaterialTheme.moneyColors.income
-                    trend.signum() < 0 -> MaterialTheme.moneyColors.expense
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-        }
-    }
+private fun SparklineCaption(hasForecast: Boolean, modifier: Modifier = Modifier) {
+    Text(
+        text = if (hasForecast) {
+            stringResource(R.string.dashboard_sparkline_caption_forecast)
+        } else {
+            stringResource(R.string.dashboard_sparkline_caption)
+        },
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
 /**

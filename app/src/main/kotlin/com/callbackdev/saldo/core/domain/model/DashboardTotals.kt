@@ -24,6 +24,13 @@ data class DashboardTotals(
     val month: PeriodTotals = PeriodTotals(),
     /** Positive magnitude spent from the 1st of the month through today. */
     val monthToDateSpend: BigDecimal = BigDecimal.ZERO,
+    /**
+     * Positive magnitude spent from the 1st of the month through today by
+     * non-recurring (manual) movements only: the base of the forecast's daily
+     * spend average, so recurring charges already booked this month do not
+     * inflate it and get double-counted against their explicit future dates.
+     */
+    val monthToDateNonRecurringSpend: BigDecimal = BigDecimal.ZERO,
     /** Positive magnitude spent by this same day last month. */
     val previousMonthToDateSpend: BigDecimal = BigDecimal.ZERO,
 )

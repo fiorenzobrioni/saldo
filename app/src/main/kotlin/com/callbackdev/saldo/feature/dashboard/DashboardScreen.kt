@@ -163,7 +163,7 @@ private fun DashboardContent(
                 currency = uiState.primaryCurrency,
                 accounts = uiState.accounts,
                 history = uiState.balanceHistory,
-                trend = uiState.balanceTrend,
+                forecast = uiState.balanceForecast,
                 date = uiState.date,
                 onManageAccounts = onManageAccounts,
             )
