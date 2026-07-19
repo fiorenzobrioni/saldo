@@ -39,7 +39,7 @@ import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
-@Suppress("LongParameterList") // Hilt wiring: one dependency per concern.
+@Suppress("LongParameterList", "TooManyFunctions") // Hilt wiring + the ledger's filter/search/delete surface.
 class TransactionsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     accountRepository: AccountRepository,

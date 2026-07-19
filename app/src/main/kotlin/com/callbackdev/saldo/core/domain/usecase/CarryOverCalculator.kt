@@ -55,7 +55,7 @@ object CarryOverCalculator {
         accountsById: Map<Long, Account>,
         description: String? = null,
     ): List<Transaction> {
-        if (transactions.isEmpty()) return emptyList()
+        // maxByOrNull is null exactly when there is nothing to delete.
         val boundary = transactions.maxByOrNull { it.timestamp } ?: return emptyList()
         return netByAccount(transactions).mapNotNull { (accountId, rawNet) ->
             val account = accountsById[accountId] ?: return@mapNotNull null

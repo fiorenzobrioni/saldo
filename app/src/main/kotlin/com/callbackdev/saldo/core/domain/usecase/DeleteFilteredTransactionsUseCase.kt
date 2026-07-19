@@ -33,17 +33,18 @@ class DeleteFilteredTransactionsUseCase @Inject constructor(
     ): List<Long> {
         if (transactions.isEmpty()) return emptyList()
         val ids = transactions.map { it.id }
-        if (!preserveBalances) {
+        return if (!preserveBalances) {
             transactionRepository.deleteByIds(ids)
-            return emptyList()
+            emptyList()
+        } else {
+            val accountsById = accountRepository.observeAccountsWithBalance().first()
+                .associate { it.account.id to it.account }
+            val carryOvers = CarryOverCalculator.adjustments(
+                transactions = transactions,
+                accountsById = accountsById,
+                description = carryOverDescription,
+            )
+            transactionRepository.deleteAndInsert(ids, carryOvers)
         }
-        val accountsById = accountRepository.observeAccountsWithBalance().first()
-            .associate { it.account.id to it.account }
-        val carryOvers = CarryOverCalculator.adjustments(
-            transactions = transactions,
-            accountsById = accountsById,
-            description = carryOverDescription,
-        )
-        return transactionRepository.deleteAndInsert(ids, carryOvers)
     }
 }

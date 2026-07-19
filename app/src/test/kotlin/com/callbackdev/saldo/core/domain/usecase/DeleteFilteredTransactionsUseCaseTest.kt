@@ -25,7 +25,6 @@ import java.util.Currency
 class DeleteFilteredTransactionsUseCaseTest {
 
     private val eur = Currency.getInstance("EUR")
-    private val usd = Currency.getInstance("USD")
 
     private val accountRepository = mockk<AccountRepository>()
     private val transactionRepository = mockk<TransactionRepository>(relaxUnitFun = true)
