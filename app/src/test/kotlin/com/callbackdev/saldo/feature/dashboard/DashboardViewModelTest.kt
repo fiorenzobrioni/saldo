@@ -201,7 +201,7 @@ class DashboardViewModelTest {
     }
 
     @Test
-    fun `balance history and trend flow into the ui state`() = runTest {
+    fun `balance history flows into the ui state`() = runTest {
         val history = listOf(
             DailyBalance(LocalDate.of(2026, 7, 6), BigDecimal("100.00")),
             DailyBalance(LocalDate.of(2026, 7, 7), BigDecimal("80.00")),
@@ -213,9 +213,7 @@ class DashboardViewModelTest {
         )
 
         viewModel.uiState.test {
-            val state = awaitLoaded()
-            assertEquals(history, state.balanceHistory)
-            assertEquals(BigDecimal("20.00"), state.balanceTrend)
+            assertEquals(history, awaitLoaded().balanceHistory)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -397,19 +395,6 @@ class DashboardViewModelTest {
 
         viewModel.uiState.test {
             assertTrue(awaitLoaded().balanceForecast.isEmpty())
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `balance trend is null with fewer than two points`() = runTest {
-        val viewModel = viewModel(
-            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
-            balanceHistory = listOf(DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal.TEN)),
-        )
-
-        viewModel.uiState.test {
-            assertNull(awaitLoaded().balanceTrend)
             cancelAndIgnoreRemainingEvents()
         }
     }

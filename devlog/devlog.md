@@ -14,6 +14,21 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Rimosso il delta a 30 giorni dalla didascalia della sparkline (Fase 10.4)
+
+**Fatto:** rimozione del numero di variazione a 30 giorni a destra della didascalia della sparkline (versionCode 89 -> 90, versionName 0.9.50 -> 0.9.51), su feedback utente.
+- Problema: quel numero (`balanceTrend` = saldo di oggi meno saldo di 30 giorni fa) era senza etichetta e, dopo l'aggiunta del forecast, stava a destra di una didascalia che ora nomina "stima a fine mese" e vicino alla coda tratteggiata e alla pill `≈`: si confondeva con una cifra della stima. L'utente lo aveva scambiato per la spesa dal 1 del mese (che invece e la card mensile).
+- Fix: `SparklineCaption` mostra ora la sola didascalia (nessun importo a destra); rimossi i parametri `trend`/`currency` del composable e il parametro `trend` di `BalanceCard`. Rimosso anche il campo `balanceTrend` da `DashboardUiState` e la sua assegnazione: era usato solo per quel numero, l'accessibilita della sparkline (`sparklineDescription`) ricalcola il trend dalla history in autonomia, quindi nessuno stato morto residuo.
+- Test: `DashboardViewModelTest` aggiornato (rimossa l'asserzione su `balanceTrend` dal test della history, rimosso il test dedicato al trend null); i test del `balanceForecast` restano invariati.
+
+**Decisioni:** valutate con l'utente due opzioni (etichettare il numero con una freccia, oppure rimuoverlo); scelta la rimozione: la forma della linea mostra gia l'andamento, la pill `≈` da la stima a fine mese e la card mensile da la spesa del mese, quindi il delta a 30 giorni era ridondante oltre che ambiguo. Un angolo con una sola cifra (la pill) e piu leggibile e premium.
+
+**Problemi:** nessuno; gate `assembleDebug testDebugUnitTest lint detekt` verde con `/opt/gradle`.
+
+**Prossimo:** verifica su device: sotto la sparkline resta solo la didascalia, a destra nessun importo; la pill `≈` sulla coda resta l'unica cifra del forecast.
+
+---
+
 ## 2026-07-19 - Fix: ricorrenze escluse dalla media giornaliera del forecast (Fase 10.4)
 
 **Fatto:** correzione di un doppio conteggio nel forecast di fine mese, segnalato dall'utente (versionCode 88 -> 89, versionName 0.9.49 -> 0.9.50).

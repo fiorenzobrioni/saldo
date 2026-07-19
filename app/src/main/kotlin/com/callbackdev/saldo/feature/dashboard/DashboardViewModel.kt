@@ -117,11 +117,6 @@ data class DashboardUiState(
      */
     val balanceHistory: List<DailyBalance> = emptyList(),
     /**
-     * Signed change of the total balance across [balanceHistory] (last minus
-     * first point); null when the sparkline window has fewer than two points.
-     */
-    val balanceTrend: BigDecimal? = null,
-    /**
      * Estimated end-of-day balances from tomorrow to the last day of the
      * month, the sparkline's dashed forecast tail: fixed recurring flows on
      * their due dates plus the month's average daily spend
@@ -356,8 +351,6 @@ class DashboardViewModel @Inject constructor(
             totalBalance = totalBalance,
             accounts = active,
             balanceHistory = balanceHistory,
-            balanceTrend = balanceHistory.takeIf { it.size > 1 }
-                ?.let { it.last().balance.subtract(it.first().balance) },
             // Anchored to the headline balance, the same figure the last
             // history point equals, so the dashed tail attaches seamlessly.
             balanceForecast = if (balanceHistory.size > 1) {

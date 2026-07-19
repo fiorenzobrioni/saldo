@@ -180,7 +180,6 @@ internal fun BalanceCard(
     accounts: List<AccountWithBalance>,
     history: List<DailyBalance>,
     forecast: List<DailyBalance>,
-    trend: BigDecimal?,
     date: LocalDate,
     onManageAccounts: () -> Unit,
     modifier: Modifier = Modifier,
@@ -245,7 +244,7 @@ internal fun BalanceCard(
                         .fillMaxWidth()
                         .height(SPARKLINE_HEIGHT.dp),
                 )
-                SparklineCaption(trend = trend, currency = currency, hasForecast = forecast.isNotEmpty())
+                SparklineCaption(hasForecast = forecast.isNotEmpty())
             }
             if (accounts.isNotEmpty()) {
                 Spacer(Modifier.height(10.dp))
@@ -317,43 +316,24 @@ internal fun RecapTeaserCard(
 }
 
 /**
- * The sparkline's legend line: the window label on the left (naming the
- * end-of-month estimate when the dashed tail is shown), the signed 30-day
- * change on the right. Direction is carried by the explicit sign, not only by
- * the money color.
+ * The sparkline's legend line: the window label, naming the end-of-month
+ * estimate when the dashed tail is shown. The dashed tail carries its own
+ * "≈ amount" pill, so no figure is repeated here.
  */
 @Composable
-private fun SparklineCaption(
-    trend: BigDecimal?,
-    currency: Currency,
-    hasForecast: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = if (hasForecast) {
-                stringResource(R.string.dashboard_sparkline_caption_forecast)
-            } else {
-                stringResource(R.string.dashboard_sparkline_caption)
-            },
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        if (trend != null) {
-            Text(
-                text = MoneyFormatter.formatSigned(trend, currency),
-                style = MaterialTheme.typography.labelSmall.tabularNumbers(),
-                color = when {
-                    trend.signum() > 0 -> MaterialTheme.moneyColors.income
-                    trend.signum() < 0 -> MaterialTheme.moneyColors.expense
-                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-        }
-    }
+private fun SparklineCaption(hasForecast: Boolean, modifier: Modifier = Modifier) {
+    Text(
+        text = if (hasForecast) {
+            stringResource(R.string.dashboard_sparkline_caption_forecast)
+        } else {
+            stringResource(R.string.dashboard_sparkline_caption)
+        },
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
 /**
