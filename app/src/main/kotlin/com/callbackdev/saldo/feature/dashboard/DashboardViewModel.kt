@@ -364,7 +364,7 @@ class DashboardViewModel @Inject constructor(
                 BalanceForecastCalculator.projectToEndOfMonth(
                     currentBalance = totalBalance,
                     today = today,
-                    monthToDateSpend = totals.monthToDateSpend,
+                    nonRecurringMonthToDateSpend = totals.monthToDateNonRecurringSpend,
                     rules = sources.rules,
                     currency = primary,
                 )

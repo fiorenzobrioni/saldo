@@ -14,6 +14,21 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Fix: ricorrenze escluse dalla media giornaliera del forecast (Fase 10.4)
+
+**Fatto:** correzione di un doppio conteggio nel forecast di fine mese, segnalato dall'utente (versionCode 88 -> 89, versionName 0.9.49 -> 0.9.50).
+- Bug: la media giornaliera si basava su `monthToDateSpend`, che include i movimenti gia generati dalle ricorrenze. Quegli importi finivano nella media *e* venivano riproiettati sulle date future dalle regole ricorrenti: doppio conteggio. Caso limite dell'utente: ricorrenza mensile di 1 EUR il giorno 1 -> appena generata, media 1 EUR/giorno -> forecast a circa -30.
+- Fix: nuova colonna `monthToDateNonRecurringSpendMinor` nella query `observeDashboardTotals` (stessa finestra, con `AND recurringRuleId IS NULL`), portata fino al dominio (`DashboardTotals.monthToDateNonRecurringSpend`). Il forecast usa questa base non ricorrente per la media; le ricorrenze fisse restano modellate una sola volta, sulla loro data. Cambiamento di sola query: nessuna migration (l'indice su `recurringRuleId` esisteva gia). La figura "spesa del mese" mostrata nel confronto mese-su-mese resta invariata (continua a includere le ricorrenze).
+- KDoc di `BalanceForecastCalculator` aggiornato (rimosso il caveat "la media include anche le ricorrenze gia addebitate", non piu vero). Parametro rinominato `nonRecurringMonthToDateSpend`.
+
+**Decisioni:** scelta la lettura del dato reale dal DB (colonna `recurringRuleId IS NULL`) invece di ricalcolare le occorrenze ricorrenti con `RecurrenceCalculator` e sottrarle: la colonna legge cio che e stato effettivamente registrato (non-pending, valuta primaria), robusta a regole modificate, movimenti cancellati e confirm-mode. Le ricorrenze a importo variabile gia addebitate escono dalla media e (come gia prima) non sono riproiettate: coerente con la scelta di saltare le regole variabili nel forward.
+
+**Problemi:** il gate in un run precedente era fallito per un errore di build-cache Gradle (`Could not get file mode` su un .dex, pressione su disco), non di codice; risolto con un run pulito.
+
+**Prossimo:** verifica su device del caso limite (ricorrenza gia addebitata a inizio mese: coda tratteggiata piatta, non in crollo).
+
+---
+
 ## 2026-07-19 - Proiezione saldo a fine mese nella sparkline (Fase 10.4)
 
 **Fatto:** punto "Proiezione saldo a fine mese" della Roadmap v2.0 (versionCode 87 -> 88, versionName 0.9.48 -> 0.9.49). Design: ADR 30.

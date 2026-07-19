@@ -15,18 +15,22 @@ import java.util.Currency
  * [LocalDate.getMonth]. Pure date/amount math, fully unit-testable.
  *
  * The estimate walks day by day from the current balance, subtracting the
- * month's average daily spend (month-to-date spend / days elapsed, the same
- * "media giornaliera" heuristic as the recap) and applying fixed-amount
- * recurring expenses *and* incomes on their due dates. Incomes matter: a
- * salary landing on the 27th is the difference between a forecast that dips
- * and one that recovers, and ignoring it would make the tail systematically
- * pessimistic. Variable-amount rules have no knowable figure and are skipped,
- * like in [UpcomingChargesCalculator].
+ * month's average daily spend and applying fixed-amount recurring expenses
+ * *and* incomes on their due dates. Incomes matter: a salary landing on the
+ * 27th is the difference between a forecast that dips and one that recovers,
+ * and ignoring it would make the tail systematically pessimistic.
+ * Variable-amount rules have no knowable figure and are skipped, like in
+ * [UpcomingChargesCalculator].
  *
- * Known and accepted approximations (the tail is always presented as an
- * estimate): the daily average also spreads recurring charges already paid
- * this month, and occurrences due today but not yet generated are skipped
- * (catch-up will fold them into the actual balance shortly).
+ * The daily average is built from *non-recurring* month-to-date spend only
+ * (manual movements), never the raw month total: a recurring charge already
+ * booked this month would otherwise inflate the average and be counted a
+ * second time against its explicit future occurrences. Recurring spending is
+ * thus modelled once, on its dates.
+ *
+ * Known and accepted approximation (the tail is always presented as an
+ * estimate): occurrences due today but not yet generated are skipped;
+ * catch-up folds them into the actual balance shortly.
  */
 object BalanceForecastCalculator {
 
@@ -39,14 +43,14 @@ object BalanceForecastCalculator {
     fun projectToEndOfMonth(
         currentBalance: BigDecimal,
         today: LocalDate,
-        monthToDateSpend: BigDecimal,
+        nonRecurringMonthToDateSpend: BigDecimal,
         rules: List<RecurringRule>,
         currency: Currency,
     ): List<DailyBalance> {
         val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
         if (today >= endOfMonth) return emptyList()
 
-        val dailySpend = monthToDateSpend.max(BigDecimal.ZERO).divide(
+        val dailySpend = nonRecurringMonthToDateSpend.max(BigDecimal.ZERO).divide(
             BigDecimal(today.dayOfMonth),
             MoneyMapper.fractionDigits(currency),
             RoundingMode.HALF_UP,

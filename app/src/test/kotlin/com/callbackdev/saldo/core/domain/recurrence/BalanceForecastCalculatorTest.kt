@@ -42,12 +42,12 @@ class BalanceForecastCalculatorTest {
     private fun forecast(
         balance: String = "100.00",
         today: LocalDate = LocalDate.of(2026, 7, 10),
-        monthToDateSpend: String = "0.00",
+        nonRecurringMonthToDateSpend: String = "0.00",
         rules: List<RecurringRule> = emptyList(),
     ) = BalanceForecastCalculator.projectToEndOfMonth(
         currentBalance = BigDecimal(balance),
         today = today,
-        monthToDateSpend = BigDecimal(monthToDateSpend),
+        nonRecurringMonthToDateSpend = BigDecimal(nonRecurringMonthToDateSpend),
         rules = rules,
         currency = eur,
     )
@@ -69,7 +69,7 @@ class BalanceForecastCalculatorTest {
     @Test
     fun `the average daily spend is subtracted each day`() {
         // 50.00 spent in 10 days: 5.00/day for the remaining 21 days.
-        val points = forecast(balance = "100.00", monthToDateSpend = "50.00")
+        val points = forecast(balance = "100.00", nonRecurringMonthToDateSpend = "50.00")
 
         assertEquals(BigDecimal("95.00"), points.first().balance)
         assertEquals(BigDecimal("-5.00"), points.last().balance)
@@ -81,10 +81,28 @@ class BalanceForecastCalculatorTest {
         val points = forecast(
             balance = "100.00",
             today = LocalDate.of(2026, 7, 3),
-            monthToDateSpend = "10.00",
+            nonRecurringMonthToDateSpend = "10.00",
         )
 
         assertEquals(BigDecimal("96.67"), points.first().balance)
+    }
+
+    @Test
+    fun `an already-charged recurrence does not bend the tail when there is no variable spend`() {
+        // The user's case: a 1.00 monthly rule fired on the 1st, no other spend.
+        // Its amount lands in the balance, not in the non-recurring average (0),
+        // and its next occurrence is next month, so the tail stays flat.
+        val points = forecast(
+            balance = "100.00",
+            today = LocalDate.of(2026, 7, 10),
+            nonRecurringMonthToDateSpend = "0.00",
+            rules = listOf(
+                rule(amount = BigDecimal("1.00"), dayOfReference = 1, lastGenerated = LocalDate.of(2026, 7, 1)),
+            ),
+        )
+
+        assertEquals(BigDecimal("100.00"), points.first().balance)
+        assertEquals(BigDecimal("100.00"), points.last().balance)
     }
 
     @Test

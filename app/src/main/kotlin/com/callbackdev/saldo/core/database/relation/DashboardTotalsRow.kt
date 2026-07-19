@@ -10,5 +10,6 @@ data class DashboardTotalsRow(
     val monthSpendMinor: Long?,
     val monthIncomeMinor: Long?,
     val monthToDateSpendMinor: Long?,
+    val monthToDateNonRecurringSpendMinor: Long?,
     val previousToDateSpendMinor: Long?,
 )

@@ -95,6 +95,7 @@ class TransactionMapperTest {
             monthSpendMinor = -11890L,
             monthIncomeMinor = 500L,
             monthToDateSpendMinor = -11890L,
+            monthToDateNonRecurringSpendMinor = -9000L,
             previousToDateSpendMinor = null,
         )
 
@@ -105,6 +106,7 @@ class TransactionMapperTest {
         assertEquals(0, BigDecimal("-118.90").compareTo(totals.month.spend))
         assertEquals(0, BigDecimal("5.00").compareTo(totals.month.income))
         assertEquals(0, BigDecimal("118.90").compareTo(totals.monthToDateSpend))
+        assertEquals(0, BigDecimal("90.00").compareTo(totals.monthToDateNonRecurringSpend))
         assertEquals(0, BigDecimal.ZERO.compareTo(totals.previousMonthToDateSpend))
     }
 

@@ -397,6 +397,7 @@
 - [x] `DashboardViewModel`: campo `balanceForecast` nello stato, ancorato al saldo headline (stesso valore dell'ultimo punto storico, aggancio senza scalino), calcolato solo quando la sparkline e visibile; test VM (camminata con media + ricorrenza, vuoto con sparkline nascosta)
 - [x] `BalanceSparkline`: normalizzazione su storia + forecast (finestra storica fissa a 30 giorni, coda con lo stesso passo per giorno, al massimo circa meta larghezza), tangenti condivise per continuita al punto di oggi, riempimento sfumato solo sotto la parte reale, coda tratteggiata con cap arrotondati, anello sul punto di fine mese, pill "≈ importo" (TextMeasurer, autoposizionata sopra/sotto e clampata nel canvas, fade-in a fine reveal), a11y estesa con la stima
 - [x] Caption aggiornata quando la coda e presente ("Ultimi 30 giorni + stima a fine mese"); stringhe IT/EN
+- [x] Fix doppio conteggio delle ricorrenze nella media giornaliera (versionCode 88 -> 89, versionName 0.9.49 -> 0.9.50): la media si basa sulla sola spesa non ricorrente del mese (`monthToDateNonRecurringSpend`, nuova colonna `recurringRuleId IS NULL` nella query dashboard, nessuna migration). Un addebito ricorrente gia registrato non gonfia piu la media ne viene riproiettato sulla data futura. Test: mapper (nuovo campo), calcolatore (coda piatta col caso 1 EUR mensile), VM (media da non ricorrente, esclusione ricorrenza gia addebitata)
 
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
