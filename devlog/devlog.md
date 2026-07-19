@@ -14,6 +14,21 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Proiezione saldo a fine mese nella sparkline (Fase 10.4)
+
+**Fatto:** punto "Proiezione saldo a fine mese" della Roadmap v2.0 (versionCode 87 -> 88, versionName 0.9.48 -> 0.9.49). Design: ADR 30.
+- `BalanceForecastCalculator` (dominio, puro): stima end-of-day da domani all'ultimo giorno del mese, camminando dal saldo totale con la media della spesa giornaliera (spesa del mese / giorni trascorsi, HALF_UP alla scala valuta) e applicando alla loro data le ricorrenze a importo fisso via `RecurrenceCalculator`, incluse le entrate (uno stipendio a fine mese cambia la coda da "affonda" a "risale"). Floor su `lastGeneratedDate` come `UpcomingChargesCalculator`; regole variabili e valute diverse escluse; vuoto l'ultimo giorno del mese.
+- `DashboardViewModel`: nuovo campo `balanceForecast`, ancorato al saldo headline (identico all'ultimo punto storico per invariante ADR 27: aggancio senza scalino), calcolato solo quando la sparkline e visibile.
+- `BalanceSparkline`: normalizzazione su storia + forecast con tangenti condivise (continuita al punto di oggi), riempimento sfumato solo sotto la parte reale, coda tratteggiata, anello sul punto di fine mese e pill "≈ importo" autoposizionata (TextMeasurer, fade-in a fine reveal); a11y estesa con la stima. Caption "Ultimi 30 giorni + stima a fine mese" quando la coda e presente. Stringhe IT/EN.
+
+**Decisioni:** coda tratteggiata invece della riga dedicata (scelta condivisa con l'utente): zero ingombro verticale e il tratteggio comunica "stima" da solo. Sul range, il dubbio dell'utente (a inizio mese una sparkline di sola previsione) si risolve tenendo fissa la finestra storica di 30 giorni e appendendo solo i giorni residui del mese con lo stesso passo per giorno: nel caso peggiore (1 del mese, mese di 31 giorni) la coda occupa circa meta della larghezza, mai di piu. La media giornaliera include anche le ricorrenze gia addebitate nel mese (leggera sovrastima della spesa futura): approssimazione accettata e documentata, la coda e sempre marcata come stima.
+
+**Problemi:** nessuno; gate `assembleDebug testDebugUnitTest lint detekt` verde con `/opt/gradle`.
+
+**Prossimo:** verifica su device: coda a inizio/meta/fine mese, pill sopra e sotto il punto a seconda di dove finisce la linea, con e senza ricorrenze, TalkBack sulla card.
+
+---
+
 ## 2026-07-19 - Recap: media giornaliera e tema adattivo (Fase 10.3)
 
 **Fatto:** due rifiniture al recap dal feedback utente (versionCode 86 -> 87, versionName 0.9.47 -> 0.9.48).

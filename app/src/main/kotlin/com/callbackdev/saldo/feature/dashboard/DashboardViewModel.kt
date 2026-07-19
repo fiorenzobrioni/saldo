@@ -16,6 +16,7 @@ import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
+import com.callbackdev.saldo.core.domain.recurrence.BalanceForecastCalculator
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
@@ -120,6 +121,14 @@ data class DashboardUiState(
      * first point); null when the sparkline window has fewer than two points.
      */
     val balanceTrend: BigDecimal? = null,
+    /**
+     * Estimated end-of-day balances from tomorrow to the last day of the
+     * month, the sparkline's dashed forecast tail: fixed recurring flows on
+     * their due dates plus the month's average daily spend
+     * ([BalanceForecastCalculator]). Empty on the last day of the month or
+     * when the sparkline itself is hidden.
+     */
+    val balanceForecast: List<DailyBalance> = emptyList(),
     val today: PeriodTotals = PeriodTotals(),
     val month: PeriodTotals = PeriodTotals(),
     /**
@@ -349,6 +358,19 @@ class DashboardViewModel @Inject constructor(
             balanceHistory = balanceHistory,
             balanceTrend = balanceHistory.takeIf { it.size > 1 }
                 ?.let { it.last().balance.subtract(it.first().balance) },
+            // Anchored to the headline balance, the same figure the last
+            // history point equals, so the dashed tail attaches seamlessly.
+            balanceForecast = if (balanceHistory.size > 1) {
+                BalanceForecastCalculator.projectToEndOfMonth(
+                    currentBalance = totalBalance,
+                    today = today,
+                    monthToDateSpend = totals.monthToDateSpend,
+                    rules = sources.rules,
+                    currency = primary,
+                )
+            } else {
+                emptyList()
+            },
             today = totals.today,
             month = totals.month,
             monthVsPreviousToDate = comparison,

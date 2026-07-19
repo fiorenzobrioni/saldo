@@ -23,6 +23,10 @@
     <string name="dashboard_sparkline_a11y_up">Andamento del saldo negli ultimi 30 giorni: da %1$s a %2$s, in aumento</string>
     <string name="dashboard_sparkline_a11y_down">Andamento del saldo negli ultimi 30 giorni: da %1$s a %2$s, in calo</string>
     <string name="dashboard_sparkline_a11y_flat">Saldo stabile a %1$s negli ultimi 30 giorni</string>
+    <string name="dashboard_sparkline_caption_forecast">Ultimi 30 giorni + stima a fine mese</string>
+    <!-- Etichetta della pill accanto alla coda tratteggiata; %1$s è un importo formattato. -->
+    <string name="dashboard_sparkline_forecast_pill">≈ %1$s</string>
+    <string name="dashboard_sparkline_a11y_forecast">Saldo stimato a fine mese: %1$s</string>
     <!-- Saluti mostrati nell'header della dashboard; uno scelto a caso a ogni apertura. -->
     <string-array name="dashboard_greetings_night">
         <item>Un\'occhiata e poi a letto.</item>

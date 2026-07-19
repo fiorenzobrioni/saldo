@@ -25,6 +25,10 @@
     <string name="dashboard_sparkline_a11y_up">Balance trend over the last 30 days: from %1$s to %2$s, rising</string>
     <string name="dashboard_sparkline_a11y_down">Balance trend over the last 30 days: from %1$s to %2$s, falling</string>
     <string name="dashboard_sparkline_a11y_flat">Balance steady at %1$s over the last 30 days</string>
+    <string name="dashboard_sparkline_caption_forecast">Last 30 days + end-of-month estimate</string>
+    <!-- Label of the pill next to the dashed forecast tail; %1$s is a formatted amount. -->
+    <string name="dashboard_sparkline_forecast_pill">≈ %1$s</string>
+    <string name="dashboard_sparkline_a11y_forecast">Estimated end-of-month balance: %1$s</string>
     <!-- Time-of-day greetings shown in the dashboard header; one is picked at random per app open. -->
     <string-array name="dashboard_greetings_night">
         <item>Still up? A quick look.</item>
