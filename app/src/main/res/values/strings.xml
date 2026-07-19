@@ -271,6 +271,32 @@
         <item quantity="other">%1$d transactions</item>
     </plurals>
 
+    <!-- Bulk delete of the filtered view -->
+    <string name="transactions_more_actions">More actions</string>
+    <string name="transactions_delete_filtered">Delete filtered transactions</string>
+    <string name="transactions_delete_filtered_title">Delete filtered transactions?</string>
+    <plurals name="transactions_delete_filtered_count">
+        <item quantity="one">%1$d transaction in the current view will be deleted.</item>
+        <item quantity="other">%1$d transactions in the current view will be deleted.</item>
+    </plurals>
+    <string name="transactions_delete_mode_recompute">Recalculate balances</string>
+    <string name="transactions_delete_mode_recompute_hint">Account balances change by the deleted amount. Best for removing wrong or duplicate entries.</string>
+    <string name="transactions_delete_mode_preserve">Keep current balances</string>
+    <string name="transactions_delete_mode_preserve_hint">Balances stay the same via a carry-over adjustment per account. Best for cleaning up old history.</string>
+    <string name="transactions_delete_impact_recompute">Balances will change by</string>
+    <string name="transactions_delete_impact_preserve">Current balances stay the same.</string>
+    <plurals name="transactions_delete_carryover_note">
+        <item quantity="one">A carry-over adjustment will be created for %1$d account.</item>
+        <item quantity="other">A carry-over adjustment will be created for %1$d accounts.</item>
+    </plurals>
+    <string name="transactions_delete_export_first">Export before deleting</string>
+    <string name="transactions_delete_confirm">Delete</string>
+    <plurals name="transactions_snackbar_bulk_deleted">
+        <item quantity="one">%1$d transaction deleted</item>
+        <item quantity="other">%1$d transactions deleted</item>
+    </plurals>
+    <string name="cleanup_carryover_description">Cleanup carry-over</string>
+
     <!-- Statistics (Phase 7) -->
     <string name="stats_empty_title">Nothing to chart yet</string>
     <string name="stats_empty_body">Statistics appear with your first recorded expenses.</string>

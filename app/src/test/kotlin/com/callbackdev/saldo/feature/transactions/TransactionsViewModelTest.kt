@@ -15,6 +15,7 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.usecase.DeleteFilteredTransactionsUseCase
 import com.callbackdev.saldo.feature.transactions.export.TransactionsCsvExporter
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
@@ -23,6 +24,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -120,6 +122,10 @@ class TransactionsViewModelTest {
             tagRepository = tagRepository,
             userPreferences = userPreferences,
             csvExporter = csvExporter,
+            deleteFilteredTransactions = DeleteFilteredTransactionsUseCase(
+                accountRepository = accountRepository,
+                transactionRepository = transactionRepository,
+            ),
             clock = clock,
             defaultDispatcher = UnconfinedTestDispatcher(),
         )
@@ -341,6 +347,80 @@ class TransactionsViewModelTest {
 
         viewModel.undoDelete(TransactionsEvent.TransactionDeleted(target, listOf(5L)))
 
+        coVerify { transactionRepository.upsert(target.copy(id = 0L)) }
+        coVerify { tagRepository.setTagsForTransaction(99L, listOf(5L)) }
+    }
+
+    @Test
+    fun `deleteFiltered recompute deletes the filtered set and emits an undoable event`() = runTest {
+        val a = transaction(id = 1L, amount = "-10.00")
+        val b = transaction(id = 2L, amount = "-4.00")
+        val viewModel = viewModel(transactions = listOf(a, b))
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+            assertEquals(2, state.filteredCount)
+
+            viewModel.deleteFiltered(preserveBalances = false, carryOverDescription = "Carry")
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify { transactionRepository.deleteByIds(match { it.toSet() == setOf(1L, 2L) }) }
+        coVerify(exactly = 0) { transactionRepository.deleteAndInsert(any(), any()) }
+        viewModel.events.test {
+            val event = awaitItem()
+            assertTrue(event is TransactionsEvent.FilteredDeleted)
+            assertEquals(2, (event as TransactionsEvent.FilteredDeleted).count)
+            assertTrue(event.carryOverIds.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `deleteFiltered preserving balances creates carry-over adjustments`() = runTest {
+        val a = transaction(id = 1L, amount = "-10.00")
+        val b = transaction(id = 2L, type = TransactionType.INCOME, amount = "30.00")
+        val inserts = slot<List<Transaction>>()
+        coEvery {
+            transactionRepository.deleteAndInsert(any(), capture(inserts))
+        } returns listOf(50L)
+        val viewModel = viewModel(transactions = listOf(a, b))
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+            assertEquals(2, state.filteredCount)
+
+            viewModel.deleteFiltered(preserveBalances = true, carryOverDescription = "Carry")
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Checking net = -10 + 30 = +20, carried back to keep the balance.
+        assertEquals(BigDecimal("20.00"), inserts.captured.single().amount)
+        assertEquals(TransactionType.ADJUSTMENT, inserts.captured.single().type)
+        viewModel.events.test {
+            val event = awaitItem() as TransactionsEvent.FilteredDeleted
+            assertEquals(listOf(50L), event.carryOverIds)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `undoFilteredDelete removes carry-overs and restores the movements`() = runTest {
+        val target = transaction(id = 1L)
+        coEvery { transactionRepository.upsert(any()) } returns 99L
+        val viewModel = viewModel()
+
+        viewModel.undoFilteredDelete(
+            TransactionsEvent.FilteredDeleted(
+                restorable = listOf(target to listOf(5L)),
+                carryOverIds = listOf(77L),
+                count = 1,
+            ),
+        )
+
+        coVerify { transactionRepository.deleteByIds(listOf(77L)) }
         coVerify { transactionRepository.upsert(target.copy(id = 0L)) }
         coVerify { tagRepository.setTagsForTransaction(99L, listOf(5L)) }
     }

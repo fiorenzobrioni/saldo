@@ -258,4 +258,12 @@ class RoomTransactionRepository @Inject constructor(
 
     override suspend fun delete(transaction: Transaction) =
         transactionDao.delete(transaction.toEntity())
+
+    override suspend fun deleteByIds(ids: List<Long>) =
+        transactionDao.deleteByIds(ids)
+
+    override suspend fun deleteAndInsert(
+        ids: List<Long>,
+        inserts: List<Transaction>,
+    ): List<Long> = transactionDao.deleteAndInsert(ids, inserts.map { it.toEntity() })
 }

@@ -220,4 +220,15 @@ interface TransactionRepository {
     suspend fun insertIfAbsent(transaction: Transaction): Long
 
     suspend fun delete(transaction: Transaction)
+
+    /** Deletes every movement whose id is in [ids] (tag links cascade). */
+    suspend fun deleteByIds(ids: List<Long>)
+
+    /**
+     * Atomically deletes the movements in [ids] and inserts [inserts] (new
+     * movements, id == 0), returning the ids assigned to the inserts. Backs the
+     * filtered delete that preserves account balances via carry-over adjustments:
+     * the removals and the adjustments commit together.
+     */
+    suspend fun deleteAndInsert(ids: List<Long>, inserts: List<Transaction>): List<Long>
 }

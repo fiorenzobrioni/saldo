@@ -272,6 +272,35 @@
         <item quantity="other">%1$d movimenti</item>
     </plurals>
 
+    <!-- Eliminazione massiva della vista filtrata -->
+    <string name="transactions_more_actions">Altre azioni</string>
+    <string name="transactions_delete_filtered">Elimina i movimenti filtrati</string>
+    <string name="transactions_delete_filtered_title">Eliminare i movimenti filtrati?</string>
+    <plurals name="transactions_delete_filtered_count">
+        <item quantity="one">Verrà eliminato %1$d movimento della vista corrente.</item>
+        <item quantity="many">Verranno eliminati %1$d movimenti della vista corrente.</item>
+        <item quantity="other">Verranno eliminati %1$d movimenti della vista corrente.</item>
+    </plurals>
+    <string name="transactions_delete_mode_recompute">Ricalcola i saldi</string>
+    <string name="transactions_delete_mode_recompute_hint">I saldi dei conti cambiano dell\'importo eliminato. Adatto a rimuovere voci errate o duplicate.</string>
+    <string name="transactions_delete_mode_preserve">Conserva i saldi correnti</string>
+    <string name="transactions_delete_mode_preserve_hint">I saldi restano invariati grazie a una rettifica di riporto per conto. Adatto a fare pulizia dello storico.</string>
+    <string name="transactions_delete_impact_recompute">I saldi cambieranno di</string>
+    <string name="transactions_delete_impact_preserve">I saldi correnti restano invariati.</string>
+    <plurals name="transactions_delete_carryover_note">
+        <item quantity="one">Verrà creata una rettifica di riporto per %1$d conto.</item>
+        <item quantity="many">Verranno create rettifiche di riporto per %1$d conti.</item>
+        <item quantity="other">Verranno create rettifiche di riporto per %1$d conti.</item>
+    </plurals>
+    <string name="transactions_delete_export_first">Esporta prima di eliminare</string>
+    <string name="transactions_delete_confirm">Elimina</string>
+    <plurals name="transactions_snackbar_bulk_deleted">
+        <item quantity="one">%1$d movimento eliminato</item>
+        <item quantity="many">%1$d movimenti eliminati</item>
+        <item quantity="other">%1$d movimenti eliminati</item>
+    </plurals>
+    <string name="cleanup_carryover_description">Riporto da pulizia</string>
+
     <!-- Statistiche (Fase 7) -->
     <string name="stats_empty_title">Ancora niente da mostrare</string>
     <string name="stats_empty_body">Le statistiche compaiono con le prime spese registrate.</string>

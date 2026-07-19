@@ -159,6 +159,7 @@
 - [x] Filtri combinabili (data con preset, categorie, account, tipo, importo, tag) come chip
 - [x] Ricerca full-text su descrizione (e nota; in-memory con normalizzazione Unicode, insensibile ad accenti e maiuscole)
 - [x] Totale della vista filtrata sempre visibile
+- [x] Eliminazione in blocco della vista filtrata (luglio 2026): menu overflow del registro, bottom sheet con due modalità - "Ricalcola i saldi" e "Conserva i saldi correnti" (rettifica `ADJUSTMENT` di riporto per conto, stesso meccanismo di `AdjustBalanceUseCase`, esclusa dalle statistiche) - anteprima impatto saldi, export prima di eliminare e undo. Data layer `TransactionDao.deleteByIds`/`deleteAndInsert`, dominio `DeleteFilteredTransactionsUseCase` + `CarryOverCalculator`. Test JVM; `TransactionDaoTest` strumentato da eseguire su device
 - [x] Statistiche (Vico 3.2.3; il donut usa il pie chart di Vico, sperimentale nella 3.x, con totale al centro come overlay Compose):
   - [x] anello spese per categoria + lista percentuali (mese/anno/custom)
   - [x] barre trend spese 12 mesi

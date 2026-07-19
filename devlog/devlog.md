@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Eliminazione dei movimenti filtrati (bulk delete) con conservazione dei saldi
+
+**Fatto:** aggiunta al registro l'eliminazione in blocco della vista filtrata corrente, WYSIWYG (si cancella esattamente ciò che i filtri mostrano, come già fa l'export CSV). Nuova voce "Elimina i movimenti filtrati" in un menu overflow (3 puntini) nella top bar, dove è stata spostata anche l'azione Esporta; restano icone dirette Cerca e Filtri. Un bottom sheet dedicato (`DeleteFilteredSheet`) mostra il conteggio, due modalità e un'anteprima dell'impatto sui saldi per conto, un link "Esporta prima di eliminare" e il pulsante distruttivo. Snackbar con undo (ripristina i movimenti e i loro tag, e rimuove le eventuali rettifiche di riporto). Le due modalità: "Ricalcola i saldi" (default, elimina e basta) e "Conserva i saldi correnti" (per pulizia dello storico: per ogni conto interessato inserisce una rettifica `ADJUSTMENT` di riporto pari al netto eliminato, così il saldo calcolato non cambia; la rettifica è esclusa dalle statistiche per tipo). Data layer: `TransactionDao.deleteByIds` (chunked, cascade sui tag) e `deleteAndInsert` atomico; nuovi metodi nel repository. Logica di dominio in `DeleteFilteredTransactionsUseCase` + `CarryOverCalculator` (puro). Stringhe IT+EN. Bump versione 90 -> 91 / 0.9.51 -> 0.9.52.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint` verdi con Gradle 8.14.3 locale (il wrapper non scarica la distribuzione dietro il proxy: usato `/opt/gradle`). Nuovi unit test JUnit5: `DeleteFilteredTransactionsUseCaseTest` (netto per conto incluse le gambe transfer, skip dei netti nulli, riporto al confine dell'intervallo, modalità recompute senza rettifiche) e aggiunte a `TransactionsViewModelTest` (deleteFiltered nelle due modalità, undo). Scritto anche il test strumentato `TransactionDaoTest` (deleteByIds + cascade tag, deleteAndInsert atomico) ma non eseguito: nessun emulatore in questo ambiente, come da prassi del progetto.
+
+**Decisioni:** approccio WYSIWYG sul registro invece di un tool separato in Impostazioni, per riuso totale del motore filtri e massima sicurezza (si elimina solo la vista mostrata). Conservazione saldi tramite rettifica di riporto (stesso meccanismo di `AdjustBalanceUseCase`) e non tramite bump del saldo iniziale: tracciabile, escluso dalle statistiche (ADR 8), undo pulito, non altera valori impostati dall'utente. Riporto datato al movimento eliminato più recente, così il grafico saldo-nel-tempo del periodo mantenuto resta corretto. Default "Ricalcola i saldi": conservare i saldi è una scelta esplicita.
+
+**Problemi:** il Gradle wrapper non riesce a scaricare la distribuzione (403 dal proxy su GitHub); usato il Gradle 8.14.3 già presente in `/opt/gradle`.
+
+**Prossimo:** eventuale pagina di manuale utente per la funzione; valutare (se emergesse da misure) la selezione multipla manuale come complemento del filtro.
+
+---
+
 ## 2026-07-19 - Indice della guida utente e pagina "Descrizione generale"
 
 **Fatto:** sostituito il `README.md` della cartella `docs/guida-utente/` con `00-indice.md`, indice unico del manuale (introduzione + argomenti raggruppati per categoria in ordine d'uso: Per iniziare, Conti, Movimenti, Budget e pianificazione, Panoramica e analisi, Dati e impostazioni). Il README principale ora punta direttamente a `00-indice.md`, così aggiungere pagine alla guida non richiede più di toccare il README. Creata la prima pagina, `descrizione-generale.md` (cos'è Saldo, target, cosa fa e cosa non fa, i principi, i quattro tipi di movimento, saldo calcolato, lingua/valuta), derivata da VISION.md. Nell'indice per ora sono collegate solo "Descrizione generale" e "Movimenti ricorrenti"; le altre voci sono elencate senza link e verranno create man mano. Aggiunto "Torna all'indice" in cima alle pagine di contenuto.

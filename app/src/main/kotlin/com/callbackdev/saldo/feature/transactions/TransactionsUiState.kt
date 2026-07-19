@@ -48,6 +48,17 @@ data class FilteredTotal(
     val net: BigDecimal get() = expenses.add(incomes)
 }
 
+/**
+ * How much deleting the filtered view would move one account's balance if the
+ * balances are recomputed (i.e. no carry-over). [delta] is the signed change to
+ * the current balance: deleting expenses raises it, deleting incomes lowers it.
+ * Used only for the delete sheet's impact preview.
+ */
+data class AccountBalanceImpact(
+    val account: Account,
+    val delta: BigDecimal,
+)
+
 /** Immutable UI state of the transactions list. */
 data class TransactionsUiState(
     val isLoading: Boolean = true,
@@ -66,6 +77,8 @@ data class TransactionsUiState(
     val filterCategories: List<Category> = emptyList(),
     val filterAccounts: List<Account> = emptyList(),
     val filterTags: List<Tag> = emptyList(),
+    /** Per-account balance change if the filtered view is deleted without a carry-over. */
+    val deletionImpacts: List<AccountBalanceImpact> = emptyList(),
 ) {
     /** The ledger itself is empty: show the first-run empty state. */
     val isEmpty: Boolean get() = !isLoading && !hasAnyTransactions
@@ -80,6 +93,18 @@ sealed interface TransactionsEvent {
     data class TransactionDeleted(
         val transaction: Transaction,
         val tagIds: List<Long>,
+    ) : TransactionsEvent
+
+    /**
+     * The filtered view was bulk-deleted. [restorable] pairs each removed
+     * movement with its tag ids so undo can rebuild it; [carryOverIds] are the
+     * carry-over adjustments created in the balance-preserving mode, removed on
+     * undo. [count] is the number of movements deleted (carry-overs excluded).
+     */
+    data class FilteredDeleted(
+        val restorable: List<Pair<Transaction, List<Long>>>,
+        val carryOverIds: List<Long>,
+        val count: Int,
     ) : TransactionsEvent
 
     /** The CSV export is ready to be handed to the system Share Sheet. */

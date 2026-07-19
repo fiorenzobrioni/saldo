@@ -21,8 +21,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.IosShare
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -88,6 +92,8 @@ fun TransactionsScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
     var showRangePicker by remember { mutableStateOf(false) }
     var showExportSheet by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
+    var showDeleteSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(viewModel, resources, context) {
         viewModel.events.collect { event ->
@@ -138,12 +144,13 @@ fun TransactionsScreen(
                                     activeCount = uiState.filters.activeCount,
                                     onClick = { showFilterSheet = true },
                                 )
-                                IconButton(onClick = { showExportSheet = true }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.IosShare,
-                                        contentDescription = stringResource(R.string.csv_export_title),
-                                    )
-                                }
+                                TransactionsOverflowMenu(
+                                    expanded = showMenu,
+                                    onExpandedChange = { showMenu = it },
+                                    deleteEnabled = uiState.filteredCount > 0,
+                                    onExport = { showExportSheet = true },
+                                    onDeleteFiltered = { showDeleteSheet = true },
+                                )
                             }
                         },
                     )
@@ -233,6 +240,23 @@ fun TransactionsScreen(
         )
     }
 
+    if (showDeleteSheet) {
+        val carryOverDescription = stringResource(R.string.cleanup_carryover_description)
+        DeleteFilteredSheet(
+            count = uiState.filteredCount,
+            impacts = uiState.deletionImpacts,
+            onExportFirst = {
+                showDeleteSheet = false
+                showExportSheet = true
+            },
+            onConfirm = { preserveBalances ->
+                showDeleteSheet = false
+                viewModel.deleteFiltered(preserveBalances, carryOverDescription)
+            },
+            onDismiss = { showDeleteSheet = false },
+        )
+    }
+
     if (showRangePicker) {
         FilterDateRangePickerDialog(
             initialStart = uiState.filters.customStart,
@@ -242,6 +266,57 @@ fun TransactionsScreen(
                 showRangePicker = false
             },
             onDismiss = { showRangePicker = false },
+        )
+    }
+}
+
+/**
+ * Overflow menu of the ledger's secondary actions: CSV export and the bulk
+ * delete of the filtered view. Kept out of the top bar's direct icons (search
+ * and filter) so the destructive action is a deliberate two-step, not a stray tap.
+ */
+@Composable
+private fun TransactionsOverflowMenu(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    deleteEnabled: Boolean,
+    onExport: () -> Unit,
+    onDeleteFiltered: () -> Unit,
+) {
+    IconButton(onClick = { onExpandedChange(true) }) {
+        Icon(
+            imageVector = Icons.Outlined.MoreVert,
+            contentDescription = stringResource(R.string.transactions_more_actions),
+        )
+    }
+    DropdownMenu(expanded = expanded, onDismissRequest = { onExpandedChange(false) }) {
+        DropdownMenuItem(
+            text = { Text(stringResource(R.string.csv_export_title)) },
+            leadingIcon = { Icon(Icons.Outlined.IosShare, contentDescription = null) },
+            onClick = {
+                onExpandedChange(false)
+                onExport()
+            },
+        )
+        DropdownMenuItem(
+            enabled = deleteEnabled,
+            text = {
+                Text(
+                    text = stringResource(R.string.transactions_delete_filtered),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Outlined.DeleteOutline,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                )
+            },
+            onClick = {
+                onExpandedChange(false)
+                onDeleteFiltered()
+            },
         )
     }
 }
@@ -267,6 +342,21 @@ private suspend fun handleTransactionsEvent(
             )
             if (result == SnackbarResult.ActionPerformed) {
                 viewModel.undoDelete(event)
+            }
+        }
+
+        is TransactionsEvent.FilteredDeleted -> {
+            val result = snackbarHostState.showSnackbar(
+                message = resources.getQuantityString(
+                    R.plurals.transactions_snackbar_bulk_deleted,
+                    event.count,
+                    event.count,
+                ),
+                actionLabel = resources.getString(R.string.action_undo),
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                viewModel.undoFilteredDelete(event)
             }
         }
 
