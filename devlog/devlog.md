@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Indice della guida utente e pagina "Descrizione generale"
+
+**Fatto:** sostituito il `README.md` della cartella `docs/guida-utente/` con `00-indice.md`, indice unico del manuale (introduzione + argomenti raggruppati per categoria in ordine d'uso: Per iniziare, Conti, Movimenti, Budget e pianificazione, Panoramica e analisi, Dati e impostazioni). Il README principale ora punta direttamente a `00-indice.md`, così aggiungere pagine alla guida non richiede più di toccare il README. Creata la prima pagina, `descrizione-generale.md` (cos'è Saldo, target, cosa fa e cosa non fa, i principi, i quattro tipi di movimento, saldo calcolato, lingua/valuta), derivata da VISION.md. Nell'indice per ora sono collegate solo "Descrizione generale" e "Movimenti ricorrenti"; le altre voci sono elencate senza link e verranno create man mano. Aggiunto "Torna all'indice" in cima alle pagine di contenuto.
+
+**Decisioni:** indice come file `00-indice.md` (prefisso numerico per ordinamento nella cartella) su richiesta utente; le pagine di contenuto mantengono nomi descrittivi senza numero. README principale con un solo riferimento all'indice per evitare churn futuro.
+
+**Problemi:** nessuno; sola documentazione, nessun bump di versione.
+
+**Prossimo:** creare le pagine successive del manuale seguendo l'ordine dell'indice (primo avvio/onboarding, conti, movimenti singoli, ecc.).
+
+---
+
 ## 2026-07-19 - Avviata la guida utente, prima pagina sui movimenti ricorrenti
 
 **Fatto:** creata la cartella `docs/guida-utente/` come manuale d'uso incrementale (una pagina per funzionalità), con indice `README.md` e prima pagina `movimenti-ricorrenti.md`. La pagina copre: le tre tipologie (uscite, entrate, trasferimenti), frequenze e giorno di riferimento con clamp sui mesi corti, data di fine, le modalità di registrazione (automatica, con conferma, importo variabile e conferma per i trasferimenti cross-currency), il comportamento del motore (nessun recupero dello storico alla creazione, catch-up all'apertura e in background, assenza di doppioni), notifiche, modifica/eliminazione regola ed effetto su saldi/budget/spendibile. Aggiunto il puntatore alla guida nella tabella "Documentazione di progetto" del README.

@@ -1,5 +1,7 @@
 # Movimenti ricorrenti
 
+[Torna all'indice](00-indice.md)
+
 Un movimento ricorrente è una regola che registra da sola un movimento a intervalli regolari: un abbonamento ogni mese, lo stipendio ogni 27, un accantonamento settimanale sul conto risparmio. Definisci la regola una volta e l'app crea i singoli movimenti alle date previste.
 
 Attenzione alla distinzione: la **regola** è il modello ricorrente (nome, importo, frequenza, conto). Il **movimento** è la singola registrazione che la regola genera a ogni scadenza. Eliminare una regola non cancella i movimenti che ha già creato.
