@@ -120,7 +120,7 @@ app/src/main/kotlin/com/callbackdev/saldo/
 | [VISION.md](./VISION.md) | Visione di prodotto: cosa è l'app, per chi e perché |
 | [PLANNING.md](./PLANNING.md) | Roadmap di sviluppo, decisioni architetturali, stato di avanzamento |
 | [CLAUDE.md](./CLAUDE.md) | Regole operative per lo sviluppo assistito da AI |
-| [Guida utente](./docs/guida-utente/00-indice.md) | Manuale d'uso, una pagina per funzionalità (indice) |
+| [Guida utente](./docs/guida-utente/) | Manuale d'uso, una pagina per funzionalità (indice) |
 | `devlog/` | Registro storico dello sviluppo |
 
 ## Licenza

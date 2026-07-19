@@ -1,6 +1,6 @@
 # Descrizione generale e filosofia
 
-[Torna all'indice](00-indice.md)
+[Torna all'indice](README.md)
 
 Saldo è un'app Android per tenere sotto controllo le spese personali. Serve a capire quanto spendi e in cosa, a sapere quanti soldi hai su ogni conto e a vedere le tue abitudini di spesa, senza collegarsi alla banca e senza registrazioni.
 
