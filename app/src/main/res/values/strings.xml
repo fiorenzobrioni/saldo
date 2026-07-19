@@ -21,6 +21,10 @@
 
     <!-- Dashboard (Phase 5) -->
     <string name="dashboard_balance_total">Total balance</string>
+    <string name="dashboard_sparkline_caption">Last 30 days</string>
+    <string name="dashboard_sparkline_a11y_up">Balance trend over the last 30 days: from %1$s to %2$s, rising</string>
+    <string name="dashboard_sparkline_a11y_down">Balance trend over the last 30 days: from %1$s to %2$s, falling</string>
+    <string name="dashboard_sparkline_a11y_flat">Balance steady at %1$s over the last 30 days</string>
     <!-- Time-of-day greetings shown in the dashboard header; one is picked at random per app open. -->
     <string-array name="dashboard_greetings_night">
         <item>Still up? A quick look.</item>
@@ -783,6 +787,8 @@
     <string name="settings_dashboard_show_budget_hint">Show the month\'s budget progress</string>
     <string name="settings_dashboard_show_recent">Latest transactions card</string>
     <string name="settings_dashboard_show_recent_hint">Show the most recent transactions at the bottom</string>
+    <string name="settings_dashboard_show_recap_teaser">Monthly recap invite</string>
+    <string name="settings_dashboard_show_recap_teaser_hint">In the first days of the month, invites you to last month\'s recap</string>
     <string name="settings_dashboard_show_savings">Savings goals card</string>
     <string name="settings_dashboard_show_savings_hint">Show progress toward your savings goals</string>
 
@@ -834,4 +840,47 @@
     <string name="dashboard_savings_more">+%1$d more</string>
     <string name="dashboard_savings_empty">No savings goals yet · tap to add one</string>
     <string name="dashboard_recurring_savings_label">Savings / month</string>
+
+    <!-- Monthly recap "Saldo Wrapped" (Phase 10.1) -->
+    <string name="recap_title">Your %1$s</string>
+    <string name="recap_net_label">Net result</string>
+    <plurals name="recap_movement_count">
+        <item quantity="one">%1$d transaction tracked</item>
+        <item quantity="other">%1$d transactions tracked</item>
+    </plurals>
+    <string name="recap_expense_title">You spent</string>
+    <string name="recap_daily_average">An average of %1$s a day</string>
+    <string name="recap_expense_vs_previous_more">%1$s more than in %2$s</string>
+    <string name="recap_expense_vs_previous_less">%1$s less than in %2$s</string>
+    <string name="recap_expense_vs_previous_same">Same as in %1$s</string>
+    <string name="recap_top_categories_title">Where it went</string>
+    <string name="recap_category_amount_percent" translatable="false">%1$s · %2$d%%</string>
+    <string name="recap_records_title">Records of the month</string>
+    <string name="recap_biggest_expense_label">Biggest expense</string>
+    <string name="recap_busiest_day_label">Busiest day</string>
+    <plurals name="recap_busiest_day_value">
+        <item quantity="one">%1$d transaction · %2$s spent</item>
+        <item quantity="other">%1$d transactions · %2$s spent</item>
+    </plurals>
+    <string name="recap_income_expense_title">In and out</string>
+    <string name="recap_income_label">Income</string>
+    <string name="recap_expense_label">Expenses</string>
+    <string name="recap_savings_rate">You kept %1$d%% of your income</string>
+    <string name="recap_recurring_title">Subscriptions and recurring</string>
+    <string name="recap_recurring_caption">charged by your recurring rules this month</string>
+    <string name="recap_closing_title">That was your %1$s</string>
+    <string name="recap_closing_privacy">Generated on your device. No data ever leaves Saldo.</string>
+    <string name="recap_share">Share</string>
+    <string name="recap_share_title">Share your recap</string>
+    <string name="recap_share_failed">Could not create the image. Try again.</string>
+    <string name="recap_close">Close</string>
+    <string name="recap_empty_title">No transactions in %1$s</string>
+    <string name="recap_empty_body">The recap appears for months with recorded expenses or income.</string>
+    <string name="recap_page_previous">Previous page</string>
+    <string name="recap_page_next">Next page</string>
+    <string name="recap_page_progress_a11y">Page %1$d of %2$d</string>
+    <string name="recap_teaser_title">Your %1$s recap is ready</string>
+    <string name="recap_teaser_subtitle">Tap to relive your month</string>
+    <string name="recap_teaser_dismiss">Dismiss</string>
+    <string name="stats_recap_action">Monthly recap</string>
 </resources>

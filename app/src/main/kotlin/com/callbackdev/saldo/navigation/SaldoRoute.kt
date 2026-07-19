@@ -100,6 +100,14 @@ data object SavingsGoalsRoute : NavKey
 @Serializable
 data class SavingsGoalEditorRoute(val goalId: Long? = null) : NavKey
 
+/**
+ * Story-style recap of one completed month ("Saldo Wrapped"), pushed full
+ * screen from the dashboard teaser or the statistics toolbar. [year]/[month]
+ * identify the calendar month, always in the past.
+ */
+@Serializable
+data class MonthlyRecapRoute(val year: Int, val month: Int) : NavKey
+
 /** Manual file backup and guided restore, reached from Settings. */
 @Serializable
 data object BackupRoute : NavKey

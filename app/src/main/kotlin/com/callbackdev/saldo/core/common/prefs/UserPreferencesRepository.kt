@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
+import java.time.YearMonth
 import java.time.temporal.WeekFields
 import java.util.Currency
 import java.util.Locale
@@ -53,6 +54,8 @@ data class DashboardCardPreferences(
     val showSafeToSpend: Boolean = true,
     val showRecentTransactions: Boolean = true,
     val showSavingsGoals: Boolean = true,
+    /** The self-expiring monthly recap teaser; off silences it for good. */
+    val showRecapTeaser: Boolean = true,
 )
 
 /**
@@ -222,6 +225,7 @@ class UserPreferencesRepository @Inject constructor(
             showSafeToSpend = preferences[DASHBOARD_SHOW_SAFE_TO_SPEND] ?: true,
             showRecentTransactions = preferences[DASHBOARD_SHOW_RECENT_TRANSACTIONS] ?: true,
             showSavingsGoals = preferences[DASHBOARD_SHOW_SAVINGS_GOALS] ?: true,
+            showRecapTeaser = preferences[DASHBOARD_SHOW_RECAP_TEASER] ?: true,
         )
     }.distinctUntilChanged()
 
@@ -241,6 +245,10 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_SAVINGS_GOALS] = shown }
     }
 
+    suspend fun setShowRecapTeaser(shown: Boolean) {
+        dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_RECAP_TEASER] = shown }
+    }
+
     /** Column separator of the CSV export; semicolon by default (Excel friendly). */
     val csvSeparator: Flow<CsvSeparator> = dataStore.data.map { preferences ->
         preferences[CSV_SEPARATOR]
@@ -250,6 +258,22 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setCsvSeparator(separator: CsvSeparator) {
         dataStore.edit { preferences -> preferences[CSV_SEPARATOR] = separator.name }
+    }
+
+    /**
+     * The month whose recap teaser the user dismissed from the dashboard,
+     * stored as "YYYY-MM"; null (or an unparsable value) means no dismissal.
+     * The teaser self-expires after the first week of the month, so a single
+     * key is enough: dismissing a new month overwrites the previous one.
+     */
+    val dismissedRecapMonth: Flow<YearMonth?> = dataStore.data.map { preferences ->
+        preferences[DISMISSED_RECAP_MONTH]?.let { stored ->
+            runCatching { YearMonth.parse(stored) }.getOrNull()
+        }
+    }.distinctUntilChanged()
+
+    suspend fun setDismissedRecapMonth(month: YearMonth) {
+        dataStore.edit { preferences -> preferences[DISMISSED_RECAP_MONTH] = month.toString() }
     }
 
     /** Snaps a stored or requested lead time to the closest offered option. */
@@ -274,5 +298,7 @@ class UserPreferencesRepository @Inject constructor(
         val DASHBOARD_SHOW_RECENT_TRANSACTIONS =
             booleanPreferencesKey("dashboard_show_recent_transactions")
         val DASHBOARD_SHOW_SAVINGS_GOALS = booleanPreferencesKey("dashboard_show_savings_goals")
+        val DASHBOARD_SHOW_RECAP_TEASER = booleanPreferencesKey("dashboard_show_recap_teaser")
+        val DISMISSED_RECAP_MONTH = stringPreferencesKey("recap_dismissed_month")
     }
 }

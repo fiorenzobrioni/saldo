@@ -127,6 +127,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { userPreferences.setShowRecentTransactions(shown) }
     }
 
+    fun onShowRecapTeaserChanged(shown: Boolean) {
+        viewModelScope.launch { userPreferences.setShowRecapTeaser(shown) }
+    }
+
     fun onShowSavingsGoalsChanged(shown: Boolean) {
         viewModelScope.launch { userPreferences.setShowSavingsGoalsCard(shown) }
     }

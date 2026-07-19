@@ -24,7 +24,8 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 ## Funzionalità (v1.0)
 
 - 👋 **Onboarding al primo avvio** - benvenuto, scelta della valuta, primo conto e, per chi torna, ripristino diretto da un backup
-- 📊 **Dashboard "Oggi"** - saldo totale, spese del giorno e del mese, ultimi movimenti: tutto in 5 secondi, e ogni scheda apre il proprio dettaglio con un tap
+- 📊 **Dashboard "Oggi"** - saldo totale con andamento degli ultimi 30 giorni (sparkline nella card principale), spese del giorno e del mese, ultimi movimenti: tutto in 5 secondi, e ogni scheda apre il proprio dettaglio con un tap
+- ✨ **Recap mensile "Saldo Wrapped"** - a inizio mese, il racconto del mese appena concluso in schermate a storia: netto, spese e confronto col mese prima, top categorie, record (spesa più grande, giorno più attivo), entrate vs uscite e quota risparmiata. Generato interamente sul dispositivo e condivisibile come immagine; raggiungibile anche dalle Statistiche per ogni mese passato
 - 💸 **Movimenti** - spese, entrate e trasferimenti tra conti, registrabili in 2-3 tap
 - ⚡ **Scorciatoie dal launcher** - pressione prolungata sull'icona dell'app per una nuova spesa, una nuova entrata o un trasferimento, senza passare dalla Dashboard
 - 🏦 **Conti multipli** - con tipi espliciti (conto corrente, conto di risparmio, carta prepagata, carta di credito, contanti, wallet digitale) e una descrizione d'uso per ciascuno direttamente nell'editor; saldo iniziale, rettifica saldo, archiviazione e due interruttori indipendenti di inclusione: nel saldo totale e nel calcolo del budget
@@ -36,7 +37,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - 🎯 **Obiettivi di risparmio** - un traguardo su un conto di risparmio: il risparmiato è il saldo reale del conto, che alimenti con i trasferimenti (manuali o ricorrenti). Con data obiettivo opzionale, suggerimento del versamento mensile necessario e stima di quando lo raggiungerai al ritmo dei tuoi trasferimenti ricorrenti
 - 🏷️ **Categorie e tag personalizzabili**
 - 🔍 **Ricerca e filtri combinabili** con totale della vista filtrata e preset rapidi (inclusa "Questa settimana", che rispetta il primo giorno scelto)
-- 📈 **Statistiche** - spese per categoria, trend mensile, entrate vs uscite, andamento saldo
+- 📈 **Statistiche** - spese per categoria (anello animato, tap sulla fetta per i movimenti), trend mensile, entrate vs uscite, andamento saldo
 - 🌍 **Multi-valuta** - ogni movimento conserva importo e valuta originali
 - 🎨 **Tema personalizzabile** - chiaro/scuro/sistema, palette dell'app o colori dinamici Material You
 - ⚙️ **Preferenze** - valuta principale (automatica o esplicita), conto predefinito per i nuovi movimenti, primo giorno della settimana, scelta delle card visibili in Dashboard

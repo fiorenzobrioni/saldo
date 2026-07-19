@@ -185,6 +185,12 @@ fun SettingsScreen(
                     checked = dashboardCards.showRecentTransactions,
                     onCheckedChange = viewModel::onShowRecentTransactionsChanged,
                 )
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dashboard_show_recap_teaser),
+                    hint = stringResource(R.string.settings_dashboard_show_recap_teaser_hint),
+                    checked = dashboardCards.showRecapTeaser,
+                    onCheckedChange = viewModel::onShowRecapTeaserChanged,
+                )
             }
 
             SettingsSectionHeader(stringResource(R.string.settings_section_notifications))

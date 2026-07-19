@@ -5,10 +5,13 @@ import com.callbackdev.saldo.core.database.mapper.toDomain
 import com.callbackdev.saldo.core.database.mapper.toEntity
 import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
+import com.callbackdev.saldo.core.domain.model.DailyActivity
+import com.callbackdev.saldo.core.domain.model.DailyNet
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
+import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -16,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
 import java.time.Instant
+import java.time.LocalDate
 import java.util.Currency
 import javax.inject.Inject
 
@@ -122,6 +126,86 @@ class RoomTransactionRepository @Inject constructor(
     override fun observeMonthlyNetChanges(currency: Currency): Flow<List<MonthlyNet>> =
         transactionDao.observeMonthlyNetChanges(currency.currencyCode)
             .map { rows -> rows.map { it.toDomain(currency) } }
+
+    override fun observeDailyNetChanges(
+        currency: Currency,
+        start: LocalDate,
+        endExclusive: LocalDate,
+    ): Flow<List<DailyNet>> =
+        transactionDao.observeDailyNetChanges(
+            startEpochDay = start.toEpochDay(),
+            endEpochDayExclusive = endExclusive.toEpochDay(),
+            currency = currency.currencyCode,
+        ).map { rows -> rows.map { it.toDomain(currency) } }
+
+    override fun observeNetChangeBefore(
+        currency: Currency,
+        start: LocalDate,
+    ): Flow<BigDecimal> =
+        transactionDao.observeNetChangeBefore(start.toEpochDay(), currency.currencyCode)
+            .map { MoneyMapper.toAmount(it ?: 0L, currency) }
+
+    override suspend fun getStatsPeriodTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): StatsPeriodTotals {
+        val row = transactionDao.getStatsPeriodTotals(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        )
+        return StatsPeriodTotals(
+            expense = MoneyMapper.toAmount(row.expenseMinor ?: 0L, currency),
+            income = MoneyMapper.toAmount(row.incomeMinor ?: 0L, currency),
+        )
+    }
+
+    override suspend fun getCategoryTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): List<CategoryTotal> =
+        transactionDao.getCategoryTotals(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { it.toDomain(currency) }
+
+    override suspend fun getBiggestExpense(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Transaction? =
+        transactionDao.getBiggestExpense(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        )?.toDomain()
+
+    override suspend fun getDailyActivity(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): List<DailyActivity> =
+        transactionDao.getDailyActivity(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { it.toDomain(currency) }
+
+    override suspend fun getRecurringSpendTotal(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): BigDecimal = MoneyMapper.toAmount(
+        transactionDao.getRecurringSpendTotal(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ) ?: 0L,
+        currency,
+    )
 
     override fun observeRecentTransactions(limit: Int): Flow<List<Transaction>> =
         transactionDao.observeRecent(limit).map { rows -> rows.map { it.toDomain() } }

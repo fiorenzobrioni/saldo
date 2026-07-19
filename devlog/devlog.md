@@ -14,6 +14,53 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Recap: media giornaliera e tema adattivo (Fase 10.3)
+
+**Fatto:** due rifiniture al recap dal feedback utente (versionCode 86 -> 87, versionName 0.9.47 -> 0.9.48).
+- Pagina "Hai speso": nuova riga sempre presente "In media X al giorno". Il campo `dailyAverageSpend` nasce in `GetMonthlyRecapUseCase` (spesa del mese / giorni di calendario, HALF_UP alla scala valuta): aritmetica monetaria nel dominio, la UI formatta soltanto. Unit test su arrotondamento (giugno, 350/30 = 11.67) e mese senza spese.
+- Recap a tema adattivo: rimosso `SaldoTheme(darkTheme = true)`; schermata e immagine condivisa ereditano il tema risolto dell'app (chiaro/scuro/sistema e palette scelti in Impostazioni). I token usati (surfaceContainerHigh -> background, categorie su surfaceVariant) erano gia theme-aware: nessun altro ritocco visivo. ADR 28 rivisto in PLANNING.
+
+**Decisioni:** valutata insieme all'utente la fusione della pagina "Hai speso" con "Dove sono andati" e scartata: il formato "una pagina, un pensiero" del recap resta, la pagina si riempie con la media giornaliera (mostrata sempre, non solo senza baseline: complementa il confronto invece di sostituirlo). Sul tema: il dark fisso era una scelta legittima stile Wrapped, ma contraddiceva l'identita dell'app che rispetta il tema scelto dall'utente ovunque; l'immagine condivisa segue lo stesso tema della schermata (condividi quello che vedi).
+
+**Problemi:** nessuno; gate `assembleDebug testDebugUnitTest lint detekt` verde con `/opt/gradle`.
+
+**Prossimo:** verifica su device: pagina spese con media (con e senza confronto), recap in tema chiaro e scuro, immagine condivisa coerente col tema visto.
+
+---
+
+## 2026-07-19 - Toggle teaser recap e grafici Statistiche premium (Fase 10.2)
+
+**Fatto:** follow-up della Fase 10.1 (versionCode 85 -> 86, versionName 0.9.46 -> 0.9.47). Design: ADR 29.
+- Impostazioni > Dashboard: nuovo switch "Invito al recap mensile" (default attivo). `showRecapTeaser` in `DashboardCardPreferences`, gate in `buildState` del `DashboardViewModel`: lo switch silenzia il teaser senza toccare il flusso di dismiss per mese.
+- Donut categorie riscritto in Canvas al posto dell'API pie di Vico (sperimentale nella 3.x): geometria pura in `DonutGeometry.kt` (fette proporzionali con gap clampato, partenza a ore 12, hit-test dell'angolo) coperta da `DonutGeometryTest`; fette con cap arrotondati, sweep-in d'ingresso orario (saltato a reduced motion), tap sulla fetta che apre lo stesso drill-down delle righe sottostanti (inclusa la fetta "Senza categoria"). Overlay centrale e riassunto TalkBack invariati.
+- Restyling cartesiani dentro Vico 3.2.3, con le firme verificate sui binari in cache Gradle (`javap` su Fill, CartesianChartHost, AreaFill/LineFill, ColumnProvider) e non a memoria: colonne a pillola da 16dp (`CircleShape`), area sotto la linea del saldo con sfumatura verticale (`Fill(Brush)`), `animateIn` su barre e linea agganciato a `rememberMotionEnabled()`. Marker, listener del drill-down e scroll a fine serie non toccati.
+
+**Decisioni:** l'evidenza della colonna del mese corrente e il punto sull'ultimo valore della linea sono stati rimandati di proposito: richiederebbero provider per-entry custom su interfacce Vico con overload multipli (rischio di regressione per un dettaglio); il piano prevedeva esplicitamente questi fallback. Le cifre delle statistiche non cambiano: nessuna query o ViewModel toccati.
+
+**Problemi:** nessuno; gate `assembleDebug testDebugUnitTest lint detekt` verde con `/opt/gradle`.
+
+**Prossimo:** verifica su device: switch teaser on/off, donut animato e tap fetta -> lista filtrata coerente con la fetta, resa di colonne a pillola e area sfumata, marker e "Vedi i movimenti di <mese>" invariati, animazioni di sistema spente.
+
+---
+
+## 2026-07-19 - Hero saldo con sparkline e recap mensile "Saldo Wrapped" (Fase 10.1)
+
+**Fatto:** due feature premium dalla review completa dell'app (versionCode 84 -> 85, versionName 0.9.45 -> 0.9.46). Design: ADR 27 e 28. Nessun cambio di schema.
+- Hero card Dashboard: count-up presentazionale del saldo (interpolazione sui minor units, frame finale esatto), sparkline 30 giorni disegnata in Canvas (interpolazione monotona Fritsch-Carlson, riempimento sfumato, reveal d'ingresso, punto sull'oggi), gradiente tonale nella card, caption "Ultimi 30 giorni" con delta a segno esplicito. Dati da due query nuove (`observeDailyNetChanges`, `observeNetChangeBefore`, stesse regole del saldo totale con entrambe le gambe dei trasferimenti) cumulate in `ObserveDailyBalanceHistoryUseCase` (zero-fill; invariante testata: ultimo punto = saldo in card). Skeleton dashboard ricalibrato. Canvas muto per TalkBack con riassunto del trend formattato.
+- Nuovo helper `rememberMotionEnabled()` nel design system (`ValueAnimator.areAnimatorsEnabled()`): count-up, reveal sparkline e reveal delle pagine recap si disattivano con le animazioni di sistema spente. Prima non c'era alcuna gestione reduced-motion.
+- Recap mensile (`feature/recap`, route `MonthlyRecapRoute`): schermata full-screen a tema scuro brand forzato con `HorizontalPager` a pagine-storia (hero col netto, spese + delta vs mese precedente, top 5 categorie con barre, record, entrate vs uscite con savings rate, ricorrenti addebitati, chiusura con riga privacy), pillole di progresso, tap zone + swipe, empty state per mese vuoto. Dati da `GetMonthlyRecapUseCase` su cinque query one-shot nuove con la semantica esatta delle statistiche (rimborsi nettati, esclusi/pending mai contati): le cifre coincidono con la schermata Statistiche.
+- Condivisione: card riassuntiva 360x640dp composta off-screen a densita 3x e registrata con `GraphicsLayer` -> `toImageBitmap()` -> PNG in `cache/exports` via FileProvider esistente -> share sheet. Zero permessi, zero rete.
+- Punti d'accesso: teaser dismissibile in Dashboard nei primi 7 giorni del mese (dismiss persistito per mese in DataStore, auto-espirante) e azione `AutoAwesome` nella toolbar Statistiche (mese visualizzato se concluso, altrimenti l'ultimo concluso).
+- PLANNING: Fase 10.1, ADR 27/28, Note e appunti aggiornate (Wrapped implementato, rilevamento ricorrenze promosso), 4 voci nuove in Roadmap v2.0 (rilevamento automatico ricorrenze, proiezione saldo a fine mese, gestione tag dedicata, ricerca con suggerimenti). README aggiornato.
+
+**Decisioni:** sparkline in Canvas e non Vico (ADR 27: componente decorativo, Vico resta nelle statistiche); recap solo per mesi conclusi (i numeri del mese corrente derivano ogni giorno); un'unica immagine riassuntiva condivisibile invece di un'immagine per pagina (un solo code path, artefatto piu curato); il teaser non entra nelle preferenze card della Dashboard perche si auto-rimuove.
+
+**Problemi:** wrapper Gradle bloccato dal proxy, usato `/opt/gradle`. La registrazione off-screen della share card (dietro lo sfondo opaco, niente alpha 0 che salterebbe il draw) e da verificare su device: fallback previsto con `android.graphics.Picture`. Test strumentati `TransactionDaoRecapTest` scritti ma non eseguiti (nessun emulatore).
+
+**Prossimo:** verifica su device: sparkline e count-up (anche con animazioni di sistema spente), skeleton senza salto, teaser a inizio mese, recap da Statistiche, condivisione immagine (qualita PNG e temi), TalkBack su sparkline e pagine.
+
+---
+
 ## 2026-07-18 - Rifiniture Dashboard, uniformita liste vuote e copy onboarding
 
 **Fatto:** giro di polish UX (versionCode 83 -> 84, versionName 0.9.44 -> 0.9.45).

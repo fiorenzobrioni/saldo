@@ -1,6 +1,11 @@
 package com.callbackdev.saldo.feature.stats
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,10 +26,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
@@ -53,12 +65,6 @@ import com.patrykandpatrick.vico.compose.common.Fill
 import com.patrykandpatrick.vico.compose.common.ProvideVicoTheme
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.m3.common.rememberM3VicoTheme
-import com.patrykandpatrick.vico.compose.pie.PieChart
-import com.patrykandpatrick.vico.compose.pie.PieChartHost
-import com.patrykandpatrick.vico.compose.pie.PieSize
-import com.patrykandpatrick.vico.compose.pie.data.PieChartModelProducer
-import com.patrykandpatrick.vico.compose.pie.data.pieSeries
-import com.patrykandpatrick.vico.compose.pie.rememberPieChart
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.NumberFormat
@@ -102,10 +108,12 @@ internal fun MonthlyBarsChart(
                 rememberColumnCartesianLayer(
                     columnProvider = ColumnCartesianLayer.ColumnProvider.series(
                         series.map { barSeries ->
+                            // Pill columns: fully rounded caps read softer than
+                            // the near-square corners of the default shape.
                             rememberLineComponent(
                                 fill = Fill(barSeries.color),
                                 thickness = COLUMN_THICKNESS,
-                                shape = MaterialTheme.shapes.extraSmall,
+                                shape = CircleShape,
                             )
                         },
                     ),
@@ -125,6 +133,7 @@ internal fun MonthlyBarsChart(
             modelProducer = modelProducer,
             // The series ends on the current month: open there, not 12 months back.
             scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End),
+            animateIn = rememberMotionEnabled(),
             modifier = modifier
                 .fillMaxWidth()
                 .height(CHART_HEIGHT)
@@ -179,8 +188,17 @@ internal fun BalanceLineChart(
                     lineProvider = LineCartesianLayer.LineProvider.series(
                         LineCartesianLayer.rememberLine(
                             fill = LineCartesianLayer.LineFill.single(Fill(lineColor)),
+                            // Gradient area: strong under the line, fading out
+                            // toward the bottom, matching the hero sparkline.
                             areaFill = LineCartesianLayer.AreaFill.single(
-                                fill = Fill(lineColor.copy(alpha = AREA_ALPHA)),
+                                fill = Fill(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            lineColor.copy(alpha = AREA_ALPHA),
+                                            Color.Transparent,
+                                        ),
+                                    ),
+                                ),
                             ),
                         ),
                     ),
@@ -197,6 +215,7 @@ internal fun BalanceLineChart(
             modelProducer = modelProducer,
             // The series ends on the current month: open there, not 12 months back.
             scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End),
+            animateIn = rememberMotionEnabled(),
             modifier = modifier
                 .fillMaxWidth()
                 .height(CHART_HEIGHT)
@@ -207,9 +226,11 @@ internal fun BalanceLineChart(
 }
 
 /**
- * Category donut: Vico pie (experimental in 3.x) with the period total as a
- * Compose overlay in the hole. Slice taps are not exposed by the API, so the
- * drill-down lives on the share list rows below the chart.
+ * Category donut drawn with a plain Canvas (ADR 29): rounded slices separated
+ * by small gaps, a clockwise sweep-in on entry, the period total as a Compose
+ * overlay in the hole, and slice taps that open the same drill-down as the
+ * share rows below. Replaces the experimental Vico 3.x pie API; the geometry
+ * (angles, hit-testing) is pure and JVM-tested in DonutGeometry.
  */
 @Composable
 internal fun CategoryDonut(
@@ -218,35 +239,80 @@ internal fun CategoryDonut(
     centerLabel: String,
     chartDescription: String,
     modifier: Modifier = Modifier,
+    onSliceClick: ((CategorySlice) -> Unit)? = null,
 ) {
-    val modelProducer = remember { PieChartModelProducer() }
+    val arcs = remember(slices) {
+        DonutGeometry.sliceAngles(slices.map { it.fraction }, gapDegrees = DONUT_GAP_DEGREES)
+    }
+    val colors = remember(slices) { slices.map { CategoryVisuals.color(it.category?.color) } }
+
+    // One clockwise sweep-in per screen visit; a data change (period paging)
+    // replays it, which reads as the chart redrawing for the new period.
+    val motionEnabled = rememberMotionEnabled()
+    val reveal = remember(slices) { Animatable(if (motionEnabled) 0f else 1f) }
     LaunchedEffect(slices) {
-        modelProducer.runTransaction {
-            pieSeries { series(slices.map { it.amount }) }
+        if (reveal.value < 1f) {
+            reveal.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = DONUT_REVEAL_MILLIS, easing = FastOutSlowInEasing),
+            )
         }
     }
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
             .fillMaxWidth()
             .height(DONUT_HEIGHT),
     ) {
-        PieChartHost(
-            chart = rememberPieChart(
-                sliceProvider = PieChart.SliceProvider.series(
-                    slices.map { slice ->
-                        PieChart.Slice(fill = Fill(CategoryVisuals.color(slice.category?.color)))
-                    },
-                ),
-                innerSize = PieSize.Inner.fixed(DONUT_HOLE),
-            ),
-            modelProducer = modelProducer,
+        Canvas(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(DONUT_HEIGHT)
+                .size(DONUT_HEIGHT)
                 // The ring draws on a silent canvas: point TalkBack to the list.
-                .semantics { contentDescription = chartDescription },
-        )
+                .semantics { contentDescription = chartDescription }
+                .pointerInput(arcs, onSliceClick) {
+                    if (onSliceClick == null) return@pointerInput
+                    detectTapGestures { offset ->
+                        val center = Offset(size.width / 2f, size.height / 2f)
+                        val distance = (offset - center).getDistance()
+                        val outer = minOf(center.x, center.y)
+                        val inner = outer - DONUT_STROKE.toPx() - DONUT_TOUCH_SLACK.toPx()
+                        if (distance in inner..(outer + DONUT_TOUCH_SLACK.toPx())) {
+                            val angle = Math.toDegrees(
+                                kotlin.math.atan2(
+                                    (offset.y - center.y).toDouble(),
+                                    (offset.x - center.x).toDouble(),
+                                ),
+                            ).toFloat()
+                            DonutGeometry.sliceIndexAt(angle, arcs)?.let { index ->
+                                slices.getOrNull(index)?.let(onSliceClick)
+                            }
+                        }
+                    }
+                },
+        ) {
+            val stroke = DONUT_STROKE.toPx()
+            val arcSize = Size(size.width - stroke, size.height - stroke)
+            val topLeft = Offset(stroke / 2f, stroke / 2f)
+            val revealedBudget = reveal.value * FULL_TURN_DEGREES
+            arcs.forEachIndexed { index, arc ->
+                // Sequential reveal: a slice draws only the part of its sweep
+                // that the clockwise budget has already reached.
+                val offsetFromStart = arc.startAngle - DonutGeometry.START_ANGLE
+                val drawnSweep = (revealedBudget - offsetFromStart).coerceIn(0f, arc.sweepAngle)
+                if (drawnSweep > 0f) {
+                    drawArc(
+                        color = colors[index],
+                        startAngle = arc.startAngle,
+                        sweepAngle = drawnSweep,
+                        useCenter = false,
+                        topLeft = topLeft,
+                        size = arcSize,
+                        style = Stroke(width = stroke, cap = StrokeCap.Round),
+                    )
+                }
+            }
+        }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = centerAmount,
@@ -328,9 +394,13 @@ internal fun monthInitial(month: java.time.YearMonth, locale: Locale): String =
 
 private val CHART_HEIGHT = 220.dp
 private val DONUT_HEIGHT = 240.dp
-private val DONUT_HOLE = 76.dp
-private val COLUMN_THICKNESS = 12.dp
-private const val AREA_ALPHA = 0.25f
+private val DONUT_STROKE = 24.dp
+private val DONUT_TOUCH_SLACK = 8.dp
+private const val DONUT_GAP_DEGREES = 3f
+private const val DONUT_REVEAL_MILLIS = 700
+private const val FULL_TURN_DEGREES = 360f
+private val COLUMN_THICKNESS = 16.dp
+private const val AREA_ALPHA = 0.30f
 private const val KILO_FRACTION_DIGITS = 1
 private const val KILO = 1000L
 private val ONE_THOUSAND = BigDecimal(KILO)

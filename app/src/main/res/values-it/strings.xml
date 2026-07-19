@@ -19,6 +19,10 @@
 
     <!-- Dashboard (Fase 5) -->
     <string name="dashboard_balance_total">Saldo totale</string>
+    <string name="dashboard_sparkline_caption">Ultimi 30 giorni</string>
+    <string name="dashboard_sparkline_a11y_up">Andamento del saldo negli ultimi 30 giorni: da %1$s a %2$s, in aumento</string>
+    <string name="dashboard_sparkline_a11y_down">Andamento del saldo negli ultimi 30 giorni: da %1$s a %2$s, in calo</string>
+    <string name="dashboard_sparkline_a11y_flat">Saldo stabile a %1$s negli ultimi 30 giorni</string>
     <!-- Saluti mostrati nell'header della dashboard; uno scelto a caso a ogni apertura. -->
     <string-array name="dashboard_greetings_night">
         <item>Un\'occhiata e poi a letto.</item>
@@ -795,6 +799,8 @@
     <string name="settings_dashboard_show_budget_hint">Mostra i progressi dei budget del mese</string>
     <string name="settings_dashboard_show_recent">Scheda ultimi movimenti</string>
     <string name="settings_dashboard_show_recent_hint">Mostra i movimenti più recenti in fondo</string>
+    <string name="settings_dashboard_show_recap_teaser">Invito al recap mensile</string>
+    <string name="settings_dashboard_show_recap_teaser_hint">Nei primi giorni del mese, invita al recap del mese concluso</string>
     <string name="settings_dashboard_show_savings">Scheda obiettivi di risparmio</string>
     <string name="settings_dashboard_show_savings_hint">Mostra i progressi verso i tuoi obiettivi di risparmio</string>
 
@@ -846,4 +852,46 @@
     <string name="dashboard_savings_more">+%1$d altri</string>
     <string name="dashboard_savings_empty">Nessun obiettivo · tocca per aggiungerne uno</string>
     <string name="dashboard_recurring_savings_label">Risparmio / mese</string>
+
+    <!-- Recap mensile "Saldo Wrapped" (Fase 10.1) -->
+    <string name="recap_title">Il tuo %1$s</string>
+    <string name="recap_net_label">Risultato netto</string>
+    <plurals name="recap_movement_count">
+        <item quantity="one">%1$d movimento registrato</item>
+        <item quantity="other">%1$d movimenti registrati</item>
+    </plurals>
+    <string name="recap_expense_title">Hai speso</string>
+    <string name="recap_daily_average">In media %1$s al giorno</string>
+    <string name="recap_expense_vs_previous_more">%1$s in più rispetto a %2$s</string>
+    <string name="recap_expense_vs_previous_less">%1$s in meno rispetto a %2$s</string>
+    <string name="recap_expense_vs_previous_same">Come a %1$s</string>
+    <string name="recap_top_categories_title">Dove sono andati</string>
+    <string name="recap_records_title">I record del mese</string>
+    <string name="recap_biggest_expense_label">La spesa più grande</string>
+    <string name="recap_busiest_day_label">Il giorno più attivo</string>
+    <plurals name="recap_busiest_day_value">
+        <item quantity="one">%1$d movimento · %2$s spesi</item>
+        <item quantity="other">%1$d movimenti · %2$s spesi</item>
+    </plurals>
+    <string name="recap_income_expense_title">Entrate e uscite</string>
+    <string name="recap_income_label">Entrate</string>
+    <string name="recap_expense_label">Uscite</string>
+    <string name="recap_savings_rate">Hai messo da parte il %1$d%% delle entrate</string>
+    <string name="recap_recurring_title">Abbonamenti e ricorrenze</string>
+    <string name="recap_recurring_caption">addebitati dalle tue regole ricorrenti questo mese</string>
+    <string name="recap_closing_title">Questo era il tuo %1$s</string>
+    <string name="recap_closing_privacy">Generato sul tuo dispositivo. Nessun dato lascia Saldo.</string>
+    <string name="recap_share">Condividi</string>
+    <string name="recap_share_title">Condividi il tuo recap</string>
+    <string name="recap_share_failed">Impossibile creare l\'immagine. Riprova.</string>
+    <string name="recap_close">Chiudi</string>
+    <string name="recap_empty_title">Nessun movimento a %1$s</string>
+    <string name="recap_empty_body">Il recap compare per i mesi con spese o entrate registrate.</string>
+    <string name="recap_page_previous">Pagina precedente</string>
+    <string name="recap_page_next">Pagina successiva</string>
+    <string name="recap_page_progress_a11y">Pagina %1$d di %2$d</string>
+    <string name="recap_teaser_title">Il recap di %1$s è pronto</string>
+    <string name="recap_teaser_subtitle">Tocca per rivivere il tuo mese</string>
+    <string name="recap_teaser_dismiss">Chiudi</string>
+    <string name="stats_recap_action">Recap mensile</string>
 </resources>

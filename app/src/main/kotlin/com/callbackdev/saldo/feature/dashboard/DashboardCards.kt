@@ -2,6 +2,9 @@
 
 package com.callbackdev.saldo.feature.dashboard
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,7 +23,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.MoneyOff
@@ -29,14 +34,18 @@ import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
@@ -55,19 +64,24 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.SaldoCard
+import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.model.DailyBalance
 import com.callbackdev.saldo.core.domain.model.PeriodTotals
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
+import com.callbackdev.saldo.feature.recap.recapMonthTitle
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import com.callbackdev.saldo.feature.transactions.TransactionRowContent
 import com.callbackdev.saldo.feature.transactions.compactDayLabel
 import com.callbackdev.saldo.feature.transactions.localDate
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Currency
 
@@ -151,8 +165,9 @@ private fun fullWeekdayDate(date: LocalDate): String {
 }
 
 /**
- * Hero card: the total balance with the per-account breakdown always in view.
- * The whole card is tappable and opens account management, with
+ * Hero card: the total balance with the per-account breakdown always in view,
+ * a 30-day balance sparkline and a decorative tonal gradient. The whole card
+ * is tappable and opens account management, with
  * [R.string.dashboard_manage_accounts] as the spoken affordance. The higher
  * tonal color and the larger shape single it out as the screen's primary
  * card, keeping the whole dashboard flat.
@@ -162,6 +177,8 @@ internal fun BalanceCard(
     totalBalance: BigDecimal,
     currency: Currency,
     accounts: List<AccountWithBalance>,
+    history: List<DailyBalance>,
+    trend: BigDecimal?,
     date: LocalDate,
     onManageAccounts: () -> Unit,
     modifier: Modifier = Modifier,
@@ -175,10 +192,19 @@ internal fun BalanceCard(
         shape = MaterialTheme.shapes.extraLarge,
     ) {
         Column(
-            modifier = Modifier.padding(
-                horizontal = SaldoDimens.cardPaddingLarge,
-                vertical = SaldoDimens.cardPaddingVertical,
-            ),
+            modifier = Modifier
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = HERO_GRADIENT_ALPHA),
+                            Color.Transparent,
+                        ),
+                    ),
+                )
+                .padding(
+                    horizontal = SaldoDimens.cardPaddingLarge,
+                    vertical = SaldoDimens.cardPaddingVertical,
+                ),
         ) {
             DashboardCardHeader(
                 icon = Icons.Outlined.AccountBalanceWallet,
@@ -194,7 +220,7 @@ internal fun BalanceCard(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = MoneyFormatter.format(totalBalance, currency),
+                text = animatedBalanceText(totalBalance, currency),
                 style = MaterialTheme.typography.headlineMedium.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
                 color = if (totalBalance.signum() < 0) {
@@ -206,6 +232,18 @@ internal fun BalanceCard(
                 autoSize = TextAutoSize.StepBased(minFontSize = HERO_MONEY_MIN, maxFontSize = HERO_MONEY_MAX),
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (history.size > 1) {
+                Spacer(Modifier.height(8.dp))
+                BalanceSparkline(
+                    history = history,
+                    currency = currency,
+                    lineColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(SPARKLINE_HEIGHT.dp),
+                )
+                SparklineCaption(trend = trend, currency = currency)
+            }
             if (accounts.isNotEmpty()) {
                 Spacer(Modifier.height(10.dp))
                 accounts.forEach { item ->
@@ -214,6 +252,121 @@ internal fun BalanceCard(
             }
         }
     }
+}
+
+/**
+ * Self-expiring teaser for last month's recap, shown only in the first days
+ * of a new month: tap opens the story, the trailing close dismisses it for
+ * good (persisted per month). Deliberately not in the dashboard card
+ * preferences: it removes itself.
+ */
+@Composable
+internal fun RecapTeaserCard(
+    month: YearMonth,
+    onClick: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val monthTitle = recapMonthTitle(month)
+    SaldoCard(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(
+                start = SaldoDimens.cardPaddingLarge,
+                top = 6.dp,
+                bottom = 6.dp,
+                end = 4.dp,
+            ),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.AutoAwesome,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp, top = 6.dp, bottom = 6.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.recap_teaser_title, monthTitle),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = stringResource(R.string.recap_teaser_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.Outlined.Close,
+                    contentDescription = stringResource(R.string.recap_teaser_dismiss),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The sparkline's legend line: the window label on the left, the signed 30-day
+ * change on the right. Direction is carried by the explicit sign, not only by
+ * the money color.
+ */
+@Composable
+private fun SparklineCaption(trend: BigDecimal?, currency: Currency, modifier: Modifier = Modifier) {
+    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = stringResource(R.string.dashboard_sparkline_caption),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        if (trend != null) {
+            Text(
+                text = MoneyFormatter.formatSigned(trend, currency),
+                style = MaterialTheme.typography.labelSmall.tabularNumbers(),
+                color = when {
+                    trend.signum() > 0 -> MaterialTheme.moneyColors.income
+                    trend.signum() < 0 -> MaterialTheme.moneyColors.expense
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+    }
+}
+
+/**
+ * The hero amount with a presentational count-up: the displayed figure sweeps
+ * from the previously shown value to the exact target in Long minor units,
+ * formatted by [MoneyFormatter] on every frame. Only the in-flight frames are
+ * interpolated (Float on the Long delta, display-only); the final frame snaps
+ * to the exact stored value, so the money rules are untouched. With system
+ * animations off the exact value renders immediately.
+ */
+@Composable
+private fun animatedBalanceText(totalBalance: BigDecimal, currency: Currency): String {
+    if (!rememberMotionEnabled()) return MoneyFormatter.format(totalBalance, currency)
+    val target = remember(totalBalance, currency) { MoneyMapper.toMinorUnits(totalBalance, currency) }
+    val displayedMinor = remember { mutableLongStateOf(0L) }
+    LaunchedEffect(target) {
+        val start = displayedMinor.longValue
+        if (start != target) {
+            Animatable(0f).animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = COUNT_UP_MILLIS, easing = FastOutSlowInEasing),
+            ) {
+                displayedMinor.longValue = start + ((target - start) * value).toLong()
+            }
+            displayedMinor.longValue = target
+        }
+    }
+    return MoneyFormatter.format(MoneyMapper.toAmount(displayedMinor.longValue, currency), currency)
 }
 
 /**
@@ -813,5 +966,14 @@ private const val AVATAR_TINT_ALPHA = 0.16f
 // half-width Today/month and budget figures. Shared by BudgetDashboardCards.
 internal val HERO_MONEY_MIN = 20.sp
 internal val HERO_MONEY_MAX = 28.sp
+
+/** Height of the hero card's balance sparkline, in dp. */
+private const val SPARKLINE_HEIGHT = 56
+
+/** Opacity of the hero card's decorative tonal gradient. */
+private const val HERO_GRADIENT_ALPHA = 0.35f
+
+/** Duration of the hero balance count-up. */
+private const val COUNT_UP_MILLIS = 700
 internal val COMPACT_MONEY_MIN = 14.sp
 internal val COMPACT_MONEY_MAX = 22.sp
