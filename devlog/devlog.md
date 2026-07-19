@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Fix: bottom sheet di eliminazione tagliato in basso
+
+**Fatto:** il `DeleteFilteredSheet` si apriva a metà altezza (stato "partially expanded" di default del `ModalBottomSheet`), lasciando fuori schermo il pulsante Elimina/Annulla finché non lo si trascinava su. Impostato `sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)` così si apre già completamente espanso, e aggiunto `verticalScroll` alla colonna come rete di sicurezza sugli schermi piccoli (stesso pattern di `TransactionFilterSheet`). Il `CsvExportSheet` non è toccato: è più basso e ci stava già tutto. Bump versione 91 -> 92 / 0.9.52 -> 0.9.53.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verdi con Gradle 8.14.3 locale. Verifica visiva del comportamento del sheet da fare su device.
+
+**Decisioni:** `skipPartiallyExpanded` invece di forzare un'altezza fissa: il contenuto ha altezza variabile (numero di conti nell'anteprima impatto) e l'espansione piena + scroll è robusta.
+
+**Problemi:** nessuno.
+
+**Prossimo:** nessuno per questo fix.
+
+---
+
 ## 2026-07-19 - Eliminazione dei movimenti filtrati (bulk delete) con conservazione dei saldi
 
 **Fatto:** aggiunta al registro l'eliminazione in blocco della vista filtrata corrente, WYSIWYG (si cancella esattamente ciò che i filtri mostrano, come già fa l'export CSV). Nuova voce "Elimina i movimenti filtrati" in un menu overflow (3 puntini) nella top bar, dove è stata spostata anche l'azione Esporta; restano icone dirette Cerca e Filtri. Un bottom sheet dedicato (`DeleteFilteredSheet`) mostra il conteggio, due modalità e un'anteprima dell'impatto sui saldi per conto, un link "Esporta prima di eliminare" e il pulsante distruttivo. Snackbar con undo (ripristina i movimenti e i loro tag, e rimuove le eventuali rettifiche di riporto). Le due modalità: "Ricalcola i saldi" (default, elimina e basta) e "Conserva i saldi correnti" (per pulizia dello storico: per ogni conto interessato inserisce una rettifica `ADJUSTMENT` di riporto pari al netto eliminato, così il saldo calcolato non cambia; la rettifica è esclusa dalle statistiche per tipo). Data layer: `TransactionDao.deleteByIds` (chunked, cascade sui tag) e `deleteAndInsert` atomico; nuovi metodi nel repository. Logica di dominio in `DeleteFilteredTransactionsUseCase` + `CarryOverCalculator` (puro). Stringhe IT+EN. Bump versione 90 -> 91 / 0.9.51 -> 0.9.52.
