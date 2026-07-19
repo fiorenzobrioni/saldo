@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.domain.model.MonthlyRecap
 import com.callbackdev.saldo.core.domain.model.RecapBiggestExpense
 import com.callbackdev.saldo.core.domain.model.RecapBusiestDay
 import com.callbackdev.saldo.core.domain.model.RecapCategoryShare
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -67,6 +68,11 @@ class GetMonthlyRecapUseCase @Inject constructor(
             },
             busiestDay = busiestDay(activity),
             recurringSpend = recurringSpend.negate().max(BigDecimal.ZERO),
+            dailyAverageSpend = expenseTotal.divide(
+                BigDecimal(month.lengthOfMonth()),
+                MoneyMapper.fractionDigits(currency),
+                RoundingMode.HALF_UP,
+            ),
             movementCount = activity.sumOf { it.count },
             savingsRatePercent = savingsRatePercent(expenseTotal, incomeTotal),
         )

@@ -190,6 +190,21 @@ class GetMonthlyRecapUseCaseTest {
     }
 
     @Test
+    fun `daily average spreads the spend over the month's days`() = runTest {
+        // June has 30 days: 350 / 30 = 11.666..., rounded to the currency scale.
+        stub(totals = StatsPeriodTotals(BigDecimal("-350.00"), BigDecimal.ZERO))
+
+        assertEquals(BigDecimal("11.67"), useCase(month, eur).dailyAverageSpend)
+    }
+
+    @Test
+    fun `daily average is zero without spend`() = runTest {
+        stub(totals = StatsPeriodTotals(BigDecimal.ZERO, BigDecimal("100.00")))
+
+        assertEquals(0, BigDecimal.ZERO.compareTo(useCase(month, eur).dailyAverageSpend))
+    }
+
+    @Test
     fun `savings rate is the floor percent of income kept`() = runTest {
         stub(totals = StatsPeriodTotals(BigDecimal("-1234.00"), BigDecimal("2000.00")))
 

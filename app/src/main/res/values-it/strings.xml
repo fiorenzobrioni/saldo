@@ -861,6 +861,7 @@
         <item quantity="other">%1$d movimenti registrati</item>
     </plurals>
     <string name="recap_expense_title">Hai speso</string>
+    <string name="recap_daily_average">In media %1$s al giorno</string>
     <string name="recap_expense_vs_previous_more">%1$s in più rispetto a %2$s</string>
     <string name="recap_expense_vs_previous_less">%1$s in meno rispetto a %2$s</string>
     <string name="recap_expense_vs_previous_same">Come a %1$s</string>

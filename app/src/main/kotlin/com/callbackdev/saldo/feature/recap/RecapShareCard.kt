@@ -35,11 +35,10 @@ import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.MonthlyRecap
 
 /**
- * The single shareable summary of the recap month (ADR 28): a fixed-design
+ * The single shareable summary of the recap month (ADR 28): a fixed-layout
  * 360x640dp portrait card rendered off-screen at 3x density into a
- * 1080x1920px image. Styling is deliberately self-contained (the composition
- * is already wrapped in the forced dark brand theme by the screen) so the
- * exported image looks the same regardless of the viewer's device theme.
+ * 1080x1920px image. It inherits the screen's ambient theme, so the exported
+ * image matches exactly what the user saw when sharing (share what you see).
  */
 @Composable
 internal fun RecapShareCard(

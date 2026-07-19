@@ -48,6 +48,7 @@ class MonthlyRecapViewModelTest {
         biggestExpense = null,
         busiestDay = null,
         recurringSpend = BigDecimal.ZERO,
+        dailyAverageSpend = BigDecimal.ZERO,
         movementCount = movementCount,
         savingsRatePercent = null,
     )

@@ -30,6 +30,11 @@ data class MonthlyRecap(
     val busiestDay: RecapBusiestDay?,
     /** Positive magnitude of the month's rule-generated expenses; zero when none. */
     val recurringSpend: BigDecimal,
+    /**
+     * [expenseTotal] spread over the month's calendar days, rounded to the
+     * currency scale; zero in a month without spend.
+     */
+    val dailyAverageSpend: BigDecimal,
     /** Number of statistics movements in the month. */
     val movementCount: Int,
     /**

@@ -64,17 +64,18 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
-import com.callbackdev.saldo.core.designsystem.theme.SaldoTheme
 import com.callbackdev.saldo.core.domain.model.MonthlyRecap
 import com.callbackdev.saldo.navigation.MonthlyRecapRoute
 import kotlinx.coroutines.launch
 import androidx.compose.material.icons.outlined.AutoAwesome
 
 /**
- * Full-screen story recap of one completed month, always in the dark brand
- * theme so the experience (and the shared image) looks identical in light and
- * dark. Pages advance by swipe or tap (right two thirds forward, left third
- * back); the top row holds the per-page progress pills, share and close.
+ * Full-screen story recap of one completed month, in the app's current theme
+ * (the user's light/dark and palette choice from Settings applies here like
+ * everywhere else; the shared image inherits the same look, so what is shared
+ * is what was seen). Pages advance by swipe or tap (right two thirds forward,
+ * left third back); the top row holds the per-page progress pills, share and
+ * close.
  */
 @Composable
 fun MonthlyRecapScreen(
@@ -113,31 +114,29 @@ fun MonthlyRecapScreen(
         }
     }
 
-    SaldoTheme(darkTheme = true, dynamicColor = false) {
-        Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Box(Modifier.fillMaxSize()) {
-                when {
-                    uiState.isLoading -> LoadingState(Modifier.align(Alignment.Center))
-                    uiState.isEmpty -> RecapEmptyContent(
-                        month = recapMonthTitle(uiState.month),
-                        onNavigateBack = onNavigateBack,
-                    )
-                    else -> uiState.recap?.let { recap ->
-                        RecapContent(
-                            recap = recap,
-                            uiState = uiState,
-                            onNavigateBack = onNavigateBack,
-                            onShare = viewModel::onShareRequested,
-                        )
-                    }
-                }
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(WindowInsets.navigationBars.asPaddingValues()),
+    Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Box(Modifier.fillMaxSize()) {
+            when {
+                uiState.isLoading -> LoadingState(Modifier.align(Alignment.Center))
+                uiState.isEmpty -> RecapEmptyContent(
+                    month = recapMonthTitle(uiState.month),
+                    onNavigateBack = onNavigateBack,
                 )
+                else -> uiState.recap?.let { recap ->
+                    RecapContent(
+                        recap = recap,
+                        uiState = uiState,
+                        onNavigateBack = onNavigateBack,
+                        onShare = viewModel::onShareRequested,
+                    )
+                }
             }
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(WindowInsets.navigationBars.asPaddingValues()),
+            )
         }
     }
 }

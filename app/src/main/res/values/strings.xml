@@ -849,6 +849,7 @@
         <item quantity="other">%1$d transactions tracked</item>
     </plurals>
     <string name="recap_expense_title">You spent</string>
+    <string name="recap_daily_average">An average of %1$s a day</string>
     <string name="recap_expense_vs_previous_more">%1$s more than in %2$s</string>
     <string name="recap_expense_vs_previous_less">%1$s less than in %2$s</string>
     <string name="recap_expense_vs_previous_same">Same as in %1$s</string>

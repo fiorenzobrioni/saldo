@@ -149,6 +149,16 @@ internal fun RecapSpendingPage(recap: MonthlyRecap, modifier: Modifier = Modifie
             text = MoneyFormatter.format(recap.expenseTotal, recap.currency),
             color = MaterialTheme.colorScheme.onSurface,
         )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = stringResource(
+                R.string.recap_daily_average,
+                MoneyFormatter.format(recap.dailyAverageSpend, recap.currency),
+            ),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
         val previous = recap.previousExpenseTotal
         if (previous != null) {
             Spacer(Modifier.height(12.dp))

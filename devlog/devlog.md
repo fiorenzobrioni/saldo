@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-19 - Recap: media giornaliera e tema adattivo (Fase 10.3)
+
+**Fatto:** due rifiniture al recap dal feedback utente (versionCode 86 -> 87, versionName 0.9.47 -> 0.9.48).
+- Pagina "Hai speso": nuova riga sempre presente "In media X al giorno". Il campo `dailyAverageSpend` nasce in `GetMonthlyRecapUseCase` (spesa del mese / giorni di calendario, HALF_UP alla scala valuta): aritmetica monetaria nel dominio, la UI formatta soltanto. Unit test su arrotondamento (giugno, 350/30 = 11.67) e mese senza spese.
+- Recap a tema adattivo: rimosso `SaldoTheme(darkTheme = true)`; schermata e immagine condivisa ereditano il tema risolto dell'app (chiaro/scuro/sistema e palette scelti in Impostazioni). I token usati (surfaceContainerHigh -> background, categorie su surfaceVariant) erano gia theme-aware: nessun altro ritocco visivo. ADR 28 rivisto in PLANNING.
+
+**Decisioni:** valutata insieme all'utente la fusione della pagina "Hai speso" con "Dove sono andati" e scartata: il formato "una pagina, un pensiero" del recap resta, la pagina si riempie con la media giornaliera (mostrata sempre, non solo senza baseline: complementa il confronto invece di sostituirlo). Sul tema: il dark fisso era una scelta legittima stile Wrapped, ma contraddiceva l'identita dell'app che rispetta il tema scelto dall'utente ovunque; l'immagine condivisa segue lo stesso tema della schermata (condividi quello che vedi).
+
+**Problemi:** nessuno; gate `assembleDebug testDebugUnitTest lint detekt` verde con `/opt/gradle`.
+
+**Prossimo:** verifica su device: pagina spese con media (con e senza confronto), recap in tema chiaro e scuro, immagine condivisa coerente col tema visto.
+
+---
+
 ## 2026-07-19 - Toggle teaser recap e grafici Statistiche premium (Fase 10.2)
 
 **Fatto:** follow-up della Fase 10.1 (versionCode 85 -> 86, versionName 0.9.46 -> 0.9.47). Design: ADR 29.
