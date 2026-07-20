@@ -1,16 +1,6 @@
 package com.callbackdev.saldo.feature.accounts
 
-import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
-
-/**
- * One account-type section of the accounts list: the [type] and its accounts,
- * already sorted alphabetically by name.
- */
-data class AccountTypeGroup(
-    val type: AccountType,
-    val accounts: List<AccountWithBalance>,
-)
 
 /**
  * Groups accounts by [AccountType] and orders the result:
