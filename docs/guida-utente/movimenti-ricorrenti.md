@@ -1,4 +1,4 @@
-# Movimenti ricorrenti
+# 🔁 Movimenti ricorrenti
 
 [Torna all'indice](README.md)
 
