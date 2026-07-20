@@ -46,8 +46,8 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
-import com.patrykandpatrick.vico.compose.cartesian.data.columnSeries
-import com.patrykandpatrick.vico.compose.cartesian.data.lineSeries
+import com.patrykandpatrick.vico.compose.cartesian.data.columnModel
+import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
 import com.patrykandpatrick.vico.compose.cartesian.layer.ColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
@@ -97,7 +97,7 @@ internal fun MonthlyBarsChart(
     val modelProducer = remember { CartesianChartModelProducer() }
     LaunchedEffect(series) {
         modelProducer.runTransaction {
-            columnSeries {
+            columnModel {
                 series.forEach { series(it.valuesMinor) }
             }
         }
@@ -177,7 +177,7 @@ internal fun BalanceLineChart(
     val modelProducer = remember { CartesianChartModelProducer() }
     LaunchedEffect(valuesMinor) {
         modelProducer.runTransaction {
-            lineSeries { series(valuesMinor) }
+            lineModel { series(valuesMinor) }
         }
     }
     val lineColor = MaterialTheme.colorScheme.primary

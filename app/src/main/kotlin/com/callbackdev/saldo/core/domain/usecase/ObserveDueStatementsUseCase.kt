@@ -54,9 +54,11 @@ class ObserveDueStatementsUseCase @Inject constructor(
         }
     }
 
-    private fun Account.awaitsManualStatement(): Boolean =
-        type == AccountType.CREDIT_CARD &&
+    private fun Account.awaitsManualStatement(): Boolean {
+        val card = creditCard ?: return false
+        return type == AccountType.CREDIT_CARD &&
             !isArchived &&
-            creditCard?.linkedAccountId != null &&
-            creditCard?.autoPost == false
+            card.linkedAccountId != null &&
+            !card.autoPost
+    }
 }

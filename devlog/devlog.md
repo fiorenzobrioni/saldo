@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-20 - Chore: azzerati i warning di compilazione (deprecazioni e KT-73255)
+
+**Fatto:** ripulite tutte le famiglie di warning emerse nel log di compilazione della CI. (1) `hiltViewModel()`: deprecato in `androidx.hilt:hilt-navigation-compose`, migrato al nuovo artifact `androidx.hilt:hilt-lifecycle-viewmodel-compose` (stessa versione 1.3.0, package `androidx.hilt.lifecycle.viewmodel.compose`), import aggiornato in 20 screen; la vecchia dipendenza è rimossa dal catalog (portava con sé androidx.navigation, che il progetto non usa: Nav3). (2) `MenuAnchorType` rinominato `ExposedDropdownMenuAnchorType` (typealias deprecato M3) in 4 file. (3) Vico: `columnSeries`/`lineSeries` -> `columnModel`/`lineModel` in `StatsCharts.kt` (rename puro, firma identica, verificato sui sorgenti v3.2.3). (4) KT-73255: aggiunto `-Xannotation-default-target=param-property` ai compiler args, il default futuro di Kotlin; i soli siti interessati sono qualifier Hilt su parametri di costruttore (`@ApplicationContext`, `@IoDispatcher`, `@ApplicationScope`), inerti sul field. (5) Rimossi safe-call e `!!` superflui segnalati dal compilatore (`ObserveDueStatementsUseCase`, `SavingsGoalsScreen`).
+
+**Verificato:** verifica statica; le firme delle nuove API sono state controllate su release notes androidx (hilt 1.3.0) e sorgenti Vico v3.2.3. Build delegata alla CI GitHub.
+
+**Decisioni:** flag del compilatore invece di annotare i 10 siti con `@param:`: è il default che Kotlin adotterà comunque e mantiene puliti i costruttori.
+
+**Problemi:** nessuno.
+
+**Prossimo:** nessuno.
+
+---
+
 ## 2026-07-20 - Chore: detekt, disattivate le regole che producevano solo rumore
 
 **Fatto:** aggiornato `config/detekt/detekt.yml`. Disattivate `LongParameterList`, `TooManyFunctions` e `MagicNumber`: il codice contava 44 `@Suppress` per queste sole regole, tutti con motivazioni strutturali (costruttori Hilt con una dipendenza per concern, DAO/repository con una funzione per query, editor ViewModel con un handler per campo, palette e valori dp/sp letterali). Una regola che richiede una deroga a ogni occorrenza non segnala più nulla. `CyclomaticComplexMethod` resta attiva ma ignora i `@Composable` (le UI Compose sono alberi di `when` per natura), come già `LongMethod` e `LongParameterList` prima della disattivazione. I `@Suppress` esistenti restano nel codice: sono innocui e documentano l'intento; rimozione eventuale come chore separata.

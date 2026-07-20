@@ -69,6 +69,10 @@ android {
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_17)
+        // KT-73255: opt in to the future default target of annotations on
+        // constructor val/var parameters (param + property/field). Our only
+        // affected annotations are Hilt qualifiers, inert on fields.
+        freeCompilerArgs.add("-Xannotation-default-target=param-property")
     }
 }
 
@@ -121,7 +125,7 @@ dependencies {
 
     // Hilt
     implementation(libs.hilt.android)
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     ksp(libs.hilt.compiler)
 
     // Kotlinx

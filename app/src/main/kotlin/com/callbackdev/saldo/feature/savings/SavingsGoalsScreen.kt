@@ -43,7 +43,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
@@ -288,18 +288,18 @@ private fun GoalStatusLine(progress: SavingsGoalProgress, modifier: Modifier = M
     val text = when {
         progress.suggestedMonthly != null && progress.goal.targetDate != null -> stringResource(
             R.string.savings_by_date_suggestion,
-            formatFullDate(progress.goal.targetDate!!),
-            MoneyFormatter.format(progress.suggestedMonthly!!, currency),
+            formatFullDate(progress.goal.targetDate),
+            MoneyFormatter.format(progress.suggestedMonthly, currency),
         )
 
         progress.goal.targetDate != null -> stringResource(
             R.string.savings_by_date,
-            formatFullDate(progress.goal.targetDate!!),
+            formatFullDate(progress.goal.targetDate),
         )
 
         progress.projectedDate != null -> stringResource(
             R.string.savings_projected,
-            formatMonthYear(progress.projectedDate!!),
+            formatMonthYear(progress.projectedDate),
         )
 
         else -> stringResource(
