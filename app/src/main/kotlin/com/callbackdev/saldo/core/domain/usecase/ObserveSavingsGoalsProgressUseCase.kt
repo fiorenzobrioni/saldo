@@ -33,6 +33,9 @@ import javax.inject.Inject
  * as "Risparmio pianificato" in the recurrences hub). Cross-currency transfers
  * are excluded: their received amount is entered at confirmation, so it cannot
  * be projected.
+ *
+ * Goals are returned sorted alphabetically by name (the aggregate saved/target
+ * total shown above the list is order-independent).
  */
 class ObserveSavingsGoalsProgressUseCase @Inject constructor(
     private val savingsGoalRepository: SavingsGoalRepository,
@@ -48,7 +51,9 @@ class ObserveSavingsGoalsProgressUseCase @Inject constructor(
     ) { goals, accounts, rules ->
         val today = LocalDate.now(clock)
         val balanceByAccount = accounts.associate { it.account.id to it }
-        goals.map { goal -> progressOf(goal, balanceByAccount[goal.accountId], rules, today) }
+        goals
+            .map { goal -> progressOf(goal, balanceByAccount[goal.accountId], rules, today) }
+            .sortedWith(goalOrder)
     }
 
     private fun progressOf(
@@ -134,4 +139,11 @@ class ObserveSavingsGoalsProgressUseCase @Inject constructor(
 
     /** Integer ceiling of [value] / [divisor], both non-negative, [divisor] > 0. */
     private fun ceilDiv(value: Long, divisor: Long): Long = (value + divisor - 1) / divisor
+
+    private companion object {
+        /** Goals listed alphabetically by name, case-insensitive, stable on id. */
+        val goalOrder: Comparator<SavingsGoalProgress> =
+            compareBy<SavingsGoalProgress, String>(String.CASE_INSENSITIVE_ORDER) { it.goal.name }
+                .thenBy { it.goal.id }
+    }
 }

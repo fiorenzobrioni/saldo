@@ -84,7 +84,7 @@ class AccountsViewModelTest {
 
         viewModel.uiState.test {
             val state = awaitLoaded()
-            assertEquals(listOf(active), state.active)
+            assertEquals(listOf(active), state.activeGroups.flatMap { it.accounts })
             assertEquals(listOf(archived), state.archived)
             cancelAndIgnoreRemainingEvents()
         }

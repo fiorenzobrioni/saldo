@@ -14,6 +14,32 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-20 - Ordinamento Obiettivi di risparmio (per nome) e Budget (spareggio per nome)
+
+**Fatto:** due ordinamenti resi deterministici.
+- Obiettivi di risparmio: `ObserveSavingsGoalsProgressUseCase` ora restituisce gli obiettivi ordinati alfabeticamente per nome (case-insensitive, tie-break sull'id) invece che nell'ordine di creazione (`sortOrder ASC, id ASC` del DAO, di fatto creazione perché non esiste UI di riordino). Il totale risparmiato resta nella hero card, indipendente dall'ordine.
+- Budget: `ObserveBudgetProgressUseCase` manteneva già i budget per categoria ordinati per frazione decrescente (più vicini al tetto per primi), con il budget complessivo in cima. A inizio mese, con spese a zero, tutte le frazioni pareggiano e l'ordine ripiegava sull'id (aspetto casuale). Aggiunto lo spareggio per nome categoria (case-insensitive) prima dell'id: la lista è alfabetica a spesa zero e diventa "a rischio in cima" man mano che si spende.
+
+**Decisioni:** per gli obiettivi si è scelto il nome e non la scadenza (`targetDate`): molti obiettivi non hanno data e mischiare con/senza data rende la lista incoerente; il nome è prevedibile e coerente con Conti. Per i budget si è scelto di NON passare all'alfabetico puro (perderebbe il segnale "a rischio sforamento", l'informazione utile della schermata) ma solo di correggere lo spareggio. Entrambe le scelte confermate dall'utente.
+
+**Verifica:** `gradle testDebugUnitTest detekt lint` verde. Aggiunti test: spareggio per nome a frazioni pari in `ObserveBudgetProgressUseCaseTest`, ordinamento alfabetico case-insensitive in `ObserveSavingsGoalsProgressUseCaseTest`. Bump `versionCode` 100→101, `versionName` 0.9.61→0.9.62.
+
+**Nota CI:** il commit precedente (raggruppamento Conti) aveva fatto fallire detekt con `MatchingDeclarationName` (`AccountsGrouping.kt` con la sola classe top-level `AccountTypeGroup`); risolto spostando il data class in `AccountsUiState.kt`, così il file *Grouping contiene solo funzioni, come nel feature transactions.
+
+---
+
+## 2026-07-20 - Elenco Conti raggruppato per tipo e ordinato per nome
+
+**Fatto:** la schermata elenco Conti (`AccountsScreen`) non aveva ordinamento e mostrava i conti nell'ordine di creazione. Ora i conti attivi sono raggruppati per tipo conto e ordinati alfabeticamente per nome all'interno di ogni gruppo. Aggiunto `AccountsGrouping.kt` con la funzione pura `buildAccountTypeGroups` (raggruppa per `AccountType`, ordina i gruppi per ordine di dichiarazione dell'enum e i conti per nome case-insensitive, con tie-break stabile sull'id) e l'estensione `sortedByTypeThenName` usata dalla sezione archiviati. Lo `AccountsUiState` espone `activeGroups: List<AccountTypeGroup>` (calcolato nel ViewModel) al posto della lista piatta `active`; `archived` è ora ordinata con lo stesso criterio. La UI rende ogni gruppo con un'intestazione di sezione (etichetta del tipo, `titleMedium`) seguita dalla card raggruppata, replicando il ritmo header/card dell'elenco movimenti (pattern `DayHeader`). L'etichetta del tipo è rimossa dalla riga dei conti attivi (ridondante con l'header, `showType = false`) e mantenuta nella card archiviati (senza header).
+
+**Decisioni:** l'ordine dei gruppi usa l'ordinale dell'enum `AccountType`, già dichiarato con `CHECKING` (conto corrente) per primo: rispetta la richiesta senza introdurre una tabella di priorità da mantenere. Nessun subtotale per gruppo nell'intestazione: mischierebbe conti inclusi/esclusi dal totale e valute diverse, creando ambiguità su cosa somma. La sezione archiviati resta una card unica collassabile (area secondaria) ma ordinata con lo stesso criterio per coerenza.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` verde (wrapper offline per il download della distribuzione, usato `gradle` di sistema con la dist in cache). Aggiunto `AccountsGroupingTest` (ordine dei gruppi, alfabetico case-insensitive, tie-break per id, flatten `sortedByTypeThenName`); aggiornato `AccountsViewModelTest` al nuovo `activeGroups`. Bump `versionCode` 99→100, `versionName` 0.9.60→0.9.61.
+
+**Prossimo:** eventuale valutazione di header anche per la sezione archiviati se il numero di conti archiviati cresce.
+
+---
+
 ## 2026-07-20 - Messaggio dell'editor obiettivi di risparmio quando i conti sono tutti occupati
 
 **Fatto:** l'empty-state dell'editor obiettivi di risparmio (`SavingsGoalEditorScreen`) ora distingue due situazioni prima confuse sotto lo stesso testo "Serve un conto di risparmio ... Creane uno per iniziare". Il modello resta 1:1 (un obiettivo per conto di risparmio, `UNIQUE(accountId)`, ADR 25): quando tutti i conti di risparmio hanno già un obiettivo l'editor non ha conti "liberi" e mostrava lo stesso messaggio del caso "nessun conto di risparmio", facendolo sembrare un bug ("mi chiede di creare un conto ogni volta"). Aggiunto in `SavingsGoalEditorUiState` il flag `hasSavingsAccounts` (esiste almeno un conto SAVINGS non archiviato, a prescindere che sia libero), calcolato in `onData` e propagato da `initCreate`/`refreshCreateOptions`. La schermata sceglie il testo: se `hasSavingsAccounts` è true usa le nuove stringhe `savings_editor_all_taken_title/body` ("I tuoi conti di risparmio sono tutti in uso ... crea un altro conto o modifica un obiettivo esistente"), altrimenti quelle esistenti. La CTA resta "Crea conto di risparmio".

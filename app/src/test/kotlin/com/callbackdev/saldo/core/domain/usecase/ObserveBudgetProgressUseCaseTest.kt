@@ -136,6 +136,22 @@ class ObserveBudgetProgressUseCaseTest {
     }
 
     @Test
+    fun `equal fractions break the tie by category name, not id`() = runTest {
+        // Nothing spent yet, so every fraction is zero: the list must read
+        // alphabetically (Groceries before Transport) even though the Transport
+        // budget has the lower id.
+        val progresses = useCase(
+            budgets = listOf(
+                forCategory(id = 2L, categoryId = 11L, amount = "100.00"),
+                forCategory(id = 3L, categoryId = 10L, amount = "100.00"),
+            ),
+        ).invoke(eur).first()
+
+        assertEquals(listOf("Groceries", "Transport"), progresses.map { it.category?.name })
+        assertEquals(listOf(3L, 2L), progresses.map { it.budget.id })
+    }
+
+    @Test
     fun `category spend maps by id and missing spend means zero`() = runTest {
         val progresses = useCase(
             budgets = listOf(forCategory(id = 2L, categoryId = 10L, amount = "80.00")),

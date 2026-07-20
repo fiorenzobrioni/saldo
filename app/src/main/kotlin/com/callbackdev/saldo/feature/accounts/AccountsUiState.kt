@@ -1,15 +1,27 @@
 package com.callbackdev.saldo.feature.accounts
 
 import com.callbackdev.saldo.core.domain.model.Account
+import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import java.math.BigDecimal
 import java.util.Currency
 
+/**
+ * One account-type section of the accounts list: the [type] and its accounts,
+ * already sorted alphabetically by name.
+ */
+data class AccountTypeGroup(
+    val type: AccountType,
+    val accounts: List<AccountWithBalance>,
+)
+
 /** Immutable UI state for the accounts list screen. */
 data class AccountsUiState(
     val isLoading: Boolean = true,
-    val active: List<AccountWithBalance> = emptyList(),
+    /** Active accounts grouped by type (CHECKING first) and sorted by name within each type. */
+    val activeGroups: List<AccountTypeGroup> = emptyList(),
+    /** Archived accounts, sorted by type then name, shown in a single collapsed card. */
     val archived: List<AccountWithBalance> = emptyList(),
     /** Account whose quick-actions sheet is open, or null. */
     val selected: AccountWithBalance? = null,
@@ -17,7 +29,7 @@ data class AccountsUiState(
     /** Credit card statements waiting to be paid, keyed by account id. */
     val dueStatements: Map<Long, DueStatement> = emptyMap(),
 ) {
-    val isEmpty: Boolean get() = !isLoading && active.isEmpty() && archived.isEmpty()
+    val isEmpty: Boolean get() = !isLoading && activeGroups.isEmpty() && archived.isEmpty()
 
     /** The statement due for [accountId], or null. */
     fun dueStatement(accountId: Long): DueStatement? = dueStatements[accountId]

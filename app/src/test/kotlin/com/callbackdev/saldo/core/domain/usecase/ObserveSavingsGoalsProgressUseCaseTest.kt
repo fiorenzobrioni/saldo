@@ -156,4 +156,44 @@ class ObserveSavingsGoalsProgressUseCaseTest {
         assertEquals(LocalDate.of(2027, 1, 15), progress.projectedDate)
         assertNull(progress.onTrack)
     }
+
+    @Test
+    fun `goals are returned alphabetically by name, case-insensitive`() = runTest {
+        fun savingsAccount(id: Long) = Account(
+            id = id,
+            name = "Account $id",
+            type = AccountType.SAVINGS,
+            currency = eur,
+            initialBalance = BigDecimal.ZERO,
+        )
+
+        fun namedGoal(id: Long, name: String) = SavingsGoal(
+            id = id,
+            name = name,
+            targetAmount = BigDecimal("1000"),
+            currency = eur,
+            accountId = id,
+        )
+
+        every { savingsGoalRepository.observeGoals() } returns flowOf(
+            listOf(
+                namedGoal(1L, "vacanza"),
+                namedGoal(2L, "Auto"),
+                namedGoal(3L, "Casa"),
+            ),
+        )
+        every { accountRepository.observeAccountsWithBalance() } returns flowOf(
+            listOf(1L, 2L, 3L).map { AccountWithBalance(savingsAccount(it), BigDecimal.ZERO) },
+        )
+        every { recurringRuleRepository.observeRules() } returns flowOf(emptyList())
+
+        val names = ObserveSavingsGoalsProgressUseCase(
+            savingsGoalRepository = savingsGoalRepository,
+            accountRepository = accountRepository,
+            recurringRuleRepository = recurringRuleRepository,
+            clock = clock,
+        ).invoke().first().map { it.goal.name }
+
+        assertEquals(listOf("Auto", "Casa", "vacanza"), names)
+    }
 }

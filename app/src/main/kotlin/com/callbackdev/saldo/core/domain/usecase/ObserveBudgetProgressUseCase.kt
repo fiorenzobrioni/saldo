@@ -27,7 +27,8 @@ import javax.inject.Inject
  * purpose and are accounted for by the safe-to-spend figure instead.
  *
  * The overall budget comes first, then category budgets by descending
- * fraction (the closest to its cap on top). The month window is resolved from
+ * fraction (the closest to its cap on top), breaking ties by category name so
+ * the list stays alphabetical when nothing has been spent yet. The month window is resolved from
  * [clock] when the flow is created, matching the dashboard's lifetime.
  */
 class ObserveBudgetProgressUseCase @Inject constructor(
@@ -75,8 +76,14 @@ class ObserveBudgetProgressUseCase @Inject constructor(
             }
             progressOf(budget, category, signedSpend)
         }
+        // Category budgets: closest to the cap first. When fractions tie (every
+        // budget sits at zero at the start of the month) fall back to the
+        // category name, so the list reads alphabetically instead of by id.
+        val categoryOrder = compareByDescending<BudgetProgress> { it.fraction }
+            .thenBy(String.CASE_INSENSITIVE_ORDER) { it.category?.name.orEmpty() }
+            .thenBy { it.budget.id }
         return progresses.filter { it.budget.isOverall } +
-            progresses.filterNot { it.budget.isOverall }.sortedByDescending { it.fraction }
+            progresses.filterNot { it.budget.isOverall }.sortedWith(categoryOrder)
     }
 
     private fun progressOf(budget: Budget, category: Category?, signedSpend: BigDecimal): BudgetProgress {
