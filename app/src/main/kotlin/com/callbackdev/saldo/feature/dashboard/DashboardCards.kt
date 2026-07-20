@@ -193,6 +193,7 @@ private fun fullWeekdayDate(date: LocalDate): String {
 @Composable
 internal fun BalanceCard(
     totalBalance: BigDecimal,
+    balanceAsOfToday: BigDecimal?,
     currency: Currency,
     accounts: List<AccountWithBalance>,
     history: List<DailyBalance>,
@@ -261,6 +262,10 @@ internal fun BalanceCard(
                 autoSize = TextAutoSize.StepBased(minFontSize = BALANCE_MONEY_MIN, maxFontSize = BALANCE_MONEY_MAX),
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (balanceAsOfToday != null) {
+                Spacer(Modifier.height(BALANCE_AMOUNT_TOP_GAP))
+                BalanceAsOfTodayLabel(amount = balanceAsOfToday, currency = currency)
+            }
             if (history.size > 1) {
                 Spacer(Modifier.height(BALANCE_SECTION_GAP))
                 BalanceSparkline(
@@ -285,6 +290,42 @@ internal fun BalanceCard(
                 )
             }
         }
+    }
+}
+
+/**
+ * Secondary line under the hero figure naming the balance as of today. Shown
+ * only when future-dated confirmed movements make [totalBalance][BalanceCard]
+ * run ahead of what is actually available today (the sparkline's today point),
+ * so the two figures the card shows never silently disagree. A muted line with
+ * a calendar glyph, one altitude below the headline, no extra emphasis.
+ */
+@Composable
+private fun BalanceAsOfTodayLabel(
+    amount: BigDecimal,
+    currency: Currency,
+    modifier: Modifier = Modifier,
+) {
+    val amountText = MoneyFormatter.format(amount, currency)
+    val label = stringResource(R.string.dashboard_balance_as_of_today, amountText)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.semantics(mergeDescendants = true) { contentDescription = label },
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Today,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(BALANCE_TODAY_ICON),
+        )
+        Spacer(Modifier.width(BALANCE_TODAY_ICON_GAP))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -1123,6 +1164,10 @@ private val BALANCE_MONEY_MAX = 34.sp
 private val BALANCE_AMOUNT_TOP_GAP = 4.dp
 private val BALANCE_SECTION_GAP = 12.dp
 private val BALANCE_BREAKDOWN_TOP_GAP = 8.dp
+
+/** Size of the calendar glyph and its gap on the "as of today" secondary line. */
+private val BALANCE_TODAY_ICON = 16.dp
+private val BALANCE_TODAY_ICON_GAP = 4.dp
 
 /** Vertical padding of a tappable account (or overflow) row in the breakdown. */
 private val BALANCE_ROW_PADDING_VERTICAL = 6.dp

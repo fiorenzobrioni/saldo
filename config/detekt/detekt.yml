@@ -38,6 +38,11 @@ complexity:
     # (e.g. the CSV reader) are irreducibly branchy without hurting clarity.
     threshold: 20
     ignoreAnnotated: ['Composable']
+  LargeClass:
+    # Test classes accumulate fixtures and one case per behaviour, so a single
+    # cohesive suite legitimately grows large; splitting it by size alone hurts
+    # readability. The rule stays active on the main sources.
+    excludes: ['**/test/**', '**/androidTest/**']
   LongMethod:
     # Threshold raised to 80: when-tree event handlers (e.g. the transactions
     # screen's one-shot event dispatch) run just past the 60-line default.

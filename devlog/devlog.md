@@ -14,6 +14,26 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-20 - Card Saldo totale: riga "ad oggi" quando ci sono movimenti futuri
+
+**Fatto:** la cifra grande della card Saldo totale è `initialBalance + Σ di tutti i movimenti confermati`, senza vincolo di data, mentre il punto "oggi" della sparkline (e la coda di previsione) considera solo i movimenti datati fino a oggi. Con movimenti confermati datati in futuro (l'editor non vincola la data massima né li marca pending, quindi entrano subito nel saldo) le due cifre divergono e la card mostrava un totale che non coincide con il grafico. Aggiunto allo `DashboardUiState` il campo `balanceAsOfToday: BigDecimal?`, calcolato in `buildState` come ultimo punto dello storico giornaliero (`balanceHistory.last().balance`, cioè il saldo datato fino a oggi) e valorizzato **solo quando diverge** da `totalBalance` (`compareTo != 0`), altrimenti null. Quando presente, la `BalanceCard` mostra sotto la cifra grande una riga secondaria attenuata con icona calendario (`Icons.Outlined.Today`, `onSurfaceVariant`, `bodyMedium` tabellare): "€X ad oggi" / "€X as of today". Nuove stringhe `dashboard_balance_as_of_today` (values + values-it).
+
+**Decisioni:** scelta l'opzione additiva (cifra grande invariata, all-in) e non la ridefinizione del saldo come "a oggi": quest'ultima avrebbe cambiato l'ADR 3 (`saldo = initialBalance + Σ movimenti`), reso il saldo dipendente dal tempo (ri-aggancio a mezzanotte) e richiesto coerenza su schermata Conti, rettifica saldo (correttezza dell'ADJUSTMENT) e grafico saldo in Statistiche: fuori portata per una card. La riga compare solo alla divergenza, così quando il totale è già il valore di oggi la card resta pulita. Nessuna query nuova: il valore "ad oggi" è già in stato come ultimo punto dello storico giornaliero. Niente marcatore sulla sparkline (scelta condivisa con l'utente: solo la riga testuale). Testo italiano "ad oggi" (forma eufonica).
+
+**Verifica:** `gradle testDebugUnitTest lint assembleDebug` verde (`gradle` di sistema 8.14.3, dist in cache: il download dal wrapper è bloccato dalla policy di rete). Aggiunti due test in `DashboardViewModelTest`: divergenza (headline 120,00 / oggi 100,00 → `balanceAsOfToday` = 100,00) e coincidenza (→ null). Bump `versionCode` 102→103, `versionName` 0.9.63→0.9.64.
+
+---
+
+## 2026-07-20 - Card Saldo totale: stesso ordine dei conti dell'elenco Conti
+
+**Fatto:** il dettaglio dei conti nella card Saldo totale in Dashboard usava l'ordine del DAO (`sortOrder ASC, id ASC`), che per i conti equivale all'ordine di inserimento (`sortOrder` non è mai impostato: nessuna UI di riordino, l'editor scrive `base?.sortOrder ?: 0`). L'elenco Conti invece ordina per tipo (ordine di dichiarazione dell'enum `AccountType`) poi per nome case-insensitive. Le due schermate mostravano quindi i conti in ordini diversi. `DashboardViewModel.buildState` ora applica alla lista `accounts` esposta nello UI state l'estensione esistente `sortedByTypeThenName()` (la stessa che alimenta la sezione archiviati dell'elenco Conti), così la card e l'elenco concordano. Il totale (`fold` sui saldi) e `hasAccounts` sono indipendenti dall'ordine, quindi invariati.
+
+**Decisioni:** riuso della funzione pura `sortedByTypeThenName` invece di duplicare il comparatore, per avere un'unica fonte di verità sull'ordine dei conti. Caveat annotato: se in futuro si introdurrà un riordino manuale basato su `sortOrder`, quella diventerà la fonte di verità e andrà applicata a entrambe le schermate insieme.
+
+**Verifica:** `gradle testDebugUnitTest lint assembleDebug` verde (usato `gradle` di sistema 8.14.3 con dist in cache: il download della distribuzione dal wrapper è bloccato dalla policy di rete). Aggiunto in `DashboardViewModelTest` un test che alimenta conti in ordine mescolato (tipi e nomi vari) e verifica l'ordine tipo-poi-nome nel dettaglio; esteso l'helper `account()` con `name`/`type`. Bump `versionCode` 101→102, `versionName` 0.9.62→0.9.63.
+
+---
+
 ## 2026-07-20 - Ordinamento Obiettivi di risparmio (per nome) e Budget (spareggio per nome)
 
 **Fatto:** due ordinamenti resi deterministici.

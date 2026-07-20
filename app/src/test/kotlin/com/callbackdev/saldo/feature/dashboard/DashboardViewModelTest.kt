@@ -76,10 +76,12 @@ class DashboardViewModelTest {
         currency: Currency = eur,
         includedInTotal: Boolean = true,
         archived: Boolean = false,
+        name: String = "acc-$id",
+        type: AccountType = AccountType.CHECKING,
     ) = Account(
         id = id,
-        name = "acc-$id",
-        type = AccountType.CHECKING,
+        name = name,
+        type = type,
         currency = currency,
         initialBalance = BigDecimal.ZERO,
         isIncludedInTotal = includedInTotal,
@@ -181,6 +183,30 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `total-balance breakdown follows the accounts screen order, type then name`() = runTest {
+        // Fed in a deliberately scrambled order; the card breakdown must present
+        // the accounts grouped by type (enum declaration order) then by name,
+        // case-insensitive, mirroring the Accounts list screen.
+        val accounts = listOf(
+            AccountWithBalance(account(1L, name = "Zeta", type = AccountType.CASH), BigDecimal.ZERO),
+            AccountWithBalance(account(2L, name = "banca", type = AccountType.CHECKING), BigDecimal.ZERO),
+            AccountWithBalance(account(3L, name = "Alfa", type = AccountType.CHECKING), BigDecimal.ZERO),
+            AccountWithBalance(account(4L, name = "PayPal", type = AccountType.DIGITAL_WALLET), BigDecimal.ZERO),
+            AccountWithBalance(account(5L, name = "Libretto", type = AccountType.SAVINGS), BigDecimal.ZERO),
+        )
+        val viewModel = viewModel(accounts = accounts)
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(
+                listOf("Alfa", "banca", "Libretto", "Zeta", "PayPal"),
+                state.accounts.map { it.account.name },
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `sparkline window covers the last thirty days anchored to today`() = runTest {
         val viewModel = viewModel(
             accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
@@ -214,6 +240,36 @@ class DashboardViewModelTest {
 
         viewModel.uiState.test {
             assertEquals(history, awaitLoaded().balanceHistory)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `balance as of today is surfaced when future-dated movements run the headline ahead`() = runTest {
+        // Headline (every booking) 120.00, today's point (dated up to today)
+        // 100.00: 20.00 sits in the future, so the card names the today figure.
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("120.00"))),
+            balanceHistory = listOf(DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal("100.00"))),
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(BigDecimal("120.00"), state.totalBalance)
+            assertEquals(BigDecimal("100.00"), state.balanceAsOfToday)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `balance as of today is null when the headline already is the today figure`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("100.00"))),
+            balanceHistory = listOf(DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal("100.00"))),
+        )
+
+        viewModel.uiState.test {
+            assertNull(awaitLoaded().balanceAsOfToday)
             cancelAndIgnoreRemainingEvents()
         }
     }
