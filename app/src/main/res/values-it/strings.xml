@@ -86,11 +86,11 @@
     <string name="dashboard_manage_accounts">Gestisci conti</string>
     <!-- Azione vocale per una riga di conto toccabile nel dettaglio del saldo; %1$s è il nome del conto. -->
     <string name="dashboard_account_open">Apri %1$s</string>
-    <!-- Riga che chiude un elenco conti ridotto; %1$d è quanti altri conti sono nascosti. -->
-    <plurals name="dashboard_accounts_more">
-        <item quantity="one">+%1$d altro</item>
-        <item quantity="many">+%1$d altri</item>
-        <item quantity="other">+%1$d altri</item>
+    <!-- Riga di overflow nel dettaglio espanso; %1$d è quanti conti restano nell'elenco completo. -->
+    <plurals name="dashboard_accounts_overflow">
+        <item quantity="one">%1$d altro conto nell\'elenco</item>
+        <item quantity="many">Altri %1$d conti nell\'elenco</item>
+        <item quantity="other">Altri %1$d conti nell\'elenco</item>
     </plurals>
     <string name="dashboard_account_other_currency">Valuta %1$s, non nel totale</string>
     <string name="dashboard_today">Oggi</string>

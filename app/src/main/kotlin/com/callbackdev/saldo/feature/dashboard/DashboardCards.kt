@@ -2,8 +2,10 @@
 
 package com.callbackdev.saldo.feature.dashboard
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,9 +21,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
@@ -30,7 +32,9 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.EventRepeat
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.MoneyOff
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.Today
@@ -50,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -172,15 +177,18 @@ private fun fullWeekdayDate(date: LocalDate): String {
 /**
  * Hero card: the total balance as the screen's dominant figure, a balance
  * sparkline (30 days of history plus a dashed end-of-month forecast tail) and,
- * under a hairline divider, the per-account breakdown capped to the first
- * [ACCOUNT_PREVIEW_COUNT] accounts with a "+N more" row opening the full list.
- * A soft top-down tonal gradient and the larger shape single it out as the
- * primary card while keeping the whole dashboard flat.
+ * under a hairline divider, the per-account breakdown. The breakdown shows the
+ * first [ACCOUNT_PREVIEW_COUNT] accounts and, when more exist, an expand chevron
+ * in the header (mirroring the safe-to-spend card) reveals the rest in place up
+ * to [ACCOUNT_EXPANDED_MAX]; beyond that an overflow row points to the full
+ * accounts list. Expansion is transient (plain [remember]): it collapses again
+ * when the app is reopened. A soft top-down tonal gradient and the larger shape
+ * single the card out as the primary one while keeping the dashboard flat.
  *
- * Tap targets are layered: each account row opens that account's detail
- * ([onAccountClick]); the "+N more" row and every other part of the card open
- * account management ([onManageAccounts], the spoken affordance of the card
- * itself).
+ * Tap targets are layered: the header chevron toggles the breakdown, each
+ * account row opens that account's detail ([onAccountClick]), and every other
+ * part of the card opens account management ([onManageAccounts], the spoken
+ * affordance of the card itself).
  */
 @Composable
 internal fun BalanceCard(
@@ -195,6 +203,7 @@ internal fun BalanceCard(
     modifier: Modifier = Modifier,
 ) {
     val manageAccountsLabel = stringResource(R.string.dashboard_manage_accounts)
+    var accountsExpanded by remember { mutableStateOf(false) }
     SaldoCard(
         onClick = onManageAccounts,
         modifier = modifier
@@ -221,12 +230,21 @@ internal fun BalanceCard(
                 icon = Icons.Outlined.AccountBalanceWallet,
                 title = stringResource(R.string.dashboard_balance_total),
                 trailingContent = {
-                    Text(
-                        text = fullWeekdayDate(date),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = fullWeekdayDate(date),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                        )
+                        if (accounts.size > ACCOUNT_PREVIEW_COUNT) {
+                            Spacer(Modifier.width(4.dp))
+                            AccountsExpandChevron(
+                                expanded = accountsExpanded,
+                                onToggle = { accountsExpanded = !accountsExpanded },
+                            )
+                        }
+                    }
                 },
             )
             Spacer(Modifier.height(BALANCE_AMOUNT_TOP_GAP))
@@ -261,6 +279,7 @@ internal fun BalanceCard(
                 AccountsBreakdownSection(
                     accounts = accounts,
                     primaryCurrency = currency,
+                    expanded = accountsExpanded,
                     onAccountClick = onAccountClick,
                     onShowAll = onManageAccounts,
                 )
@@ -271,33 +290,34 @@ internal fun BalanceCard(
 
 /**
  * The per-account breakdown under the hero figure: a hairline divider that
- * separates it from the balance and sparkline, the first [ACCOUNT_PREVIEW_COUNT]
- * accounts as tappable rows, and, when more accounts exist, a "+N more" row that
- * opens the full accounts list. Capping the preview keeps the hero card compact
- * no matter how many accounts the user holds.
+ * separates it from the balance and sparkline, then the account rows. When
+ * collapsed only the first [ACCOUNT_PREVIEW_COUNT] rows show; when [expanded]
+ * the list grows in place (animated) up to [ACCOUNT_EXPANDED_MAX] rows, and if
+ * still more accounts remain an overflow row points to the full accounts list.
  */
 @Composable
 private fun AccountsBreakdownSection(
     accounts: List<AccountWithBalance>,
     primaryCurrency: Currency,
+    expanded: Boolean,
     onAccountClick: (Long) -> Unit,
     onShowAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth().animateContentSize()) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Spacer(Modifier.height(BALANCE_BREAKDOWN_TOP_GAP))
-        val preview = accounts.take(ACCOUNT_PREVIEW_COUNT)
-        preview.forEach { item ->
+        val limit = if (expanded) ACCOUNT_EXPANDED_MAX else ACCOUNT_PREVIEW_COUNT
+        accounts.take(limit).forEach { item ->
             AccountBreakdownRow(
                 item = item,
                 primaryCurrency = primaryCurrency,
                 onClick = { onAccountClick(item.account.id) },
             )
         }
-        val hidden = accounts.size - preview.size
-        if (hidden > 0) {
-            MoreAccountsRow(count = hidden, onClick = onShowAll)
+        val overflow = accounts.size - ACCOUNT_EXPANDED_MAX
+        if (expanded && overflow > 0) {
+            OverflowAccountsRow(count = overflow, onClick = onShowAll)
         }
     }
 }
@@ -486,12 +506,42 @@ private fun AccountBreakdownRow(
 }
 
 /**
- * The "+N more" row closing a capped breakdown: it lines up with the account
- * names above it and, with its leading-tinted label and trailing chevron, reads
- * as a continuation of the list that navigates to the full accounts screen.
+ * The header expand/collapse affordance: the same 24dp [Icons.Outlined.ExpandMore]
+ * chevron as the safe-to-spend card, columnar in the header's trailing slot and
+ * rotating on toggle. It carries its own click so the tap toggles the breakdown
+ * instead of falling through to the card's "manage accounts" navigation.
  */
 @Composable
-private fun MoreAccountsRow(
+private fun AccountsExpandChevron(
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val rotation by animateFloatAsState(
+        targetValue = if (expanded) CHEVRON_EXPANDED_DEGREES else 0f,
+        label = "balanceAccountsChevron",
+    )
+    Icon(
+        imageVector = Icons.Outlined.ExpandMore,
+        contentDescription = stringResource(
+            if (expanded) R.string.dashboard_accounts_collapse else R.string.dashboard_accounts_expand,
+        ),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+            .clip(CircleShape)
+            .clickable(onClick = onToggle)
+            .rotate(rotation),
+    )
+}
+
+/**
+ * The row closing an expanded breakdown that still hides accounts past
+ * [ACCOUNT_EXPANDED_MAX]: a "more" glyph aligned with the account avatars and a
+ * muted label, tappable to open the full accounts list. It exists only to keep
+ * the hero card bounded when a user holds an unusually large number of accounts.
+ */
+@Composable
+private fun OverflowAccountsRow(
     count: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -504,22 +554,26 @@ private fun MoreAccountsRow(
             .padding(vertical = BALANCE_ROW_PADDING_VERTICAL),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        Box(
+            modifier = Modifier.size(36.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.MoreHoriz,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
         Text(
-            text = pluralStringResource(R.plurals.dashboard_accounts_more, count, count),
+            text = pluralStringResource(R.plurals.dashboard_accounts_overflow, count, count),
             style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .weight(1f)
-                .padding(start = BALANCE_MORE_ROW_INDENT),
-        )
-        Icon(
-            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(20.dp),
+                .padding(horizontal = 12.dp),
         )
     }
 }
@@ -1070,14 +1124,17 @@ private val BALANCE_AMOUNT_TOP_GAP = 4.dp
 private val BALANCE_SECTION_GAP = 12.dp
 private val BALANCE_BREAKDOWN_TOP_GAP = 8.dp
 
-/** Vertical padding of a tappable account (or "+N more") row in the breakdown. */
-private val BALANCE_ROW_PADDING_VERTICAL = 8.dp
+/** Vertical padding of a tappable account (or overflow) row in the breakdown. */
+private val BALANCE_ROW_PADDING_VERTICAL = 6.dp
 
-/** Start indent of the "+N more" row: avatar (36dp) + its 12dp gap, so it aligns with the account names. */
-private val BALANCE_MORE_ROW_INDENT = 48.dp
-
-/** How many accounts the hero breakdown shows before collapsing the rest into "+N more". */
+/** How many accounts the collapsed breakdown shows before the expand chevron. */
 private const val ACCOUNT_PREVIEW_COUNT = 2
+
+/** How many accounts the expanded breakdown shows before the overflow row. */
+private const val ACCOUNT_EXPANDED_MAX = 10
+
+/** Rotation of the expand chevron when the breakdown is open. */
+private const val CHEVRON_EXPANDED_DEGREES = 180f
 
 /** Height of the hero card's balance sparkline, in dp. */
 private const val SPARKLINE_HEIGHT = 56
