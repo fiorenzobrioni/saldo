@@ -32,6 +32,7 @@ import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSavingsGoalsProgressUseCase
 import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
+import com.callbackdev.saldo.feature.accounts.sortedByTypeThenName
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -349,7 +350,9 @@ class DashboardViewModel @Inject constructor(
             hasAccounts = active.isNotEmpty(),
             primaryCurrency = primary,
             totalBalance = totalBalance,
-            accounts = active,
+            // Same order as the Accounts screen (type declaration order, then
+            // name) so the total-balance breakdown and the full list agree.
+            accounts = active.sortedByTypeThenName(),
             balanceHistory = balanceHistory,
             // Anchored to the headline balance, the same figure the last
             // history point equals, so the dashed tail attaches seamlessly.

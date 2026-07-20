@@ -14,6 +14,16 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-20 - Card Saldo totale: stesso ordine dei conti dell'elenco Conti
+
+**Fatto:** il dettaglio dei conti nella card Saldo totale in Dashboard usava l'ordine del DAO (`sortOrder ASC, id ASC`), che per i conti equivale all'ordine di inserimento (`sortOrder` non è mai impostato: nessuna UI di riordino, l'editor scrive `base?.sortOrder ?: 0`). L'elenco Conti invece ordina per tipo (ordine di dichiarazione dell'enum `AccountType`) poi per nome case-insensitive. Le due schermate mostravano quindi i conti in ordini diversi. `DashboardViewModel.buildState` ora applica alla lista `accounts` esposta nello UI state l'estensione esistente `sortedByTypeThenName()` (la stessa che alimenta la sezione archiviati dell'elenco Conti), così la card e l'elenco concordano. Il totale (`fold` sui saldi) e `hasAccounts` sono indipendenti dall'ordine, quindi invariati.
+
+**Decisioni:** riuso della funzione pura `sortedByTypeThenName` invece di duplicare il comparatore, per avere un'unica fonte di verità sull'ordine dei conti. Caveat annotato: se in futuro si introdurrà un riordino manuale basato su `sortOrder`, quella diventerà la fonte di verità e andrà applicata a entrambe le schermate insieme.
+
+**Verifica:** `gradle testDebugUnitTest lint assembleDebug` verde (usato `gradle` di sistema 8.14.3 con dist in cache: il download della distribuzione dal wrapper è bloccato dalla policy di rete). Aggiunto in `DashboardViewModelTest` un test che alimenta conti in ordine mescolato (tipi e nomi vari) e verifica l'ordine tipo-poi-nome nel dettaglio; esteso l'helper `account()` con `name`/`type`. Bump `versionCode` 101→102, `versionName` 0.9.62→0.9.63.
+
+---
+
 ## 2026-07-20 - Ordinamento Obiettivi di risparmio (per nome) e Budget (spareggio per nome)
 
 **Fatto:** due ordinamenti resi deterministici.
