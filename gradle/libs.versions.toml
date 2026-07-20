@@ -18,9 +18,8 @@ datastore = "1.2.1"
 work = "2.11.2"
 # androidx.hilt 1.4.0 pulls lifecycle 2.11 (needs compileSdk 37/AGP 9.1): 1.3.0 is the
 # latest compatible with the pinned lifecycle 2.10 (see the SDK 37 chore note in PLANNING.md).
-# Covers hilt-work, hilt-compiler and hilt-navigation-compose.
+# Covers hilt-work, hilt-compiler and hilt-lifecycle-viewmodel-compose.
 androidxHilt = "1.3.0"
-androidxHiltNavigationCompose = "1.3.0"
 
 # Google
 # Hilt 2.59+ requires AGP 9.0 and Gradle 9.1: 2.58 is the latest compatible with AGP 8.x.
@@ -76,7 +75,10 @@ androidx-datastore-preferences = { group = "androidx.datastore", name = "datasto
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
 androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "androidxHilt" }
 androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "androidxHilt" }
-androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "androidxHiltNavigationCompose" }
+# hiltViewModel() moved out of hilt-navigation-compose in androidx.hilt 1.3.0
+# (package androidx.hilt.lifecycle.viewmodel.compose), dropping the transitive
+# dependency on androidx.navigation, which Saldo does not use (Navigation 3).
+androidx-hilt-lifecycle-viewmodel-compose = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
 
 # Hilt
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }

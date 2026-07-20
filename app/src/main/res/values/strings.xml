@@ -252,6 +252,24 @@
     <string name="filter_date_last_90_days">Last 90 days</string>
     <string name="filter_date_this_year">This year</string>
     <string name="filter_date_custom">Custom</string>
+    <string name="filter_date_sheet_title">Custom period</string>
+    <string name="filter_date_sheet_subtitle">Pick a range, or only a start or end date.</string>
+    <string name="filter_date_mode_range">Range</string>
+    <string name="filter_date_mode_from">From</string>
+    <string name="filter_date_mode_until">Until</string>
+    <string name="filter_date_range_label">%1$s – %2$s</string>
+    <string name="filter_date_range_partial">%1$s – …</string>
+    <string name="filter_date_from_label">From %1$s</string>
+    <string name="filter_date_until_label">Until %1$s</string>
+    <string name="filter_date_pick_start">Select the start date</string>
+    <string name="filter_date_pick_end">Select the end date</string>
+    <string name="filter_date_no_end">No end date</string>
+    <string name="filter_date_no_start">No start date</string>
+    <plurals name="filter_date_day_count">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="filter_date_clear">Clear period</string>
     <string name="filter_section_type">Type</string>
     <string name="filter_section_amount">Amount</string>
     <string name="filter_amount_min">Minimum</string>

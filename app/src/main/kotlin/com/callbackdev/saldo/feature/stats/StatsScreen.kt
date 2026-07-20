@@ -40,7 +40,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
@@ -51,7 +51,6 @@ import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
-import com.callbackdev.saldo.feature.transactions.FilterDateRangePickerDialog
 import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
 import java.time.LocalDate
 import java.time.YearMonth
@@ -178,7 +177,7 @@ fun StatsScreen(
 
     if (showRangePicker) {
         val currentRange = (uiState.period as? StatsPeriod.Custom)
-        FilterDateRangePickerDialog(
+        StatsDateRangePickerDialog(
             initialStart = currentRange?.start,
             initialEnd = currentRange?.end,
             onConfirm = { start, end ->

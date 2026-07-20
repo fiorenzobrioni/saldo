@@ -33,6 +33,7 @@ import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
+import java.time.LocalDate
 
 /**
  * The always-visible date preset chips plus, when other filters are active, a
@@ -42,6 +43,7 @@ import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
 @Composable
 internal fun TransactionsFilterBar(
     filters: TransactionFilters,
+    today: LocalDate,
     categories: List<Category>,
     accounts: List<Account>,
     tags: List<Tag>,
@@ -53,6 +55,7 @@ internal fun TransactionsFilterBar(
     Column(modifier = modifier.fillMaxWidth()) {
         DatePresetRow(
             filters = filters,
+            today = today,
             onSetPreset = onSetPreset,
             onRequestCustomRange = onRequestCustomRange,
         )
@@ -75,6 +78,7 @@ private val TransactionFilters.hasNonDateFilters: Boolean
 @Composable
 private fun DatePresetRow(
     filters: TransactionFilters,
+    today: LocalDate,
     onSetPreset: (DatePreset) -> Unit,
     onRequestCustomRange: () -> Unit,
     modifier: Modifier = Modifier,
@@ -101,7 +105,7 @@ private fun DatePresetRow(
                 label = {
                     Text(
                         if (preset == DatePreset.CUSTOM && selected) {
-                            customRangeLabel(filters)
+                            customRangeLabel(filters, today)
                         } else {
                             stringResource(preset.labelRes)
                         },
@@ -112,16 +116,11 @@ private fun DatePresetRow(
     }
 }
 
+/** Chip label of the applied custom period, open bounds included. */
 @Composable
-private fun customRangeLabel(filters: TransactionFilters): String {
-    val start = filters.customStart
-    val end = filters.customEnd
-    return if (start != null && end != null) {
-        "${chipDayLabel(start, start)} - ${chipDayLabel(end, end)}"
-    } else {
-        stringResource(DatePreset.CUSTOM.labelRes)
-    }
-}
+private fun customRangeLabel(filters: TransactionFilters, today: LocalDate): String =
+    periodLabel(filters.customStart, filters.customEnd, today)
+        ?: stringResource(DatePreset.CUSTOM.labelRes)
 
 private val DatePreset.labelRes: Int
     get() = when (this) {

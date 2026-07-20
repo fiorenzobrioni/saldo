@@ -55,7 +55,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
@@ -66,6 +66,7 @@ import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.feature.transactions.export.CsvExportSheet
+import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import java.time.LocalDate
 
 /**
@@ -181,6 +182,7 @@ fun TransactionsScreen(
             else -> Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                 TransactionsFilterBar(
                     filters = uiState.filters,
+                    today = uiState.today,
                     categories = uiState.filterCategories,
                     accounts = uiState.filterAccounts,
                     tags = uiState.filterTags,
@@ -258,11 +260,17 @@ fun TransactionsScreen(
     }
 
     if (showRangePicker) {
-        FilterDateRangePickerDialog(
+        FilterDateRangeSheet(
             initialStart = uiState.filters.customStart,
             initialEnd = uiState.filters.customEnd,
-            onConfirm = { start, end ->
+            today = uiState.today,
+            showClear = uiState.filters.datePreset == DatePreset.CUSTOM,
+            onApply = { start, end ->
                 viewModel.setCustomRange(start, end)
+                showRangePicker = false
+            },
+            onClear = {
+                viewModel.setDatePreset(DatePreset.ALL)
                 showRangePicker = false
             },
             onDismiss = { showRangePicker = false },

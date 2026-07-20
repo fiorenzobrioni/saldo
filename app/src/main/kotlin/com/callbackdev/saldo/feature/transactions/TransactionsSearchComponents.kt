@@ -1,7 +1,6 @@
 package com.callbackdev.saldo.feature.transactions
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Close
@@ -9,17 +8,13 @@ import androidx.compose.material.icons.outlined.FilterList
 import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -28,12 +23,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
 
 /** The ledger's app bar in search mode: a flat text field with back and clear. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,55 +99,6 @@ internal fun FilterButton(
         }
     }
 }
-
-/** Material date range picker for the "custom" preset. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun FilterDateRangePickerDialog(
-    initialStart: LocalDate?,
-    initialEnd: LocalDate?,
-    onConfirm: (LocalDate, LocalDate) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val state = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = initialStart?.toUtcMillis(),
-        initialSelectedEndDateMillis = initialEnd?.toUtcMillis(),
-    )
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val start = state.selectedStartDateMillis ?: return@TextButton
-                    val end = state.selectedEndDateMillis ?: return@TextButton
-                    onConfirm(start.toUtcLocalDate(), end.toUtcLocalDate())
-                },
-                enabled = state.selectedStartDateMillis != null && state.selectedEndDateMillis != null,
-            ) {
-                Text(stringResource(R.string.action_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
-    ) {
-        DateRangePicker(
-            state = state,
-            showModeToggle = false,
-            modifier = Modifier.heightIn(max = RANGE_PICKER_MAX_HEIGHT),
-        )
-    }
-}
-
-private val RANGE_PICKER_MAX_HEIGHT = 460.dp
-
-private fun LocalDate.toUtcMillis(): Long =
-    atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-
-private fun Long.toUtcLocalDate(): LocalDate =
-    Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 
 /** Movements exist, but none passes the active filters. */
 @Composable
