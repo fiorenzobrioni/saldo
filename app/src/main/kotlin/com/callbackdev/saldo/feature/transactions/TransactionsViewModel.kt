@@ -6,11 +6,15 @@ import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.di.DefaultDispatcher
 import com.callbackdev.saldo.core.common.prefs.CsvSeparator
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Tag
+import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.usecase.CarryOverCalculator
+import com.callbackdev.saldo.core.domain.usecase.DeleteFilteredTransactionsUseCase
 import com.callbackdev.saldo.feature.transactions.export.TransactionsCsvExporter
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilterEngine
@@ -35,7 +39,7 @@ import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
-@Suppress("LongParameterList") // Hilt wiring: one dependency per concern.
+@Suppress("LongParameterList", "TooManyFunctions") // Hilt wiring + the ledger's filter/search/delete surface.
 class TransactionsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     accountRepository: AccountRepository,
@@ -43,6 +47,7 @@ class TransactionsViewModel @Inject constructor(
     private val tagRepository: TagRepository,
     private val userPreferences: UserPreferencesRepository,
     private val csvExporter: TransactionsCsvExporter,
+    private val deleteFilteredTransactions: DeleteFilteredTransactionsUseCase,
     private val clock: Clock,
     @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -89,22 +94,21 @@ class TransactionsViewModel @Inject constructor(
         // Compiled once per pass: this loop runs over the whole ledger on
         // every keystroke of the search field.
         val compiled = TransactionFilterEngine.compile(activeFilters, today, firstDayOfWeek)
-        val filtered = transactions
-            .filter { transaction ->
-                compiled.matches(
-                    transaction = transaction,
-                    localDate = transaction.localDate,
-                    tagIds = tags.assignments[transaction.id].orEmpty(),
-                )
-            }
-            .map { transaction ->
-                TransactionListItem(
-                    transaction = transaction,
-                    account = accountById[transaction.accountId],
-                    toAccount = transaction.transferAccountId?.let { accountById[it] },
-                    category = transaction.categoryId?.let { categoryById[it] },
-                )
-            }
+        val matching = transactions.filter { transaction ->
+            compiled.matches(
+                transaction = transaction,
+                localDate = transaction.localDate,
+                tagIds = tags.assignments[transaction.id].orEmpty(),
+            )
+        }
+        val filtered = matching.map { transaction ->
+            TransactionListItem(
+                transaction = transaction,
+                account = accountById[transaction.accountId],
+                toAccount = transaction.transferAccountId?.let { accountById[it] },
+                category = transaction.categoryId?.let { categoryById[it] },
+            )
+        }
         TransactionsUiState(
             isLoading = false,
             hasAccounts = accounts.any { !it.account.isArchived },
@@ -117,6 +121,7 @@ class TransactionsViewModel @Inject constructor(
             filterCategories = categories,
             filterAccounts = accounts.map { it.account }.sortedBy { it.isArchived },
             filterTags = tags.tags,
+            deletionImpacts = deletionImpacts(matching, accountById),
         )
     }
         .flowOn(defaultDispatcher)
@@ -226,6 +231,73 @@ class TransactionsViewModel @Inject constructor(
             }.onFailure { _events.send(TransactionsEvent.WriteFailed) }
         }
     }
+
+    /**
+     * Deletes every movement in the current filtered view. When
+     * [preserveBalances] is set, each affected account keeps its current balance
+     * via a carry-over adjustment (labelled [carryOverDescription]); otherwise
+     * balances recompute. Captures each movement's tags first so undo can rebuild
+     * it, and reports the created carry-overs so undo can remove them.
+     */
+    fun deleteFiltered(preserveBalances: Boolean, carryOverDescription: String) {
+        viewModelScope.launch {
+            val transactions = uiState.value.days
+                .flatMap { it.items }
+                .map { it.transaction }
+            if (transactions.isEmpty()) return@launch
+            suspendRunCatching {
+                val assignments = tagRepository.observeTagAssignments().first()
+                val restorable = transactions.map { it to assignments[it.id].orEmpty().toList() }
+                val carryOverIds = deleteFilteredTransactions(
+                    transactions = transactions,
+                    preserveBalances = preserveBalances,
+                    carryOverDescription = carryOverDescription,
+                )
+                restorable to carryOverIds
+            }
+                .onSuccess { (restorable, carryOverIds) ->
+                    _events.send(
+                        TransactionsEvent.FilteredDeleted(
+                            restorable = restorable,
+                            carryOverIds = carryOverIds,
+                            count = restorable.size,
+                        ),
+                    )
+                }
+                .onFailure { _events.send(TransactionsEvent.WriteFailed) }
+        }
+    }
+
+    /** Removes the carry-over adjustments, then re-inserts the deleted movements and their tags. */
+    fun undoFilteredDelete(event: TransactionsEvent.FilteredDeleted) {
+        viewModelScope.launch {
+            suspendRunCatching {
+                if (event.carryOverIds.isNotEmpty()) {
+                    transactionRepository.deleteByIds(event.carryOverIds)
+                }
+                event.restorable.forEach { (transaction, tagIds) ->
+                    val newId = transactionRepository.upsert(transaction.copy(id = 0L))
+                    if (tagIds.isNotEmpty()) {
+                        tagRepository.setTagsForTransaction(newId, tagIds)
+                    }
+                }
+            }.onFailure { _events.send(TransactionsEvent.WriteFailed) }
+        }
+    }
+
+    /**
+     * Per-account balance change if [matching] were deleted without a carry-over:
+     * the net effect removed from each balance, negated (deleting expenses raises
+     * the balance). Skips accounts with a zero net; drives the delete sheet preview.
+     */
+    private fun deletionImpacts(
+        matching: List<Transaction>,
+        accountById: Map<Long, Account>,
+    ): List<AccountBalanceImpact> =
+        CarryOverCalculator.netByAccount(matching).mapNotNull { (accountId, net) ->
+            if (net.signum() == 0) return@mapNotNull null
+            accountById[accountId]?.let { AccountBalanceImpact(it, net.negate()) }
+        }
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L

@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
 import com.callbackdev.saldo.core.database.relation.AccountTotalRow
@@ -49,6 +50,36 @@ interface TransactionDao {
 
     @Delete
     suspend fun delete(transaction: TransactionEntity)
+
+    /**
+     * Deletes a single chunk of ids in one statement. Callers go through
+     * [deleteByIds], which chunks: SQLite caps the number of bound variables
+     * per statement, so a very large filtered selection cannot be a single IN.
+     */
+    @Query("DELETE FROM transactions WHERE id IN (:ids)")
+    suspend fun deleteByIdsChunk(ids: List<Long>)
+
+    /**
+     * Deletes every movement whose id is in [ids]; tag cross-refs cascade
+     * (`onDelete = CASCADE`). Chunked and wrapped in a single transaction so
+     * the whole filtered selection is removed atomically.
+     */
+    @Transaction
+    suspend fun deleteByIds(ids: List<Long>) {
+        ids.chunked(ID_CHUNK_SIZE).forEach { deleteByIdsChunk(it) }
+    }
+
+    /**
+     * Atomically deletes [ids] and inserts [inserts] (new rows, id == 0),
+     * returning the ids assigned to the inserts. Backs the filtered delete that
+     * preserves balances: the deletions and the carry-over adjustments must land
+     * together or not at all.
+     */
+    @Transaction
+    suspend fun deleteAndInsert(ids: List<Long>, inserts: List<TransactionEntity>): List<Long> {
+        ids.chunked(ID_CHUNK_SIZE).forEach { deleteByIdsChunk(it) }
+        return if (inserts.isEmpty()) emptyList() else insertAll(inserts)
+    }
 
     /** The confirmed ledger; pending recurring movements are excluded. */
     @Query("SELECT * FROM transactions WHERE isPending = 0 ORDER BY timestampEpochMilli DESC, id DESC")
@@ -561,6 +592,14 @@ interface TransactionDao {
         endMillis: Long,
         currency: String,
     ): Long?
+
+    companion object {
+        /**
+         * Ids per `IN (...)` chunk. Kept well under SQLite's default variable
+         * limit (999) so a large filtered delete stays a handful of statements.
+         */
+        private const val ID_CHUNK_SIZE = 900
+    }
 
     @Query("SELECT COUNT(*) FROM transactions WHERE accountId = :accountId OR transferAccountId = :accountId")
     suspend fun countForAccount(accountId: Long): Int

@@ -37,6 +37,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - 🎯 **Obiettivi di risparmio** - un traguardo su un conto di risparmio: il risparmiato è il saldo reale del conto, che alimenti con i trasferimenti (manuali o ricorrenti). Con data obiettivo opzionale, suggerimento del versamento mensile necessario e stima di quando lo raggiungerai al ritmo dei tuoi trasferimenti ricorrenti
 - 🏷️ **Categorie e tag personalizzabili**
 - 🔍 **Ricerca e filtri combinabili** con totale della vista filtrata e preset rapidi (inclusa "Questa settimana", che rispetta il primo giorno scelto)
+- 🧹 **Eliminazione dei movimenti filtrati** - dal registro elimini in blocco tutti i movimenti della vista filtrata (per data, tipo, categoria, conto, tag, importo), con anteprima dell'impatto e undo. Due modalità: "Ricalcola i saldi" (per rimuovere voci errate) e "Conserva i saldi correnti" (per fare pulizia dello storico senza spostare i saldi, tramite una rettifica di riporto per conto). Con export della selezione prima di eliminare
 - 📈 **Statistiche** - spese per categoria (anello animato, tap sulla fetta per i movimenti), trend mensile, entrate vs uscite, andamento saldo
 - 🌍 **Multi-valuta** - ogni movimento conserva importo e valuta originali
 - 🎨 **Tema personalizzabile** - chiaro/scuro/sistema, palette dell'app o colori dinamici Material You
