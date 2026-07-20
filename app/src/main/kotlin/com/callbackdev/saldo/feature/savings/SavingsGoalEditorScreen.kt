@@ -166,8 +166,20 @@ fun SavingsGoalEditorScreen(
 
             uiState.noAvailableAccounts -> EmptyState(
                 icon = Icons.Outlined.Savings,
-                title = stringResource(R.string.savings_editor_no_account_title),
-                body = stringResource(R.string.savings_editor_no_account_body),
+                title = stringResource(
+                    if (uiState.hasSavingsAccounts) {
+                        R.string.savings_editor_all_taken_title
+                    } else {
+                        R.string.savings_editor_no_account_title
+                    },
+                ),
+                body = stringResource(
+                    if (uiState.hasSavingsAccounts) {
+                        R.string.savings_editor_all_taken_body
+                    } else {
+                        R.string.savings_editor_no_account_body
+                    },
+                ),
                 actionLabel = stringResource(R.string.savings_editor_no_account_cta),
                 onAction = onNavigateToNewAccount,
                 modifier = Modifier.fillMaxSize().padding(innerPadding),

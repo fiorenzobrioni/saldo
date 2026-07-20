@@ -85,6 +85,13 @@
     <string name="dashboard_accounts_expand">Show accounts</string>
     <string name="dashboard_accounts_collapse">Hide accounts</string>
     <string name="dashboard_manage_accounts">Manage accounts</string>
+    <!-- Spoken action for a tappable account row in the balance breakdown; %1$s is the account name. -->
+    <string name="dashboard_account_open">Open %1$s</string>
+    <!-- Overflow row in the expanded breakdown; %1$d is how many accounts remain in the full list. -->
+    <plurals name="dashboard_accounts_overflow">
+        <item quantity="one">%1$d more in the accounts list</item>
+        <item quantity="other">%1$d more in the accounts list</item>
+    </plurals>
     <string name="dashboard_account_other_currency">Currency %1$s, not in the total</string>
     <string name="dashboard_today">Today</string>
     <string name="dashboard_month">This month</string>
@@ -946,6 +953,9 @@
     <string name="savings_editor_no_account_title">A savings account is needed</string>
     <string name="savings_editor_no_account_body">A goal sits on a Savings account, which you feed with transfers. Create one to get started.</string>
     <string name="savings_editor_no_account_cta">Create savings account</string>
+    <!-- Shown when savings accounts exist but each already has a goal (one goal per account). -->
+    <string name="savings_editor_all_taken_title">Your savings accounts are all in use</string>
+    <string name="savings_editor_all_taken_body">Each goal links to its own savings account, and all of yours already have one. Create another savings account for a new goal, or edit an existing goal.</string>
     <string name="savings_delete_title">Delete this goal?</string>
     <string name="savings_delete_body">The goal is removed. The linked savings account and its transactions stay.</string>
     <string name="savings_delete_action">Delete</string>

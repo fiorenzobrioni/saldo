@@ -48,6 +48,7 @@ import java.time.YearMonth
 @Composable
 fun DashboardScreen(
     onNavigateToAccounts: () -> Unit,
+    onNavigateToAccount: (Long) -> Unit,
     onCreateFirstAccount: () -> Unit,
     onNavigateToNewTransaction: (TransactionType) -> Unit,
     onNavigateToEditTransaction: (Long) -> Unit,
@@ -98,6 +99,7 @@ fun DashboardScreen(
                 else -> DashboardContent(
                     uiState = uiState,
                     onManageAccounts = onNavigateToAccounts,
+                    onAccountClick = onNavigateToAccount,
                     onSeeAllTransactions = onSeeAllTransactions,
                     onTransactionClick = onNavigateToEditTransaction,
                     onRecurringClick = onNavigateToRecurrences,
@@ -134,6 +136,7 @@ fun DashboardScreen(
 private fun DashboardContent(
     uiState: DashboardUiState,
     onManageAccounts: () -> Unit,
+    onAccountClick: (Long) -> Unit,
     onSeeAllTransactions: () -> Unit,
     onTransactionClick: (Long) -> Unit,
     onRecurringClick: () -> Unit,
@@ -166,6 +169,7 @@ private fun DashboardContent(
                 forecast = uiState.balanceForecast,
                 date = uiState.date,
                 onManageAccounts = onManageAccounts,
+                onAccountClick = onAccountClick,
             )
         }
         uiState.safeToSpend?.takeIf { uiState.cardPrefs.showSafeToSpend }?.let { safeToSpend ->

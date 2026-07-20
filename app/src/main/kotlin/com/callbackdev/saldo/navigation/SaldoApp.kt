@@ -101,6 +101,7 @@ fun SaldoApp(
             DashboardScreen(
                 modifier = topLevelModifier,
                 onNavigateToAccounts = { nav.navigate(AccountsRoute) },
+                onNavigateToAccount = { id -> nav.navigate(AccountEditorRoute(id)) },
                 onCreateFirstAccount = { nav.navigate(AccountEditorRoute()) },
                 onNavigateToNewTransaction = { type ->
                     nav.navigate(TransactionEditorRoute(initialTypeName = type.name))

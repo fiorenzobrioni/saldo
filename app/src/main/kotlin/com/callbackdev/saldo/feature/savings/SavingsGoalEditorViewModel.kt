@@ -49,8 +49,14 @@ data class SavingsGoalEditorUiState(
     val targetDate: LocalDate? = null,
     val color: Int = CategoryVisuals.colors.first(),
     val icon: String = DEFAULT_ICON,
-    /** True in create mode when every savings account already has a goal (or none exists). */
+    /** True in create mode when no savings account can be linked (none free, or none at all). */
     val noAvailableAccounts: Boolean = false,
+    /**
+     * True when at least one (non-archived) savings account exists, regardless of whether it
+     * is free. Distinguishes "you have no savings account" from "all of them already have a
+     * goal", which need different empty-state copy.
+     */
+    val hasSavingsAccounts: Boolean = false,
     val showValidation: Boolean = false,
     val showDeleteDialog: Boolean = false,
 ) {
@@ -131,20 +137,21 @@ class SavingsGoalEditorViewModel @AssistedInject constructor(
 
     private suspend fun onData(accounts: List<AccountWithBalance>, goals: List<SavingsGoal>) {
         balancesByAccount = accounts.associate { it.account.id to it.balance }
-        val freeSavings = accounts
+        val savingsAccounts = accounts
             .filter { it.account.type == AccountType.SAVINGS && !it.account.isArchived }
             .map { it.account }
-            .filter { account -> goals.none { it.accountId == account.id } }
+        val freeSavings = savingsAccounts.filter { account -> goals.none { it.accountId == account.id } }
+        val hasSavingsAccounts = savingsAccounts.isNotEmpty()
 
         if (!initialized) {
             initialized = true
-            if (route.goalId == null) initCreate(freeSavings) else initEdit(accounts, goals)
+            if (route.goalId == null) initCreate(freeSavings, hasSavingsAccounts) else initEdit(accounts, goals)
         } else if (_uiState.value.isNew) {
-            refreshCreateOptions(freeSavings)
+            refreshCreateOptions(freeSavings, hasSavingsAccounts)
         }
     }
 
-    private fun initCreate(freeSavings: List<Account>) {
+    private fun initCreate(freeSavings: List<Account>, hasSavingsAccounts: Boolean) {
         val selected = freeSavings.firstOrNull()
         _uiState.update {
             it.copy(
@@ -155,6 +162,7 @@ class SavingsGoalEditorViewModel @AssistedInject constructor(
                 currency = selected?.currency ?: fallbackCurrency,
                 savedBalance = selected?.let { acc -> balancesByAccount[acc.id] } ?: BigDecimal.ZERO,
                 noAvailableAccounts = freeSavings.isEmpty(),
+                hasSavingsAccounts = hasSavingsAccounts,
             )
         }
         captureBaseline()
@@ -192,7 +200,7 @@ class SavingsGoalEditorViewModel @AssistedInject constructor(
      * the "create a savings account" shortcut). Preselects the first option when
      * nothing valid is selected yet, so a freshly created account is picked up.
      */
-    private fun refreshCreateOptions(freeSavings: List<Account>) {
+    private fun refreshCreateOptions(freeSavings: List<Account>, hasSavingsAccounts: Boolean) {
         _uiState.update { state ->
             val stillValid = state.accountId != null && freeSavings.any { it.id == state.accountId }
             val accountId = if (stillValid) state.accountId else freeSavings.firstOrNull()?.id
@@ -203,6 +211,7 @@ class SavingsGoalEditorViewModel @AssistedInject constructor(
                 currency = account?.currency ?: state.currency,
                 savedBalance = accountId?.let { balancesByAccount[it] } ?: BigDecimal.ZERO,
                 noAvailableAccounts = freeSavings.isEmpty(),
+                hasSavingsAccounts = hasSavingsAccounts,
             )
         }
     }
