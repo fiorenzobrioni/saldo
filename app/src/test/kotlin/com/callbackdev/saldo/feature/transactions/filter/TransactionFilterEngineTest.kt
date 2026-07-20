@@ -178,8 +178,15 @@ class TransactionFilterEngineTest {
         assertTrue(matches(transaction(timestamp = Instant.parse("2026-07-08T08:00:00Z")), bounded))
         assertFalse(matches(transaction(timestamp = Instant.parse("2026-07-09T08:00:00Z")), bounded))
 
+        // "Until" only: open at the start, still bounded at the end.
         val openStart = bounded.copy(customStart = null)
         assertTrue(matches(transaction(timestamp = Instant.parse("2026-06-01T08:00:00Z")), openStart))
+        assertFalse(matches(transaction(timestamp = Instant.parse("2026-07-09T08:00:00Z")), openStart))
+
+        // "From" only: open at the end, still bounded at the start.
+        val openEnd = bounded.copy(customEnd = null)
+        assertTrue(matches(transaction(timestamp = Instant.parse("2026-12-31T08:00:00Z")), openEnd))
+        assertFalse(matches(transaction(timestamp = Instant.parse("2026-06-30T08:00:00Z")), openEnd))
 
         val unbounded = bounded.copy(customStart = null, customEnd = null)
         assertNull(TransactionFilterEngine.dateRange(unbounded, today, DayOfWeek.MONDAY))

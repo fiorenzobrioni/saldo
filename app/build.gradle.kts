@@ -20,8 +20,8 @@ android {
         applicationId = "com.callbackdev.saldo"
         minSdk = 33
         targetSdk = 36
-        versionCode = 92
-        versionName = "0.9.53"
+        versionCode = 93
+        versionName = "0.9.54"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

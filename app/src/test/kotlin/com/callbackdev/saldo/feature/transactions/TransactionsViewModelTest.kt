@@ -268,6 +268,58 @@ class TransactionsViewModelTest {
     }
 
     @Test
+    fun `an open-ended custom range filters the list on the set bound only`() = runTest {
+        val june = transaction(id = 1L, timestamp = Instant.parse("2026-06-15T08:00:00Z"))
+        val july = transaction(id = 2L, timestamp = Instant.parse("2026-07-08T08:00:00Z"))
+        val viewModel = viewModel(transactions = listOf(june, july))
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+
+            // "From" only: everything from July 1st onward.
+            viewModel.setCustomRange(LocalDate.of(2026, 7, 1), null)
+            state = awaitItem()
+            assertEquals(DatePreset.CUSTOM, state.filters.datePreset)
+            assertEquals(listOf(2L), state.days.flatMap { day -> day.items.map { it.id } })
+
+            // "Until" only: everything up to June 30th.
+            viewModel.setCustomRange(null, LocalDate.of(2026, 6, 30))
+            state = awaitItem()
+            assertEquals(listOf(1L), state.days.flatMap { day -> day.items.map { it.id } })
+
+            // Both bounds missing: falls back to the unrestricted view.
+            viewModel.setCustomRange(null, null)
+            state = awaitItem()
+            assertEquals(DatePreset.ALL, state.filters.datePreset)
+            assertEquals(2, state.filteredCount)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `deleteFiltered honors an open-ended custom range`() = runTest {
+        val june = transaction(id = 1L, timestamp = Instant.parse("2026-06-15T08:00:00Z"))
+        val july = transaction(id = 2L, timestamp = Instant.parse("2026-07-08T08:00:00Z"))
+        val viewModel = viewModel(transactions = listOf(june, july))
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+
+            viewModel.setCustomRange(null, LocalDate.of(2026, 6, 30))
+            state = awaitItem()
+            assertEquals(1, state.filteredCount)
+
+            viewModel.deleteFiltered(preserveBalances = false, carryOverDescription = "Carry")
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        // Only the movement inside the open-ended period is deleted.
+        coVerify { transactionRepository.deleteByIds(listOf(1L)) }
+    }
+
+    @Test
     fun `the filter badge ignores the default month preset and ALL`() {
         assertEquals(0, TransactionFilters.DEFAULT.activeCount)
         assertEquals(0, TransactionFilters.NONE.activeCount)

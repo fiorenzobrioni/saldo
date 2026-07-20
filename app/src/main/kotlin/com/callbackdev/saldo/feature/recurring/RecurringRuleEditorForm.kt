@@ -47,6 +47,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.toUtcLocalDate
+import com.callbackdev.saldo.core.common.date.toUtcMillis
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
@@ -54,9 +56,7 @@ import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Currency
 
@@ -425,12 +425,12 @@ internal fun RecurringDatePickerDialog(
         } else {
             object : SelectableDates {
                 override fun isSelectableDate(utcTimeMillis: Long): Boolean =
-                    !Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneOffset.UTC).toLocalDate().isBefore(minDate)
+                    !utcTimeMillis.toUtcLocalDate().isBefore(minDate)
             }
         }
     }
     val state = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        initialSelectedDateMillis = initialDate.toUtcMillis(),
         selectableDates = selectableDates,
     )
     DatePickerDialog(
@@ -439,7 +439,7 @@ internal fun RecurringDatePickerDialog(
             TextButton(
                 onClick = {
                     state.selectedDateMillis?.let { millis ->
-                        onConfirm(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
+                        onConfirm(millis.toUtcLocalDate())
                     }
                 },
                 enabled = state.selectedDateMillis != null,

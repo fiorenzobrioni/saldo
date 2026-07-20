@@ -252,6 +252,25 @@
     <string name="filter_date_last_90_days">Ultimi 90 giorni</string>
     <string name="filter_date_this_year">Quest\'anno</string>
     <string name="filter_date_custom">Personalizzato</string>
+    <string name="filter_date_sheet_title">Periodo personalizzato</string>
+    <string name="filter_date_sheet_subtitle">Scegli un intervallo, oppure solo una data di inizio o di fine.</string>
+    <string name="filter_date_mode_range">Intervallo</string>
+    <string name="filter_date_mode_from">Da</string>
+    <string name="filter_date_mode_until">Fino a</string>
+    <string name="filter_date_range_label">%1$s – %2$s</string>
+    <string name="filter_date_range_partial">%1$s – …</string>
+    <string name="filter_date_from_label">Dal %1$s</string>
+    <string name="filter_date_until_label">Fino al %1$s</string>
+    <string name="filter_date_pick_start">Seleziona la data di inizio</string>
+    <string name="filter_date_pick_end">Seleziona la data di fine</string>
+    <string name="filter_date_no_end">Senza data di fine</string>
+    <string name="filter_date_no_start">Senza data di inizio</string>
+    <plurals name="filter_date_day_count">
+        <item quantity="one">%1$d giorno</item>
+        <item quantity="many">%1$d giorni</item>
+        <item quantity="other">%1$d giorni</item>
+    </plurals>
+    <string name="filter_date_clear">Rimuovi il periodo</string>
     <string name="filter_section_type">Tipo</string>
     <string name="filter_section_amount">Importo</string>
     <string name="filter_amount_min">Minimo</string>

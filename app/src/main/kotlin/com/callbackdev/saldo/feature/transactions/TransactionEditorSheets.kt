@@ -44,6 +44,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.date.toUtcLocalDate
+import com.callbackdev.saldo.core.common.date.toUtcMillis
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
@@ -51,9 +53,7 @@ import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneOffset
 
 /**
  * Bottom sheet listing the pickable accounts with their current balance.
@@ -253,21 +253,14 @@ internal fun TransactionDatePickerDialog(
     onConfirm: (LocalDate) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val state = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate
-            .atStartOfDay(ZoneOffset.UTC)
-            .toInstant()
-            .toEpochMilli(),
-    )
+    val state = rememberDatePickerState(initialSelectedDateMillis = initialDate.toUtcMillis())
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
                 onClick = {
                     state.selectedDateMillis?.let { millis ->
-                        onConfirm(
-                            Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate(),
-                        )
+                        onConfirm(millis.toUtcLocalDate())
                     }
                 },
                 enabled = state.selectedDateMillis != null,

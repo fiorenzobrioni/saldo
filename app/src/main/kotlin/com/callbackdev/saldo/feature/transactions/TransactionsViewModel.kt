@@ -188,9 +188,19 @@ class TransactionsViewModel @Inject constructor(
         }
     }
 
-    /** Applies an explicit date range picked by the user. */
-    fun setCustomRange(start: LocalDate, end: LocalDate) {
-        filters.update { it.copy(datePreset = DatePreset.CUSTOM, customStart = start, customEnd = end) }
+    /**
+     * Applies an explicit period picked by the user: a closed range, or an
+     * open-ended one when a bound is null ("from" only / "until" only). Both
+     * bounds missing means no restriction, so it falls back to [DatePreset.ALL].
+     */
+    fun setCustomRange(start: LocalDate?, end: LocalDate?) {
+        filters.update {
+            if (start == null && end == null) {
+                it.copy(datePreset = DatePreset.ALL, customStart = null, customEnd = null)
+            } else {
+                it.copy(datePreset = DatePreset.CUSTOM, customStart = start, customEnd = end)
+            }
+        }
     }
 
     /** Replaces the whole filter state (the sheet commits its edited copy here). */
