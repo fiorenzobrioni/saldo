@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
@@ -67,7 +70,18 @@ import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.feature.transactions.export.CsvExportSheet
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
+import com.callbackdev.saldo.feature.transactions.importer.CsvImportError
+import com.callbackdev.saldo.feature.transactions.importer.CsvImportSheet
 import java.time.LocalDate
+
+/** MIME types accepted by the CSV import picker; providers vary in how they type CSV. */
+private val CSV_IMPORT_MIME_TYPES = arrayOf(
+    "text/csv",
+    "text/comma-separated-values",
+    "text/plain",
+    "application/vnd.ms-excel",
+    "application/octet-stream",
+)
 
 /**
  * Movement ledger: all movements grouped by day (per-movement offset, ADR 7)
@@ -86,9 +100,13 @@ fun TransactionsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val csvSeparator by viewModel.csvSeparator.collectAsStateWithLifecycle()
+    val importStage by viewModel.importStage.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
     val context = LocalContext.current
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri -> uri?.let(viewModel::importCsv) }
     var isSearching by rememberSaveable { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var showRangePicker by remember { mutableStateOf(false) }
@@ -145,10 +163,16 @@ fun TransactionsScreen(
                                     activeCount = uiState.filters.activeCount,
                                     onClick = { showFilterSheet = true },
                                 )
+                            }
+                            // The overflow shows even on an empty ledger: import is
+                            // how you fill a fresh install from another app.
+                            if (!uiState.isLoading) {
                                 TransactionsOverflowMenu(
                                     expanded = showMenu,
                                     onExpandedChange = { showMenu = it },
+                                    exportEnabled = uiState.hasAnyTransactions,
                                     deleteEnabled = uiState.filteredCount > 0,
+                                    onImport = { importLauncher.launch(CSV_IMPORT_MIME_TYPES) },
                                     onExport = { showExportSheet = true },
                                     onDeleteFiltered = { showDeleteSheet = true },
                                 )
@@ -259,6 +283,15 @@ fun TransactionsScreen(
         )
     }
 
+    importStage?.let { stage ->
+        CsvImportSheet(
+            stage = stage,
+            onOptionsChange = viewModel::setImportOptions,
+            onConfirm = viewModel::confirmImport,
+            onDismiss = viewModel::dismissImport,
+        )
+    }
+
     if (showRangePicker) {
         FilterDateRangeSheet(
             initialStart = uiState.filters.customStart,
@@ -287,7 +320,9 @@ fun TransactionsScreen(
 private fun TransactionsOverflowMenu(
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
+    exportEnabled: Boolean,
     deleteEnabled: Boolean,
+    onImport: () -> Unit,
     onExport: () -> Unit,
     onDeleteFiltered: () -> Unit,
 ) {
@@ -299,6 +334,15 @@ private fun TransactionsOverflowMenu(
     }
     DropdownMenu(expanded = expanded, onDismissRequest = { onExpandedChange(false) }) {
         DropdownMenuItem(
+            text = { Text(stringResource(R.string.csv_import_title)) },
+            leadingIcon = { Icon(Icons.Outlined.FileDownload, contentDescription = null) },
+            onClick = {
+                onExpandedChange(false)
+                onImport()
+            },
+        )
+        DropdownMenuItem(
+            enabled = exportEnabled,
             text = { Text(stringResource(R.string.csv_export_title)) },
             leadingIcon = { Icon(Icons.Outlined.IosShare, contentDescription = null) },
             onClick = {
@@ -383,6 +427,20 @@ private suspend fun handleTransactionsEvent(
             snackbarHostState.showSnackbar(
                 message = resources.getString(R.string.csv_export_failed),
                 duration = SnackbarDuration.Short,
+            )
+        }
+
+        is TransactionsEvent.CsvImportFileError -> {
+            snackbarHostState.showSnackbar(
+                message = resources.getString(csvImportErrorMessage(event.error)),
+                duration = SnackbarDuration.Long,
+            )
+        }
+
+        TransactionsEvent.CsvImportWriteFailed -> {
+            snackbarHostState.showSnackbar(
+                message = resources.getString(R.string.csv_import_write_failed),
+                duration = SnackbarDuration.Long,
             )
         }
 
@@ -516,6 +574,15 @@ private fun TransactionsEmptyState(
         onAction = if (hasAccounts) onAddTransaction else onCreateAccount,
         modifier = modifier,
     )
+}
+
+/** Maps a whole-file import failure to its user-facing message. */
+private fun csvImportErrorMessage(error: CsvImportError): Int = when (error) {
+    CsvImportError.UNREADABLE -> R.string.csv_import_error_unreadable
+    CsvImportError.EMPTY_FILE -> R.string.csv_import_error_empty
+    CsvImportError.UNRECOGNIZED_FORMAT -> R.string.csv_import_error_unrecognized
+    CsvImportError.NO_DATA_ROWS -> R.string.csv_import_error_no_rows
+    CsvImportError.TOO_MANY_ROWS -> R.string.csv_import_error_too_many_rows
 }
 
 /** Duration of the top-bar/search crossfade; brief on purpose, it is chrome. */

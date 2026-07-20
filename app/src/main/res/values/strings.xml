@@ -695,6 +695,68 @@
     <string name="csv_header_received_currency">Currency received</string>
     <string name="csv_header_tags">Tags</string>
     <string name="csv_header_note">Note</string>
+    <string name="csv_header_recurring">Recurring</string>
+    <string name="csv_value_recurring">Yes</string>
+
+    <!-- CSV import -->
+    <string name="csv_import_title">Import CSV</string>
+    <string name="csv_import_reading">Reading the file…</string>
+    <string name="csv_import_summary_none">Nothing to import from this file</string>
+    <plurals name="csv_import_summary_importable">
+        <item quantity="one">%1$d movement ready to import</item>
+        <item quantity="other">%1$d movements ready to import</item>
+    </plurals>
+    <plurals name="csv_import_stat_duplicates">
+        <item quantity="one">%1$d duplicate skipped</item>
+        <item quantity="other">%1$d duplicates skipped</item>
+    </plurals>
+    <plurals name="csv_import_stat_adjusted">
+        <item quantity="one">%1$d row auto-corrected</item>
+        <item quantity="other">%1$d rows auto-corrected</item>
+    </plurals>
+    <plurals name="csv_import_stat_invalid">
+        <item quantity="one">%1$d row skipped (errors)</item>
+        <item quantity="other">%1$d rows skipped (errors)</item>
+    </plurals>
+    <string name="csv_import_creates_title">Will be created</string>
+    <plurals name="csv_import_creates_accounts">
+        <item quantity="one">%1$d account</item>
+        <item quantity="other">%1$d accounts</item>
+    </plurals>
+    <plurals name="csv_import_creates_categories">
+        <item quantity="one">%1$d category</item>
+        <item quantity="other">%1$d categories</item>
+    </plurals>
+    <plurals name="csv_import_creates_tags">
+        <item quantity="one">%1$d tag</item>
+        <item quantity="other">%1$d tags</item>
+    </plurals>
+    <string name="csv_import_options_title">Options</string>
+    <string name="csv_import_option_skip_duplicates">Skip duplicates</string>
+    <string name="csv_import_option_skip_duplicates_hint">Don\'t re-import movements already in the ledger or repeated in the file.</string>
+    <string name="csv_import_option_create_accounts">Create missing accounts</string>
+    <string name="csv_import_option_create_accounts_hint">Add accounts named in the file that don\'t exist yet.</string>
+    <string name="csv_import_option_create_categories">Create missing categories</string>
+    <string name="csv_import_option_create_categories_hint">Add categories named in the file that don\'t exist yet.</string>
+    <string name="csv_import_option_create_tags">Create missing tags</string>
+    <string name="csv_import_option_create_tags_hint">Add tags named in the file that don\'t exist yet.</string>
+    <string name="csv_import_safety_note">Import only adds movements: it never edits or deletes the ones you already have.</string>
+    <plurals name="csv_import_action">
+        <item quantity="one">Import %1$d movement</item>
+        <item quantity="other">Import %1$d movements</item>
+    </plurals>
+    <string name="csv_import_done_title">Import complete</string>
+    <plurals name="csv_import_done_imported">
+        <item quantity="one">%1$d movement imported</item>
+        <item quantity="other">%1$d movements imported</item>
+    </plurals>
+    <string name="csv_import_done_action">Done</string>
+    <string name="csv_import_error_unreadable">The file could not be read. Try another file.</string>
+    <string name="csv_import_error_empty">The file is empty.</string>
+    <string name="csv_import_error_unrecognized">Unrecognized format: the file needs at least a date column and an amount column.</string>
+    <string name="csv_import_error_no_rows">The file has a header but no movements.</string>
+    <string name="csv_import_error_too_many_rows">The file has too many rows for a single import. Split it into smaller files.</string>
+    <string name="csv_import_write_failed">Import failed. Your data is unchanged.</string>
 
     <!-- About screen -->
     <string name="about_title">About</string>

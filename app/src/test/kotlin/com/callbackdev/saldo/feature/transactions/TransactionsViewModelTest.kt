@@ -17,6 +17,7 @@ import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.DeleteFilteredTransactionsUseCase
 import com.callbackdev.saldo.feature.transactions.export.TransactionsCsvExporter
+import com.callbackdev.saldo.feature.transactions.importer.TransactionsCsvImporter
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
 import com.callbackdev.saldo.testing.MainDispatcherExtension
@@ -64,6 +65,7 @@ class TransactionsViewModelTest {
         every { firstDayOfWeek } returns flowOf(DayOfWeek.MONDAY)
     }
     private val csvExporter = mockk<TransactionsCsvExporter>()
+    private val csvImporter = mockk<TransactionsCsvImporter>()
 
     private val checking = Account(
         id = 1L,
@@ -122,6 +124,7 @@ class TransactionsViewModelTest {
             tagRepository = tagRepository,
             userPreferences = userPreferences,
             csvExporter = csvExporter,
+            csvImporter = csvImporter,
             deleteFilteredTransactions = DeleteFilteredTransactionsUseCase(
                 accountRepository = accountRepository,
                 transactionRepository = transactionRepository,

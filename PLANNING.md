@@ -323,7 +323,7 @@
 
 - [ ] PIN lock + biometria (`BiometricPrompt`) + `FLAG_SECURE` opzionale
 - [ ] Widget: saldo totale, spese oggi, aggiunta rapida (Glance)
-- [ ] Import CSV con wizard di mappatura colonne
+- [x] Import CSV (anticipato): riconoscimento automatico di separatore, decimali e colonne (mappatura per nome, alias IT/EN, ordine libero, colonne minime data+importo), regole di adattamento (tipo dedotto dal segno, normalizzazione del segno, valuta dal conto), creazione opzionale di conti/categorie/tag mancanti, rilevazione duplicati contro il registro e nel file, anteprima a due passi e report finale. Solo inserimento, in un'unica transazione. La colonna "Ricorrente" dell'export è informativa e non viene reimportata
 - [ ] Export Excel (.xlsx)
 - [ ] Export Google Sheets (nuovo foglio o aggiornamento foglio esistente; richiede verifica OAuth Google per lo scope "sensitive" `spreadsheets` - avviare la review per tempo)
 - [ ] Miglioramenti UX dal feedback della v1.0
@@ -442,6 +442,7 @@
   - ~~Recap mensile condivisibile (stile Wrapped)~~: implementato (Fase 10.1).
   - Quick-add ovunque: widget home (già in v1.5), ~~app shortcut statici~~ (implementati in Fase 9.6), Quick Settings tile: spesa registrata in 2 tap senza aprire l'app.
   - Quick entry testuale: parser offline di "12,50 pizza" → importo + categoria suggerita.
+- Indicatore "generato da ricorrenza" nella lista Movimenti (richiesto dall'utente a luglio 2026, step separato): mostrare nel registro un segno visivo quando un movimento è stato generato da una regola di Movimenti ricorrenti (il dato esiste già: `Transaction.recurringRuleId`). L'export CSV lo riporta già come colonna "Ricorrente" (informativa); qui si tratta solo della visualizzazione in lista, da progettare (badge/icona sulla riga).
 
 # Bug conosciuti
 
