@@ -401,6 +401,15 @@
 - [x] Fix doppio conteggio delle ricorrenze nella media giornaliera (versionCode 88 -> 89, versionName 0.9.49 -> 0.9.50): la media si basa sulla sola spesa non ricorrente del mese (`monthToDateNonRecurringSpend`, nuova colonna `recurringRuleId IS NULL` nella query dashboard, nessuna migration). Un addebito ricorrente gia registrato non gonfia piu la media ne viene riproiettato sulla data futura. Test: mapper (nuovo campo), calcolatore (coda piatta col caso 1 EUR mensile), VM (media da non ricorrente, esclusione ricorrenza gia addebitata)
 - [x] Rimosso il numero di variazione a 30 giorni dalla didascalia della sparkline (versionCode 89 -> 90, versionName 0.9.50 -> 0.9.51): dopo l'aggiunta del forecast quel numero senza etichetta, vicino alla coda e alla pill `≈`, si confondeva con una cifra della stima (feedback utente). L'andamento resta leggibile dalla forma della linea, la pill da la stima a fine mese e la card mensile da la spesa del mese; rimosso anche il campo `balanceTrend` dal ViewModel (stato morto, l'a11y della sparkline ricalcola il trend dalla history)
 
+## Fase 10.5 - Indicatore movimenti da ricorrenza e filtro per origine (luglio 2026)
+
+> Richiesta utente (versionCode 95 -> 96, versionName 0.9.56 -> 0.9.57), promossa dalle Note e appunti. Nessun cambio di schema o query: il dato esiste gia (`Transaction.recurringRuleId`, FK `SET_NULL` alla cancellazione della regola), il filtro e in memoria come tutto il motore filtri. Estensione condivisa `Transaction.isRecurring` per centralizzare il discriminatore (prima duplicato nel CSV builder).
+
+- [x] Segno di riga non invasivo: icona `Repeat` (16dp, `onSurfaceVariant`) prima dell'importo in `TransactionRowContent`, quindi automaticamente in registro, Dashboard (ultimi movimenti) e drill-down statistiche, tutti resi dallo stesso composable; `contentDescription` dedicata per TalkBack (non solo colore)
+- [x] Editor movimento: `InfoBanner` in cima al form quando il movimento e generato da una regola, con il nome della regola (`RecurringRuleRepository.getRule`, risolvibile perche la FK e `SET_NULL`) o testo generico di fallback; chiarisce che le modifiche valgono solo per quel movimento. Campi read-only nel Form, fuori dallo snapshot di dirty detection
+- [x] Filtro per origine nel registro (`TransactionOrigin` RECURRING/MANUAL, tri-state): sezione "Origine" nel filter sheet, chip rimovibile nella barra dei filtri attivi, conteggio nel badge; predicato `matchesOrigin` nel motore filtri
+- [x] Stringhe IT/EN; unit test (motore filtri origine + activeCount, editor VM: flag e nome regola caricati, movimento manuale non marcato). Gate `assembleDebug testDebugUnitTest lint detekt` verde
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.
@@ -442,7 +451,7 @@
   - ~~Recap mensile condivisibile (stile Wrapped)~~: implementato (Fase 10.1).
   - Quick-add ovunque: widget home (già in v1.5), ~~app shortcut statici~~ (implementati in Fase 9.6), Quick Settings tile: spesa registrata in 2 tap senza aprire l'app.
   - Quick entry testuale: parser offline di "12,50 pizza" → importo + categoria suggerita.
-- Indicatore "generato da ricorrenza" nella lista Movimenti (richiesto dall'utente a luglio 2026, step separato): mostrare nel registro un segno visivo quando un movimento è stato generato da una regola di Movimenti ricorrenti (il dato esiste già: `Transaction.recurringRuleId`). L'export CSV lo riporta già come colonna "Ricorrente" (informativa); qui si tratta solo della visualizzazione in lista, da progettare (badge/icona sulla riga).
+- ~~Indicatore "generato da ricorrenza" nella lista Movimenti~~: implementato nella Fase 10.5 (luglio 2026). Icona `Repeat` sulla riga (registro, Dashboard e drill-down statistiche), banner nell'editor con il nome della regola, e filtro per origine (ricorrenti/manuali) nel registro.
 
 # Bug conosciuti
 

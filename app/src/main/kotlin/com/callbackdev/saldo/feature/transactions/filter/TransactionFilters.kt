@@ -12,6 +12,13 @@ import java.time.LocalDate
 enum class DatePreset { ALL, THIS_WEEK, THIS_MONTH, LAST_MONTH, LAST_90_DAYS, THIS_YEAR, CUSTOM }
 
 /**
+ * Filter on how a movement entered the ledger: [RECURRING] keeps only the ones
+ * a recurring rule generated, [MANUAL] only the ones entered by hand. A null
+ * origin (the default) keeps both.
+ */
+enum class TransactionOrigin { RECURRING, MANUAL }
+
+/**
  * The combinable filters of the movements list. Empty sets and null bounds
  * mean "no restriction"; the whole state is immutable so it can live in a
  * [kotlinx.coroutines.flow.StateFlow] and be combined with the data flows.
@@ -30,6 +37,7 @@ data class TransactionFilters(
     val tagIds: Set<Long> = emptySet(),
     val amountMin: BigDecimal? = null,
     val amountMax: BigDecimal? = null,
+    val origin: TransactionOrigin? = null,
 ) {
     /** True when anything beyond the search query restricts the list. */
     val hasActiveFilters: Boolean
@@ -39,7 +47,8 @@ data class TransactionFilters(
             accountIds.isNotEmpty() ||
             tagIds.isNotEmpty() ||
             amountMin != null ||
-            amountMax != null
+            amountMax != null ||
+            origin != null
 
     /** True when the visible list is restricted in any way (filters or search). */
     val isActive: Boolean get() = hasActiveFilters || query.isNotBlank()
@@ -57,6 +66,7 @@ data class TransactionFilters(
             accountIds.isNotEmpty(),
             tagIds.isNotEmpty(),
             amountMin != null || amountMax != null,
+            origin != null,
         ).count { it }
 
     companion object {

@@ -37,6 +37,7 @@ import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
+import com.callbackdev.saldo.feature.transactions.filter.TransactionOrigin
 
 /**
  * Full filter editor. Edits a local copy of [filters] and commits it on
@@ -79,6 +80,19 @@ internal fun TransactionFilterSheet(
                         label = { Text(stringResource(type.labelRes)) },
                     )
                 }
+            }
+
+            FilterSection(title = stringResource(R.string.filter_section_origin)) {
+                FilterChip(
+                    selected = draft.origin == TransactionOrigin.RECURRING,
+                    onClick = { draft = draft.copy(origin = draft.origin.toggled(TransactionOrigin.RECURRING)) },
+                    label = { Text(stringResource(R.string.filter_origin_recurring)) },
+                )
+                FilterChip(
+                    selected = draft.origin == TransactionOrigin.MANUAL,
+                    onClick = { draft = draft.copy(origin = draft.origin.toggled(TransactionOrigin.MANUAL)) },
+                    label = { Text(stringResource(R.string.filter_origin_manual)) },
+                )
             }
 
             if (categories.isNotEmpty()) {
@@ -194,6 +208,9 @@ private const val AMOUNT_FRACTION_DIGITS = 2
 
 private fun <T> Set<T>.toggled(value: T): Set<T> =
     if (value in this) this - value else this + value
+
+/** Single-select tri-state: picking the current value clears it, another replaces it. */
+private fun <T> T?.toggled(value: T): T? = if (this == value) null else value
 
 @Composable
 private fun FilterSection(

@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.transactions.export
 import com.callbackdev.saldo.core.common.csv.CsvFormulaGuard
 import com.callbackdev.saldo.core.common.prefs.CsvSeparator
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.isRecurring
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import com.callbackdev.saldo.feature.transactions.localDate
 import java.math.BigDecimal
@@ -77,7 +78,7 @@ object TransactionCsvBuilder {
                 // Informational flag only: the export marks movements a recurring
                 // rule generated, but the import never rebuilds that link (it has
                 // no rule to attach to), so an imported movement is always manual.
-                if (transaction.recurringRuleId != null) recurringMark else "",
+                if (transaction.isRecurring) recurringMark else "",
             )
         }
         return buildString {

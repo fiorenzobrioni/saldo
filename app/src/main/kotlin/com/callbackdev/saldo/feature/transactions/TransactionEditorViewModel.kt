@@ -15,6 +15,7 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
+import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
@@ -53,6 +54,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
     private val accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
     private val tagRepository: TagRepository,
+    private val recurringRuleRepository: RecurringRuleRepository,
     private val userPreferences: UserPreferencesRepository,
     private val clock: Clock,
 ) : ViewModel() {
@@ -81,6 +83,9 @@ class TransactionEditorViewModel @AssistedInject constructor(
         val selectedTagIds: Set<Long> = emptySet(),
         val isExcludedFromStats: Boolean = false,
         val isRefund: Boolean = false,
+        /** Read-only metadata: kept out of [snapshot] so it never marks the form dirty. */
+        val isRecurring: Boolean = false,
+        val recurringRuleName: String? = null,
         val showValidation: Boolean = false,
     )
 
@@ -308,6 +313,8 @@ class TransactionEditorViewModel @AssistedInject constructor(
             selectedTags = tags.filter { it.id in current.selectedTagIds },
             isExcludedFromStats = current.isExcludedFromStats,
             isRefund = current.isRefund,
+            isRecurring = current.isRecurring,
+            recurringRuleName = current.recurringRuleName,
             showValidation = current.showValidation,
         )
     }
@@ -346,11 +353,17 @@ class TransactionEditorViewModel @AssistedInject constructor(
             val tagIds = tagRepository.observeTagsForTransaction(transactionId).first()
                 .map { it.id }
                 .toSet()
+            // The FK is SET_NULL on rule deletion, so a non-null id still resolves;
+            // fall back to a nameless banner if the lookup ever comes back empty.
+            val ruleName = transaction.recurringRuleId
+                ?.let { recurringRuleRepository.getRule(it)?.name }
             val local = transaction.timestamp.atOffset(transaction.zoneOffset)
             form.update {
                 it.copy(
                     isLoading = false,
                     isNew = false,
+                    isRecurring = transaction.recurringRuleId != null,
+                    recurringRuleName = ruleName,
                     type = transaction.type,
                     isTypeLocked = transaction.type == TransactionType.TRANSFER ||
                         transaction.type == TransactionType.ADJUSTMENT,

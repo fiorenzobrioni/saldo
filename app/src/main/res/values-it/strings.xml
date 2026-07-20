@@ -272,6 +272,9 @@
     </plurals>
     <string name="filter_date_clear">Rimuovi il periodo</string>
     <string name="filter_section_type">Tipo</string>
+    <string name="filter_section_origin">Origine</string>
+    <string name="filter_origin_recurring">Ricorrenti</string>
+    <string name="filter_origin_manual">Manuali</string>
     <string name="filter_section_amount">Importo</string>
     <string name="filter_amount_min">Minimo</string>
     <string name="filter_amount_max">Massimo</string>
@@ -373,6 +376,9 @@
     <string name="transaction_editor_exclude_stats_hint">Non conteggiato nei grafici e nei totali delle statistiche</string>
     <string name="transaction_editor_refund">Rimborso</string>
     <string name="transaction_editor_refund_hint">Un\'entrata che compensa una spesa della categoria scelta</string>
+    <string name="transaction_recurring_badge">Generato da un movimento ricorrente</string>
+    <string name="transaction_editor_recurring_banner">Generato dal movimento ricorrente «%1$s». Le modifiche valgono solo per questo movimento; la regola resta invariata.</string>
+    <string name="transaction_editor_recurring_banner_generic">Generato da un movimento ricorrente. Le modifiche valgono solo per questo movimento; la regola resta invariata.</string>
     <string name="transaction_editor_delete">Elimina</string>
     <string name="keypad_backspace">Cancella l\'ultima cifra</string>
 
