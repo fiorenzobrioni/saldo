@@ -38,6 +38,7 @@ class TransactionsCsvExporter @Inject constructor(
             typeLabels = typeLabels(),
             labels = columnLabels(),
             separator = separator,
+            recurringMark = context.getString(R.string.csv_value_recurring),
         )
         val directory = File(context.cacheDir, EXPORTS_DIRECTORY).apply { mkdirs() }
         val file = File(directory, fileName)
@@ -65,6 +66,7 @@ class TransactionsCsvExporter @Inject constructor(
         receivedCurrency = context.getString(R.string.csv_header_received_currency),
         tags = context.getString(R.string.csv_header_tags),
         note = context.getString(R.string.csv_header_note),
+        recurring = context.getString(R.string.csv_header_recurring),
     )
 
     private companion object {

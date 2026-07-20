@@ -112,6 +112,14 @@ sealed interface TransactionsEvent {
 
     data object CsvExportFailed : TransactionsEvent
 
+    /** The picked CSV could not be opened as a valid file (before any preview). */
+    data class CsvImportFileError(
+        val error: com.callbackdev.saldo.feature.transactions.importer.CsvImportError,
+    ) : TransactionsEvent
+
+    /** The import write failed; the ledger is unchanged (import only inserts). */
+    data object CsvImportWriteFailed : TransactionsEvent
+
     /** A delete or undo failed: nothing changed, let the user retry. */
     data object WriteFailed : TransactionsEvent
 }

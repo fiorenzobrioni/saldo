@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.transactions
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
@@ -16,6 +17,10 @@ import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.CarryOverCalculator
 import com.callbackdev.saldo.core.domain.usecase.DeleteFilteredTransactionsUseCase
 import com.callbackdev.saldo.feature.transactions.export.TransactionsCsvExporter
+import com.callbackdev.saldo.feature.transactions.importer.CsvImportError
+import com.callbackdev.saldo.feature.transactions.importer.CsvImportOptions
+import com.callbackdev.saldo.feature.transactions.importer.CsvImportStage
+import com.callbackdev.saldo.feature.transactions.importer.TransactionsCsvImporter
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilterEngine
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
@@ -47,6 +52,7 @@ class TransactionsViewModel @Inject constructor(
     private val tagRepository: TagRepository,
     private val userPreferences: UserPreferencesRepository,
     private val csvExporter: TransactionsCsvExporter,
+    private val csvImporter: TransactionsCsvImporter,
     private val deleteFilteredTransactions: DeleteFilteredTransactionsUseCase,
     private val clock: Clock,
     @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
@@ -169,6 +175,82 @@ class TransactionsViewModel @Inject constructor(
                 .onSuccess { uri -> _events.send(TransactionsEvent.CsvExported(uri)) }
                 .onFailure { _events.send(TransactionsEvent.CsvExportFailed) }
         }
+    }
+
+    /** The guided CSV import; null while no import sheet is shown. */
+    private val _importStage = MutableStateFlow<CsvImportStage?>(null)
+    val importStage: StateFlow<CsvImportStage?> = _importStage.asStateFlow()
+
+    /** The parsed file kept between option toggles, so it is read only once. */
+    private var parsedCsv: TransactionsCsvImporter.ParsedCsv? = null
+
+    /** Opens the picked CSV, then analyzes it with the default options. */
+    fun importCsv(uri: Uri) {
+        _importStage.value = CsvImportStage.Reading
+        viewModelScope.launch {
+            val read = suspendRunCatching { csvImporter.read(uri) }
+                .getOrElse { TransactionsCsvImporter.ReadResult.Failure(CsvImportError.UNREADABLE) }
+            when (read) {
+                is TransactionsCsvImporter.ReadResult.Success -> {
+                    parsedCsv = read.parsed
+                    analyzeImport(CsvImportOptions())
+                }
+
+                is TransactionsCsvImporter.ReadResult.Failure -> {
+                    _importStage.value = null
+                    _events.send(TransactionsEvent.CsvImportFileError(read.error))
+                }
+            }
+        }
+    }
+
+    /** Re-runs the dry-run with new [options] (e.g. a toggled "create accounts"). */
+    fun setImportOptions(options: CsvImportOptions) {
+        val current = _importStage.value
+        if (current is CsvImportStage.Preview) {
+            _importStage.value = current.copy(options = options, isBusy = true)
+        }
+        analyzeImport(options)
+    }
+
+    private fun analyzeImport(options: CsvImportOptions) {
+        val parsed = parsedCsv ?: return
+        viewModelScope.launch {
+            suspendRunCatching { csvImporter.analyze(parsed, options) }
+                .onSuccess { analysis ->
+                    _importStage.value = CsvImportStage.Preview(analysis, options)
+                }
+                .onFailure {
+                    parsedCsv = null
+                    _importStage.value = null
+                    _events.send(TransactionsEvent.CsvImportFileError(CsvImportError.UNREADABLE))
+                }
+        }
+    }
+
+    /** Commits the previewed import, then shows its report. */
+    fun confirmImport() {
+        val current = _importStage.value
+        if (current !is CsvImportStage.Preview || current.analysis.isEmpty) return
+        _importStage.value = current.copy(isBusy = true)
+        viewModelScope.launch {
+            suspendRunCatching { csvImporter.commit(current.analysis) }
+                .onSuccess { report ->
+                    parsedCsv = null
+                    _importStage.value = CsvImportStage.Done(report)
+                }
+                .onFailure {
+                    parsedCsv = null
+                    _importStage.value = null
+                    _events.send(TransactionsEvent.CsvImportWriteFailed)
+                }
+        }
+    }
+
+    /** Closes the import sheet at any stage, discarding the cached file. */
+    fun dismissImport() {
+        parsedCsv = null
+        _importStage.value = null
     }
 
     /** Replaces the search text, leaving the other filters untouched. */

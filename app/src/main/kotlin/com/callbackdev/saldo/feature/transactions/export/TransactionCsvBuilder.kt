@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.transactions.export
 
+import com.callbackdev.saldo.core.common.csv.CsvFormulaGuard
 import com.callbackdev.saldo.core.common.prefs.CsvSeparator
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
@@ -20,6 +21,7 @@ data class CsvColumnLabels(
     val receivedCurrency: String,
     val tags: String,
     val note: String,
+    val recurring: String,
 )
 
 /**
@@ -47,27 +49,35 @@ object TransactionCsvBuilder {
         typeLabels: Map<TransactionType, String>,
         labels: CsvColumnLabels,
         separator: CsvSeparator,
+        recurringMark: String,
     ): String {
         val header = listOf(
             labels.date, labels.type, labels.category, labels.description,
             labels.account, labels.toAccount, labels.amount, labels.currency,
             labels.receivedAmount, labels.receivedCurrency, labels.tags, labels.note,
+            labels.recurring,
         )
         val rows = items.map { item ->
             val transaction = item.transaction
             listOf(
                 transaction.localDate.toString(),
                 typeLabels[transaction.type] ?: transaction.type.name,
-                item.category?.name.orEmpty(),
-                transaction.description.orEmpty(),
-                item.account?.name.orEmpty(),
-                item.toAccount?.name.orEmpty(),
+                // Text fields carry user input: guard them against spreadsheet
+                // formula injection. Amounts, dates and codes stay untouched.
+                CsvFormulaGuard.guard(item.category?.name.orEmpty()),
+                CsvFormulaGuard.guard(transaction.description.orEmpty()),
+                CsvFormulaGuard.guard(item.account?.name.orEmpty()),
+                CsvFormulaGuard.guard(item.toAccount?.name.orEmpty()),
                 formatAmount(transaction.amount, separator),
                 transaction.currency.currencyCode,
                 transaction.transferAmount?.let { formatAmount(it, separator) }.orEmpty(),
                 transaction.transferCurrency?.currencyCode.orEmpty(),
-                tagNames[transaction.id].orEmpty().joinToString(TAG_SEPARATOR),
-                transaction.note.orEmpty(),
+                CsvFormulaGuard.guard(tagNames[transaction.id].orEmpty().joinToString(TAG_SEPARATOR)),
+                CsvFormulaGuard.guard(transaction.note.orEmpty()),
+                // Informational flag only: the export marks movements a recurring
+                // rule generated, but the import never rebuilds that link (it has
+                // no rule to attach to), so an imported movement is always manual.
+                if (transaction.recurringRuleId != null) recurringMark else "",
             )
         }
         return buildString {

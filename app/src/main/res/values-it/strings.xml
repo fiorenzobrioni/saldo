@@ -713,6 +713,68 @@
     <string name="csv_header_received_currency">Valuta ricevuta</string>
     <string name="csv_header_tags">Tag</string>
     <string name="csv_header_note">Nota</string>
+    <string name="csv_header_recurring">Ricorrente</string>
+    <string name="csv_value_recurring">Sì</string>
+
+    <!-- Import CSV -->
+    <string name="csv_import_title">Importa CSV</string>
+    <string name="csv_import_reading">Lettura del file…</string>
+    <string name="csv_import_summary_none">Niente da importare da questo file</string>
+    <plurals name="csv_import_summary_importable">
+        <item quantity="one">%1$d movimento pronto da importare</item>
+        <item quantity="other">%1$d movimenti pronti da importare</item>
+    </plurals>
+    <plurals name="csv_import_stat_duplicates">
+        <item quantity="one">%1$d duplicato saltato</item>
+        <item quantity="other">%1$d duplicati saltati</item>
+    </plurals>
+    <plurals name="csv_import_stat_adjusted">
+        <item quantity="one">%1$d riga corretta in automatico</item>
+        <item quantity="other">%1$d righe corrette in automatico</item>
+    </plurals>
+    <plurals name="csv_import_stat_invalid">
+        <item quantity="one">%1$d riga ignorata (errori)</item>
+        <item quantity="other">%1$d righe ignorate (errori)</item>
+    </plurals>
+    <string name="csv_import_creates_title">Verranno creati</string>
+    <plurals name="csv_import_creates_accounts">
+        <item quantity="one">%1$d conto</item>
+        <item quantity="other">%1$d conti</item>
+    </plurals>
+    <plurals name="csv_import_creates_categories">
+        <item quantity="one">%1$d categoria</item>
+        <item quantity="other">%1$d categorie</item>
+    </plurals>
+    <plurals name="csv_import_creates_tags">
+        <item quantity="one">%1$d tag</item>
+        <item quantity="other">%1$d tag</item>
+    </plurals>
+    <string name="csv_import_options_title">Opzioni</string>
+    <string name="csv_import_option_skip_duplicates">Salta i duplicati</string>
+    <string name="csv_import_option_skip_duplicates_hint">Non reimporta i movimenti già presenti o ripetuti nel file.</string>
+    <string name="csv_import_option_create_accounts">Crea i conti mancanti</string>
+    <string name="csv_import_option_create_accounts_hint">Aggiunge i conti citati nel file e non ancora presenti.</string>
+    <string name="csv_import_option_create_categories">Crea le categorie mancanti</string>
+    <string name="csv_import_option_create_categories_hint">Aggiunge le categorie citate nel file e non ancora presenti.</string>
+    <string name="csv_import_option_create_tags">Crea i tag mancanti</string>
+    <string name="csv_import_option_create_tags_hint">Aggiunge i tag citati nel file e non ancora presenti.</string>
+    <string name="csv_import_safety_note">L\'importazione aggiunge solo movimenti: non modifica né elimina quelli già presenti.</string>
+    <plurals name="csv_import_action">
+        <item quantity="one">Importa %1$d movimento</item>
+        <item quantity="other">Importa %1$d movimenti</item>
+    </plurals>
+    <string name="csv_import_done_title">Importazione completata</string>
+    <plurals name="csv_import_done_imported">
+        <item quantity="one">%1$d movimento importato</item>
+        <item quantity="other">%1$d movimenti importati</item>
+    </plurals>
+    <string name="csv_import_done_action">Fine</string>
+    <string name="csv_import_error_unreadable">Impossibile leggere il file. Prova con un altro file.</string>
+    <string name="csv_import_error_empty">Il file è vuoto.</string>
+    <string name="csv_import_error_unrecognized">Formato non riconosciuto: servono almeno una colonna data e una colonna importo.</string>
+    <string name="csv_import_error_no_rows">Il file ha un\'intestazione ma nessun movimento.</string>
+    <string name="csv_import_error_too_many_rows">Il file ha troppe righe per una sola importazione. Suddividilo in file più piccoli.</string>
+    <string name="csv_import_write_failed">Importazione non riuscita. I tuoi dati non sono stati modificati.</string>
 
     <!-- Schermata Informazioni -->
     <string name="about_title">Informazioni</string>
