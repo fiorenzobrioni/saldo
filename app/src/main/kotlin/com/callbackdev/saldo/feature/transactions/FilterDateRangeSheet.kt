@@ -78,15 +78,7 @@ internal fun FilterDateRangeSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var mode by remember {
-        mutableStateOf(
-            when {
-                initialStart != null && initialEnd == null -> DateFilterMode.FROM
-                initialStart == null && initialEnd != null -> DateFilterMode.UNTIL
-                else -> DateFilterMode.RANGE
-            },
-        )
-    }
+    var mode by remember { mutableStateOf(initialMode(initialStart, initialEnd)) }
     val rangeState = rememberDateRangePickerState(
         initialSelectedStartDateMillis = initialStart?.toUtcMillis(),
         // The range state rejects an end without a start ("until" only filter):
@@ -99,11 +91,6 @@ internal fun FilterDateRangeSheet(
     val (startMillis, endMillis) = selectedBounds(mode, rangeState, fromState, untilState)
     val start = startMillis?.toUtcLocalDate()
     val end = endMillis?.toUtcLocalDate()
-    val applyEnabled = when (mode) {
-        DateFilterMode.RANGE -> start != null && end != null
-        DateFilterMode.FROM -> start != null
-        DateFilterMode.UNTIL -> end != null
-    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -166,13 +153,10 @@ internal fun FilterDateRangeSheet(
             Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                 Button(
                     onClick = {
-                        when (mode) {
-                            DateFilterMode.RANGE -> onApply(start, end)
-                            DateFilterMode.FROM -> onApply(start, null)
-                            DateFilterMode.UNTIL -> onApply(null, end)
-                        }
+                        val (applyStart, applyEnd) = appliedBounds(mode, start, end)
+                        onApply(applyStart, applyEnd)
                     },
-                    enabled = applyEnabled,
+                    enabled = canApply(mode, start, end),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(stringResource(R.string.filter_apply))
@@ -181,6 +165,32 @@ internal fun FilterDateRangeSheet(
             }
         }
     }
+}
+
+/** The mode the sheet opens in, mirroring the shape of the applied filter. */
+private fun initialMode(start: LocalDate?, end: LocalDate?): DateFilterMode = when {
+    start != null && end == null -> DateFilterMode.FROM
+    start == null && end != null -> DateFilterMode.UNTIL
+    else -> DateFilterMode.RANGE
+}
+
+/** Whether the active mode has every bound it needs to be applied. */
+private fun canApply(mode: DateFilterMode, start: LocalDate?, end: LocalDate?): Boolean =
+    when (mode) {
+        DateFilterMode.RANGE -> start != null && end != null
+        DateFilterMode.FROM -> start != null
+        DateFilterMode.UNTIL -> end != null
+    }
+
+/** The bounds the active mode applies to the filter: null on the open side. */
+private fun appliedBounds(
+    mode: DateFilterMode,
+    start: LocalDate?,
+    end: LocalDate?,
+): Pair<LocalDate?, LocalDate?> = when (mode) {
+    DateFilterMode.RANGE -> start to end
+    DateFilterMode.FROM -> start to null
+    DateFilterMode.UNTIL -> null to end
 }
 
 /** The two selected bounds in picker millis, as the active mode defines them. */
