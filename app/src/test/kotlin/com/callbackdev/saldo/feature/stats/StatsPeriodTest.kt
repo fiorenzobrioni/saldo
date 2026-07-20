@@ -14,16 +14,48 @@ class StatsPeriodTest {
 
     @Test
     fun `month covers its whole calendar month`() {
-        val range = StatsPeriod.Month(YearMonth.of(2026, 2)).dateRange()
+        val range = StatsPeriod.Month(YearMonth.of(2026, 2)).dateRange(today)
         assertEquals(LocalDate.of(2026, 2, 1), range.start)
         assertEquals(LocalDate.of(2026, 2, 28), range.endInclusive)
     }
 
     @Test
     fun `year covers january 1st through december 31st`() {
-        val range = StatsPeriod.Year(2026).dateRange()
+        val range = StatsPeriod.Year(2026).dateRange(today)
         assertEquals(LocalDate.of(2026, 1, 1), range.start)
         assertEquals(LocalDate.of(2026, 12, 31), range.endInclusive)
+    }
+
+    @Test
+    fun `closed custom range keeps both bounds`() {
+        val range = StatsPeriod.Custom(LocalDate.of(2026, 3, 5), LocalDate.of(2026, 4, 10)).dateRange(today)
+        assertEquals(LocalDate.of(2026, 3, 5), range.start)
+        assertEquals(LocalDate.of(2026, 4, 10), range.endInclusive)
+    }
+
+    @Test
+    fun `open-ended from resolves the end to today`() {
+        val range = StatsPeriod.Custom(LocalDate.of(2026, 3, 5), null).dateRange(today)
+        assertEquals(LocalDate.of(2026, 3, 5), range.start)
+        assertEquals(today, range.endInclusive)
+    }
+
+    @Test
+    fun `open-ended until floors the start at the earliest ledger date`() {
+        val range = StatsPeriod.Custom(null, LocalDate.of(2026, 3, 5)).dateRange(today)
+        assertEquals(EARLIEST_LEDGER_DATE, range.start)
+        assertEquals(LocalDate.of(2026, 3, 5), range.endInclusive)
+    }
+
+    @Test
+    fun `earliest ledger date survives conversion to epoch millis`() {
+        // Guards the floor against LocalDate.MIN, whose epoch millis overflow a Long.
+        assertEquals(
+            EARLIEST_LEDGER_DATE,
+            java.time.Instant.ofEpochMilli(
+                EARLIEST_LEDGER_DATE.atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toEpochMilli(),
+            ).atZone(java.time.ZoneOffset.UTC).toLocalDate(),
+        )
     }
 
     @Test

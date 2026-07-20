@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-20 - Statistiche: riuso di FilterDateRangeSheet per il periodo custom
+
+**Fatto:** la schermata statistiche ora apre `FilterDateRangeSheet` (la bottom sheet ridisegnata dei movimenti) al posto del vecchio `StatsDateRangePickerDialog`, che è stato rimosso. Nessuna modifica alla sheet: solo riuso (è `internal` nello stesso modulo `:app`). Per far leggere ai grafici anche i periodi aperti che la sheet consente (solo "dal" o solo "fino al"), `StatsPeriod.Custom` passa da bound obbligatori a `LocalDate?`: `dateRange(today)` risolve l'estremo aperto (fine aperta -> oggi, inizio aperto -> `EARLIEST_LEDGER_DATE`, una data anteriore a qualsiasi movimento e convertibile in epoch millis, a differenza di `LocalDate.MIN` che va in overflow). La label del periodo custom riusa il formatter condiviso `periodLabel(start, end, today)` dei movimenti, così un periodo aperto si legge allo stesso modo nelle due schermate ("Dal 5 lug", "Fino al 5 lug"). `selectCustomRange` accetta bound nullable; con entrambi null (caso che la sheet non produce) ripiega sul mese corrente. Il pulsante "Cancella" della sheet, che nei movimenti torna a "tutte le date", qui torna alla vista mese (le statistiche non hanno uno stato "nessun periodo").
+
+**Verificato:** `gradle testDebugUnitTest assembleDebug lint` verde. Aggiunti test in `StatsPeriodTest` per range chiuso, "dal" (fine -> oggi), "fino al" (inizio -> floor) e per la conversione del floor in epoch millis senza overflow. Verificato che l'unico altro punto dell'app che chiede un range di date è questa schermata: editor movimento, obiettivi di risparmio e regole ricorrenti usano date-picker a data singola, non range.
+
+**Decisioni:** supporto ai periodi aperti anche nelle statistiche (scelta confermata dall'utente) invece di forzare la sheet a soli range chiusi: preserva le funzionalità della sheet e le query dei grafici restano corrette. Floor `LocalDate.of(1, 1, 1)` invece di `LocalDate.MIN` per evitare l'overflow di `toEpochMilli()` nel repository.
+
+**Problemi:** nessuno.
+
+**Prossimo:** nessuno.
+
+---
+
 ## 2026-07-20 - Chore: azzerati i warning di compilazione (deprecazioni e KT-73255)
 
 **Fatto:** ripulite tutte le famiglie di warning emerse nel log di compilazione della CI. (1) `hiltViewModel()`: deprecato in `androidx.hilt:hilt-navigation-compose`, migrato al nuovo artifact `androidx.hilt:hilt-lifecycle-viewmodel-compose` (stessa versione 1.3.0, package `androidx.hilt.lifecycle.viewmodel.compose`), import aggiornato in 20 screen; la vecchia dipendenza è rimossa dal catalog (portava con sé androidx.navigation, che il progetto non usa: Nav3). (2) `MenuAnchorType` rinominato `ExposedDropdownMenuAnchorType` (typealias deprecato M3) in 4 file. (3) Vico: `columnSeries`/`lineSeries` -> `columnModel`/`lineModel` in `StatsCharts.kt` (rename puro, firma identica, verificato sui sorgenti v3.2.3). (4) KT-73255: aggiunto `-Xannotation-default-target=param-property` ai compiler args, il default futuro di Kotlin; i soli siti interessati sono qualifier Hilt su parametri di costruttore (`@ApplicationContext`, `@IoDispatcher`, `@ApplicationScope`), inerti sul field. (5) Rimossi safe-call e `!!` superflui segnalati dal compilatore (`ObserveDueStatementsUseCase`, `SavingsGoalsScreen`).

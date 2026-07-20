@@ -81,7 +81,7 @@ class StatsViewModel @Inject constructor(
         .flatMapLatest { inputs ->
             val currency = primaryCurrency(inputs.accounts, inputs.currencyOverride)
             val zone = clock.zone
-            val range = inputs.period.dateRange()
+            val range = inputs.period.dateRange(inputs.today)
             val periodStart = range.start.atStartOfDay(zone).toInstant()
             val periodEnd = range.endInclusive.plusDays(1).atStartOfDay(zone).toInstant()
             val months = trailingMonths(YearMonth.from(inputs.today))
@@ -126,9 +126,17 @@ class StatsViewModel @Inject constructor(
         period.value = StatsPeriod.Year(LocalDate.now(clock).year)
     }
 
-    /** Applies an explicit range picked by the user. */
-    fun selectCustomRange(start: LocalDate, end: LocalDate) {
-        period.value = StatsPeriod.Custom(start, end)
+    /**
+     * Applies an explicit range picked by the user, possibly open-ended (a null
+     * bound is open on that side). Both bounds null means no restriction at
+     * all, which stats cannot represent: fall back to the current month.
+     */
+    fun selectCustomRange(start: LocalDate?, end: LocalDate?) {
+        period.value = if (start == null && end == null) {
+            StatsPeriod.Month(YearMonth.now(clock))
+        } else {
+            StatsPeriod.Custom(start, end)
+        }
     }
 
     fun previousPeriod() {
