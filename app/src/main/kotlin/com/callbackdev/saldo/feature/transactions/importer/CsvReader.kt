@@ -11,7 +11,7 @@ package com.callbackdev.saldo.feature.transactions.importer
  */
 object CsvReader {
 
-    private const val BOM = '﻿'
+    private const val BOM = '\uFEFF'
     private const val QUOTE = '"'
 
     /**

@@ -30,7 +30,7 @@ class CsvReaderTest {
 
     @Test
     fun `a leading BOM is stripped and a trailing newline adds no empty record`() {
-        val records = CsvReader.parse("﻿a;b\n", ';')
+        val records = CsvReader.parse("\uFEFFa;b\n", ';')
         assertEquals(listOf(listOf("a", "b")), records)
     }
 

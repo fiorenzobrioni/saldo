@@ -25,7 +25,7 @@ object CsvSeparatorSniffer {
 
     /** First line that carries a non-blank character, BOM stripped. */
     private fun firstContentLine(text: String): String? =
-        text.removePrefix("﻿")
+        text.removePrefix("\uFEFF")
             .lineSequence()
             .firstOrNull { it.isNotBlank() }
 
