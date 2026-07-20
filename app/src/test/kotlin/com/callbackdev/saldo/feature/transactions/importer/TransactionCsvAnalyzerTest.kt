@@ -18,7 +18,6 @@ class TransactionCsvAnalyzerTest {
 
     private val analyzer = TransactionCsvAnalyzer()
     private val eur: Currency = Currency.getInstance("EUR")
-    private val usd: Currency = Currency.getInstance("USD")
 
     private val checking = Account(id = 1L, name = "Checking", type = AccountType.CHECKING, currency = eur, initialBalance = BigDecimal.ZERO)
     private val savings = Account(id = 2L, name = "Savings", type = AccountType.SAVINGS, currency = eur, initialBalance = BigDecimal.ZERO)
