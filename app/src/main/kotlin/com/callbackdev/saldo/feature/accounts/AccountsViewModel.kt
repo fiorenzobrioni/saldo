@@ -49,8 +49,8 @@ class AccountsViewModel @Inject constructor(
     ) { accounts, currentDialog, selectedId, due ->
         AccountsUiState(
             isLoading = false,
-            active = accounts.filter { !it.account.isArchived },
-            archived = accounts.filter { it.account.isArchived },
+            activeGroups = buildAccountTypeGroups(accounts.filter { !it.account.isArchived }),
+            archived = accounts.filter { it.account.isArchived }.sortedByTypeThenName(),
             selected = accounts.firstOrNull { it.account.id == selectedId },
             dialog = currentDialog,
             // Oldest due statement per card: settlement always pays the oldest

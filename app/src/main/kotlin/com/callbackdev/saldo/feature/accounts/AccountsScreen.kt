@@ -5,13 +5,14 @@ import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.designsystem.visuals.labelRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -65,6 +66,7 @@ import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.Account
+import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 
 /**
@@ -210,16 +212,28 @@ private fun AccountsList(
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
-        if (uiState.active.isNotEmpty()) {
-            item(key = "active") {
+        // Active accounts: one type header plus its grouped card, mirroring the
+        // day header / card rhythm of the movements ledger.
+        uiState.activeGroups.forEach { group ->
+            item(key = "type-header-${group.type}", contentType = "type-header") {
+                Column(modifier = Modifier.animateItem()) {
+                    AccountTypeHeader(type = group.type)
+                    Spacer(Modifier.height(6.dp))
+                }
+            }
+            item(key = "type-card-${group.type}", contentType = "type-card") {
                 AccountsCard(
-                    items = uiState.active,
+                    items = group.accounts,
                     uiState = uiState,
                     onAccountClick = onAccountClick,
                     onSettleStatement = onSettleStatement,
+                    modifier = Modifier.animateItem(),
+                    showType = false,
                 )
+            }
+            item(key = "type-spacer-${group.type}", contentType = "type-spacer") {
+                Spacer(Modifier.height(SaldoDimens.cardSpacing))
             }
         }
 
@@ -238,11 +252,27 @@ private fun AccountsList(
                         uiState = uiState,
                         onAccountClick = onAccountClick,
                         onSettleStatement = onSettleStatement,
+                        modifier = Modifier.padding(top = SaldoDimens.cardSpacing),
                     )
                 }
             }
         }
     }
+}
+
+/** Section header for an account-type group: the type label, ledger-style. */
+@Composable
+private fun AccountTypeHeader(
+    type: AccountType,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = stringResource(type.labelRes()),
+        style = MaterialTheme.typography.titleMedium,
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, end = 4.dp, top = 4.dp),
+    )
 }
 
 /** All accounts of a section in one grouped card, split by hairline dividers. */
@@ -253,6 +283,7 @@ private fun AccountsCard(
     onAccountClick: (AccountWithBalance) -> Unit,
     onSettleStatement: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    showType: Boolean = true,
 ) {
     SaldoCard(
         modifier = modifier.fillMaxWidth(),
@@ -272,6 +303,7 @@ private fun AccountsCard(
                     ) {
                         AccountRowContent(
                             item = item,
+                            showType = showType,
                             modifier = Modifier.padding(
                                 horizontal = SaldoDimens.rowPaddingHorizontal,
                                 vertical = SaldoDimens.rowPaddingVertical,
@@ -324,6 +356,7 @@ private fun ArchivedHeader(
 internal fun AccountRowContent(
     item: AccountWithBalance,
     modifier: Modifier = Modifier,
+    showType: Boolean = true,
 ) {
     val account = item.account
     Row(
@@ -344,13 +377,16 @@ internal fun AccountRowContent(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text(
-                text = accountSupportingText(account),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            val supporting = accountSupportingText(account, showType = showType)
+            if (supporting.isNotEmpty()) {
+                Text(
+                    text = supporting,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         Text(
             text = MoneyFormatter.format(item.balance, account.currency),
@@ -387,9 +423,11 @@ internal fun AccountAvatar(
 }
 
 @Composable
-private fun accountSupportingText(account: Account): String {
+private fun accountSupportingText(account: Account, showType: Boolean): String {
     val parts = buildList {
-        add(stringResource(account.type.labelRes()))
+        // The active list carries a per-type header, so the type is dropped from
+        // the row to avoid repeating it; the archived card has no header.
+        if (showType) add(stringResource(account.type.labelRes()))
         if (account.isArchived) add(stringResource(R.string.accounts_archived_label))
         if (!account.isIncludedInTotal) {
             add(stringResource(R.string.accounts_excluded_from_total))
