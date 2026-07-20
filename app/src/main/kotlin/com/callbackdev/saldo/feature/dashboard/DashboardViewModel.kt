@@ -110,11 +110,21 @@ data class DashboardUiState(
     val hasAccounts: Boolean = false,
     val primaryCurrency: Currency = fallbackCurrency,
     val totalBalance: BigDecimal = BigDecimal.ZERO,
+    /**
+     * Balance as of today (movements dated up to today), i.e. the sparkline's
+     * today point. Non-null only when it differs from [totalBalance], which
+     * happens when confirmed movements dated in the future are already booked:
+     * then [totalBalance] runs ahead of what is actually available today and
+     * the card surfaces this figure as a secondary line. Null when the two
+     * coincide (nothing to disambiguate).
+     */
+    val balanceAsOfToday: BigDecimal? = null,
     /** Active (non-archived) accounts with balances, for the expandable detail. */
     val accounts: List<AccountWithBalance> = emptyList(),
     /**
      * End-of-day total balance over the sparkline window (ascending, last
-     * point = [totalBalance]); empty while loading or without accounts.
+     * point = [balanceAsOfToday] when set, otherwise [totalBalance]); empty
+     * while loading or without accounts.
      */
     val balanceHistory: List<DailyBalance> = emptyList(),
     /**
@@ -328,6 +338,13 @@ class DashboardViewModel @Inject constructor(
             .filter { it.account.isIncludedInTotal && it.account.currency == primary }
             .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.balance) }
 
+        // The sparkline's today point is the balance dated up to today; it lags
+        // [totalBalance] when future-dated confirmed movements are already
+        // booked. Surface it only on that divergence, so the card stays quiet
+        // when the headline already is the today figure.
+        val balanceAsOfToday = balanceHistory.lastOrNull()?.balance
+            ?.takeIf { it.compareTo(totalBalance) != 0 }
+
         val totals = sources.totals
         val previousReference = totals.previousMonthToDateSpend.takeIf { it.signum() > 0 }
         val comparison = previousReference?.let { totals.monthToDateSpend.subtract(it) }
@@ -350,6 +367,7 @@ class DashboardViewModel @Inject constructor(
             hasAccounts = active.isNotEmpty(),
             primaryCurrency = primary,
             totalBalance = totalBalance,
+            balanceAsOfToday = balanceAsOfToday,
             // Same order as the Accounts screen (type declaration order, then
             // name) so the total-balance breakdown and the full list agree.
             accounts = active.sortedByTypeThenName(),

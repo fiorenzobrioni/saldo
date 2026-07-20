@@ -245,6 +245,36 @@ class DashboardViewModelTest {
     }
 
     @Test
+    fun `balance as of today is surfaced when future-dated movements run the headline ahead`() = runTest {
+        // Headline (every booking) 120.00, today's point (dated up to today)
+        // 100.00: 20.00 sits in the future, so the card names the today figure.
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("120.00"))),
+            balanceHistory = listOf(DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal("100.00"))),
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(BigDecimal("120.00"), state.totalBalance)
+            assertEquals(BigDecimal("100.00"), state.balanceAsOfToday)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `balance as of today is null when the headline already is the today figure`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("100.00"))),
+            balanceHistory = listOf(DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal("100.00"))),
+        )
+
+        viewModel.uiState.test {
+            assertNull(awaitLoaded().balanceAsOfToday)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `recap teaser shows the previous month during the first week with data`() = runTest {
         val viewModel = viewModel(
             accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),

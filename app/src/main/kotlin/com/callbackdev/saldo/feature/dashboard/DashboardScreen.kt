@@ -163,6 +163,7 @@ private fun DashboardContent(
         item {
             BalanceCard(
                 totalBalance = uiState.totalBalance,
+                balanceAsOfToday = uiState.balanceAsOfToday,
                 currency = uiState.primaryCurrency,
                 accounts = uiState.accounts,
                 history = uiState.balanceHistory,
