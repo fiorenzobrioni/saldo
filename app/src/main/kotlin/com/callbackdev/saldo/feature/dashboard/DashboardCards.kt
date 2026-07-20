@@ -6,6 +6,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
@@ -40,8 +42,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -165,13 +170,17 @@ private fun fullWeekdayDate(date: LocalDate): String {
 }
 
 /**
- * Hero card: the total balance with the per-account breakdown always in view,
- * a balance sparkline (30 days of history plus a dashed end-of-month forecast
- * tail) and a decorative tonal gradient. The whole card
- * is tappable and opens account management, with
- * [R.string.dashboard_manage_accounts] as the spoken affordance. The higher
- * tonal color and the larger shape single it out as the screen's primary
- * card, keeping the whole dashboard flat.
+ * Hero card: the total balance as the screen's dominant figure, a balance
+ * sparkline (30 days of history plus a dashed end-of-month forecast tail) and,
+ * under a hairline divider, the per-account breakdown capped to the first
+ * [ACCOUNT_PREVIEW_COUNT] accounts with a "+N more" row opening the full list.
+ * A soft top-down tonal gradient and the larger shape single it out as the
+ * primary card while keeping the whole dashboard flat.
+ *
+ * Tap targets are layered: each account row opens that account's detail
+ * ([onAccountClick]); the "+N more" row and every other part of the card open
+ * account management ([onManageAccounts], the spoken affordance of the card
+ * itself).
  */
 @Composable
 internal fun BalanceCard(
@@ -182,6 +191,7 @@ internal fun BalanceCard(
     forecast: List<DailyBalance>,
     date: LocalDate,
     onManageAccounts: () -> Unit,
+    onAccountClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val manageAccountsLabel = stringResource(R.string.dashboard_manage_accounts)
@@ -195,7 +205,7 @@ internal fun BalanceCard(
         Column(
             modifier = Modifier
                 .background(
-                    Brush.linearGradient(
+                    Brush.verticalGradient(
                         colors = listOf(
                             MaterialTheme.colorScheme.primaryContainer.copy(alpha = HERO_GRADIENT_ALPHA),
                             Color.Transparent,
@@ -219,7 +229,7 @@ internal fun BalanceCard(
                     )
                 },
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(BALANCE_AMOUNT_TOP_GAP))
             Text(
                 text = animatedBalanceText(totalBalance, currency),
                 style = MaterialTheme.typography.headlineMedium.tabularNumbers(),
@@ -230,11 +240,11 @@ internal fun BalanceCard(
                     MaterialTheme.colorScheme.onSurface
                 },
                 maxLines = 1,
-                autoSize = TextAutoSize.StepBased(minFontSize = HERO_MONEY_MIN, maxFontSize = HERO_MONEY_MAX),
+                autoSize = TextAutoSize.StepBased(minFontSize = BALANCE_MONEY_MIN, maxFontSize = BALANCE_MONEY_MAX),
                 modifier = Modifier.fillMaxWidth(),
             )
             if (history.size > 1) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(BALANCE_SECTION_GAP))
                 BalanceSparkline(
                     history = history,
                     forecast = forecast,
@@ -247,11 +257,47 @@ internal fun BalanceCard(
                 SparklineCaption(hasForecast = forecast.isNotEmpty())
             }
             if (accounts.isNotEmpty()) {
-                Spacer(Modifier.height(10.dp))
-                accounts.forEach { item ->
-                    AccountBreakdownRow(item = item, primaryCurrency = currency)
-                }
+                Spacer(Modifier.height(BALANCE_SECTION_GAP))
+                AccountsBreakdownSection(
+                    accounts = accounts,
+                    primaryCurrency = currency,
+                    onAccountClick = onAccountClick,
+                    onShowAll = onManageAccounts,
+                )
             }
+        }
+    }
+}
+
+/**
+ * The per-account breakdown under the hero figure: a hairline divider that
+ * separates it from the balance and sparkline, the first [ACCOUNT_PREVIEW_COUNT]
+ * accounts as tappable rows, and, when more accounts exist, a "+N more" row that
+ * opens the full accounts list. Capping the preview keeps the hero card compact
+ * no matter how many accounts the user holds.
+ */
+@Composable
+private fun AccountsBreakdownSection(
+    accounts: List<AccountWithBalance>,
+    primaryCurrency: Currency,
+    onAccountClick: (Long) -> Unit,
+    onShowAll: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Spacer(Modifier.height(BALANCE_BREAKDOWN_TOP_GAP))
+        val preview = accounts.take(ACCOUNT_PREVIEW_COUNT)
+        preview.forEach { item ->
+            AccountBreakdownRow(
+                item = item,
+                primaryCurrency = primaryCurrency,
+                onClick = { onAccountClick(item.account.id) },
+            )
+        }
+        val hidden = accounts.size - preview.size
+        if (hidden > 0) {
+            MoreAccountsRow(count = hidden, onClick = onShowAll)
         }
     }
 }
@@ -343,25 +389,30 @@ private fun SparklineCaption(hasForecast: Boolean, modifier: Modifier = Modifier
  * interpolated (Float on the Long delta, display-only); the final frame snaps
  * to the exact stored value, so the money rules are untouched. With system
  * animations off the exact value renders immediately.
+ *
+ * The displayed value is kept in [rememberSaveable] so it survives the card
+ * scrolling out of and back into the LazyColumn: the sweep plays once on the
+ * first open (from zero) and then only when the balance actually changes, never
+ * replaying from zero on every scroll back into view.
  */
 @Composable
 private fun animatedBalanceText(totalBalance: BigDecimal, currency: Currency): String {
     if (!rememberMotionEnabled()) return MoneyFormatter.format(totalBalance, currency)
     val target = remember(totalBalance, currency) { MoneyMapper.toMinorUnits(totalBalance, currency) }
-    val displayedMinor = remember { mutableLongStateOf(0L) }
+    var displayedMinor by rememberSaveable { mutableStateOf(0L) }
     LaunchedEffect(target) {
-        val start = displayedMinor.longValue
+        val start = displayedMinor
         if (start != target) {
             Animatable(0f).animateTo(
                 targetValue = 1f,
                 animationSpec = tween(durationMillis = COUNT_UP_MILLIS, easing = FastOutSlowInEasing),
             ) {
-                displayedMinor.longValue = start + ((target - start) * value).toLong()
+                displayedMinor = start + ((target - start) * value).toLong()
             }
-            displayedMinor.longValue = target
+            displayedMinor = target
         }
     }
-    return MoneyFormatter.format(MoneyMapper.toAmount(displayedMinor.longValue, currency), currency)
+    return MoneyFormatter.format(MoneyMapper.toAmount(displayedMinor, currency), currency)
 }
 
 /**
@@ -369,22 +420,28 @@ private fun animatedBalanceText(totalBalance: BigDecimal, currency: Currency): S
  * small markers explaining why the row does not feed the headline total, and
  * the balance. An account that does not contribute to the total (its flag is
  * off or it is in a non-primary currency) has its balance muted, so the eye
- * sees at a glance which rows are not part of the big number.
+ * sees at a glance which rows are not part of the big number. The whole row is
+ * tappable and opens the account's own detail via [onClick].
  */
 @Composable
 private fun AccountBreakdownRow(
     item: AccountWithBalance,
     primaryCurrency: Currency,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val account = item.account
     val color = AccountVisuals.color(account.color)
     val nonPrimaryCurrency = account.currency != primaryCurrency
     val contributesToTotal = account.isIncludedInTotal && !nonPrimaryCurrency
+    val openLabel = stringResource(R.string.dashboard_account_open, account.name)
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .clip(MaterialTheme.shapes.small)
+            .clickable(onClick = onClick)
+            .semantics { onClick(label = openLabel, action = null) }
+            .padding(vertical = BALANCE_ROW_PADDING_VERTICAL),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -424,6 +481,45 @@ private fun AccountBreakdownRow(
                 item.balance.signum() < 0 -> MaterialTheme.moneyColors.negative
                 else -> MaterialTheme.colorScheme.onSurface
             },
+        )
+    }
+}
+
+/**
+ * The "+N more" row closing a capped breakdown: it lines up with the account
+ * names above it and, with its leading-tinted label and trailing chevron, reads
+ * as a continuation of the list that navigates to the full accounts screen.
+ */
+@Composable
+private fun MoreAccountsRow(
+    count: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.small)
+            .clickable(onClick = onClick)
+            .padding(vertical = BALANCE_ROW_PADDING_VERTICAL),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = pluralStringResource(R.plurals.dashboard_accounts_more, count, count),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = BALANCE_MORE_ROW_INDENT),
+        )
+        Icon(
+            imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp),
         )
     }
 }
@@ -957,10 +1053,31 @@ private const val AVATAR_TINT_ALPHA = 0.16f
 
 // Money figures auto-size within these bounds so large amounts shrink to fit
 // instead of truncating, while typical values keep the target size. Hero: the
-// balance and safe-to-spend figures on the full-width cards; compact: the
-// half-width Today/month and budget figures. Shared by BudgetDashboardCards.
+// safe-to-spend figure on its full-width card; compact: the half-width
+// Today/month and budget figures. Shared by BudgetDashboardCards.
 internal val HERO_MONEY_MIN = 20.sp
 internal val HERO_MONEY_MAX = 28.sp
+
+// The total-balance figure is the screen's primary number and outranks even the
+// safe-to-spend hero, so it auto-sizes within a larger band of its own.
+private val BALANCE_MONEY_MIN = 24.sp
+private val BALANCE_MONEY_MAX = 34.sp
+
+// Vertical rhythm inside the balance card: a tight gap under the header before
+// the figure, a wider gap between its sections (figure / sparkline / accounts),
+// and a smaller one under the breakdown divider.
+private val BALANCE_AMOUNT_TOP_GAP = 4.dp
+private val BALANCE_SECTION_GAP = 12.dp
+private val BALANCE_BREAKDOWN_TOP_GAP = 8.dp
+
+/** Vertical padding of a tappable account (or "+N more") row in the breakdown. */
+private val BALANCE_ROW_PADDING_VERTICAL = 8.dp
+
+/** Start indent of the "+N more" row: avatar (36dp) + its 12dp gap, so it aligns with the account names. */
+private val BALANCE_MORE_ROW_INDENT = 48.dp
+
+/** How many accounts the hero breakdown shows before collapsing the rest into "+N more". */
+private const val ACCOUNT_PREVIEW_COUNT = 2
 
 /** Height of the hero card's balance sparkline, in dp. */
 private const val SPARKLINE_HEIGHT = 56

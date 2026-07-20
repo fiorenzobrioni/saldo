@@ -84,6 +84,14 @@
     <string name="dashboard_accounts_expand">Mostra i conti</string>
     <string name="dashboard_accounts_collapse">Nascondi i conti</string>
     <string name="dashboard_manage_accounts">Gestisci conti</string>
+    <!-- Azione vocale per una riga di conto toccabile nel dettaglio del saldo; %1$s è il nome del conto. -->
+    <string name="dashboard_account_open">Apri %1$s</string>
+    <!-- Riga che chiude un elenco conti ridotto; %1$d è quanti altri conti sono nascosti. -->
+    <plurals name="dashboard_accounts_more">
+        <item quantity="one">+%1$d altro</item>
+        <item quantity="many">+%1$d altri</item>
+        <item quantity="other">+%1$d altri</item>
+    </plurals>
     <string name="dashboard_account_other_currency">Valuta %1$s, non nel totale</string>
     <string name="dashboard_today">Oggi</string>
     <string name="dashboard_month">Questo mese</string>

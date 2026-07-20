@@ -85,6 +85,13 @@
     <string name="dashboard_accounts_expand">Show accounts</string>
     <string name="dashboard_accounts_collapse">Hide accounts</string>
     <string name="dashboard_manage_accounts">Manage accounts</string>
+    <!-- Spoken action for a tappable account row in the balance breakdown; %1$s is the account name. -->
+    <string name="dashboard_account_open">Open %1$s</string>
+    <!-- Row closing a capped account breakdown; %1$d is how many more accounts are hidden. -->
+    <plurals name="dashboard_accounts_more">
+        <item quantity="one">+%1$d more</item>
+        <item quantity="other">+%1$d more</item>
+    </plurals>
     <string name="dashboard_account_other_currency">Currency %1$s, not in the total</string>
     <string name="dashboard_today">Today</string>
     <string name="dashboard_month">This month</string>
