@@ -1,4 +1,4 @@
-# Descrizione generale e filosofia
+# 🧭 Descrizione generale e filosofia
 
 [Torna all'indice](README.md)
 

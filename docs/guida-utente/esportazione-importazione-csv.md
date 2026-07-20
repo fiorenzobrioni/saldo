@@ -1,4 +1,4 @@
-# Esportazione e importazione CSV
+# 🔄 Esportazione e importazione CSV
 
 [Torna all'indice](README.md)
 
