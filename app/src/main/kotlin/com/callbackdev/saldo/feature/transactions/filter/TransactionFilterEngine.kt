@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.feature.transactions.filter
 
 import com.callbackdev.saldo.core.domain.model.Transaction
+import com.callbackdev.saldo.core.domain.model.isRecurring
 import java.text.Normalizer
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -82,6 +83,7 @@ object TransactionFilterEngine {
                 matchesAccount(transaction, filters) &&
                 matchesTags(tagIds, filters) &&
                 matchesAmount(transaction, filters) &&
+                matchesOrigin(transaction, filters) &&
                 matchesQuery(transaction, needle)
     }
 
@@ -127,6 +129,13 @@ object TransactionFilterEngine {
         return (filters.amountMin == null || magnitude >= filters.amountMin) &&
             (filters.amountMax == null || magnitude <= filters.amountMax)
     }
+
+    private fun matchesOrigin(transaction: Transaction, filters: TransactionFilters): Boolean =
+        when (filters.origin) {
+            null -> true
+            TransactionOrigin.RECURRING -> transaction.isRecurring
+            TransactionOrigin.MANUAL -> !transaction.isRecurring
+        }
 
     private fun matchesQuery(transaction: Transaction, needle: String?): Boolean {
         if (needle == null) return true

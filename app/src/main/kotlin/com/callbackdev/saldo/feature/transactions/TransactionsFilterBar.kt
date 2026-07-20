@@ -33,6 +33,7 @@ import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
+import com.callbackdev.saldo.feature.transactions.filter.TransactionOrigin
 import java.time.LocalDate
 
 /**
@@ -73,7 +74,7 @@ internal fun TransactionsFilterBar(
 
 private val TransactionFilters.hasNonDateFilters: Boolean
     get() = types.isNotEmpty() || categoryIds.isNotEmpty() || accountIds.isNotEmpty() ||
-        tagIds.isNotEmpty() || amountMin != null || amountMax != null
+        tagIds.isNotEmpty() || amountMin != null || amountMax != null || origin != null
 
 @Composable
 private fun DatePresetRow(
@@ -182,8 +183,20 @@ private fun ActiveFilterRow(
                 onRemove = { onFiltersChange(filters.copy(amountMin = null, amountMax = null)) },
             )
         }
+        filters.origin?.let { origin ->
+            RemovableChip(
+                label = stringResource(origin.labelRes),
+                onRemove = { onFiltersChange(filters.copy(origin = null)) },
+            )
+        }
     }
 }
+
+private val TransactionOrigin.labelRes: Int
+    get() = when (this) {
+        TransactionOrigin.RECURRING -> R.string.filter_origin_recurring
+        TransactionOrigin.MANUAL -> R.string.filter_origin_manual
+    }
 
 @Composable
 private fun amountChipLabel(filters: TransactionFilters): String {

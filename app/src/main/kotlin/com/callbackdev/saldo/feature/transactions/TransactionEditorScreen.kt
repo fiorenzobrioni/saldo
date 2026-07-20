@@ -55,6 +55,7 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
+import com.callbackdev.saldo.core.designsystem.component.InfoBanner
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.Category
@@ -297,6 +298,14 @@ private fun EditorForm(
         if (uiState.isNew) amountFocus.requestFocus()
     }
     Column(modifier = modifier) {
+        if (uiState.isRecurring) {
+            Spacer(Modifier.height(16.dp))
+            InfoBanner(
+                text = uiState.recurringRuleName?.let {
+                    stringResource(R.string.transaction_editor_recurring_banner, it)
+                } ?: stringResource(R.string.transaction_editor_recurring_banner_generic),
+            )
+        }
         Spacer(Modifier.height(16.dp))
         val showTypeSelector = !uiState.isTypeLocked && !(uiState.isNew && uiState.isTypePreset)
         if (showTypeSelector) {

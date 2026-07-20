@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -45,6 +46,7 @@ import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.isRecurring
 
 /**
  * A movement row that can be swiped away (end to start) to delete it. Flat, so
@@ -145,6 +147,16 @@ internal fun TransactionRowContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (transaction.isRecurring) {
+            Icon(
+                imageVector = Icons.Outlined.Repeat,
+                contentDescription = stringResource(R.string.transaction_recurring_badge),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .size(16.dp),
             )
         }
         if (transaction.isExcludedFromStats) {

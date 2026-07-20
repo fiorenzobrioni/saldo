@@ -10,8 +10,11 @@ import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
+import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
+import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
@@ -59,6 +62,7 @@ class TransactionEditorViewModelTest {
     private val accountRepository = mockk<AccountRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
     private val tagRepository = mockk<TagRepository>(relaxUnitFun = true)
+    private val recurringRuleRepository = mockk<RecurringRuleRepository>(relaxUnitFun = true)
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true)
 
     private fun account(
@@ -116,6 +120,7 @@ class TransactionEditorViewModelTest {
             accountRepository = accountRepository,
             categoryRepository = categoryRepository,
             tagRepository = tagRepository,
+            recurringRuleRepository = recurringRuleRepository,
             userPreferences = userPreferences,
             clock = clock,
         )
@@ -399,6 +404,59 @@ class TransactionEditorViewModelTest {
     }
 
     @Test
+    fun `editing a generated movement surfaces the recurring flag and rule name`() = runTest {
+        val existing = Transaction(
+            id = 7L,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-12.99"),
+            currency = eur,
+            accountId = checking.id,
+            timestamp = Instant.parse("2026-07-01T10:00:00Z"),
+            zoneOffset = ZoneOffset.ofHours(2),
+            categoryId = groceries.id,
+            recurringRuleId = 3L,
+        )
+        coEvery { transactionRepository.getTransaction(7L) } returns existing
+        every { tagRepository.observeTagsForTransaction(7L) } returns flowOf(emptyList())
+        coEvery { recurringRuleRepository.getRule(3L) } returns RecurringRule(
+            id = 3L,
+            name = "Netflix",
+            type = TransactionType.EXPENSE,
+            currency = eur,
+            accountId = checking.id,
+            frequency = RecurrenceFrequency.MONTHLY,
+            startDate = LocalDate.of(2026, 1, 7),
+        )
+        val viewModel = viewModel(route = TransactionEditorRoute(7L))
+        collectState(viewModel)
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isRecurring)
+        assertEquals("Netflix", state.recurringRuleName)
+    }
+
+    @Test
+    fun `a manual movement is not flagged as recurring`() = runTest {
+        val existing = Transaction(
+            id = 8L,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-5.00"),
+            currency = eur,
+            accountId = checking.id,
+            timestamp = Instant.parse("2026-07-01T10:00:00Z"),
+            zoneOffset = ZoneOffset.ofHours(2),
+            categoryId = groceries.id,
+        )
+        coEvery { transactionRepository.getTransaction(8L) } returns existing
+        every { tagRepository.observeTagsForTransaction(8L) } returns flowOf(emptyList())
+        val viewModel = viewModel(route = TransactionEditorRoute(8L))
+        collectState(viewModel)
+
+        assertFalse(viewModel.uiState.value.isRecurring)
+        assertNull(viewModel.uiState.value.recurringRuleName)
+    }
+
+    @Test
     fun `saving an edit keeps the id and the fields the form does not touch`() = runTest {
         val existing = Transaction(
             id = 7L,
@@ -414,6 +472,7 @@ class TransactionEditorViewModelTest {
         )
         coEvery { transactionRepository.getTransaction(7L) } returns existing
         every { tagRepository.observeTagsForTransaction(7L) } returns flowOf(emptyList())
+        coEvery { recurringRuleRepository.getRule(3L) } returns null
         val saved = slot<Transaction>()
         val viewModel = viewModel(route = TransactionEditorRoute(7L))
         collectState(viewModel)

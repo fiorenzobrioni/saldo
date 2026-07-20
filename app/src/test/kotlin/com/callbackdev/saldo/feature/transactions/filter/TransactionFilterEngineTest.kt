@@ -30,6 +30,7 @@ class TransactionFilterEngineTest {
         transferAccountId: Long? = null,
         description: String? = null,
         note: String? = null,
+        recurringRuleId: Long? = null,
     ) = Transaction(
         type = type,
         amount = BigDecimal(amount),
@@ -41,6 +42,7 @@ class TransactionFilterEngineTest {
         transferAccountId = transferAccountId,
         description = description,
         note = note,
+        recurringRuleId = recurringRuleId,
     )
 
     private fun matches(
@@ -241,6 +243,24 @@ class TransactionFilterEngineTest {
     }
 
     @Test
+    fun `origin filter keeps only recurring or only manual movements`() {
+        val recurring = transaction(recurringRuleId = 3L)
+        val manual = transaction(recurringRuleId = null)
+
+        val onlyRecurring = TransactionFilters(origin = TransactionOrigin.RECURRING)
+        assertTrue(matches(recurring, onlyRecurring))
+        assertFalse(matches(manual, onlyRecurring))
+
+        val onlyManual = TransactionFilters(origin = TransactionOrigin.MANUAL)
+        assertFalse(matches(recurring, onlyManual))
+        assertTrue(matches(manual, onlyManual))
+
+        // No origin set keeps both.
+        assertTrue(matches(recurring, TransactionFilters.NONE))
+        assertTrue(matches(manual, TransactionFilters.NONE))
+    }
+
+    @Test
     fun `filters combine with AND semantics`() {
         val filters = TransactionFilters(
             query = "caffe",
@@ -262,6 +282,8 @@ class TransactionFilterEngineTest {
             amountMin = BigDecimal.ONE,
         )
         assertEquals(3, filters.activeCount)
+        // Origin is its own group: setting it bumps the count.
+        assertEquals(4, filters.copy(origin = TransactionOrigin.RECURRING).activeCount)
         assertTrue(filters.isActive)
         assertFalse(TransactionFilters.NONE.isActive)
         // The query alone makes the view "active" but is not a filter group.
