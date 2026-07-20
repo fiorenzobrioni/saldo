@@ -61,6 +61,31 @@ class SavingsGoalEditorViewModelTest {
     }
 
     @Test
+    fun `create mode with no savings account reports none available and none existing`() = runTest {
+        val viewModel = viewModel(accounts = emptyList())
+
+        val state = viewModel.uiState.value
+        assertTrue(state.noAvailableAccounts)
+        assertFalse(state.hasSavingsAccounts)
+    }
+
+    @Test
+    fun `create mode with the only savings account already taken reports none available but existing`() = runTest {
+        val existingGoal = SavingsGoal(
+            id = 1L,
+            name = "Vacanze",
+            targetAmount = BigDecimal("500.00"),
+            currency = eur,
+            accountId = 9L,
+        )
+        val viewModel = viewModel(goals = listOf(existingGoal))
+
+        val state = viewModel.uiState.value
+        assertTrue(state.noAvailableAccounts)
+        assertTrue(state.hasSavingsAccounts)
+    }
+
+    @Test
     fun `saving persists the parsed goal linked to the account`() = runTest {
         val saved = slot<SavingsGoal>()
         coEvery { savingsGoalRepository.upsert(capture(saved)) } returns 1L

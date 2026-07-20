@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-20 - Messaggio dell'editor obiettivi di risparmio quando i conti sono tutti occupati
+
+**Fatto:** l'empty-state dell'editor obiettivi di risparmio (`SavingsGoalEditorScreen`) ora distingue due situazioni prima confuse sotto lo stesso testo "Serve un conto di risparmio ... Creane uno per iniziare". Il modello resta 1:1 (un obiettivo per conto di risparmio, `UNIQUE(accountId)`, ADR 25): quando tutti i conti di risparmio hanno già un obiettivo l'editor non ha conti "liberi" e mostrava lo stesso messaggio del caso "nessun conto di risparmio", facendolo sembrare un bug ("mi chiede di creare un conto ogni volta"). Aggiunto in `SavingsGoalEditorUiState` il flag `hasSavingsAccounts` (esiste almeno un conto SAVINGS non archiviato, a prescindere che sia libero), calcolato in `onData` e propagato da `initCreate`/`refreshCreateOptions`. La schermata sceglie il testo: se `hasSavingsAccounts` è true usa le nuove stringhe `savings_editor_all_taken_title/body` ("I tuoi conti di risparmio sono tutti in uso ... crea un altro conto o modifica un obiettivo esistente"), altrimenti quelle esistenti. La CTA resta "Crea conto di risparmio".
+
+**Verificato:** verifica statica severa (nessun SDK Android in locale, build/test in CI GitHub). Aggiunti due unit test JUnit5 in `SavingsGoalEditorViewModelTest`: nessun conto risparmio (`noAvailableAccounts` true, `hasSavingsAccounts` false) e unico conto già occupato da un obiettivo (`noAvailableAccounts` true, `hasSavingsAccounts` true). Parità chiavi stringhe IT/EN.
+
+**Decisioni:** solo chiarimento del messaggio, nessun cambio al modello 1:1 (confermato con l'utente): un secondo obiettivo richiede un secondo conto di risparmio, coerente con il modello pot/vault e col saldo come single source of truth (ADR 25). Riuso della stessa CTA perché l'azione utile resta creare un nuovo conto.
+
+**Problemi:** nessuno in scrittura; build e test da confermare in CI.
+
+**Prossimo:** nessuno pianificato.
+
+---
+
 ## 2026-07-20 - Rifinitura premium della card Saldo (Dashboard)
 
 **Fatto:** revisione UI/UX della hero card del saldo (`BalanceCard` in `DashboardCards.kt`), sette interventi. (1) La cifra del saldo totale ha ora una banda di auto-size dedicata e più grande (`BALANCE_MONEY_MIN/MAX` = 24/34sp) rispetto agli altri numeri hero (`HERO_MONEY_*` restano 20/28sp, usati dalla card Spendibile oggi), così è il numero primario della schermata. (2) Il breakdown per conto mostra i primi 2 conti (`ACCOUNT_PREVIEW_COUNT`) e, quando ce ne sono di più, un chevron `ExpandMore` nell'header (stessa icona/dimensione/posizione della card Spendibile oggi) espande in place i restanti con `animateContentSize` fino a un massimo di 10 (`ACCOUNT_EXPANDED_MAX`); oltre i 10 una riga di overflow con glifo `MoreHoriz` e conteggio (nuovo plural `dashboard_accounts_overflow`) rimanda all'elenco conti completo. L'espansione è transitoria (`remember`, non `rememberSaveable`): alla riapertura dell'app torna collassata. (3) Il count-up del saldo usa `rememberSaveable`, così sopravvive allo scroll fuori/dentro il `LazyColumn`: parte da zero solo alla prima apertura e poi anima solo al cambio reale del valore, non più da zero a ogni rientro in viewport (allineati commento e implementazione). (4) Un `HorizontalDivider` separa il blocco totale+sparkline dalle righe dei conti. (5) Le righe dei singoli conti sono ora toccabili e aprono il dettaglio del conto (`AccountEditorRoute(id)` via nuovo callback `onNavigateToAccount`), mentre il resto della card resta "Gestisci conti"; nuova azione vocale `dashboard_account_open`. (6) Spaziatura interna tokenizzata (`BALANCE_AMOUNT_TOP_GAP`, `BALANCE_SECTION_GAP`, `BALANCE_BREAKDOWN_TOP_GAP`, `BALANCE_ROW_PADDING_VERTICAL` ridotto a 6dp per conti più ravvicinati). (7) Gradiente decorativo da diagonale (`linearGradient`) a verticale top-down (`verticalGradient`), lettura più pulita.
