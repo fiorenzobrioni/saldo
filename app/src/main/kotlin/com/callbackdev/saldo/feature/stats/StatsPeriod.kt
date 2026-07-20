@@ -9,14 +9,34 @@ import java.time.YearMonth
 sealed interface StatsPeriod {
     data class Month(val month: YearMonth) : StatsPeriod
     data class Year(val year: Int) : StatsPeriod
-    data class Custom(val start: LocalDate, val end: LocalDate) : StatsPeriod
+
+    /**
+     * An explicit range, reusing the movements filter's open-ended period: at
+     * least one bound is set, a null bound is open on that side. The open end
+     * resolves to today and the open start to [EARLIEST_LEDGER_DATE] when the
+     * period becomes a query, so the ring and per-account windows cover
+     * "from X onwards" / "up to Y".
+     */
+    data class Custom(val start: LocalDate?, val end: LocalDate?) : StatsPeriod
 }
 
-/** Inclusive local-date range covered by the period. */
-fun StatsPeriod.dateRange(): ClosedRange<LocalDate> = when (this) {
+/**
+ * A floor for open-start custom periods: earlier than any real ledger entry,
+ * and (unlike `LocalDate.MIN`) safe to turn into epoch millis for the SQL
+ * window. The query result is the same as "from the first movement", since
+ * nothing predates it.
+ */
+val EARLIEST_LEDGER_DATE: LocalDate = LocalDate.of(1, 1, 1)
+
+/**
+ * Inclusive local-date range covered by the period. A custom period's open
+ * bounds resolve against [today]: an open start floors at [EARLIEST_LEDGER_DATE],
+ * an open end ceils at [today].
+ */
+fun StatsPeriod.dateRange(today: LocalDate): ClosedRange<LocalDate> = when (this) {
     is StatsPeriod.Month -> month.atDay(1)..month.atEndOfMonth()
     is StatsPeriod.Year -> Year.of(year).atDay(1)..Year.of(year).atMonth(Month.DECEMBER).atEndOfMonth()
-    is StatsPeriod.Custom -> start..end
+    is StatsPeriod.Custom -> (start ?: EARLIEST_LEDGER_DATE)..(end ?: today)
 }
 
 /**

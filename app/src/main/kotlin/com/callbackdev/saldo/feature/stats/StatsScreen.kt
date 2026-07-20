@@ -51,6 +51,8 @@ import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
+import com.callbackdev.saldo.feature.transactions.FilterDateRangeSheet
+import com.callbackdev.saldo.feature.transactions.periodLabel as customPeriodLabel
 import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
 import java.time.LocalDate
 import java.time.YearMonth
@@ -137,6 +139,7 @@ fun StatsScreen(
                                     onNavigateToFiltered(
                                         periodRoute(
                                             period = uiState.period,
+                                            today = uiState.today,
                                             categoryId = slice.category?.id,
                                             uncategorizedOnly = slice.category == null,
                                         ),
@@ -148,6 +151,7 @@ fun StatsScreen(
                             onNavigateToFiltered(
                                 periodRoute(
                                     period = uiState.period,
+                                    today = uiState.today,
                                     categoryId = slice.category?.id,
                                     uncategorizedOnly = slice.category == null,
                                 ),
@@ -163,7 +167,7 @@ fun StatsScreen(
                         currency = uiState.currency,
                         onAccountClick = { spend ->
                             onNavigateToFiltered(
-                                periodRoute(uiState.period, accountId = spend.account.id),
+                                periodRoute(uiState.period, uiState.today, accountId = spend.account.id),
                             )
                         },
                     )
@@ -177,11 +181,19 @@ fun StatsScreen(
 
     if (showRangePicker) {
         val currentRange = (uiState.period as? StatsPeriod.Custom)
-        StatsDateRangePickerDialog(
+        FilterDateRangeSheet(
             initialStart = currentRange?.start,
             initialEnd = currentRange?.end,
-            onConfirm = { start, end ->
+            today = uiState.today,
+            showClear = uiState.period is StatsPeriod.Custom,
+            onApply = { start, end ->
                 viewModel.selectCustomRange(start, end)
+                showRangePicker = false
+            },
+            // Stats has no "no period": clearing a custom range returns to the
+            // default month view.
+            onClear = {
+                viewModel.selectMonthMode()
                 showRangePicker = false
             },
             onDismiss = { showRangePicker = false },
@@ -322,11 +334,12 @@ private fun MonthDrillDownButton(
 /** The route covering the selected period, optionally narrowed to one entity. */
 private fun periodRoute(
     period: StatsPeriod,
+    today: LocalDate,
     categoryId: Long? = null,
     accountId: Long? = null,
     uncategorizedOnly: Boolean = false,
 ): FilteredTransactionsRoute {
-    val range = period.dateRange()
+    val range = period.dateRange(today)
     return FilteredTransactionsRoute(
         startEpochDay = range.start.toEpochDay(),
         endEpochDayExclusive = range.endInclusive.plusDays(1).toEpochDay(),
@@ -419,7 +432,7 @@ private fun PeriodSelector(
                 )
             }
             Text(
-                text = periodLabel(period),
+                text = periodLabel(period, today),
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.weight(1f),
@@ -439,22 +452,23 @@ private fun PeriodSelector(
 
 private const val MODE_COUNT = 3
 
-/** Localized label of the selected period, normalized to the locale's own casing. */
+/**
+ * Localized label of the selected period, normalized to the locale's own
+ * casing. Custom ranges reuse the movements filter's label so an open-ended
+ * period reads the same way there and here ("Dal 5 lug", "Fino al 5 lug").
+ */
 @Composable
-private fun periodLabel(period: StatsPeriod): String {
+private fun periodLabel(period: StatsPeriod, today: LocalDate): String {
     val locale = LocalConfiguration.current.locales[0]
-    return remember(period, locale) {
-        when (period) {
-            is StatsPeriod.Month -> {
-                val pattern = DateFormat.getBestDateTimePattern(locale, "yMMMM")
-                period.month.atDay(1).format(DateTimeFormatter.ofPattern(pattern, locale))
-            }
-            is StatsPeriod.Year -> period.year.toString()
-            is StatsPeriod.Custom -> {
-                val pattern = DateFormat.getBestDateTimePattern(locale, "dMMMy")
-                val formatter = DateTimeFormatter.ofPattern(pattern, locale)
-                "${period.start.format(formatter)} - ${period.end.format(formatter)}"
-            }
-        }.withLocaleDateCasing(locale)
+    return when (period) {
+        is StatsPeriod.Month -> remember(period, locale) {
+            val pattern = DateFormat.getBestDateTimePattern(locale, "yMMMM")
+            period.month.atDay(1).format(DateTimeFormatter.ofPattern(pattern, locale))
+                .withLocaleDateCasing(locale)
+        }
+        is StatsPeriod.Year -> period.year.toString()
+        is StatsPeriod.Custom ->
+            customPeriodLabel(period.start, period.end, today)
+                ?: stringResource(R.string.stats_period_custom)
     }
 }
