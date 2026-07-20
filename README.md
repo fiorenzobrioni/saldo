@@ -47,7 +47,9 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - 🛟 **Niente modifiche perse per sbaglio** - uscendo da un editor (conto, movimento, ricorrenza, budget, categoria) con dati non salvati, l'app chiede conferma prima di scartarli
 - 🇮🇹 🇬🇧 Italiano e inglese
 
-In arrivo (v1.5 / v2.0): PIN e biometria, widget, export Google Sheets/Excel/PDF, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
+### Roadmap futura (v1.5 / v2.0)
+
+PIN e biometria, widget, export Google Sheets/Excel/PDF, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
 
 ## Principi
 
@@ -76,10 +78,10 @@ Gli importi monetari sono gestiti come `Long` in centesimi nel database e `BigDe
 
 ## Build
 
-Requisiti: Android Studio (ultima versione stabile), JDK 17+.
+Requisiti: Android Studio (ultima versione stabile), JDK 21+.
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/fiorenzobrioni/saldo.git
 cd saldo
 ./gradlew assembleDebug
 ```
@@ -96,23 +98,32 @@ La CI (GitHub Actions) esegue gli stessi task su ogni push.
 
 ```text
 app/src/main/kotlin/com/callbackdev/saldo/
+├── MainActivity.kt          # activity host
+├── MainViewModel.kt         # stato globale (tema, navigazione)
+├── SaldoApplication.kt      # Application + Hilt entry point
+├── budget/                   # notifiche e watcher soglie budget
+├── creditcard/               # notifiche carte di credito a saldo
+├── recurring/                # worker e notifiche movimenti ricorrenti
 ├── core/
-│   ├── common/          # utility condivise
-│   ├── database/        # Room (da Fase 1)
-│   ├── designsystem/    # tema Material 3, componenti UI condivisi
-│   └── domain/          # modelli e logica di dominio (da Fase 1)
+│   ├── common/              # utility condivise
+│   ├── database/            # Room DB, DAO, migrazioni
+│   ├── designsystem/        # tema Material 3, componenti UI condivisi
+│   └── domain/              # modelli e logica di dominio
 ├── feature/
-│   ├── accounts/        # conti: lista, editor, rettifica saldo (da Fase 2)
-│   ├── categories/      # categorie: tab spese/entrate, editor, riordino drag (da Fase 4)
-│   ├── dashboard/       # schermata "Oggi": saldo, oggi/mese, ultimi movimenti, FAB (da Fase 5)
-│   ├── transactions/    # movimenti: lista per giorno, ricerca e filtri, editor (da Fase 3)
-│   ├── recurring/       # movimenti ricorrenti: hub uscite/entrate/trasferimenti, editor, motore (da Fase 6)
-│   ├── stats/           # statistiche: grafici Vico, periodo, drill-down (da Fase 7)
-│   ├── backup/          # backup su file: export e ripristino guidato (da Fase 8)
-│   ├── onboarding/      # primo avvio: benvenuto, valuta, primo conto, notifiche (da Fase 9)
-│   ├── settings/        # impostazioni
-│   └── about/           # schermata informazioni: versione, licenza, librerie
-└── navigation/          # route NavKey, scaffold, bottom bar
+│   ├── about/               # schermata informazioni: versione, licenza, librerie
+│   ├── accounts/            # conti: lista, editor, rettifica saldo
+│   ├── backup/              # backup su file: export e ripristino guidato
+│   ├── budgets/             # budget mensili: tetto globale e per categoria
+│   ├── categories/          # categorie: tab spese/entrate, editor, riordino drag
+│   ├── dashboard/           # schermata "Oggi": saldo, oggi/mese, ultimi movimenti, FAB
+│   ├── onboarding/          # primo avvio: benvenuto, valuta, primo conto, notifiche
+│   ├── recap/               # Saldo Wrapped: recap mensile a storia
+│   ├── recurring/           # movimenti ricorrenti: hub, editor, motore
+│   ├── savings/             # obiettivi di risparmio
+│   ├── settings/            # impostazioni
+│   ├── stats/               # statistiche: grafici Vico, periodo, drill-down
+│   └── transactions/        # movimenti: lista per giorno, ricerca e filtri, editor
+└── navigation/              # route NavKey, scaffold, bottom bar
 ```
 
 ## Documentazione di progetto
@@ -122,6 +133,7 @@ app/src/main/kotlin/com/callbackdev/saldo/
 | [VISION.md](./VISION.md) | Visione di prodotto: cosa è l'app, per chi e perché |
 | [PLANNING.md](./PLANNING.md) | Roadmap di sviluppo, decisioni architetturali, stato di avanzamento |
 | [CLAUDE.md](./CLAUDE.md) | Regole operative per lo sviluppo assistito da AI |
+| [docs/CLAUDE.md](./docs/CLAUDE.md) | Linee guida per la documentazione del progetto |
 | [Guida utente](./docs/guida-utente/) | Manuale d'uso, una pagina per funzionalità (indice) |
 | `devlog/` | Registro storico dello sviluppo |
 
