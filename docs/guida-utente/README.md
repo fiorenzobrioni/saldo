@@ -31,7 +31,7 @@ Il manuale cresce in modo incrementale. Gli argomenti già disponibili hanno un 
 
 - 💰 Budget mensili: tetto complessivo e tetti per categoria.
 - 🟢 Spendibile oggi: quanto puoi ancora spendere restando nel budget.
-- 🎯 Obiettivi di risparmio: traguardi su un conto di risparmio.
+- 🎯 [Obiettivi di risparmio](obiettivi-di-risparmio.md): traguardi su un conto di risparmio, con progresso sul saldo reale, suggerimento mensile e proiezione.
 
 ### Panoramica e analisi
 
