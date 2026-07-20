@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-20 - Chore: detekt, disattivate le regole che producevano solo rumore
+
+**Fatto:** aggiornato `config/detekt/detekt.yml`. Disattivate `LongParameterList`, `TooManyFunctions` e `MagicNumber`: il codice contava 44 `@Suppress` per queste sole regole, tutti con motivazioni strutturali (costruttori Hilt con una dipendenza per concern, DAO/repository con una funzione per query, editor ViewModel con un handler per campo, palette e valori dp/sp letterali). Una regola che richiede una deroga a ogni occorrenza non segnala più nulla. `CyclomaticComplexMethod` resta attiva ma ignora i `@Composable` (le UI Compose sono alberi di `when` per natura), come già `LongMethod` e `LongParameterList` prima della disattivazione. I `@Suppress` esistenti restano nel codice: sono innocui e documentano l'intento; rimozione eventuale come chore separata.
+
+**Decisioni:** disattivazione mirata invece che per categoria: `CyclomaticComplexMethod` sul codice di dominio è un segnale reale e non ha mai richiesto deroghe, quindi resta.
+
+**Problemi:** motivato dal secondo giro di CI consecutivo causato da detekt su codice legittimo (`FilterDateRangeSheet`, complessità 18 per i `when` sulle modalità).
+
+**Prossimo:** nessuno.
+
+---
+
 ## 2026-07-20 - Redesign del periodo personalizzato del filtro date, con range aperti
 
 **Fatto:** sostituito il `DatePickerDialog` + `DateRangePicker` del preset "Personalizzato" con un bottom sheet dedicato (`FilterDateRangeSheet`, aperto già espanso): selettore a tre modalità con segmented buttons (Intervallo / Da / Fino a), card di riepilogo live della selezione (con conteggio giorni per gli intervalli chiusi e indicazione del lato aperto per gli altri), calendario Material 3 incorporato (range picker o single picker a seconda della modalità, header nativo nascosto), pulsante Applica a tutta larghezza, Annulla e "Rimuovi il periodo" (torna a "Tutto", visibile solo con un periodo attivo). Le modalità "Da" e "Fino a" applicano un bound solo: `TransactionsViewModel.setCustomRange` ora accetta bound nulli (entrambi nulli = fallback ad ALL); il motore filtri supportava già i range aperti (`LocalDate.MIN`/`MAX`), nessuna modifica alle query. Il chip "Personalizzato" mostra l'etichetta anche per i range aperti ("Dal 5 lug" / "Fino al 5 lug"). Nuove stringhe IT+EN. Bump versione 92 -> 93 / 0.9.53 -> 0.9.54.

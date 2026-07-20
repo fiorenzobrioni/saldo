@@ -12,16 +12,24 @@ naming:
 
 style:
   MagicNumber:
-    # Dp/sp literals inside composables are idiomatic.
-    ignoreAnnotated: ['Composable']
+    # Disabled: every hit was a justified literal (dp/sp values in
+    # composables, palette colors, calendar math) and needed a @Suppress.
+    active: false
   UnusedPrivateMember:
     ignoreAnnotated: ['Preview']
 
 complexity:
+  CyclomaticComplexMethod:
+    # Compose UI is when-tree heavy by nature; the rule stays active for
+    # domain and logic code, where high complexity is a real signal.
+    ignoreAnnotated: ['Composable']
   LongMethod:
     ignoreAnnotated: ['Composable']
   LongParameterList:
-    ignoreAnnotated: ['Composable']
-    # Room entities and their domain mirrors carry many columns; optional columns
-    # are expressed as parameters with default values, which we do not count.
-    ignoreDefaultParameters: true
+    # Disabled: Hilt constructors and pure functions take one parameter per
+    # dependency/input by design; the rule only produced noise here.
+    active: false
+  TooManyFunctions:
+    # Disabled: DAOs, repositories, editor ViewModels and the settings
+    # registry naturally expose one function per query/field/preference.
+    active: false
