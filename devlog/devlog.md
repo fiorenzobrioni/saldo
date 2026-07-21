@@ -14,6 +14,16 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-21 - Card Saldo totale: ritmo verticale piu compatto
+
+**Fatto:** su feedback utente (dopo il test su device della linea dello zero) ridotti due stacchi nella hero card. (1) Sparkline piu vicina all'importo che descrive: nuovo `BALANCE_SPARKLINE_TOP_GAP = 8.dp` al posto del generico `BALANCE_SECTION_GAP` (12dp) prima del grafico; col 4dp di inset del canvas il gap visivo passa da 16 a 12dp. Lo stacco prima della sezione conti resta 12dp. (2) Righe dei conti nel breakdown piu ravvicinate: `BALANCE_ROW_PADDING_VERTICAL` 6 -> 4dp (gap tra avatar consecutivi 12 -> 8dp) e, in coerenza, `BALANCE_ROW_TWO_LINE_HEIGHT` 52 -> 48dp (stesso contenuto a due righe, padding ridotto).
+
+**Decisioni:** gap asimmetrico voluto: la sparkline e una lettura dell'importo (prossimita = appartenenza), la sezione conti e un blocco distinto e tiene lo stacco pieno. Trade-off dichiarato: le righe conto scendono da 48 a 44dp di altezza tappabile, sotto il target Material di 48dp ma sopra i 44pt iOS; accettato perche l'intera card e comunque cliccabile e le righe sono bersagli larghi full-width.
+
+**Verificato:** verifica statica (nessun SDK in locale): solo costanti dp e un rename di Spacer, nessuna nuova API; build, lint e unit test delegati alla CI GitHub. versionCode 109 -> 110, versionName 0.9.70 -> 0.9.71. Stesso branch/PR della linea dello zero.
+
+---
+
 ## 2026-07-21 - Sparkline Saldo totale: linea dello zero e fill ancorato allo zero
 
 **Fatto:** la sparkline della card "Saldo totale" ora disegna una baseline dello zero quando il range plottato (storico + forecast) attraversa lo zero: linea puntinata fine (1dp, trattini da 1dp con cap arrotondato che rendono come puntini, gap 3dp) in `outlineVariant` (lo stesso colore hairline dei divider della card), disegnata per prima dentro la clip del reveal cosi resta dietro a fill, curva e coda forecast. Quando la baseline e visibile, il gradiente di riempimento si ancora alla quota zero invece che al fondo del canvas (clip a `zeroY` + `endY` del gradiente a `zeroY`): l'area tinta esiste solo sopra lo zero, sotto resta la sola curva, cosi il tratto negativo non porta "massa" visiva. Nuova funzione pura `zeroLineFraction(min, max)` in `BalanceSparkline.kt` con 5 test JVM in `SparklineGeometryTest` (range che attraversa, simmetrico, tutto positivo, tutto negativo, range che tocca lo zero senza attraversarlo).

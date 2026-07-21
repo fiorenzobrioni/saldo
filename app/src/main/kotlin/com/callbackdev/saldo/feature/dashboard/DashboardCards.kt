@@ -268,7 +268,7 @@ internal fun BalanceCard(
                 BalanceAsOfTodayLabel(amount = balanceAsOfToday, currency = currency)
             }
             if (history.size > 1) {
-                Spacer(Modifier.height(BALANCE_SECTION_GAP))
+                Spacer(Modifier.height(BALANCE_SPARKLINE_TOP_GAP))
                 BalanceSparkline(
                     history = history,
                     forecast = forecast,
@@ -1199,9 +1199,11 @@ private val BALANCE_MONEY_MIN = 24.sp
 private val BALANCE_MONEY_MAX = 34.sp
 
 // Vertical rhythm inside the balance card: a tight gap under the header before
-// the figure, a wider gap between its sections (figure / sparkline / accounts),
-// and a smaller one under the breakdown divider.
+// the figure, a snug gap pulling the sparkline up to the figure it plots (they
+// read as one unit; the canvas adds its own 4dp inset on top), a wider gap
+// before the accounts section, and a smaller one under the breakdown divider.
 private val BALANCE_AMOUNT_TOP_GAP = 4.dp
+private val BALANCE_SPARKLINE_TOP_GAP = 8.dp
 private val BALANCE_SECTION_GAP = 12.dp
 private val BALANCE_BREAKDOWN_TOP_GAP = 8.dp
 
@@ -1209,13 +1211,15 @@ private val BALANCE_BREAKDOWN_TOP_GAP = 8.dp
 private val BALANCE_TODAY_ICON = 16.dp
 private val BALANCE_TODAY_ICON_GAP = 4.dp
 
-/** Vertical padding of a tappable account (or overflow) row in the breakdown. */
-private val BALANCE_ROW_PADDING_VERTICAL = 6.dp
+// Vertical padding of a tappable account (or overflow) row in the breakdown:
+// with the 36dp avatar a row lands at 44dp of tappable height, trading a bit
+// of the 48dp Material target for a breakdown that reads as one group.
+private val BALANCE_ROW_PADDING_VERTICAL = 4.dp
 
 // Height a breakdown row is pinned to while the "as of today" line can appear,
 // so a diverging (two-line) row never grows past its single-line peers: the
 // bodyLarge amount and the labelSmall today line plus the row's vertical padding.
-private val BALANCE_ROW_TWO_LINE_HEIGHT = 52.dp
+private val BALANCE_ROW_TWO_LINE_HEIGHT = 48.dp
 
 /** How many accounts the collapsed breakdown shows before the expand chevron. */
 private const val ACCOUNT_PREVIEW_COUNT = 2
