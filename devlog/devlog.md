@@ -22,11 +22,13 @@ Onboarding: le pagine statiche 1/2/5 (benvenuto, privacy, notifiche) non usano p
 
 **Decisioni:** animazione one-shot, non in loop e non bloccante (la CTA è sempre attiva); rispetta il setting di sistema (`ANIMATOR_DURATION_SCALE == 0` -> icona finale senza moto). Approccio a layer di drawable (non Canvas/PathParser): condividendo viewport e transform, gli strati si allineano al pixel senza calcoli di coordinate. Carte non clippate al squircle così entrano "da fuori"; il wallet frontale è clippato e opaco, quindi copre la metà bassa delle carte a riposo (effetto "infilate"). Colori badge presi dalla palette brand (verde/rosso), entrambi >= 3:1 su glifo bianco; significato portato dalla forma oltre che dal colore (accessibilità). Icona ancora placeholder: il checkbox "Icona app, screenshot, scheda Play Store" (Fase 10) resta aperto perché copre anche screenshot e scheda.
 
-**Problemi:** nessun emulatore in questo ambiente: `assembleDebug testDebugUnitTest lint` verde, ma la resa a video dell'animazione e dei badge è da confermare su device.
+Anche la About mostra ora l'icona nuda (rimosso il cerchio bianco `ic_launcher_background` in `AppLogo`, stessa tecnica overdraw 108/72), leggermente più grande (`LOGO_SIZE` 96 -> 120dp). Onboarding rifinito a 220dp (un filo meno di 240). Lo splash di sistema (Android 12+, nessun tema custom) usa già solo il foreground dell'adaptive icon sul window background: il quadrato bianco dello sfondo adattivo non compare nello splash, quindi nessuna modifica lì.
+
+**Problemi:** nessun emulatore in questo ambiente: `assembleDebug testDebugUnitTest lint` verde, ma la resa a video dell'animazione, dei badge e dell'icona nuda su About/splash è da confermare su device.
 
 **Prossimo:** verifica su device del reveal e dei badge; scelta definitiva del brand prima della pubblicazione.
 
-**Verifica:** `gradle assembleDebug testDebugUnitTest lint` (BUILD SUCCESSFUL). versionCode 103 -> 105, versionName 0.9.64 -> 0.9.66 (0.9.65 il primo giro con squircle bianco, 0.9.66 il passaggio a icona nuda 2x su feedback utente).
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` (BUILD SUCCESSFUL). versionCode 103 -> 106, versionName 0.9.64 -> 0.9.67 (0.9.65 primo giro con squircle bianco, 0.9.66 icona nuda 2x nell'onboarding, 0.9.67 onboarding a 220dp + About nuda 120dp - tutti su feedback utente).
 
 ---
 

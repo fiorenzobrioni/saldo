@@ -46,8 +46,8 @@ import kotlinx.coroutines.launch
  * and group transform, so at rest they equal ic_launcher_foreground.
  */
 
-/** Onboarding hero size: about double the old 120dp tile, now that it is bare. */
-val ONBOARDING_APP_ICON_SIZE = 240.dp
+/** Onboarding hero size: roughly double the old 120dp tile, now that it is bare. */
+val ONBOARDING_APP_ICON_SIZE = 220.dp
 
 /** 108dp canvas over the 72dp masked window: fills the box like the launcher. */
 private const val ARTWORK_OVERDRAW = 108f / 72f

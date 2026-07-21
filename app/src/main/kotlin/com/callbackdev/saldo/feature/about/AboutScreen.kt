@@ -1,7 +1,6 @@
 package com.callbackdev.saldo.feature.about
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -29,8 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -125,18 +121,16 @@ private fun AppIdentity(modifier: Modifier = Modifier) {
 }
 
 /**
- * The launcher icon rendered as the in-app logo. The adaptive-icon foreground
- * draws on a 108dp canvas of which the visible masked circle is the central
- * 72dp: scaling the image to size * 108/72 inside a clipped circle of the
- * launcher background color reproduces the icon exactly as the launcher shows it.
+ * The launcher artwork rendered as the in-app logo, bare (no ground): the
+ * adaptive-icon foreground draws on a 108dp canvas of which the visible masked
+ * area is the central 72dp, so scaling the image to size * 108/72 inside a box
+ * of [LOGO_SIZE] crops to that window and fills it, with the transparent margins
+ * overflowing harmlessly. The wallet sits straight on the screen.
  */
 @Composable
 private fun AppLogo(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier
-            .size(LOGO_SIZE)
-            .clip(CircleShape)
-            .background(colorResource(R.color.ic_launcher_background)),
+        modifier = modifier.size(LOGO_SIZE),
         contentAlignment = Alignment.Center,
     ) {
         Image(
@@ -229,7 +223,7 @@ private fun AboutCard(
     }
 }
 
-private val LOGO_SIZE = 96.dp
+private val LOGO_SIZE = 120.dp
 
 /** Adaptive-icon canvas (108dp) over the visible masked area (72dp). */
 private const val LOGO_CANVAS_OVER_VISIBLE = 108f / 72f
