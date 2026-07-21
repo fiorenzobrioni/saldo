@@ -14,6 +14,16 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-21 - Card Ricorrenti: spese mensili dal rosso al ruolo expense
+
+**Fatto:** nella card Ricorrenti il totale mensile delle spese ricorrenti passa da `moneyColors.negative` (rosso, applicato ogni volta che il totale era > 0, cioe quasi sempre) al ruolo `moneyColors.expense` (neutro, `onSurface`): il segno meno porta la direzione. Il ramo condizionale sparisce: entrambe le alternative convergevano sullo stesso colore. Entrate ricorrenti invariate (verdi se > 0).
+
+**Decisioni:** esito di una ricognizione richiesta dall'utente su come tutte le card della dashboard colorano gli importi. Tre famiglie coerenti: saldi (rosso solo se sotto zero), flussi (colore per direzione/tipo: entrate verdi, spese neutre), soglie (container + icona, mai solo colore). Unica incoerenza trovata: questa card usava `negative` (riservato dai ruoli documentati in `MoneyColors` ai saldi sotto zero come warning) per un flusso normale e pianificato, diluendo il valore del rosso nella dashboard. Deciso anche di NON rendere rosso il netto negativo delle card Oggi/mese: e lo stato normale (si spende ogni giorno, si incassa una volta al mese) e la dashboard sarebbe perennemente in allarme.
+
+**Verificato:** verifica statica (nessun SDK in locale): sostituzione di un colore con un ruolo esistente del design system, nessuna nuova API; build, lint e unit test delegati alla CI GitHub. versionCode 112 -> 113, versionName 0.9.73 -> 0.9.74. Stesso branch/PR della linea dello zero.
+
+---
+
 ## 2026-07-21 - Pill del forecast in errorContainer quando la stima e negativa
 
 **Fatto:** il pill "≈ importo" sulla coda forecast della sparkline ora usa la coppia `errorContainer`/`onErrorContainer` quando la proiezione a fine mese e negativa; altrimenti resta `secondaryContainer`/`onSecondaryContainer` come prima. L'anello tratteggiato di fine mese resta neutro (colore linea attenuato).

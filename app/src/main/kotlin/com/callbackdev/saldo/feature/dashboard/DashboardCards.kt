@@ -1035,11 +1035,10 @@ internal fun RecurringCard(
                     RecurringMetric(
                         label = stringResource(R.string.dashboard_recurring_expenses_label),
                         value = MoneyFormatter.formatSigned(summary.monthlyExpenses.negate(), currency),
-                        color = if (summary.monthlyExpenses.signum() > 0) {
-                            MaterialTheme.moneyColors.negative
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
+                        // Expenses use their neutral role (the minus sign carries the
+                        // direction): planned outflows are not a warning, and red
+                        // stays reserved for balances below zero.
+                        color = MaterialTheme.moneyColors.expense,
                         modifier = Modifier.weight(1f),
                     )
                     RecurringMetric(
