@@ -14,6 +14,46 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-21 - Card Ricorrenti: spese mensili dal rosso al ruolo expense
+
+**Fatto:** nella card Ricorrenti il totale mensile delle spese ricorrenti passa da `moneyColors.negative` (rosso, applicato ogni volta che il totale era > 0, cioe quasi sempre) al ruolo `moneyColors.expense` (neutro, `onSurface`): il segno meno porta la direzione. Il ramo condizionale sparisce: entrambe le alternative convergevano sullo stesso colore. Entrate ricorrenti invariate (verdi se > 0).
+
+**Decisioni:** esito di una ricognizione richiesta dall'utente su come tutte le card della dashboard colorano gli importi. Tre famiglie coerenti: saldi (rosso solo se sotto zero), flussi (colore per direzione/tipo: entrate verdi, spese neutre), soglie (container + icona, mai solo colore). Unica incoerenza trovata: questa card usava `negative` (riservato dai ruoli documentati in `MoneyColors` ai saldi sotto zero come warning) per un flusso normale e pianificato, diluendo il valore del rosso nella dashboard. Deciso anche di NON rendere rosso il netto negativo delle card Oggi/mese: e lo stato normale (si spende ogni giorno, si incassa una volta al mese) e la dashboard sarebbe perennemente in allarme.
+
+**Verificato:** verifica statica (nessun SDK in locale): sostituzione di un colore con un ruolo esistente del design system, nessuna nuova API; build, lint e unit test delegati alla CI GitHub. versionCode 112 -> 113, versionName 0.9.73 -> 0.9.74. Stesso branch/PR della linea dello zero.
+
+---
+
+## 2026-07-21 - Pill del forecast in errorContainer quando la stima e negativa
+
+**Fatto:** il pill "≈ importo" sulla coda forecast della sparkline ora usa la coppia `errorContainer`/`onErrorContainer` quando la proiezione a fine mese e negativa; altrimenti resta `secondaryContainer`/`onSecondaryContainer` come prima. L'anello tratteggiato di fine mese resta neutro (colore linea attenuato).
+
+**Decisioni:** era l'unico valore della card fuori dalla regola "rosso solo se negativo" (cifra principale, righe "ad oggi", saldi per conto la seguono gia), ed e la previsione piu actionable del grafico. Coppia container Material standard invece di tingere solo il testo: contrasto garantito in entrambi i temi. La semantica di incertezza resta alla forma ("≈" + tratteggio), il colore porta solo il segno; niente variante positiva (regola asimmetrica, come nel resto della card). Il warning sta nel pill, non nella geometria. Proposta discussa e confermata dall'utente.
+
+**Verificato:** verifica statica (nessun SDK in locale): solo scelta di colori da `MaterialTheme.colorScheme`, nessuna nuova API; build, lint e unit test delegati alla CI GitHub. versionCode 111 -> 112, versionName 0.9.72 -> 0.9.73. Stesso branch/PR della linea dello zero.
+
+---
+
+## 2026-07-21 - Card Saldo totale: ritmo verticale piu compatto
+
+**Fatto:** su feedback utente (dopo il test su device della linea dello zero) ridotto lo stacco tra importo e sparkline nella hero card: nuovo `BALANCE_SPARKLINE_TOP_GAP = 8.dp` al posto del generico `BALANCE_SECTION_GAP` (12dp) prima del grafico; col 4dp di inset del canvas il gap visivo passa da 16 a 12dp. Lo stacco prima della sezione conti resta 12dp.
+
+**Decisioni:** gap asimmetrico voluto: la sparkline e una lettura dell'importo (prossimita = appartenenza), la sezione conti e un blocco distinto e tiene lo stacco pieno. Provata anche la compattazione delle righe conto del breakdown (`BALANCE_ROW_PADDING_VERTICAL` 6 -> 4dp, riga da 48 a 44dp tappabili): scartata e ripristinata a 6dp su decisione dell'utente, che vuole attenersi allo standard Material del touch target 48dp.
+
+**Verificato:** verifica statica (nessun SDK in locale): solo costanti dp e un rename di Spacer, nessuna nuova API; build, lint e unit test delegati alla CI GitHub. versionCode 109 -> 111, versionName 0.9.70 -> 0.9.72 (0.9.71 il giro intermedio con le righe a 44dp). Stesso branch/PR della linea dello zero.
+
+---
+
+## 2026-07-21 - Sparkline Saldo totale: linea dello zero e fill ancorato allo zero
+
+**Fatto:** la sparkline della card "Saldo totale" ora disegna una baseline dello zero quando il range plottato (storico + forecast) attraversa lo zero: linea puntinata fine (1dp, trattini da 1dp con cap arrotondato che rendono come puntini, gap 3dp) in `outlineVariant` (lo stesso colore hairline dei divider della card), disegnata per prima dentro la clip del reveal cosi resta dietro a fill, curva e coda forecast. Quando la baseline e visibile, il gradiente di riempimento si ancora alla quota zero invece che al fondo del canvas (clip a `zeroY` + `endY` del gradiente a `zeroY`): l'area tinta esiste solo sopra lo zero, sotto resta la sola curva, cosi il tratto negativo non porta "massa" visiva. Nuova funzione pura `zeroLineFraction(min, max)` in `BalanceSparkline.kt` con 5 test JVM in `SparklineGeometryTest` (range che attraversa, simmetrico, tutto positivo, tutto negativo, range che tocca lo zero senza attraversarlo).
+
+**Decisioni:** la linea compare solo con attraversamento stretto (`min < 0 && max > 0`): se il minimo o il massimo toccano esattamente lo zero coinciderebbe col bordo della curva e leggerebbe come una sottolineatura spuria. Stile puntinato (non tratteggiato) per non confondersi semanticamente con la coda forecast, che usa trattini lunghi e significa "stima". Niente etichetta "0": su 56dp di altezza sarebbe rumore. Scelte (puntinato + fill ancorato allo zero) confermate dall'utente tra le alternative proposte.
+
+**Verificato:** verifica statica (nessun SDK Android in locale): riletto il diff, controllate firme di `drawLine`/`PathEffect.dashPathEffect`/`clipRect` gia usate nel file, detekt ok per costruzione (`LongMethod` ignora `@Composable`, `MagicNumber` disattivo). Build, lint e unit test delegati alla CI GitHub. versionCode 108 -> 109, versionName 0.9.69 -> 0.9.70.
+
+---
+
 ## 2026-07-21 - Saldo ad oggi in rosso quando negativo
 
 **Fatto:** la riga "ad oggi" (per-conto in Conti e nel breakdown, piu quella globale sotto il Saldo totale nella hero card) ora e rossa (`moneyColors.negative`) quando il valore e negativo, altrimenti resta grigia attenuata (`onSurfaceVariant`). Sulla riga globale (`BalanceAsOfTodayLabel`) il colore si applica in modo coerente a icona e testo.

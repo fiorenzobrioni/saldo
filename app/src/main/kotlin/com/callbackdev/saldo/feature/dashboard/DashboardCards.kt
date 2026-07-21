@@ -268,7 +268,7 @@ internal fun BalanceCard(
                 BalanceAsOfTodayLabel(amount = balanceAsOfToday, currency = currency)
             }
             if (history.size > 1) {
-                Spacer(Modifier.height(BALANCE_SECTION_GAP))
+                Spacer(Modifier.height(BALANCE_SPARKLINE_TOP_GAP))
                 BalanceSparkline(
                     history = history,
                     forecast = forecast,
@@ -1035,11 +1035,10 @@ internal fun RecurringCard(
                     RecurringMetric(
                         label = stringResource(R.string.dashboard_recurring_expenses_label),
                         value = MoneyFormatter.formatSigned(summary.monthlyExpenses.negate(), currency),
-                        color = if (summary.monthlyExpenses.signum() > 0) {
-                            MaterialTheme.moneyColors.negative
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
+                        // Expenses use their neutral role (the minus sign carries the
+                        // direction): planned outflows are not a warning, and red
+                        // stays reserved for balances below zero.
+                        color = MaterialTheme.moneyColors.expense,
                         modifier = Modifier.weight(1f),
                     )
                     RecurringMetric(
@@ -1199,9 +1198,11 @@ private val BALANCE_MONEY_MIN = 24.sp
 private val BALANCE_MONEY_MAX = 34.sp
 
 // Vertical rhythm inside the balance card: a tight gap under the header before
-// the figure, a wider gap between its sections (figure / sparkline / accounts),
-// and a smaller one under the breakdown divider.
+// the figure, a snug gap pulling the sparkline up to the figure it plots (they
+// read as one unit; the canvas adds its own 4dp inset on top), a wider gap
+// before the accounts section, and a smaller one under the breakdown divider.
 private val BALANCE_AMOUNT_TOP_GAP = 4.dp
+private val BALANCE_SPARKLINE_TOP_GAP = 8.dp
 private val BALANCE_SECTION_GAP = 12.dp
 private val BALANCE_BREAKDOWN_TOP_GAP = 8.dp
 
@@ -1209,7 +1210,8 @@ private val BALANCE_BREAKDOWN_TOP_GAP = 8.dp
 private val BALANCE_TODAY_ICON = 16.dp
 private val BALANCE_TODAY_ICON_GAP = 4.dp
 
-/** Vertical padding of a tappable account (or overflow) row in the breakdown. */
+// Vertical padding of a tappable account (or overflow) row in the breakdown:
+// with the 36dp avatar a row lands exactly on the 48dp Material touch target.
 private val BALANCE_ROW_PADDING_VERTICAL = 6.dp
 
 // Height a breakdown row is pinned to while the "as of today" line can appear,
