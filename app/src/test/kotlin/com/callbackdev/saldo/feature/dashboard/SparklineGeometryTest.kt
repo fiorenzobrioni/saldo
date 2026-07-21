@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.feature.dashboard
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -87,6 +88,34 @@ class SparklineGeometryTest {
     @Test
     fun `fewer than two points is rejected`() {
         assertThrows(IllegalArgumentException::class.java) { monotoneTangents(listOf(1f)) }
+    }
+
+    @Test
+    fun `zero baseline sits at its fraction of a straddling range`() {
+        assertEquals(0.25f, zeroLineFraction(min = -50f, max = 150f))
+    }
+
+    @Test
+    fun `zero baseline is centered on a symmetric range`() {
+        assertEquals(0.5f, zeroLineFraction(min = -100f, max = 100f))
+    }
+
+    @Test
+    fun `all-positive range draws no zero baseline`() {
+        assertNull(zeroLineFraction(min = 10f, max = 200f))
+    }
+
+    @Test
+    fun `all-negative range draws no zero baseline`() {
+        assertNull(zeroLineFraction(min = -200f, max = -10f))
+    }
+
+    @Test
+    fun `range merely touching zero draws no baseline`() {
+        // At either edge the line would coincide with the curve's own
+        // extreme and read as a stray underline.
+        assertNull(zeroLineFraction(min = 0f, max = 100f))
+        assertNull(zeroLineFraction(min = -100f, max = 0f))
     }
 
     private companion object {

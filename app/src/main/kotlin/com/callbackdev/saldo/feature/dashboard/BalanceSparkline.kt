@@ -51,6 +51,13 @@ import kotlin.math.sqrt
  * take at most about half the width (a 31-day month seen from day 1): the
  * solid, factual part always dominates.
  *
+ * When the plotted range straddles zero, a faint dotted baseline marks where
+ * zero sits ([zeroLineFraction]): with min-max normalization a balance just
+ * above zero would otherwise be indistinguishable from a comfortable one. The
+ * baseline is drawn behind everything else in the hairline color, and the
+ * gradient fill then anchors to it instead of the canvas bottom, so only the
+ * area above zero carries the tint and the below-zero stretch reads as such.
+ *
  * Geometry is purely presentational: balances are projected to float
  * fractions of the drawing area only to place pixels, never to compute money.
  * The canvas is mute for TalkBack, so the whole drawing carries a single
@@ -72,15 +79,18 @@ internal fun BalanceSparkline(
 
     // Presentational projection to [0, 1] fractions of the drawing height,
     // normalized over history and forecast together so the tail fits; a flat
-    // series (min == max) sits on the vertical midline.
-    val fractions = remember(history, forecast) {
+    // series (min == max) sits on the vertical midline. The zero baseline, when
+    // the range straddles it, lives in the same normalized space.
+    val (fractions, zeroFraction) = remember(history, forecast) {
         val values = (history + forecast).map { it.balance.toFloat() }
         val min = values.min()
         val max = values.max()
         val span = max - min
-        values.map { if (span == 0f) MIDLINE else (it - min) / span }
+        val fractions = values.map { if (span == 0f) MIDLINE else (it - min) / span }
+        fractions to zeroLineFraction(min, max)
     }
     val tangents = remember(fractions) { monotoneTangents(fractions) }
+    val zeroLineColor = MaterialTheme.colorScheme.outlineVariant
 
     // The estimate pill: text measured up front, drawn inside the canvas next
     // to the projected end-of-month point.
@@ -130,15 +140,37 @@ internal fun BalanceSparkline(
             null
         }
 
+        // With a visible zero baseline the tinted area stops at zero: below it
+        // only the bare curve remains, so negative stretches carry no mass.
+        val zeroY = zeroFraction?.let { inset + height * (1f - it) }
+        val fillBottom = zeroY ?: size.height
+
         clipRect(right = size.width * reveal.value) {
-            drawPath(
-                path = fill,
-                brush = Brush.verticalGradient(
-                    colors = listOf(lineColor.copy(alpha = FILL_ALPHA), Color.Transparent),
-                    startY = 0f,
-                    endY = size.height,
-                ),
-            )
+            if (zeroY != null) {
+                // Fine dots (round caps on hair-length dashes) in the hairline
+                // color: a quiet reference clearly distinct from the long-dash
+                // forecast tail. Drawn first, so the data always covers it.
+                drawLine(
+                    color = zeroLineColor,
+                    start = Offset(points.first().x, zeroY),
+                    end = Offset(points.last().x, zeroY),
+                    strokeWidth = ZERO_STROKE.dp.toPx(),
+                    cap = StrokeCap.Round,
+                    pathEffect = PathEffect.dashPathEffect(
+                        floatArrayOf(ZERO_DOT_ON.dp.toPx(), ZERO_DOT_OFF.dp.toPx()),
+                    ),
+                )
+            }
+            clipRect(bottom = fillBottom) {
+                drawPath(
+                    path = fill,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(lineColor.copy(alpha = FILL_ALPHA), Color.Transparent),
+                        startY = 0f,
+                        endY = fillBottom,
+                    ),
+                )
+            }
             drawPath(
                 path = line,
                 color = lineColor,
@@ -282,6 +314,17 @@ private fun DrawScope.drawEstimatePill(
 }
 
 /**
+ * Where the zero baseline sits within the plotted [min, max] range, as a
+ * [0, 1] fraction of the value span, or null when the line should not be
+ * drawn. Only a strict crossing counts: a series that merely touches zero at
+ * its minimum (or maximum) would put the line right along the curve's own
+ * edge, where it reads as a stray underline rather than a reference. Top-level
+ * and pure so the placement rule is unit-testable on the JVM.
+ */
+internal fun zeroLineFraction(min: Float, max: Float): Float? =
+    if (min < 0f && max > 0f) -min / (max - min) else null
+
+/**
  * Fritsch-Carlson monotone tangents for a uniformly spaced series, expressed
  * as delta per unit index step. The interpolated curve never overshoots the
  * data range: tangents are zeroed at local extrema and clamped where the
@@ -333,5 +376,11 @@ private const val DOT_RADIUS = 3
 private const val RING_STROKE = 1.5f
 private const val DASH_ON = 5
 private const val DASH_OFF = 6
+
+// The zero baseline: a 1dp stroke whose hair-length dashes render as fine
+// dots under the round cap, spaced tighter than the forecast's long dashes.
+private const val ZERO_STROKE = 1
+private const val ZERO_DOT_ON = 1
+private const val ZERO_DOT_OFF = 3
 private const val MONOTONE_LIMIT = 9f
 private const val MONOTONE_FACTOR = 3f

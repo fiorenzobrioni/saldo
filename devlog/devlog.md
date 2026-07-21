@@ -14,6 +14,16 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-21 - Sparkline Saldo totale: linea dello zero e fill ancorato allo zero
+
+**Fatto:** la sparkline della card "Saldo totale" ora disegna una baseline dello zero quando il range plottato (storico + forecast) attraversa lo zero: linea puntinata fine (1dp, trattini da 1dp con cap arrotondato che rendono come puntini, gap 3dp) in `outlineVariant` (lo stesso colore hairline dei divider della card), disegnata per prima dentro la clip del reveal cosi resta dietro a fill, curva e coda forecast. Quando la baseline e visibile, il gradiente di riempimento si ancora alla quota zero invece che al fondo del canvas (clip a `zeroY` + `endY` del gradiente a `zeroY`): l'area tinta esiste solo sopra lo zero, sotto resta la sola curva, cosi il tratto negativo non porta "massa" visiva. Nuova funzione pura `zeroLineFraction(min, max)` in `BalanceSparkline.kt` con 5 test JVM in `SparklineGeometryTest` (range che attraversa, simmetrico, tutto positivo, tutto negativo, range che tocca lo zero senza attraversarlo).
+
+**Decisioni:** la linea compare solo con attraversamento stretto (`min < 0 && max > 0`): se il minimo o il massimo toccano esattamente lo zero coinciderebbe col bordo della curva e leggerebbe come una sottolineatura spuria. Stile puntinato (non tratteggiato) per non confondersi semanticamente con la coda forecast, che usa trattini lunghi e significa "stima". Niente etichetta "0": su 56dp di altezza sarebbe rumore. Scelte (puntinato + fill ancorato allo zero) confermate dall'utente tra le alternative proposte.
+
+**Verificato:** verifica statica (nessun SDK Android in locale): riletto il diff, controllate firme di `drawLine`/`PathEffect.dashPathEffect`/`clipRect` gia usate nel file, detekt ok per costruzione (`LongMethod` ignora `@Composable`, `MagicNumber` disattivo). Build, lint e unit test delegati alla CI GitHub. versionCode 108 -> 109, versionName 0.9.69 -> 0.9.70.
+
+---
+
 ## 2026-07-21 - Saldo ad oggi in rosso quando negativo
 
 **Fatto:** la riga "ad oggi" (per-conto in Conti e nel breakdown, piu quella globale sotto il Saldo totale nella hero card) ora e rossa (`moneyColors.negative`) quando il valore e negativo, altrimenti resta grigia attenuata (`onSurfaceVariant`). Sulla riga globale (`BalanceAsOfTodayLabel`) il colore si applica in modo coerente a icona e testo.
