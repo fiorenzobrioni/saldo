@@ -48,9 +48,10 @@ import kotlin.math.sqrt
  * tail to the end of the month (same curve, same per-day step, no fill), with
  * a hollow ring on the projected end-of-month point and a small pill carrying
  * the estimated figure (on the error container pairing when the estimate is
- * negative, matching the card-wide "red only when negative" rule). The 30-day history window is fixed, so the tail can
- * take at most about half the width (a 31-day month seen from day 1): the
- * solid, factual part always dominates.
+ * negative, matching the card-wide "red only when negative" rule). The
+ * 30-day history window is fixed, so the tail can take at most about half
+ * the width (a 31-day month seen from day 1): the solid, factual part
+ * always dominates.
  *
  * When the plotted range straddles zero, a faint dotted baseline marks where
  * zero sits ([zeroLineFraction]): with min-max normalization a balance just
