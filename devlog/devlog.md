@@ -14,6 +14,16 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-21 - Pill del forecast in errorContainer quando la stima e negativa
+
+**Fatto:** il pill "≈ importo" sulla coda forecast della sparkline ora usa la coppia `errorContainer`/`onErrorContainer` quando la proiezione a fine mese e negativa; altrimenti resta `secondaryContainer`/`onSecondaryContainer` come prima. L'anello tratteggiato di fine mese resta neutro (colore linea attenuato).
+
+**Decisioni:** era l'unico valore della card fuori dalla regola "rosso solo se negativo" (cifra principale, righe "ad oggi", saldi per conto la seguono gia), ed e la previsione piu actionable del grafico. Coppia container Material standard invece di tingere solo il testo: contrasto garantito in entrambi i temi. La semantica di incertezza resta alla forma ("≈" + tratteggio), il colore porta solo il segno; niente variante positiva (regola asimmetrica, come nel resto della card). Il warning sta nel pill, non nella geometria. Proposta discussa e confermata dall'utente.
+
+**Verificato:** verifica statica (nessun SDK in locale): solo scelta di colori da `MaterialTheme.colorScheme`, nessuna nuova API; build, lint e unit test delegati alla CI GitHub. versionCode 111 -> 112, versionName 0.9.72 -> 0.9.73. Stesso branch/PR della linea dello zero.
+
+---
+
 ## 2026-07-21 - Card Saldo totale: ritmo verticale piu compatto
 
 **Fatto:** su feedback utente (dopo il test su device della linea dello zero) ridotto lo stacco tra importo e sparkline nella hero card: nuovo `BALANCE_SPARKLINE_TOP_GAP = 8.dp` al posto del generico `BALANCE_SECTION_GAP` (12dp) prima del grafico; col 4dp di inset del canvas il gap visivo passa da 16 a 12dp. Lo stacco prima della sezione conti resta 12dp.

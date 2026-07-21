@@ -47,7 +47,8 @@ import kotlin.math.sqrt
  * When a [forecast] is provided, the line continues past today as a dashed
  * tail to the end of the month (same curve, same per-day step, no fill), with
  * a hollow ring on the projected end-of-month point and a small pill carrying
- * the estimated figure. The 30-day history window is fixed, so the tail can
+ * the estimated figure (on the error container pairing when the estimate is
+ * negative, matching the card-wide "red only when negative" rule). The 30-day history window is fixed, so the tail can
  * take at most about half the width (a 31-day month seen from day 1): the
  * solid, factual part always dominates.
  *
@@ -100,8 +101,22 @@ internal fun BalanceSparkline(
         val pillText = stringResource(R.string.dashboard_sparkline_forecast_pill, text)
         remember(pillText, pillStyle) { textMeasurer.measure(AnnotatedString(pillText), pillStyle) }
     }
-    val pillContainer = MaterialTheme.colorScheme.secondaryContainer
-    val pillContent = MaterialTheme.colorScheme.onSecondaryContainer
+    // The pill flips to the error pairing when the projection lands below
+    // zero, in line with the card-wide "red only when negative" rule: the
+    // "≈" and the dashed tail already say "estimate", the color carries the
+    // sign. The end-of-month ring stays neutral: the warning lives in the
+    // pill, not in the geometry.
+    val projectedNegative = (forecast.lastOrNull()?.balance?.signum() ?: 0) < 0
+    val pillContainer = if (projectedNegative) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.secondaryContainer
+    }
+    val pillContent = if (projectedNegative) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onSecondaryContainer
+    }
 
     // One entrance reveal per screen visit, not one per data emission: a new
     // movement must update the line in place, not replay the sweep.
