@@ -123,6 +123,7 @@ class DashboardViewModelTest {
         previousMonthTotals: List<com.callbackdev.saldo.core.domain.model.MonthlyTotal> = emptyList(),
     ): DashboardViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
+        every { accountRepository.observeAccountsWithBalanceAsOfToday(any()) } returns flowOf(accounts)
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
         every { userPreferences.dashboardCardPreferences } returns flowOf(cardPrefs)
         every { userPreferences.dismissedRecapMonth } returns flowOf(dismissedRecapMonth)
@@ -521,6 +522,9 @@ class DashboardViewModelTest {
     fun `aggregate windows are derived from the clock and passed to the query`() = runTest {
         val windows = slot<DashboardWindows>()
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(
+            listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+        )
+        every { accountRepository.observeAccountsWithBalanceAsOfToday(any()) } returns flowOf(
             listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
         )
         every { userPreferences.primaryCurrencyOverride } returns flowOf(null)

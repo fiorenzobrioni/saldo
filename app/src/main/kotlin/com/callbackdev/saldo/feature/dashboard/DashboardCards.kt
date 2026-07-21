@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -349,10 +350,15 @@ private fun AccountsBreakdownSection(
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Spacer(Modifier.height(BALANCE_BREAKDOWN_TOP_GAP))
         val limit = if (expanded) ACCOUNT_EXPANDED_MAX else ACCOUNT_PREVIEW_COUNT
+        // Reserve the second amount line for the whole list only when at least
+        // one account diverges, so every row stays the same height (no ragged
+        // list, no jump) while the common case keeps its compact rows.
+        val reserveTodayLine = accounts.any { it.balanceAsOfToday != null }
         accounts.take(limit).forEach { item ->
             AccountBreakdownRow(
                 item = item,
                 primaryCurrency = primaryCurrency,
+                reserveTodayLine = reserveTodayLine,
                 onClick = { onAccountClick(item.account.id) },
             )
         }
@@ -490,6 +496,7 @@ private fun AccountBreakdownRow(
     primaryCurrency: Currency,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    reserveTodayLine: Boolean = false,
 ) {
     val account = item.account
     val color = AccountVisuals.color(account.color)
@@ -502,6 +509,9 @@ private fun AccountBreakdownRow(
             .clip(MaterialTheme.shapes.small)
             .clickable(onClick = onClick)
             .semantics { onClick(label = openLabel, action = null) }
+            // When any account shows the "as of today" line, pin every row to the
+            // two-line height so a diverging row never grows taller than its peers.
+            .then(if (reserveTodayLine) Modifier.heightIn(min = BALANCE_ROW_TWO_LINE_HEIGHT) else Modifier)
             .padding(vertical = BALANCE_ROW_PADDING_VERTICAL),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -534,15 +544,32 @@ private fun AccountBreakdownRow(
             excludedFromTotal = !account.isIncludedInTotal && !nonPrimaryCurrency,
             excludedFromBudget = !account.isIncludedInBudget,
         )
-        Text(
-            text = MoneyFormatter.format(item.balance, account.currency),
-            style = MaterialTheme.typography.bodyLarge.tabularNumbers(),
-            color = when {
-                !contributesToTotal -> MaterialTheme.colorScheme.onSurfaceVariant
-                item.balance.signum() < 0 -> MaterialTheme.moneyColors.negative
-                else -> MaterialTheme.colorScheme.onSurface
-            },
-        )
+        Column(
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = MoneyFormatter.format(item.balance, account.currency),
+                style = MaterialTheme.typography.bodyLarge.tabularNumbers(),
+                color = when {
+                    !contributesToTotal -> MaterialTheme.colorScheme.onSurfaceVariant
+                    item.balance.signum() < 0 -> MaterialTheme.moneyColors.negative
+                    else -> MaterialTheme.colorScheme.onSurface
+                },
+            )
+            item.balanceAsOfToday?.let { today ->
+                Text(
+                    text = stringResource(
+                        R.string.dashboard_balance_as_of_today,
+                        MoneyFormatter.format(today, account.currency),
+                    ),
+                    style = MaterialTheme.typography.labelSmall.tabularNumbers(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 
@@ -1171,6 +1198,11 @@ private val BALANCE_TODAY_ICON_GAP = 4.dp
 
 /** Vertical padding of a tappable account (or overflow) row in the breakdown. */
 private val BALANCE_ROW_PADDING_VERTICAL = 6.dp
+
+// Height a breakdown row is pinned to while the "as of today" line can appear,
+// so a diverging (two-line) row never grows past its single-line peers: the
+// bodyLarge amount and the labelSmall today line plus the row's vertical padding.
+private val BALANCE_ROW_TWO_LINE_HEIGHT = 52.dp
 
 /** How many accounts the collapsed breakdown shows before the expand chevron. */
 private const val ACCOUNT_PREVIEW_COUNT = 2

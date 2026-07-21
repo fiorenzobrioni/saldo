@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.callbackdev.saldo.core.database.entity.AccountEntity
+import com.callbackdev.saldo.core.database.relation.AccountBalanceAsOfRow
 import com.callbackdev.saldo.core.database.relation.AccountWithBalanceRow
 import kotlinx.coroutines.flow.Flow
 
@@ -76,6 +77,34 @@ interface AccountDao {
         """,
     )
     fun observeAllWithBalance(): Flow<List<AccountWithBalanceRow>>
+
+    /**
+     * Every account's balance counting only movements whose local day (ADR 7)
+     * is before [endEpochDayExclusive], i.e. the balance "as of today" when the
+     * cutoff is today + 1. Same shape as [observeAllWithBalance] but with the
+     * day filter, so future-dated confirmed movements are left out. The local
+     * day is derived per movement from its own stored offset, exactly like the
+     * dashboard's daily net series.
+     */
+    @Query(
+        """
+        SELECT a.id AS accountId,
+            a.initialBalanceMinor
+            + COALESCE((
+                SELECT SUM(t.amountMinor) FROM transactions t
+                WHERE t.accountId = a.id AND t.isPending = 0
+                    AND (t.timestampEpochMilli / 1000 + t.zoneOffsetSeconds) / 86400 < :endEpochDayExclusive
+            ), 0)
+            + COALESCE((
+                SELECT SUM(t2.transferAmountMinor) FROM transactions t2
+                WHERE t2.type = 'TRANSFER' AND t2.transferAccountId = a.id AND t2.isPending = 0
+                    AND (t2.timestampEpochMilli / 1000 + t2.zoneOffsetSeconds) / 86400 < :endEpochDayExclusive
+            ), 0) AS balanceMinor
+        FROM accounts a
+        ORDER BY a.sortOrder ASC, a.id ASC
+        """,
+    )
+    fun observeAllBalancesAsOf(endEpochDayExclusive: Long): Flow<List<AccountBalanceAsOfRow>>
 
     /** Current balance of a single account, in minor units; null if the account is missing. */
     @Query(

@@ -264,9 +264,12 @@ class DashboardViewModel @Inject constructor(
                 extras,
                 observeDailyBalanceHistory(primary, sparklineDays),
                 recapTeaserMonth(today, primary),
-            ) { collapsed, bundle, balanceHistory, recapTeaserMonth ->
+                // Accounts enriched with their per-account "as of today" balance,
+                // so a diverging account can show it in the breakdown.
+                accountRepository.observeAccountsWithBalanceAsOfToday(today.plusDays(1).toEpochDay()),
+            ) { collapsed, bundle, balanceHistory, recapTeaserMonth, accountsToday ->
                 buildState(
-                    accounts = accounts,
+                    accounts = accountsToday,
                     primary = primary,
                     today = today,
                     sources = collapsed,

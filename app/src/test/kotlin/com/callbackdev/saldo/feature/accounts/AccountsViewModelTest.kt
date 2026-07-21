@@ -25,7 +25,10 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Currency
 
 @ExtendWith(MainDispatcherExtension::class)
@@ -39,6 +42,7 @@ class AccountsViewModelTest {
     private val adjustBalance = mockk<AdjustBalanceUseCase>()
     private val observeDueStatements = mockk<ObserveDueStatementsUseCase>()
     private val settleStatement = mockk<SettleCreditCardStatementUseCase>()
+    private val clock: Clock = Clock.fixed(Instant.parse("2026-07-21T10:00:00Z"), ZoneId.of("Europe/Rome"))
 
     private fun account(
         id: Long = 1L,
@@ -57,6 +61,7 @@ class AccountsViewModelTest {
         dueStatements: List<DueStatement> = emptyList(),
     ): AccountsViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
+        every { accountRepository.observeAccountsWithBalanceAsOfToday(any()) } returns flowOf(accounts)
         coEvery { accountRepository.upsert(any()) } returns 1L
         coEvery { recurringRuleRepository.countForAccount(any()) } returns 0
         every { observeDueStatements() } returns flowOf(dueStatements)
@@ -67,6 +72,7 @@ class AccountsViewModelTest {
             adjustBalance,
             observeDueStatements,
             settleStatement,
+            clock,
         )
     }
 

@@ -13,6 +13,17 @@ interface AccountRepository {
     /** All accounts (archived included) with their current balance, ordered for display. */
     fun observeAccountsWithBalance(): Flow<List<AccountWithBalance>>
 
+    /**
+     * Like [observeAccountsWithBalance] but each account also carries its
+     * balance as of today ([AccountWithBalance.balanceAsOfToday], non-null only
+     * when it diverges from the total). [todayEpochDayExclusive] is today's
+     * local day plus one; movements dated on or after it are left out of the
+     * "as of today" figure.
+     */
+    fun observeAccountsWithBalanceAsOfToday(
+        todayEpochDayExclusive: Long,
+    ): Flow<List<AccountWithBalance>>
+
     /** A single account, or null if it does not exist. */
     fun observeAccount(id: Long): Flow<Account?>
 

@@ -120,6 +120,34 @@ class SaldoDatabaseTest {
     }
 
     @Test
+    fun balancesAsOfExcludeMovementsDatedAfterCutoff() = runBlocking {
+        val a = accountDao.insert(account(initialMinor = 10_000L))
+        val b = accountDao.insert(account(initialMinor = 0L))
+
+        // Local day (offset 0): 1_700_000_000_000 ms -> epochDay 19675 ("today"),
+        // 1_702_080_000_000 ms -> epochDay 19700 (in the future).
+        val todayMillis = 1_700_000_000_000L
+        val futureMillis = 1_702_080_000_000L
+        transactionDao.insert(movement(TransactionType.EXPENSE, -1_000L, a).copy(timestampEpochMilli = todayMillis))
+        transactionDao.insert(movement(TransactionType.INCOME, 5_000L, a).copy(timestampEpochMilli = futureMillis))
+        transactionDao.insert(
+            movement(TransactionType.TRANSFER, -2_000L, a, transferAccountId = b, transferAmountMinor = 2_000L)
+                .copy(timestampEpochMilli = futureMillis),
+        )
+
+        val cutoff = 19_676L // today (19675) + 1
+        val total = accountDao.observeAllWithBalance().first().associate { it.account.id to it.balanceMinor }
+        val asOf = accountDao.observeAllBalancesAsOf(cutoff).first().associate { it.accountId to it.balanceMinor }
+
+        // The total counts every confirmed movement, future ones included.
+        assertEquals(12_000L, total[a])
+        assertEquals(2_000L, total[b])
+        // As of today only the today-dated expense counts; future income and transfer are left out.
+        assertEquals(9_000L, asOf[a])
+        assertEquals(0L, asOf[b])
+    }
+
+    @Test
     fun categoryTotalsNetRefundsAndExcludeTransfersAdjustments() = runBlocking {
         val a = accountDao.insert(account(initialMinor = 100_000L))
         val b = accountDao.insert(account(initialMinor = 0L))

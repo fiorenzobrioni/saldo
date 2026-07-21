@@ -388,15 +388,32 @@ internal fun AccountRowContent(
                 )
             }
         }
-        Text(
-            text = MoneyFormatter.format(item.balance, account.currency),
-            style = MaterialTheme.typography.titleMedium.tabularNumbers(),
-            color = if (item.balance.signum() < 0) {
-                MaterialTheme.moneyColors.negative
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
-        )
+        // Trailing amount, with the "as of today" figure stacked underneath only
+        // when it diverges. The row height stays governed by the 44dp avatar, so
+        // the extra line never makes the row grow.
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = MoneyFormatter.format(item.balance, account.currency),
+                style = MaterialTheme.typography.titleMedium.tabularNumbers(),
+                color = if (item.balance.signum() < 0) {
+                    MaterialTheme.moneyColors.negative
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+            )
+            item.balanceAsOfToday?.let { today ->
+                Text(
+                    text = stringResource(
+                        R.string.dashboard_balance_as_of_today,
+                        MoneyFormatter.format(today, account.currency),
+                    ),
+                    style = MaterialTheme.typography.labelSmall.tabularNumbers(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 
