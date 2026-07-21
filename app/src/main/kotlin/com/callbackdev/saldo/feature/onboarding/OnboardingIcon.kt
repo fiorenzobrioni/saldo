@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
@@ -28,7 +29,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
-import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import kotlinx.coroutines.launch
 
 /**
@@ -37,17 +37,19 @@ import kotlinx.coroutines.launch
  * corner-badge overlay that keeps the per-page meaning (a shield for privacy, a
  * bell for notifications) while the brand mark carries the identity.
  *
- * The launcher artwork lives on a 108dp canvas whose masked area is the central
- * 72dp, so overdrawing the image by 108/72 inside a clipped squircle reproduces
- * the icon exactly as the launcher shows it (same technique as the About logo).
- * The welcome reveal stacks the three ic_app_icon_* layers, which share that
- * canvas and group transform, so at rest they equal ic_launcher_foreground.
+ * Unlike the launcher tile, onboarding drops the white ground: the artwork sits
+ * straight on the page. The launcher artwork lives on a 108dp canvas whose
+ * masked area is the central 72dp, so overdrawing the image by 108/72 inside a
+ * box of the target size crops to that window and fills it (the transparent
+ * margins overflow harmlessly, and layout still measures the target size). The
+ * welcome reveal stacks the three ic_app_icon_* layers, which share that canvas
+ * and group transform, so at rest they equal ic_launcher_foreground.
  */
 
-/** Default onboarding size for the app-icon hero: a step up from the old badge. */
-val ONBOARDING_APP_ICON_SIZE = 120.dp
+/** Onboarding hero size: about double the old 120dp tile, now that it is bare. */
+val ONBOARDING_APP_ICON_SIZE = 240.dp
 
-/** 108dp canvas over the 72dp masked window: fills the tile like the launcher. */
+/** 108dp canvas over the 72dp masked window: fills the box like the launcher. */
 private const val ARTWORK_OVERDRAW = 108f / 72f
 
 // Fixed brand-palette accents for the corner badges (the icon itself is fixed
@@ -56,32 +58,26 @@ private const val ARTWORK_OVERDRAW = 108f / 72f
 private val SecurityBadgeColor = Color(0xFF34A853) // brand green
 private val NotificationBadgeColor = Color(0xFFEA4335) // brand red
 
-/** Static app icon inside the app's squircle, on the launcher's white ground. */
+/** The bare app-icon artwork (no ground), drawn straight on the page. */
 @Composable
 internal fun AppIconArtwork(
     size: Dp = ONBOARDING_APP_ICON_SIZE,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .size(size)
-            .clip(AvatarShape)
-            .background(Color.White),
-        contentAlignment = Alignment.Center,
-    ) {
+    Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
         Image(
             painter = painterResource(R.drawable.ic_launcher_foreground),
             contentDescription = null,
-            modifier = Modifier.size(size * ARTWORK_OVERDRAW),
+            modifier = Modifier.requiredSize(size * ARTWORK_OVERDRAW),
         )
     }
 }
 
 /**
- * Welcome hero: the two cards fall in from above the tile, one then the other,
- * and slot behind the wallet to assemble the full icon. One-shot, non-looping,
- * and non-blocking (the CTA is always live). When the system animation scale is
- * 0 the finished icon is shown with no motion.
+ * Welcome hero: the two cards fall in from above, one then the other, and slot
+ * behind the wallet to assemble the full icon straight on the page. One-shot,
+ * non-looping, and non-blocking (the CTA is always live). When the system
+ * animation scale is 0 the finished icon is shown with no motion.
  */
 @Composable
 internal fun WelcomeAppIcon(
@@ -91,7 +87,7 @@ internal fun WelcomeAppIcon(
     val context = LocalContext.current
     val animate = remember { animationsEnabled(context) }
 
-    // Vertical offset as a fraction of the tile height; -1.15 clears the tile.
+    // Vertical offset as a fraction of the hero height; -1.15 clears the artwork.
     val backCard = remember { Animatable(if (animate) -1.15f else 0f) }
     val frontCard = remember { Animatable(if (animate) -1.15f else 0f) }
 
@@ -109,40 +105,31 @@ internal fun WelcomeAppIcon(
 
     val artSize = size * ARTWORK_OVERDRAW
     Box(modifier = modifier.size(size), contentAlignment = Alignment.Center) {
-        // White squircle ground.
-        Box(
-            Modifier
-                .matchParentSize()
-                .clip(AvatarShape)
-                .background(Color.White),
-        )
-        // Cards travel unclipped so they read as arriving from off-tile.
+        // Cards arrive from off-screen, over the page itself (no ground).
         Image(
             painter = painterResource(R.drawable.ic_app_icon_card_back),
             contentDescription = null,
             modifier = Modifier
-                .size(artSize)
+                .requiredSize(artSize)
                 .graphicsLayer { translationY = backCard.value * size.toPx() },
         )
         Image(
             painter = painterResource(R.drawable.ic_app_icon_card_front),
             contentDescription = null,
             modifier = Modifier
-                .size(artSize)
+                .requiredSize(artSize)
                 .graphicsLayer { translationY = frontCard.value * size.toPx() },
         )
-        // Wallet front, clipped to the tile, hides the cards' lower half at rest.
-        Box(Modifier.matchParentSize().clip(AvatarShape), contentAlignment = Alignment.Center) {
-            Image(
-                painter = painterResource(R.drawable.ic_app_icon_wallet),
-                contentDescription = null,
-                modifier = Modifier.size(artSize),
-            )
-        }
+        // Opaque wallet drawn on top hides the cards' lower half at rest.
+        Image(
+            painter = painterResource(R.drawable.ic_app_icon_wallet),
+            contentDescription = null,
+            modifier = Modifier.requiredSize(artSize),
+        )
     }
 }
 
-/** App icon with a small round accent badge on the top-right corner. */
+/** App icon with a small round accent badge on the wallet's top-right shoulder. */
 @Composable
 internal fun AppIconWithSecurityBadge(
     badge: ImageVector,
@@ -164,13 +151,15 @@ private fun AppIconWithCornerBadge(
     size: Dp,
     modifier: Modifier = Modifier,
 ) {
-    val chipSize = size * 0.34f
+    val chipSize = size * 0.23f
     Box(modifier = modifier.size(size)) {
         AppIconArtwork(size = size)
+        // The bare artwork fills the box (108/72 crop), so its top-right corner
+        // sits near the box corner; nudge the chip onto the wallet's shoulder.
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = chipSize * 0.30f, y = -chipSize * 0.30f)
+                .offset(x = -size * 0.02f, y = size * 0.08f)
                 .size(chipSize)
                 .clip(CircleShape)
                 // A ring in the page ground colour lifts the chip off the icon.
