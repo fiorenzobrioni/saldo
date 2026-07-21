@@ -16,11 +16,11 @@ Formato suggerito per ogni voce:
 
 ## 2026-07-21 - Card Saldo totale: ritmo verticale piu compatto
 
-**Fatto:** su feedback utente (dopo il test su device della linea dello zero) ridotti due stacchi nella hero card. (1) Sparkline piu vicina all'importo che descrive: nuovo `BALANCE_SPARKLINE_TOP_GAP = 8.dp` al posto del generico `BALANCE_SECTION_GAP` (12dp) prima del grafico; col 4dp di inset del canvas il gap visivo passa da 16 a 12dp. Lo stacco prima della sezione conti resta 12dp. (2) Righe dei conti nel breakdown piu ravvicinate: `BALANCE_ROW_PADDING_VERTICAL` 6 -> 4dp (gap tra avatar consecutivi 12 -> 8dp) e, in coerenza, `BALANCE_ROW_TWO_LINE_HEIGHT` 52 -> 48dp (stesso contenuto a due righe, padding ridotto).
+**Fatto:** su feedback utente (dopo il test su device della linea dello zero) ridotto lo stacco tra importo e sparkline nella hero card: nuovo `BALANCE_SPARKLINE_TOP_GAP = 8.dp` al posto del generico `BALANCE_SECTION_GAP` (12dp) prima del grafico; col 4dp di inset del canvas il gap visivo passa da 16 a 12dp. Lo stacco prima della sezione conti resta 12dp.
 
-**Decisioni:** gap asimmetrico voluto: la sparkline e una lettura dell'importo (prossimita = appartenenza), la sezione conti e un blocco distinto e tiene lo stacco pieno. Trade-off dichiarato: le righe conto scendono da 48 a 44dp di altezza tappabile, sotto il target Material di 48dp ma sopra i 44pt iOS; accettato perche l'intera card e comunque cliccabile e le righe sono bersagli larghi full-width.
+**Decisioni:** gap asimmetrico voluto: la sparkline e una lettura dell'importo (prossimita = appartenenza), la sezione conti e un blocco distinto e tiene lo stacco pieno. Provata anche la compattazione delle righe conto del breakdown (`BALANCE_ROW_PADDING_VERTICAL` 6 -> 4dp, riga da 48 a 44dp tappabili): scartata e ripristinata a 6dp su decisione dell'utente, che vuole attenersi allo standard Material del touch target 48dp.
 
-**Verificato:** verifica statica (nessun SDK in locale): solo costanti dp e un rename di Spacer, nessuna nuova API; build, lint e unit test delegati alla CI GitHub. versionCode 109 -> 110, versionName 0.9.70 -> 0.9.71. Stesso branch/PR della linea dello zero.
+**Verificato:** verifica statica (nessun SDK in locale): solo costanti dp e un rename di Spacer, nessuna nuova API; build, lint e unit test delegati alla CI GitHub. versionCode 109 -> 111, versionName 0.9.70 -> 0.9.72 (0.9.71 il giro intermedio con le righe a 44dp). Stesso branch/PR della linea dello zero.
 
 ---
 

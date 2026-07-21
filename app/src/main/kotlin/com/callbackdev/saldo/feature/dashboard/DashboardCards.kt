@@ -1212,14 +1212,13 @@ private val BALANCE_TODAY_ICON = 16.dp
 private val BALANCE_TODAY_ICON_GAP = 4.dp
 
 // Vertical padding of a tappable account (or overflow) row in the breakdown:
-// with the 36dp avatar a row lands at 44dp of tappable height, trading a bit
-// of the 48dp Material target for a breakdown that reads as one group.
-private val BALANCE_ROW_PADDING_VERTICAL = 4.dp
+// with the 36dp avatar a row lands exactly on the 48dp Material touch target.
+private val BALANCE_ROW_PADDING_VERTICAL = 6.dp
 
 // Height a breakdown row is pinned to while the "as of today" line can appear,
 // so a diverging (two-line) row never grows past its single-line peers: the
 // bodyLarge amount and the labelSmall today line plus the row's vertical padding.
-private val BALANCE_ROW_TWO_LINE_HEIGHT = 48.dp
+private val BALANCE_ROW_TWO_LINE_HEIGHT = 52.dp
 
 /** How many accounts the collapsed breakdown shows before the expand chevron. */
 private const val ACCOUNT_PREVIEW_COUNT = 2
