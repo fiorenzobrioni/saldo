@@ -14,6 +14,16 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-21 - Saldo ad oggi in rosso quando negativo
+
+**Fatto:** la riga "ad oggi" (per-conto in Conti e nel breakdown, piu quella globale sotto il Saldo totale nella hero card) ora e rossa (`moneyColors.negative`) quando il valore e negativo, altrimenti resta grigia attenuata (`onSurfaceVariant`). Sulla riga globale (`BalanceAsOfTodayLabel`) il colore si applica in modo coerente a icona e testo.
+
+**Decisioni:** rosso solo nel negativo (non specchio pieno del colore dell'importo principale): nel positivo la riga resta attenuata per non diventare un secondo numero forte. Il caso che la scelta serve a evidenziare e "saldo totale positivo ma saldo ad oggi negativo" (entrata futura gia registrata, ma oggi si e in rosso): li la cifra principale e neutra e l'unico segnale di allerta e la riga ad oggi. La subordinazione resta garantita dalla dimensione (`labelSmall`/`bodyMedium`) e il segno meno accompagna il colore (accessibilita). Idea e conferma dell'utente.
+
+**Verificato:** `gradle testDebugUnitTest assembleDebug lint` verde (Gradle di sistema). versionCode 107 -> 108, versionName 0.9.68 -> 0.9.69.
+
+---
+
 ## 2026-07-21 - Saldo ad oggi per singolo conto (Dashboard + Conti)
 
 **Fatto:** esteso il concetto di "saldo ad oggi" (fin qui solo globale, sulla hero card) al singolo conto, mostrato solo quando diverge dal saldo totale del conto, cioè quando esistono movimenti confermati datati nel futuro. Nuova query DAO `AccountDao.observeAllBalancesAsOf(endEpochDayExclusive)`: gemella di `observeAllWithBalance` con in piu il filtro sul giorno locale del movimento (`(timestampEpochMilli/1000 + zoneOffsetSeconds)/86400 < :endEpochDayExclusive`), stesso pattern della serie giornaliera della sparkline; nuova relation `AccountBalanceAsOfRow(accountId, balanceMinor)`. Il modello `AccountWithBalance` ha ora un campo opzionale `balanceAsOfToday: BigDecimal? = null`, valorizzato solo alla divergenza. Nuovo metodo repository `observeAccountsWithBalanceAsOfToday(todayEpochDayExclusive)` che combina saldo totale e saldo ad oggi per conto (`balanceAsOfToday = today.takeIf { it != total }`). `AccountsViewModel` inietta `Clock` e usa `midnightTicker` per ri-ancorare "oggi"; `DashboardViewModel` arricchisce la lista del breakdown dentro il `flatMapLatest` dove "oggi" e gia disponibile. Il vecchio `observeAccountsWithBalance()` (30+ chiamanti) resta invariato.

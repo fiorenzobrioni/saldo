@@ -418,6 +418,7 @@
 - [x] `AccountsViewModel` inietta `Clock` + `midnightTicker` per ri-ancorare "oggi"; `DashboardViewModel` arricchisce la lista del breakdown nel `flatMapLatest` esistente
 - [x] UI: riga `labelSmall` attenuata "%1$s ad oggi" sotto l'importo in `AccountRowContent` (schermata Conti) e `AccountBreakdownRow` (card Saldo totale), solo alla divergenza. Vincolo "la riga non cresce ne salta": nei Conti l'altezza e gia dettata dall'avatar 44dp; nel breakdown si riserva l'altezza a due righe su tutte le righe solo quando almeno un conto diverge (`BALANCE_ROW_TWO_LINE_HEIGHT`), cosi il caso comune resta compatto e la lista non e frastagliata. Riuso della stringa `dashboard_balance_as_of_today`
 - [x] Test strumentato `SaldoDatabaseTest.balancesAsOfExcludeMovementsDatedAfterCutoff` (futuro escluso, oggi contato); stub MockK aggiornati (Accounts/Dashboard VM). Gate `assembleDebug testDebugUnitTest lint` verde
+- [x] Riga "ad oggi" in rosso (`moneyColors.negative`) quando negativa, altrimenti grigia attenuata; per-conto e riga globale della hero card (icona + testo coerenti). Rosso solo nel negativo per non trasformare il positivo in un secondo numero forte (versionCode 107 -> 108, versionName 0.9.68 -> 0.9.69)
 
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 

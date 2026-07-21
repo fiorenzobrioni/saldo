@@ -309,6 +309,13 @@ private fun BalanceAsOfTodayLabel(
 ) {
     val amountText = MoneyFormatter.format(amount, currency)
     val label = stringResource(R.string.dashboard_balance_as_of_today, amountText)
+    // Red only when today is in the red; otherwise muted, so the line (icon and
+    // text together) stays a quiet reference under the headline figure.
+    val contentColor = if (amount.signum() < 0) {
+        MaterialTheme.moneyColors.negative
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.semantics(mergeDescendants = true) { contentDescription = label },
@@ -316,14 +323,14 @@ private fun BalanceAsOfTodayLabel(
         Icon(
             imageVector = Icons.Outlined.Today,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = contentColor,
             modifier = Modifier.size(BALANCE_TODAY_ICON),
         )
         Spacer(Modifier.width(BALANCE_TODAY_ICON_GAP))
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = contentColor,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -564,7 +571,13 @@ private fun AccountBreakdownRow(
                         MoneyFormatter.format(today, account.currency),
                     ),
                     style = MaterialTheme.typography.labelSmall.tabularNumbers(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // Red only when negative (today is in the red); otherwise it
+                    // stays muted, so the secondary line keeps its low profile.
+                    color = if (today.signum() < 0) {
+                        MaterialTheme.moneyColors.negative
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

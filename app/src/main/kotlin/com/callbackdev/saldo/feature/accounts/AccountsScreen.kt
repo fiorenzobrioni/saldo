@@ -408,7 +408,13 @@ internal fun AccountRowContent(
                         MoneyFormatter.format(today, account.currency),
                     ),
                     style = MaterialTheme.typography.labelSmall.tabularNumbers(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    // Red only when negative (today is in the red); otherwise it
+                    // stays muted, so the secondary line keeps its low profile.
+                    color = if (today.signum() < 0) {
+                        MaterialTheme.moneyColors.negative
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
