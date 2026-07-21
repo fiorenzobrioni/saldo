@@ -22,6 +22,25 @@ class RoomAccountRepository @Inject constructor(
     override fun observeAccountsWithBalance(): Flow<List<AccountWithBalance>> =
         accountDao.observeAllWithBalance().map { rows -> rows.map { it.toDomain() } }
 
+    override fun observeAccountsWithBalanceAsOfToday(
+        todayEpochDayExclusive: Long,
+    ): Flow<List<AccountWithBalance>> =
+        combine(
+            accountDao.observeAllWithBalance(),
+            accountDao.observeAllBalancesAsOf(todayEpochDayExclusive),
+        ) { totalRows, todayRows ->
+            val todayMinorByAccount = todayRows.associateBy({ it.accountId }, { it.balanceMinor })
+            totalRows.map { row ->
+                val base = row.toDomain()
+                val todayBalance = todayMinorByAccount[base.account.id]
+                    ?.let { MoneyMapper.toAmount(it, base.account.currency) }
+                base.copy(
+                    // Surfaced only on divergence, so a settled account stays a single line.
+                    balanceAsOfToday = todayBalance?.takeIf { it.compareTo(base.balance) != 0 },
+                )
+            }
+        }
+
     override fun observeAccount(id: Long): Flow<Account?> =
         accountDao.observeById(id).map { it?.toDomain() }
 

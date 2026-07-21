@@ -14,6 +14,30 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-21 - Saldo ad oggi in rosso quando negativo
+
+**Fatto:** la riga "ad oggi" (per-conto in Conti e nel breakdown, piu quella globale sotto il Saldo totale nella hero card) ora e rossa (`moneyColors.negative`) quando il valore e negativo, altrimenti resta grigia attenuata (`onSurfaceVariant`). Sulla riga globale (`BalanceAsOfTodayLabel`) il colore si applica in modo coerente a icona e testo.
+
+**Decisioni:** rosso solo nel negativo (non specchio pieno del colore dell'importo principale): nel positivo la riga resta attenuata per non diventare un secondo numero forte. Il caso che la scelta serve a evidenziare e "saldo totale positivo ma saldo ad oggi negativo" (entrata futura gia registrata, ma oggi si e in rosso): li la cifra principale e neutra e l'unico segnale di allerta e la riga ad oggi. La subordinazione resta garantita dalla dimensione (`labelSmall`/`bodyMedium`) e il segno meno accompagna il colore (accessibilita). Idea e conferma dell'utente.
+
+**Verificato:** `gradle testDebugUnitTest assembleDebug lint` verde (Gradle di sistema). versionCode 107 -> 108, versionName 0.9.68 -> 0.9.69.
+
+---
+
+## 2026-07-21 - Saldo ad oggi per singolo conto (Dashboard + Conti)
+
+**Fatto:** esteso il concetto di "saldo ad oggi" (fin qui solo globale, sulla hero card) al singolo conto, mostrato solo quando diverge dal saldo totale del conto, cioè quando esistono movimenti confermati datati nel futuro. Nuova query DAO `AccountDao.observeAllBalancesAsOf(endEpochDayExclusive)`: gemella di `observeAllWithBalance` con in piu il filtro sul giorno locale del movimento (`(timestampEpochMilli/1000 + zoneOffsetSeconds)/86400 < :endEpochDayExclusive`), stesso pattern della serie giornaliera della sparkline; nuova relation `AccountBalanceAsOfRow(accountId, balanceMinor)`. Il modello `AccountWithBalance` ha ora un campo opzionale `balanceAsOfToday: BigDecimal? = null`, valorizzato solo alla divergenza. Nuovo metodo repository `observeAccountsWithBalanceAsOfToday(todayEpochDayExclusive)` che combina saldo totale e saldo ad oggi per conto (`balanceAsOfToday = today.takeIf { it != total }`). `AccountsViewModel` inietta `Clock` e usa `midnightTicker` per ri-ancorare "oggi"; `DashboardViewModel` arricchisce la lista del breakdown dentro il `flatMapLatest` dove "oggi" e gia disponibile. Il vecchio `observeAccountsWithBalance()` (30+ chiamanti) resta invariato.
+
+UI: in `AccountRowContent` (schermata Conti) e `AccountBreakdownRow` (card Saldo totale) l'importo diventa una `Column` allineata a destra; sotto, solo alla divergenza, una riga `labelSmall` attenuata "%1$s ad oggi" (riuso della stringa esistente `dashboard_balance_as_of_today`).
+
+**Decisioni:** vincolo dell'utente: la riga non deve crescere ne saltare quando compare il valore. Nella schermata Conti l'altezza e gia dettata dall'avatar 44dp, quindi la seconda riga (~40dp con l'importo) ci rientra senza modifiche. Nel breakdown Dashboard (avatar 36dp) la seconda riga sforerebbe: si riserva l'altezza a due righe (`BALANCE_ROW_TWO_LINE_HEIGHT = 52.dp`) su tutte le righe **solo quando almeno un conto diverge** (`accounts.any { it.balanceAsOfToday != null }`), cosi il caso comune resta compatto e, quando serve, tutte le righe sono uniformi (niente lista frastagliata). Divergenza calcolata come per il globale (`compareTo != 0`).
+
+**Verificato:** `gradle testDebugUnitTest assembleDebug lint` verde (usato il Gradle di sistema `/opt/gradle`: il wrapper non puo scaricare la distribuzione da github per policy di egress). Aggiornati gli stub MockK in `AccountsViewModelTest` (nuovo param `clock`) e `DashboardViewModelTest`. Nuovo test strumentato `SaldoDatabaseTest.balancesAsOfExcludeMovementsDatedAfterCutoff` (movimento datato oggi contato, movimento e gamba trasferimento datati in futuro esclusi; il totale li include).
+
+**Prossimo:** verifica su device del comportamento (nessun salto di altezza) e coerenza somma per-conto vs saldo ad oggi globale.
+
+---
+
 ## 2026-07-21 - Icona app: gradiente + thumb-notch, e app icon nell'onboarding
 
 **Fatto:** rivisto il disegno dell'icona (placeholder) su due assi. (1) Colore: ogni elemento passa da tinta piena a un gradiente lineare 45 gradi dalla tonalità base (in basso a destra) a una più chiara (in alto a sinistra), colori base invariati; aggiornati `ic_launcher_foreground.xml` (gradienti via `aapt:attr`) e, in sincrono, `ic_launcher_monochrome.xml`. (2) Dettaglio focale: rimosso il bottone-clasp tondo verde (troppo comune tra le icone-wallet del Play Store) e sostituito con un thumb-notch, un incavo semicircolare sul bordo superiore della tasca che lascia intravedere il blu del corpo (dettaglio da portacarte reale). Il launcher, lo splash di sistema (Android 12+, nessun tema splash custom) e il logo della About (`AppLogo` usa `painterResource(ic_launcher_foreground)`) si allineano da soli.

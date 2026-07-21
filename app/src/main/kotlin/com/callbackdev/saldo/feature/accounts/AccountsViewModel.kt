@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.money.MoneyInput
+import com.callbackdev.saldo.core.common.time.midnightTicker
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
@@ -15,16 +16,19 @@ import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.SettleCreditCardStatementUseCase
 import com.callbackdev.saldo.core.domain.usecase.StatementSettlement
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.RoundingMode
+import java.time.Clock
 import javax.inject.Inject
 
 @HiltViewModel
@@ -36,13 +40,21 @@ class AccountsViewModel @Inject constructor(
     private val adjustBalance: AdjustBalanceUseCase,
     private val observeDueStatements: ObserveDueStatementsUseCase,
     private val settleStatement: SettleCreditCardStatementUseCase,
+    private val clock: Clock,
 ) : ViewModel() {
 
     private val dialog = MutableStateFlow<AccountsDialog?>(null)
     private val selectedAccountId = MutableStateFlow<Long?>(null)
 
+    // Re-anchors "today" at local midnight so the per-account "as of today"
+    // line stays correct while the screen is open.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val accountsWithBalance = midnightTicker(clock).flatMapLatest { today ->
+        accountRepository.observeAccountsWithBalanceAsOfToday(today.plusDays(1).toEpochDay())
+    }
+
     val uiState: StateFlow<AccountsUiState> = combine(
-        accountRepository.observeAccountsWithBalance(),
+        accountsWithBalance,
         dialog,
         selectedAccountId,
         observeDueStatements(),

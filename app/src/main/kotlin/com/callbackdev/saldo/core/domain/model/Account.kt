@@ -60,8 +60,15 @@ data class CreditCardConfig(
     val lastSettledClosing: LocalDate? = null,
 )
 
-/** An [Account] paired with its computed current balance. */
+/**
+ * An [Account] paired with its computed current balance.
+ *
+ * [balanceAsOfToday] is the balance counting only movements dated up to today;
+ * it is non-null only when it differs from [balance], i.e. when future-dated
+ * confirmed movements make the total run ahead of what is available today.
+ */
 data class AccountWithBalance(
     val account: Account,
     val balance: BigDecimal,
+    val balanceAsOfToday: BigDecimal? = null,
 )
