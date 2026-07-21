@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-21 - Icona app: gradiente + thumb-notch, e app icon nell'onboarding
+
+**Fatto:** rivisto il disegno dell'icona (placeholder) su due assi. (1) Colore: ogni elemento passa da tinta piena a un gradiente lineare 45 gradi dalla tonalità base (in basso a destra) a una più chiara (in alto a sinistra), colori base invariati; aggiornati `ic_launcher_foreground.xml` (gradienti via `aapt:attr`) e, in sincrono, `ic_launcher_monochrome.xml`. (2) Dettaglio focale: rimosso il bottone-clasp tondo verde (troppo comune tra le icone-wallet del Play Store) e sostituito con un thumb-notch, un incavo semicircolare sul bordo superiore della tasca che lascia intravedere il blu del corpo (dettaglio da portacarte reale). Il launcher, lo splash di sistema (Android 12+, nessun tema splash custom) e il logo della About (`AppLogo` usa `painterResource(ic_launcher_foreground)`) si allineano da soli.
+
+Onboarding: le pagine statiche 1/2/5 (benvenuto, privacy, notifiche) non usano più i glifi Material ma l'icona dell'app, a 120dp (prima badge 96dp). Nuovo `OnboardingIcon.kt`: `AppIconArtwork` (icona nel squircle `AvatarShape` su fondo bianco, stessa tecnica 108/72 della About), `WelcomeAppIcon` (reveal animato) e i badge d'angolo. Pagina 1: le due carte scendono da fuori tile e si infilano dietro al wallet (prima la gialla, poi la rossa, sfalsate di 170ms), ricomponendo l'icona; realizzato stratificando tre drawable dedicati (`ic_app_icon_card_back`, `ic_app_icon_card_front`, `ic_app_icon_wallet`) che condividono viewport e group con il foreground, così a riposo coincidono col launcher. Pagina 2: badge circolare verde brand (`#34A853`) con scudo (`VerifiedUser`) in alto a destra. Pagina 5: badge rosso brand (`#EA4335`) con campana (`NotificationsActive`).
+
+**Decisioni:** animazione one-shot, non in loop e non bloccante (la CTA è sempre attiva); rispetta il setting di sistema (`ANIMATOR_DURATION_SCALE == 0` -> icona finale senza moto). Approccio a layer di drawable (non Canvas/PathParser): condividendo viewport e transform, gli strati si allineano al pixel senza calcoli di coordinate. Carte non clippate al squircle così entrano "da fuori"; il wallet frontale è clippato e opaco, quindi copre la metà bassa delle carte a riposo (effetto "infilate"). Colori badge presi dalla palette brand (verde/rosso), entrambi >= 3:1 su glifo bianco; significato portato dalla forma oltre che dal colore (accessibilità). Icona ancora placeholder: il checkbox "Icona app, screenshot, scheda Play Store" (Fase 10) resta aperto perché copre anche screenshot e scheda.
+
+**Problemi:** nessun emulatore in questo ambiente: `assembleDebug testDebugUnitTest lint` verde, ma la resa a video dell'animazione e dei badge è da confermare su device.
+
+**Prossimo:** verifica su device del reveal e dei badge; scelta definitiva del brand prima della pubblicazione.
+
+**Verifica:** `gradle assembleDebug testDebugUnitTest lint` (BUILD SUCCESSFUL). versionCode 103 -> 104, versionName 0.9.64 -> 0.9.65.
+
+---
+
 ## 2026-07-20 - Card Saldo totale: riga "ad oggi" quando ci sono movimenti futuri
 
 **Fatto:** la cifra grande della card Saldo totale è `initialBalance + Σ di tutti i movimenti confermati`, senza vincolo di data, mentre il punto "oggi" della sparkline (e la coda di previsione) considera solo i movimenti datati fino a oggi. Con movimenti confermati datati in futuro (l'editor non vincola la data massima né li marca pending, quindi entrano subito nel saldo) le due cifre divergono e la card mostrava un totale che non coincide con il grafico. Aggiunto allo `DashboardUiState` il campo `balanceAsOfToday: BigDecimal?`, calcolato in `buildState` come ultimo punto dello storico giornaliero (`balanceHistory.last().balance`, cioè il saldo datato fino a oggi) e valorizzato **solo quando diverge** da `totalBalance` (`compareTo != 0`), altrimenti null. Quando presente, la `BalanceCard` mostra sotto la cifra grande una riga secondaria attenuata con icona calendario (`Icons.Outlined.Today`, `onSurfaceVariant`, `bodyMedium` tabellare): "€X ad oggi" / "€X as of today". Nuove stringhe `dashboard_balance_as_of_today` (values + values-it).

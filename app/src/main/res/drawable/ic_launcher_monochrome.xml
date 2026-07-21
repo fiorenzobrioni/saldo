@@ -4,8 +4,8 @@
     ic_launcher_foreground, single white fill with alpha for layering since
     the system applies its own tint at runtime. Kept in sync with the foreground:
     same scale/upward-nudge wrapper, staggered cards behind the wallet, darker
-    pocket band rendered as a lower-alpha overlay and the clasp button on the
-    seam.
+    pocket band rendered as a lower-alpha overlay, and the thumb-notch scoop cut
+    into the pocket's top edge (no clasp button here either).
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -37,15 +37,6 @@
         <path
             android:fillColor="#FFFFFF"
             android:fillAlpha="0.35"
-            android:pathData="M24,64 H84 V74 A10,10 0 0 1 74,84 H34 A10,10 0 0 1 24,74 Z" />
-
-        <path
-            android:fillColor="#FFFFFF"
-            android:fillAlpha="0.7"
-            android:pathData="M74,64 m-6.5,0 a6.5,6.5 0 1 0 13,0 a6.5,6.5 0 1 0 -13,0 Z" />
-
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M74,64 m-2.4,0 a2.4,2.4 0 1 0 4.8,0 a2.4,2.4 0 1 0 -4.8,0 Z" />
+            android:pathData="M24,64 H45 A9,9 0 0 0 63,64 H84 V74 A10,10 0 0 1 74,84 H34 A10,10 0 0 1 24,74 Z" />
     </group>
 </vector>

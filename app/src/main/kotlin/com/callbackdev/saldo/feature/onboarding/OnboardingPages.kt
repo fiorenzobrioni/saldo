@@ -1,8 +1,6 @@
 package com.callbackdev.saldo.feature.onboarding
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -20,8 +17,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.VerifiedUser
-import androidx.compose.material.icons.outlined.Wallet
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -29,8 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -39,13 +32,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
-import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
 import java.util.Currency
 
 /**
  * The onboarding page bodies. Each page is a column with the shared visual
- * language (squircle badge, centered headline and body) followed by its own
+ * language (app-icon hero, centered headline and body) followed by its own
  * content; static pages scroll so nothing clips at 200% font scale. The CTAs
  * live in the screen-level action block, not here.
  */
@@ -53,7 +45,7 @@ import java.util.Currency
 @Composable
 internal fun WelcomePage(modifier: Modifier = Modifier) {
     StaticPage(
-        icon = Icons.Outlined.Wallet,
+        hero = { WelcomeAppIcon() },
         title = stringResource(R.string.onboarding_welcome_title),
         body = stringResource(R.string.onboarding_welcome_body),
         modifier = modifier,
@@ -63,7 +55,7 @@ internal fun WelcomePage(modifier: Modifier = Modifier) {
 @Composable
 internal fun PrivacyPage(modifier: Modifier = Modifier) {
     StaticPage(
-        icon = Icons.Outlined.VerifiedUser,
+        hero = { AppIconWithSecurityBadge(badge = Icons.Outlined.VerifiedUser) },
         title = stringResource(R.string.onboarding_privacy_title),
         body = stringResource(R.string.onboarding_privacy_body),
         modifier = modifier,
@@ -73,7 +65,7 @@ internal fun PrivacyPage(modifier: Modifier = Modifier) {
 @Composable
 internal fun NotificationsPage(modifier: Modifier = Modifier) {
     StaticPage(
-        icon = Icons.Outlined.NotificationsActive,
+        hero = { AppIconWithNotificationBadge(badge = Icons.Outlined.NotificationsActive) },
         title = stringResource(R.string.onboarding_notifications_title),
         body = stringResource(R.string.onboarding_notifications_body),
         modifier = modifier,
@@ -170,10 +162,10 @@ internal fun AccountPage(
     }
 }
 
-/** A page with no inputs: badge, headline, body, all centered and scrollable. */
+/** A page with no inputs: hero, headline, body, all centered and scrollable. */
 @Composable
 private fun StaticPage(
-    icon: ImageVector,
+    hero: @Composable () -> Unit,
     title: String,
     body: String,
     modifier: Modifier = Modifier,
@@ -185,7 +177,7 @@ private fun StaticPage(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Badge(icon)
+        hero()
         Spacer(Modifier.height(32.dp))
         Text(
             text = title,
@@ -233,24 +225,3 @@ private fun PageHeader(
     }
 }
 
-/** The onboarding's brand badge: a bigger cousin of the EmptyState squircle. */
-@Composable
-private fun Badge(icon: ImageVector, modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .size(BADGE_SIZE)
-            .clip(AvatarShape)
-            .background(MaterialTheme.colorScheme.primaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-            modifier = Modifier.size(BADGE_ICON_SIZE),
-        )
-    }
-}
-
-private val BADGE_SIZE = 96.dp
-private val BADGE_ICON_SIZE = 44.dp
