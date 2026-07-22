@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 
 /**
@@ -142,7 +143,9 @@ private fun SkeletonRow(color: Color, modifier: Modifier = Modifier) {
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SkeletonBlock(color, Modifier.size(40.dp), shape = CircleShape)
+        // Same squircle as the real row avatars, so the shape does not jump
+        // when the content lands.
+        SkeletonBlock(color, Modifier.size(40.dp), shape = AvatarShape)
         Spacer(Modifier.width(12.dp))
         Column(
             modifier = Modifier.weight(1f),

@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Icon
@@ -22,14 +21,16 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 
 /**
- * Circular swatch grid for a curated color palette: the single implementation
- * behind the category, account and subscription color pickers. [colors] are
- * the raw palette values as stored in the domain; [resolveColor] maps one to
- * its display color, and [optionLabelRes] (with a positional placeholder)
- * labels each swatch for TalkBack.
+ * Squircle swatch grid for a curated color palette: the single implementation
+ * behind the category, account and subscription color pickers. Swatches use
+ * [AvatarShape] because each one previews the avatar background it will
+ * become. [colors] are the raw palette values as stored in the domain;
+ * [resolveColor] maps one to its display color, and [optionLabelRes] (with a
+ * positional placeholder) labels each swatch for TalkBack.
  */
 @Composable
 fun ColorSwatchPicker(
@@ -51,7 +52,7 @@ fun ColorSwatchPicker(
             Box(
                 modifier = Modifier
                     .size(COLOR_SWATCH_SIZE)
-                    .clip(CircleShape)
+                    .clip(AvatarShape)
                     .background(resolveColor(color))
                     .selectable(
                         selected = isSelected,
@@ -73,9 +74,10 @@ fun ColorSwatchPicker(
 }
 
 /**
- * Circular grid of a curated icon set; the selected cell fills with
+ * Squircle grid of a curated icon set; the selected cell fills with
  * [selectedColor]. The counterpart of [ColorSwatchPicker] for the icon half
- * of the same editors. [resolveIcon] maps a stored icon key to its vector.
+ * of the same editors; cells use [AvatarShape] like every entity avatar in
+ * the app. [resolveIcon] maps a stored icon key to its vector.
  */
 @Composable
 fun IconSwatchPicker(
@@ -97,7 +99,7 @@ fun IconSwatchPicker(
             Box(
                 modifier = Modifier
                     .size(ICON_SWATCH_SIZE)
-                    .clip(CircleShape)
+                    .clip(AvatarShape)
                     .background(
                         if (isSelected) {
                             selectedColor

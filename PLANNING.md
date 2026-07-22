@@ -491,6 +491,7 @@
 - [x] Undo cross-screen generalizzato: `UndoDeleteCoordinator` in `core/domain/undo` con `UndoableDelete` sealed (Movement, Budget, Goal) e `UndoDeleteViewModel` in `navigation`; snackbar con messaggio per entita. Budget ripristinato via write path transazionali del repository (i watermark di notifica ripartono), obiettivo re-inserito com'era
 - [x] Fix minori: dialog di eliminazione ricorrenza chiuso prima del delete (come gli altri editor)
 - [x] Test: nuovo `BudgetEditorViewModelTest` (mancava del tutto), `UndoDeleteViewModelTest` sui tre percorsi di ripristino, test delete/undo per obiettivo
+- [x] Follow-up forma squircle (versionCode 120 -> 121): `ColorSwatchPicker`/`IconSwatchPicker` e il segnaposto avatar degli skeleton passano da cerchio ad `AvatarShape`. Restano deliberatamente rotondi: barre pill, dot di legenda e indicatori pagina (a 4-10dp la forma non si distingue), FAB/speed dial (spec M3), ripple sulle icone, badge illustrativi onboarding, colonne pill dei grafici
 
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 

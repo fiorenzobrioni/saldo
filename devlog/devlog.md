@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-22 - Squircle ovunque sia un avatar: swatch picker e skeleton
+
+**Fatto:** dopo feedback utente (icone/categorie ancora rotonde in alcune schermate), censimento completo di `CircleShape` nel codice (12 file) e correzione dei due casi che rappresentano avatar: (1) `ColorSwatchPicker` e `IconSwatchPicker` in `core/designsystem` (usati da editor categoria, conto, abbonamenti, obiettivi) passano ad `AvatarShape`: le celle icona sono di fatto una griglia di avatar e lo swatch colore fa da anteprima dello sfondo avatar; (2) il segnaposto avatar 40dp di `SkeletonRow` passa ad `AvatarShape`, cosi la forma non salta quando arrivano i dati reali.
+
+**Decisioni:** restano deliberatamente rotondi (motivati all'utente): barre pill (recap, share card, statistiche, `ThresholdProgressBar`, skeleton del selettore periodo: `CircleShape` su un rettangolo produce estremita a pill, non un cerchio), dot di legenda e indicatori di pagina (4-10dp, squircle indistinguibile), FAB e speed dial (spec Material 3), ripple tondo sulle icone (feedback touch standard), badge decorativo dell'illustrazione onboarding, colonne pill dei grafici.
+
+**Problemi:** nessuno.
+
+**Verificato:** verifica statica + gate CI GitHub. Nessun test nuovo (cambio di sola forma). versionCode 120 -> 121, versionName 0.9.81 -> 0.9.82.
+
+**Prossimo:** verifica visiva su device dei picker colore/icona nei quattro editor che li usano.
+
+---
+
 ## 2026-07-22 - Coerenza "premium" per tutti gli editor (conto, rettifica, budget, obiettivo, ricorrenze, categoria)
 
 **Fatto:** estesa la review della Fase 10.12 a tutti gli altri editor (Fase 10.13 in PLANNING.md), su branch `claude/editors-premium-polish` basato su quello dei movimenti (non ancora mergiato, ne riusa i componenti). Cinque commit: (1) promozione in `core/designsystem/component` di `HeroAmountField`, `AnimatedSection` e `SaldoDatePickerDialog` (unifica i due date dialog, chip rapidi opzionali), con l'editor movimenti che delega; (2) editor conto: `LoadingState`, cifre tabulari su saldo iniziale e massimale carta, cross-fade animato tra saldo iniziale e sezione carta di credito, Salva sempre attivo; rettifica saldo con importo hero compatto nel dialog e preview a cifre tabulari; editor categoria allineato (LoadingState, Salva); (3) budget: limite mensile hero, Salva sempre attivo, eliminazione senza dialog con undo cross-screen, coordinator generalizzato (`core/domain/undo/UndoDeleteCoordinator` con sealed `UndoableDelete` e `UndoDeleteViewModel` in `navigation`, snackbar con messaggio per entita); (4) obiettivo di risparmio: target hero, reveal animato della data obiettivo, eliminazione con undo; (5) ricorrenze: importo hero con swap animato verso la nota importo variabile, sezioni animate (mode selector, nota cross-currency, data fine), `LoadingState`, Salva sempre attivo.
