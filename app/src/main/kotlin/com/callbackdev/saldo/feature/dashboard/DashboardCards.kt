@@ -78,6 +78,7 @@ import androidx.compose.ui.unit.sp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.AsOfTodayAmount
 import com.callbackdev.saldo.core.designsystem.component.SaldoCard
 import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
@@ -574,22 +575,8 @@ private fun AccountBreakdownRow(
                 },
             )
             item.balanceAsOfToday?.let { today ->
-                Text(
-                    text = stringResource(
-                        R.string.dashboard_balance_as_of_today,
-                        MoneyFormatter.format(today, account.currency),
-                    ),
-                    style = MaterialTheme.typography.labelSmall.tabularNumbers(),
-                    // Red only when negative (today is in the red); otherwise it
-                    // stays muted, so the secondary line keeps its low profile.
-                    color = if (today.signum() < 0) {
-                        MaterialTheme.moneyColors.negative
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                // Same compact calendar-glyph treatment as the accounts screen.
+                AsOfTodayAmount(amount = today, currency = account.currency)
             }
         }
     }

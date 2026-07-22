@@ -459,6 +459,13 @@
 - [x] Sottototale "ad oggi" nell'intestazione di gruppo sotto il totale (`AccountTypeGroup.subtotalAsOfToday`), stesso glifo, mostrato solo alla divergenza (qualche conto del gruppo ha movimenti datati nel futuro)
 - [x] Stringhe IT/EN (`accounts_reorder_info`); unit test `AccountsGroupingTest` (sottototale "ad oggi" solo alla divergenza). Gate `assembleDebug testDebugUnitTest lint` verde
 
+## Fase 10.11 - "Ad oggi" a icona anche nel breakdown della Dashboard (luglio 2026)
+
+> Richiesta utente (versionCode 117 -> 118, versionName 0.9.78 -> 0.9.79). Uniformita: la stessa treatment compatta "ad oggi" (glifo + importo) della schermata Conti portata anche nel breakdown della card Saldo totale. Refactor presentazionale, nessun cambio di comportamento.
+
+- [x] Componente condiviso `AsOfTodayAmount(amount, currency)` in `core/designsystem/component`: unica sorgente per riga conti, intestazione di gruppo (schermata Conti) e breakdown della Dashboard. Rimossa la copia privata `AsOfTodayLine`, sostituito il `Text` "%1$s ad oggi" nel breakdown della `AccountBreakdownRow`
+- [x] Hero card (`BalanceAsOfTodayLabel`, riga prominente sotto la cifra) lasciata com'e (icona + parola "ad oggi"): contesto piu grande dove la parola aiuta. Gate `assembleDebug testDebugUnitTest lint` verde
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.

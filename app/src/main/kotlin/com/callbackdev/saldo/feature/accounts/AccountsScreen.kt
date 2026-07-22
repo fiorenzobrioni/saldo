@@ -24,7 +24,6 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -59,8 +58,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -68,6 +65,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.AsOfTodayAmount
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.InfoBanner
 import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
@@ -85,8 +83,6 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import kotlinx.coroutines.flow.first
-import java.math.BigDecimal
-import java.util.Currency
 
 /**
  * Account list: active accounts with their computed balance, a collapsible
@@ -482,50 +478,10 @@ private fun AccountTypeHeader(
                     },
                 )
                 group.subtotalAsOfToday?.let { today ->
-                    AsOfTodayLine(amount = today, currency = currency)
+                    AsOfTodayAmount(amount = today, currency = currency)
                 }
             }
         }
-    }
-}
-
-/**
- * The compact "as of today" figure: the calendar glyph the dashboard hero uses
- * for the same meaning plus the amount, red only when negative. Dropping the
- * "ad oggi" word (the glyph carries it) keeps the trailing column narrow, so the
- * account name keeps its room; the spoken label restores the full phrase.
- */
-@Composable
-private fun AsOfTodayLine(
-    amount: BigDecimal,
-    currency: Currency,
-    modifier: Modifier = Modifier,
-) {
-    val amountText = MoneyFormatter.format(amount, currency)
-    val description = stringResource(R.string.dashboard_balance_as_of_today, amountText)
-    val color = if (amount.signum() < 0) {
-        MaterialTheme.moneyColors.negative
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-        modifier = modifier.semantics(mergeDescendants = true) { contentDescription = description },
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Today,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(13.dp),
-        )
-        Text(
-            text = amountText,
-            style = MaterialTheme.typography.labelSmall.tabularNumbers(),
-            color = color,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 
@@ -656,7 +612,7 @@ internal fun AccountRowContent(
                 },
             )
             item.balanceAsOfToday?.let { today ->
-                AsOfTodayLine(amount = today, currency = account.currency)
+                AsOfTodayAmount(amount = today, currency = account.currency)
             }
         }
     }

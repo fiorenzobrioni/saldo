@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-22 - "Ad oggi" a icona anche nel breakdown della Dashboard (uniformita)
+
+**Fatto:** portata la treatment compatta "ad oggi" (glifo calendario + importo, senza la parola) anche nelle righe del breakdown della card Saldo totale in Dashboard, che usavano ancora il testo "%1$s ad oggi". Estratto un componente condiviso `AsOfTodayAmount(amount, currency)` in `core/designsystem/component`, unica fonte per riga conti, intestazione di gruppo e breakdown della Dashboard: rimossa la copia privata `AsOfTodayLine` dalla schermata Conti, sostituito il `Text` nel breakdown. La riga "ad oggi" prominente della hero card (`BalanceAsOfTodayLabel`, icona + testo "ad oggi") resta invariata: e un contesto piu grande e piu esplicito, dove la parola aiuta.
+
+**Decisioni:** componente condiviso invece di duplicare il composable tra due feature: e il senso della richiesta di uniformita (unica sorgente di verita per il trattamento). Messo in `designsystem/component` con riferimento a `MoneyFormatter` e alla stringa `dashboard_balance_as_of_today` (c'e gia precedente di componenti designsystem che usano `R.string`, es. `PlaceholderScreen`). Componente autosufficiente `(amount, currency)`: i chiamanti non ripetono formattazione, descrizione a11y e colore.
+
+**Problemi:** nessuno.
+
+**Verificato:** gate `assembleDebug testDebugUnitTest lint` verde (Gradle di sistema). versionCode 117 -> 118, versionName 0.9.78 -> 0.9.79. Nessun nuovo test (refactor presentazionale a parita di comportamento; i test di grouping restano validi).
+
+**Prossimo:** niente in coda su questo.
+
+---
+
 ## 2026-07-22 - Schermata Conti: piu spazio al nome, info sul riordino, "ad oggi" nei gruppi
 
 **Fatto:** tre rifiniture alla schermata Conti dopo feedback su screenshot. (1) Il nome del conto veniva troncato: la causa principale era la riga secondaria "-2.115,89 € ad oggi", piu larga dell'importo, che dettava la larghezza della colonna a destra. Sostituita la parola "ad oggi" con il glifo calendario (`Today`, lo stesso che la hero card usa per "ad oggi") accanto all'importo: la colonna si stringe e il nome guadagna ~3 caratteri. Aggiunti anche una maniglia di drag piu stretta (40dp invece di 48, sempre alta 48 per il target) e padding del nome ridotto. Accessibilita preservata: il `contentDescription` recita la frase completa "X ad oggi". (2) `InfoBanner` in cima all'elenco (stesso componente della schermata Budget) che spiega che il riordino e possibile solo dentro lo stesso gruppo, cosi l'utente sa che non e un bug; mostrato solo quando un gruppo ha almeno 2 conti (riordino effettivamente possibile) e tenuto fuori dalla `LazyColumn` per non alterare lo spazio degli indici del drag. (3) Sottototale "ad oggi" nell'intestazione di gruppo sotto il totale, con lo stesso glifo, mostrato solo alla divergenza (qualche conto del gruppo ha movimenti datati nel futuro).
