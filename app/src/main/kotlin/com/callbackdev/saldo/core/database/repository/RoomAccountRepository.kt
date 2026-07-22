@@ -4,6 +4,7 @@ import com.callbackdev.saldo.core.database.dao.AccountDao
 import com.callbackdev.saldo.core.database.mapper.toDomain
 import com.callbackdev.saldo.core.database.mapper.toEntity
 import com.callbackdev.saldo.core.domain.model.Account
+import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
@@ -69,6 +70,22 @@ class RoomAccountRepository @Inject constructor(
             accountDao.update(entity)
             entity.id
         }
+    }
+
+    override suspend fun nextSortOrder(type: AccountType): Int =
+        accountDao.maxSortOrder(type.name) + 1
+
+    override suspend fun reorder(orderedActive: List<Account>) {
+        // Reorder is within-type, so number each account among its own type's
+        // members in the given order; the full-row update carries the rest of
+        // the account through unchanged.
+        val positionByType = mutableMapOf<AccountType, Int>()
+        val reordered = orderedActive.map { account ->
+            val index = positionByType.getOrDefault(account.type, 0)
+            positionByType[account.type] = index + 1
+            account.toEntity().copy(sortOrder = index)
+        }
+        accountDao.updateAll(reordered)
     }
 
     override suspend fun updateSettlementWatermark(accountId: Long, closing: LocalDate) =

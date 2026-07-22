@@ -63,6 +63,11 @@ fun DashboardScreen(
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // Both breakdown expansions live in the ViewModel so they survive scrolling
+    // the cards out of view and moving between screens, resetting to their
+    // defaults only on a fresh app open.
+    val accountsExpanded by viewModel.balanceAccountsExpanded.collectAsStateWithLifecycle()
+    val safeToSpendExpanded by viewModel.safeToSpendExpanded.collectAsStateWithLifecycle()
     // Plain remember on purpose: an open speed dial should not survive
     // navigating away and back (the tab keeps its state now), nor a rotation.
     var fabExpanded by remember { mutableStateOf(false) }
@@ -98,6 +103,10 @@ fun DashboardScreen(
 
                 else -> DashboardContent(
                     uiState = uiState,
+                    accountsExpanded = accountsExpanded,
+                    onToggleAccounts = viewModel::toggleBalanceAccountsExpanded,
+                    safeToSpendExpanded = safeToSpendExpanded,
+                    onToggleSafeToSpend = viewModel::toggleSafeToSpendExpanded,
                     onManageAccounts = onNavigateToAccounts,
                     onAccountClick = onNavigateToAccount,
                     onSeeAllTransactions = onSeeAllTransactions,
@@ -135,6 +144,10 @@ fun DashboardScreen(
 @Composable
 private fun DashboardContent(
     uiState: DashboardUiState,
+    accountsExpanded: Boolean,
+    onToggleAccounts: () -> Unit,
+    safeToSpendExpanded: Boolean,
+    onToggleSafeToSpend: () -> Unit,
     onManageAccounts: () -> Unit,
     onAccountClick: (Long) -> Unit,
     onSeeAllTransactions: () -> Unit,
@@ -169,6 +182,8 @@ private fun DashboardContent(
                 history = uiState.balanceHistory,
                 forecast = uiState.balanceForecast,
                 date = uiState.date,
+                accountsExpanded = accountsExpanded,
+                onToggleAccounts = onToggleAccounts,
                 onManageAccounts = onManageAccounts,
                 onAccountClick = onAccountClick,
             )
@@ -178,6 +193,8 @@ private fun DashboardContent(
                 SafeToSpendCard(
                     safeToSpend = safeToSpend,
                     currency = uiState.primaryCurrency,
+                    expanded = safeToSpendExpanded,
+                    onToggleExpanded = onToggleSafeToSpend,
                     onManageBudgets = onBudgetsClick,
                 )
             }

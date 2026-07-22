@@ -25,6 +25,17 @@ interface AccountDao {
     @Update
     suspend fun update(account: AccountEntity)
 
+    /** Persists a new ordering (used by manual reorder). */
+    @Update
+    suspend fun updateAll(accounts: List<AccountEntity>)
+
+    /**
+     * Highest sortOrder among accounts of [type], or -1 when none exist, so a
+     * freshly created account appends to the end of its own type group.
+     */
+    @Query("SELECT COALESCE(MAX(sortOrder), -1) FROM accounts WHERE type = :type")
+    suspend fun maxSortOrder(type: String): Int
+
     /**
      * Advances the credit card settlement watermark on its own, without a
      * full-row update: settlement runs concurrently with the editor, and a

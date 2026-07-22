@@ -14,6 +14,76 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-22 - "Ad oggi" a icona anche nel breakdown della Dashboard (uniformita)
+
+**Fatto:** portata la treatment compatta "ad oggi" (glifo calendario + importo, senza la parola) anche nelle righe del breakdown della card Saldo totale in Dashboard, che usavano ancora il testo "%1$s ad oggi". Estratto un componente condiviso `AsOfTodayAmount(amount, currency)` in `core/designsystem/component`, unica fonte per riga conti, intestazione di gruppo e breakdown della Dashboard: rimossa la copia privata `AsOfTodayLine` dalla schermata Conti, sostituito il `Text` nel breakdown. La riga "ad oggi" prominente della hero card (`BalanceAsOfTodayLabel`, icona + testo "ad oggi") resta invariata: e un contesto piu grande e piu esplicito, dove la parola aiuta.
+
+**Decisioni:** componente condiviso invece di duplicare il composable tra due feature: e il senso della richiesta di uniformita (unica sorgente di verita per il trattamento). Messo in `designsystem/component` con riferimento a `MoneyFormatter` e alla stringa `dashboard_balance_as_of_today` (c'e gia precedente di componenti designsystem che usano `R.string`, es. `PlaceholderScreen`). Componente autosufficiente `(amount, currency)`: i chiamanti non ripetono formattazione, descrizione a11y e colore.
+
+**Problemi:** nessuno.
+
+**Verificato:** gate `assembleDebug testDebugUnitTest lint` verde (Gradle di sistema). versionCode 117 -> 118, versionName 0.9.78 -> 0.9.79. Nessun nuovo test (refactor presentazionale a parita di comportamento; i test di grouping restano validi).
+
+**Prossimo:** niente in coda su questo.
+
+---
+
+## 2026-07-22 - Schermata Conti: piu spazio al nome, info sul riordino, "ad oggi" nei gruppi
+
+**Fatto:** tre rifiniture alla schermata Conti dopo feedback su screenshot. (1) Il nome del conto veniva troncato: la causa principale era la riga secondaria "-2.115,89 € ad oggi", piu larga dell'importo, che dettava la larghezza della colonna a destra. Sostituita la parola "ad oggi" con il glifo calendario (`Today`, lo stesso che la hero card usa per "ad oggi") accanto all'importo: la colonna si stringe e il nome guadagna ~3 caratteri. Aggiunti anche una maniglia di drag piu stretta (40dp invece di 48, sempre alta 48 per il target) e padding del nome ridotto. Accessibilita preservata: il `contentDescription` recita la frase completa "X ad oggi". (2) `InfoBanner` in cima all'elenco (stesso componente della schermata Budget) che spiega che il riordino e possibile solo dentro lo stesso gruppo, cosi l'utente sa che non e un bug; mostrato solo quando un gruppo ha almeno 2 conti (riordino effettivamente possibile) e tenuto fuori dalla `LazyColumn` per non alterare lo spazio degli indici del drag. (3) Sottototale "ad oggi" nell'intestazione di gruppo sotto il totale, con lo stesso glifo, mostrato solo alla divergenza (qualche conto del gruppo ha movimenti datati nel futuro).
+
+**Decisioni:** icona al posto della parola "ad oggi" sulle righe conto: e la leva a maggiore impatto sullo spazio del nome (recupera ~3 caratteri, contro ~1 di maniglia+padding) ed e coerente col glifo calendario gia usato dalla hero card. Piccolo componente condiviso `AsOfTodayLine` (icona + importo, rosso solo se negativo) riusato da riga e intestazione. Sottototale "ad oggi" solo alla divergenza, come tutte le righe "ad oggi" dell'app (niente rumore nel caso comune). Banner mostrato solo quando serve (un gruppo con >= 2 conti) e sopra la lista, non come primo item: cosi l'indice locale di `itemsIndexed` resta uguale all'indice assoluto della `LazyColumn` e il drag non si rompe.
+
+**Problemi:** nessuno. Attenzione tenuta sul fatto che aggiungere un item prima della lista riordinabile avrebbe disallineato lo spazio degli indici del componente di drag: risolto tenendo il banner fuori dalla `LazyColumn`.
+
+**Verificato:** gate `assembleDebug testDebugUnitTest lint` verde (Gradle di sistema). Nuovi unit test in `AccountsGroupingTest` (sottototale "ad oggi" solo alla divergenza, e assente altrimenti). versionCode 116 -> 117, versionName 0.9.77 -> 0.9.78.
+
+**Prossimo:** eventuale allineamento della stessa treatment "ad oggi" (icona invece di parola) anche nel breakdown della card Saldo totale in Dashboard, per uniformita, se richiesto.
+
+---
+
+## 2026-07-22 - Schermata Conti: sottototali per tipo e riordino manuale con drag
+
+**Fatto:** due rifiniture "premium" alla schermata Conti, dopo una valutazione condivisa con l'utente (punti 1, 2, 3). (1) Ogni intestazione di sezione tipo mostra ora il sottototale del gruppo (somma dei saldi delle righe), attenuato e rosso solo se negativo (es. carta di credito a metà ciclo), omesso quando il gruppo mescola valute. Niente grande totale in cima (scelta dell'utente): i sottototali fanno da riepilogo, così non si duplica l'hero della Dashboard. (2) Riordino manuale dei conti col trascinamento, confinato dentro ciascun gruppo di tipo: il raggruppamento e i sottototali restano coerenti, e l'ordine è condiviso con il breakdown della card Saldo totale in Dashboard (stesso comparatore).
+
+**Decisioni:** riuso del componente in-repo `ReorderableListState` (già usato dalle Categorie), non una libreria esterna: l'utente chiedeva "la cosa più premium", ma guardando le Categorie si è visto che il drag è già un componente custom robusto del design system, quindi zero nuove dipendenze e due schermate unificate per costruzione. Esteso il componente con una guardia opzionale `canMove(from, to)` (default sempre true, Categorie invariate): per i Conti confina il target ai soli conti dello stesso tipo, così l'intestazione fa da barriera e il conto non esce dal gruppo. Lista attiva ristrutturata da "una card per gruppo" a righe-card individuali con intestazioni di sezione separate (stile Categorie), necessario perché il drag opera su item distinti della `LazyColumn`; archiviati invariati (card unica). Persistenza: nessuna migrazione, la colonna `sortOrder` esisteva già (schema, DAO, mapper) ma era di fatto inutilizzata (tutti a 0, la UI riordinava per tipo+nome); ora `accountOrder` ordina per `sortOrder` poi nome, `RoomAccountRepository.reorder` riscrive l'indice per-tipo, e un conto nuovo prende `nextSortOrder(type)` per accodarsi al suo gruppo. Sottototale: somma delle righe visibili (non filtrato per "escluso dal totale", coerente con le righe di questa schermata che non attenuano gli esclusi), solo se il gruppo è monovaluta.
+
+**Problemi:** nessuno. Il target del drag poteva cadere su un'intestazione o su un altro gruppo: risolto con la guardia `canMove`, che salta i target non validi senza spostare (l'item torna al suo posto se si trascina oltre il bordo del gruppo).
+
+**Verificato:** gate `assembleDebug testDebugUnitTest lint` verde (Gradle di sistema). Nuovi unit test in `AccountsGroupingTest` (posizione manuale vince sul nome, sottototale monovaluta, nessun sottototale multivaluta) e stub `nextSortOrder` nell'editor test. versionCode 115 -> 116, versionName 0.9.76 -> 0.9.77.
+
+**Prossimo:** eventuale riordino anche dei gruppi tra loro (oggi l'ordine dei tipi è fisso: conto corrente per primo), se emergerà la richiesta.
+
+---
+
+## 2026-07-22 - Righe conti piu compatte e colore predefinito per tipo di conto
+
+**Fatto:** due rifiniture dopo il feedback su screenshot. (1) Righe del breakdown conti piu compatte: padding verticale 4dp -> 2dp, altezza minima 44dp -> 40dp, e soprattutto altezza a due righe (caso "ad oggi") 48dp -> 44dp. Nello screenshot dell'utente un conto aveva la riga "ad oggi", che fissa tutte le righe all'altezza a due righe: e li che si vedeva l'aria, ora recuperata. (2) Alla creazione di un conto (non in modifica) la selezione del tipo preimposta anche un colore di default, con la stessa logica gia usata per l'icona (`userPickedColor` come guardia; in edit e in load il flag parte true, quindi non sovrascrive mai una scelta persistita). Nuovo `AccountVisuals.defaultColorFor(type)`. Allineato anche il conto creato in onboarding (sempre CHECKING) al nuovo default.
+
+**Decisioni:** colori per tipo scelti su convenzioni comuni e per massima distinzione tra i sette tipi: blu per il conto corrente (colore universale della finanza), verde per il risparmio (denaro/crescita), ambra per i contanti (monete/banconote), ciano per la prepagata e indaco per il wallet digitale (due tinte "carta/digitale" tenute distinte dal blu del conto corrente), viola scuro per la carta di credito (feeling da carta, e volutamente non rosso per non confondersi col rosso "sotto zero" dell'app), grigio-blu neutro per "altro". Tutti i default sono membri della palette esistente, cosi il picker evidenzia lo swatch giusto. Altezza righe: 40/44dp sono sotto il minimo Material 48dp, scelta consapevole e limitata a questa card: senza il chip il glifo nudo lasciava troppa aria a 48dp; 44dp e il pavimento nel caso "ad oggi" (sotto si taglierebbe la seconda riga o la lista diventerebbe frastagliata).
+
+**Problemi:** nessuno. Build locale col Gradle di sistema (il wrapper non scarica la distribuzione dietro il proxy).
+
+**Verificato:** gate `assembleDebug testDebugUnitTest lint`. Nuovo unit test `type changes drive the color until the user picks one` (gemello di quello sull'icona). versionCode 114 -> 115, versionName 0.9.75 -> 0.9.76.
+
+**Prossimo:** eventuale ulteriore compattazione righe solo se richiesto (sotto i 44dp servirebbe togliere la riga "ad oggi" o accettare una lista frastagliata).
+
+---
+
+## 2026-07-22 - Card Saldo totale: dettaglio conti configurabile e stato persistente
+
+**Fatto:** cinque interventi sulla card Saldo totale, su richiesta utente. (1) Le icone dei conti nel breakdown perdono il chip colorato: ora sono glifi tinti col colore del conto, 24dp, allineati al bordo sinistro come le icone header delle card, cosi icona e nome cadono nella stessa colonna lungo tutta la Dashboard (stesso trattamento per la riga di overflow). (2) Righe piu compatte: padding verticale 6dp -> 4dp, altezza minima 44dp (prima 48dp erano dettati dal chip 36dp), riga a due righe "ad oggi" 52dp -> 48dp, gap divisore-prima riga 8dp -> 4dp. (3) Chiuso non mostra piu 2 conti ma nessuno: il breakdown e una sezione rivelata solo da espansa con `AnimatedVisibility` (expand + fade, comprende gap e divisore), e il chevron nell'header e sempre presente quando c'e almeno un conto. (4) Lo stato di apertura del breakdown conti e del dettaglio Spendibile oggi passa dal composable al `DashboardViewModel` (`StateFlow` + toggle): sopravvive allo scroll e alla navigazione tra schermate, torna al default solo alla riapertura dell'app. (5) Nuova preferenza `balance_accounts_expanded_default` (DataStore, default aperto) con switch "Dettaglio conti aperto" in Impostazioni > Dashboard.
+
+**Decisioni:** stato di apertura nel ViewModel invece che in `rememberSaveable`: e l'unico modo per avere la semantica richiesta in modo deterministico (persiste per tutta la sessione, incluso scroll e cambio schermata perche il tab tiene vivi i ViewModel, ma si azzera al processo nuovo). `rememberSaveable` sopravviverebbe anche alla process death via saved instance state, quindi non tornerebbe al default in modo prevedibile. Il default conti e un `combine(override, defaultDaSettings)` con override null = "segue il default": cambiare il default in Impostazioni aggiorna la card live finche l'utente non tocca il chevron in quella sessione. Spendibile oggi resta senza default persistito (parte sempre chiuso), coerente con la richiesta che chiedeva solo di renderne lo stato non volatile durante lo scroll/navigazione. Altezza riga 44dp invece di 48dp: scelta di compromesso: senza il chip 36dp il vecchio 48dp lasciava troppa aria attorno al glifo nudo (il punto della richiesta), 44dp resta un target ampio; segnalato all'utente come lieve scostamento dal minimo Material 48dp, reversibile.
+
+**Problemi:** build locale non eseguibile col wrapper (il proxy risponde 403 sul download della distribuzione Gradle da github); usato il Gradle di sistema 8.14.3 (stessa versione del wrapper) che scarica plugin e dipendenze dai repo Maven attraverso il proxy.
+
+**Verificato:** gate `assembleDebug testDebugUnitTest lint` (Gradle di sistema). versionCode 113 -> 114, versionName 0.9.74 -> 0.9.75.
+
+**Prossimo:** eventuale rifinitura ulteriore della compattezza righe se l'utente vuole spingersi sotto i 44dp.
+
+---
+
 ## 2026-07-21 - Card Ricorrenti: spese mensili dal rosso al ruolo expense
 
 **Fatto:** nella card Ricorrenti il totale mensile delle spese ricorrenti passa da `moneyColors.negative` (rosso, applicato ogni volta che il totale era > 0, cioe quasi sempre) al ruolo `moneyColors.expense` (neutro, `onSurface`): il segno meno porta la direzione. Il ramo condizionale sparisce: entrambe le alternative convergevano sullo stesso colore. Entrate ricorrenti invariate (verdi se > 0).

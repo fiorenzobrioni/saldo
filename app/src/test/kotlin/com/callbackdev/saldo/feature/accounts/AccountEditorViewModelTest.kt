@@ -39,6 +39,7 @@ class AccountEditorViewModelTest {
 
     private fun viewModel(route: AccountEditorRoute = AccountEditorRoute()): AccountEditorViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(emptyList())
+        coEvery { accountRepository.nextSortOrder(any()) } returns 0
         return AccountEditorViewModel(route, accountRepository, transactionRepository, clock)
     }
 
@@ -246,6 +247,18 @@ class AccountEditorViewModelTest {
         viewModel.onIconSelected("home")
         viewModel.onTypeChanged(AccountType.PREPAID_CARD)
         assertEquals("home", viewModel.uiState.value.icon)
+    }
+
+    @Test
+    fun `type changes drive the color until the user picks one`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onTypeChanged(AccountType.SAVINGS)
+        assertEquals(AccountVisuals.defaultColorFor(AccountType.SAVINGS), viewModel.uiState.value.color)
+
+        viewModel.onColorSelected(AccountVisuals.colors[5])
+        viewModel.onTypeChanged(AccountType.CREDIT_CARD)
+        assertEquals(AccountVisuals.colors[5], viewModel.uiState.value.color)
     }
 
     @Test

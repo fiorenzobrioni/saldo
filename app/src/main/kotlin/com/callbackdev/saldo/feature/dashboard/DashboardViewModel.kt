@@ -37,8 +37,10 @@ import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -292,6 +294,44 @@ class DashboardViewModel @Inject constructor(
                 greetingRoll = greetingRoll,
             ),
         )
+
+    /**
+     * In-session expansion of the Total-balance card's account breakdown. Held
+     * in the ViewModel (not the composable) so it outlives the card scrolling
+     * out of the list and navigating between screens/tabs, and resets to the
+     * Settings default only when the app is reopened (a fresh ViewModel). A null
+     * override means "still following the persisted default", so changing the
+     * default in Settings updates the card live until the user toggles it by
+     * hand this session.
+     */
+    private val balanceAccountsExpandedOverride = MutableStateFlow<Boolean?>(null)
+
+    val balanceAccountsExpanded: StateFlow<Boolean> = combine(
+        balanceAccountsExpandedOverride,
+        userPreferences.balanceAccountsExpandedByDefault,
+    ) { override, default -> override ?: default }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = false,
+        )
+
+    fun toggleBalanceAccountsExpanded() {
+        balanceAccountsExpandedOverride.value = !balanceAccountsExpanded.value
+    }
+
+    /**
+     * In-session expansion of the Spendable-today breakdown, with the same
+     * lifetime as [balanceAccountsExpanded]: it survives scrolling and
+     * navigation and resets on a fresh app open. Unlike the accounts breakdown
+     * it has no persisted default, so it always starts collapsed.
+     */
+    private val safeToSpendExpandedState = MutableStateFlow(false)
+    val safeToSpendExpanded: StateFlow<Boolean> = safeToSpendExpandedState.asStateFlow()
+
+    fun toggleSafeToSpendExpanded() {
+        safeToSpendExpandedState.value = !safeToSpendExpandedState.value
+    }
 
     /**
      * The recap teaser month: the just-completed month, only during the first

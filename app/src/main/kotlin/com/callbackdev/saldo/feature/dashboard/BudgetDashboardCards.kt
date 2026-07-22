@@ -24,9 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,24 +54,27 @@ import kotlin.math.roundToInt
  * Rendered only when an overall budget exists. Tapping the card expands the
  * math behind the figure (the only composite number of the app whose formula
  * is not visible anywhere else); the budgets screen stays one tap away via
- * the link inside the breakdown.
+ * the link inside the breakdown. The [expanded] state is owned by the ViewModel,
+ * so it survives scrolling and navigation and resets (collapsed) on a fresh app
+ * open, matching the balance card's breakdown.
  */
 @Composable
 internal fun SafeToSpendCard(
     safeToSpend: SafeToSpend,
     currency: Currency,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
     onManageBudgets: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val over = safeToSpend.remaining.signum() < 0
-    var expanded by rememberSaveable { mutableStateOf(false) }
     val contentColor = if (over) {
         MaterialTheme.colorScheme.onErrorContainer
     } else {
         MaterialTheme.colorScheme.onSurface
     }
     SaldoCard(
-        onClick = { expanded = !expanded },
+        onClick = onToggleExpanded,
         shape = MaterialTheme.shapes.extraLarge,
         containerColor = if (over) {
             MaterialTheme.colorScheme.errorContainer

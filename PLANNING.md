@@ -420,6 +420,52 @@
 - [x] Test strumentato `SaldoDatabaseTest.balancesAsOfExcludeMovementsDatedAfterCutoff` (futuro escluso, oggi contato); stub MockK aggiornati (Accounts/Dashboard VM). Gate `assembleDebug testDebugUnitTest lint` verde
 - [x] Riga "ad oggi" in rosso (`moneyColors.negative`) quando negativa, altrimenti grigia attenuata; per-conto e riga globale della hero card (icona + testo coerenti). Rosso solo nel negativo per non trasformare il positivo in un secondo numero forte (versionCode 107 -> 108, versionName 0.9.68 -> 0.9.69)
 
+## Fase 10.7 - Card Saldo totale: dettaglio conti configurabile e stato di apertura persistente (luglio 2026)
+
+> Richiesta utente (versionCode 113 -> 114, versionName 0.9.74 -> 0.9.75). Rifinitura della card Saldo totale: dettaglio conti come sezione rivelabile (chiuso non mostra alcun conto), icone di conto senza sfondo allineate in colonna con le icone delle altre card, righe piu compatte, stato di apertura tenuto nel ViewModel e default configurabile in Impostazioni. Nessun cambio di schema o query.
+
+- [x] Icona di conto nel breakdown senza chip colorato: glifo `AccountVisuals.icon` tinto col colore del conto, 24dp, allineato al bordo sinistro come le icone header delle card, cosi icona e nome stanno nella stessa colonna dell'icona e del titolo lungo tutta la card. Stesso trattamento per la riga di overflow (`MoreHoriz`). Rimossi `AVATAR_TINT_ALPHA` e la `Box` avatar in `AccountBreakdownRow`
+- [x] Righe piu compatte: padding verticale 6dp -> 4dp e altezza minima 44dp (era 48dp, dettata dal chip 36dp), riga a due righe "ad oggi" 52dp -> 48dp, gap divisore-prima riga 8dp -> 4dp
+- [x] Chiuso = nessun conto (prima ne mostrava sempre 2): il breakdown e ora una sezione mostrata solo da espansa, con `AnimatedVisibility` (expand + fade) che comprende gap superiore e divisore; il chevron nell'header e sempre presente quando esiste almeno un conto. Rimosso `ACCOUNT_PREVIEW_COUNT`
+- [x] Stato di apertura del breakdown conti e del dettaglio Spendibile oggi spostato dal composable (`remember`/`rememberSaveable`) al `DashboardViewModel` (`StateFlow` + toggle): sopravvive allo scroll fuori dalla lista e alla navigazione tra schermate/tab (il tab tiene i ViewModel vivi), torna al default solo alla riapertura dell'app (ViewModel nuovo). Supera la nota "stato non persistito (si riapre chiusa)" della Fase 9.14
+- [x] Nuova preferenza `balance_accounts_expanded_default` (DataStore, default true = aperto alla prima installazione): switch "Dettaglio conti aperto" nella sezione Dashboard delle Impostazioni. Il `DashboardViewModel` combina l'override di sessione col default persistito (override null = segue il default live finche l'utente non tocca il chevron)
+- [x] Stringhe IT/EN; unit test `DashboardViewModel` (breakdown conti dal default aperto/chiuso, toggle conti, toggle spendibile). Gate `assembleDebug testDebugUnitTest lint` verde
+
+## Fase 10.8 - Righe conti piu compatte e colore predefinito per tipo (luglio 2026)
+
+> Richiesta utente (versionCode 114 -> 115, versionName 0.9.75 -> 0.9.76). Due rifiniture dopo il feedback su screenshot: compattazione delle righe del breakdown conti e preimpostazione del colore per tipo alla creazione di un conto, gemella di quella gia esistente per l'icona.
+
+- [x] Righe breakdown conti piu compatte: padding verticale 4dp -> 2dp, altezza minima 40dp e altezza a due righe ("ad oggi") 48dp -> 44dp. Nel caso comune con una riga "ad oggi" tutte le righe sono fissate all'altezza a due righe, quindi 44dp e il pavimento (sotto si taglierebbe la seconda riga o la lista diventerebbe frastagliata). Scelta consapevole sotto il minimo Material 48dp, limitata a questa card
+- [x] `AccountVisuals.defaultColorFor(type)`: colore di palette per tipo (blu conto corrente, verde risparmio, ambra contanti, ciano prepagata, indaco wallet, viola scuro carta di credito - non rosso per non confondersi col "sotto zero" - grigio-blu altro). Tutti membri della palette, cosi il picker evidenzia lo swatch
+- [x] `AccountEditorViewModel`: alla creazione il cambio tipo preimposta il colore (guardia `userPickedColor`, gemella di `userPickedIcon`; in edit/load parte true e non sovrascrive mai la scelta persistita). Stato iniziale e fallback usano `defaultColorFor`. Onboarding (conto CHECKING) allineato al nuovo default
+- [x] Unit test `type changes drive the color until the user picks one` (gemello di quello sull'icona). Gate `assembleDebug testDebugUnitTest lint` verde
+
+## Fase 10.9 - Schermata Conti: sottototali per tipo e riordino manuale (luglio 2026)
+
+> Richiesta utente (versionCode 115 -> 116, versionName 0.9.76 -> 0.9.77), dopo una valutazione condivisa. Due rifiniture premium alla schermata Conti: sottototale del gruppo in ogni intestazione di tipo e riordino manuale dei conti col trascinamento, confinato dentro il gruppo. Nessuna migrazione: la colonna `sortOrder` esisteva gia (era inutilizzata, tutti a 0).
+
+- [x] Sottototale per tipo nell'intestazione di sezione (`AccountTypeGroup.subtotal/currency` calcolati in `buildAccountTypeGroups`): somma delle righe del gruppo, attenuato e rosso solo se negativo, omesso quando il gruppo mescola valute. Nessun grande totale in cima (scelta utente): i sottototali fanno da riepilogo senza duplicare l'hero della Dashboard
+- [x] Riordino manuale col drag riusando il componente in-repo `ReorderableListState` (già delle Categorie, nessuna libreria esterna). Esteso con una guardia opzionale `canMove(from, to)` (default sempre true): per i Conti confina il target ai conti dello stesso tipo, così l'intestazione fa da barriera e il conto resta nel suo gruppo. Categorie invariate
+- [x] Lista attiva ristrutturata a righe-card individuali con intestazioni di sezione (stile Categorie), necessario perché il drag opera su item distinti della `LazyColumn`; archiviati invariati (card unica collassabile)
+- [x] Persistenza dell'ordine: `accountOrder` ordina per `sortOrder` poi nome (tutti a 0 = comportamento attuale, nessun salto); `AccountRepository.reorder(orderedActive)` riscrive l'indice per-tipo; un conto nuovo prende `nextSortOrder(type)` per accodarsi al suo gruppo. L'ordine è condiviso con il breakdown della card Saldo totale in Dashboard (stesso `sortedByTypeThenName`)
+- [x] Stringhe IT/EN (`accounts_reorder`); unit test `AccountsGroupingTest` (posizione manuale vince sul nome, sottototale monovaluta, nessun sottototale multivaluta). Gate `assembleDebug testDebugUnitTest lint` verde
+
+## Fase 10.10 - Schermata Conti: spazio al nome, info riordino, "ad oggi" nei gruppi (luglio 2026)
+
+> Richiesta utente (versionCode 116 -> 117, versionName 0.9.77 -> 0.9.78), tre rifiniture dopo feedback su screenshot. Nessun cambio di schema o query.
+
+- [x] Piu spazio al nome del conto: la riga secondaria "%1$s ad oggi" era piu larga dell'importo e dettava la larghezza della colonna a destra. La parola "ad oggi" e sostituita dal glifo calendario (`Today`, come nella hero card) accanto all'importo (`AsOfTodayLine`, componente condiviso riga+intestazione): il nome guadagna ~3 caratteri. Maniglia di drag piu stretta (40dp, alta 48) e padding del nome ridotto; `contentDescription` mantiene la frase completa per TalkBack
+- [x] `InfoBanner` in cima all'elenco (stesso componente della schermata Budget) che chiarisce che il riordino e solo dentro lo stesso gruppo (non un bug). Mostrato solo quando un gruppo ha >= 2 conti, e tenuto fuori dalla `LazyColumn` per non disallineare lo spazio degli indici del drag
+- [x] Sottototale "ad oggi" nell'intestazione di gruppo sotto il totale (`AccountTypeGroup.subtotalAsOfToday`), stesso glifo, mostrato solo alla divergenza (qualche conto del gruppo ha movimenti datati nel futuro)
+- [x] Stringhe IT/EN (`accounts_reorder_info`); unit test `AccountsGroupingTest` (sottototale "ad oggi" solo alla divergenza). Gate `assembleDebug testDebugUnitTest lint` verde
+
+## Fase 10.11 - "Ad oggi" a icona anche nel breakdown della Dashboard (luglio 2026)
+
+> Richiesta utente (versionCode 117 -> 118, versionName 0.9.78 -> 0.9.79). Uniformita: la stessa treatment compatta "ad oggi" (glifo + importo) della schermata Conti portata anche nel breakdown della card Saldo totale. Refactor presentazionale, nessun cambio di comportamento.
+
+- [x] Componente condiviso `AsOfTodayAmount(amount, currency)` in `core/designsystem/component`: unica sorgente per riga conti, intestazione di gruppo (schermata Conti) e breakdown della Dashboard. Rimossa la copia privata `AsOfTodayLine`, sostituito il `Text` "%1$s ad oggi" nel breakdown della `AccountBreakdownRow`
+- [x] Hero card (`BalanceAsOfTodayLabel`, riga prominente sotto la cifra) lasciata com'e (icona + parola "ad oggi"): contesto piu grande dove la parola aiuta. Gate `assembleDebug testDebugUnitTest lint` verde
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.

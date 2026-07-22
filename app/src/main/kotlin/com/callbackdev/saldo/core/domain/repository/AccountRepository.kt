@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.core.domain.repository
 
 import com.callbackdev.saldo.core.domain.model.Account
+import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
@@ -47,6 +48,20 @@ interface AccountRepository {
 
     /** Inserts a new account (id == 0) or updates an existing one. Returns its id. */
     suspend fun upsert(account: Account): Long
+
+    /**
+     * Next free sort position within [type], so a freshly created account
+     * appends to the end of its own type group instead of jumping into the
+     * middle of a manually arranged list.
+     */
+    suspend fun nextSortOrder(type: AccountType): Int
+
+    /**
+     * Persists a manual reorder of the active accounts. Ordering is confined to
+     * within each type group, so each account's [Account.sortOrder] is rewritten
+     * to its index among the accounts of its own type in [orderedActive].
+     */
+    suspend fun reorder(orderedActive: List<Account>)
 
     /**
      * Advances the credit card settlement watermark to [closing] without

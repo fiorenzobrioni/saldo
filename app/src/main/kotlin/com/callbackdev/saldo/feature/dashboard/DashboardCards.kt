@@ -2,11 +2,15 @@
 
 package com.callbackdev.saldo.feature.dashboard
 
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -74,6 +78,7 @@ import androidx.compose.ui.unit.sp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.AsOfTodayAmount
 import com.callbackdev.saldo.core.designsystem.component.SaldoCard
 import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
@@ -178,18 +183,19 @@ private fun fullWeekdayDate(date: LocalDate): String {
 /**
  * Hero card: the total balance as the screen's dominant figure, a balance
  * sparkline (30 days of history plus a dashed end-of-month forecast tail) and,
- * under a hairline divider, the per-account breakdown. The breakdown shows the
- * first [ACCOUNT_PREVIEW_COUNT] accounts and, when more exist, an expand chevron
- * in the header (mirroring the safe-to-spend card) reveals the rest in place up
- * to [ACCOUNT_EXPANDED_MAX]; beyond that an overflow row points to the full
- * accounts list. Expansion is transient (plain [remember]): it collapses again
- * when the app is reopened. A soft top-down tonal gradient and the larger shape
- * single the card out as the primary one while keeping the dashboard flat.
+ * behind an expand chevron in the header, the per-account breakdown. Collapsed
+ * the card shows no accounts at all; expanded, a hairline divider precedes the
+ * account rows in place, up to [ACCOUNT_EXPANDED_MAX], beyond which an overflow
+ * row points to the full accounts list. The open/closed state and its per-open
+ * default (Settings) are owned by the ViewModel ([accountsExpanded]), so it
+ * outlives scrolling and navigation and resets only on a fresh app open. A soft
+ * top-down tonal gradient and the larger shape single the card out as the
+ * primary one while keeping the dashboard flat.
  *
- * Tap targets are layered: the header chevron toggles the breakdown, each
- * account row opens that account's detail ([onAccountClick]), and every other
- * part of the card opens account management ([onManageAccounts], the spoken
- * affordance of the card itself).
+ * Tap targets are layered: the header chevron toggles the breakdown
+ * ([onToggleAccounts]), each account row opens that account's detail
+ * ([onAccountClick]), and every other part of the card opens account management
+ * ([onManageAccounts], the spoken affordance of the card itself).
  */
 @Composable
 internal fun BalanceCard(
@@ -200,12 +206,13 @@ internal fun BalanceCard(
     history: List<DailyBalance>,
     forecast: List<DailyBalance>,
     date: LocalDate,
+    accountsExpanded: Boolean,
+    onToggleAccounts: () -> Unit,
     onManageAccounts: () -> Unit,
     onAccountClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val manageAccountsLabel = stringResource(R.string.dashboard_manage_accounts)
-    var accountsExpanded by remember { mutableStateOf(false) }
     SaldoCard(
         onClick = onManageAccounts,
         modifier = modifier
@@ -239,11 +246,11 @@ internal fun BalanceCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                         )
-                        if (accounts.size > ACCOUNT_PREVIEW_COUNT) {
+                        if (accounts.isNotEmpty()) {
                             Spacer(Modifier.width(4.dp))
                             AccountsExpandChevron(
                                 expanded = accountsExpanded,
-                                onToggle = { accountsExpanded = !accountsExpanded },
+                                onToggle = onToggleAccounts,
                             )
                         }
                     }
@@ -280,16 +287,15 @@ internal fun BalanceCard(
                 )
                 SparklineCaption(hasForecast = forecast.isNotEmpty())
             }
-            if (accounts.isNotEmpty()) {
-                Spacer(Modifier.height(BALANCE_SECTION_GAP))
-                AccountsBreakdownSection(
-                    accounts = accounts,
-                    primaryCurrency = currency,
-                    expanded = accountsExpanded,
-                    onAccountClick = onAccountClick,
-                    onShowAll = onManageAccounts,
-                )
-            }
+            // Collapsed: no accounts at all. Expanded: the breakdown reveals in
+            // place (its own top gap and divider animate in with it).
+            AccountsBreakdownSection(
+                accounts = accounts,
+                primaryCurrency = currency,
+                expanded = accountsExpanded,
+                onAccountClick = onAccountClick,
+                onShowAll = onManageAccounts,
+            )
         }
     }
 }
@@ -338,11 +344,12 @@ private fun BalanceAsOfTodayLabel(
 }
 
 /**
- * The per-account breakdown under the hero figure: a hairline divider that
- * separates it from the balance and sparkline, then the account rows. When
- * collapsed only the first [ACCOUNT_PREVIEW_COUNT] rows show; when [expanded]
- * the list grows in place (animated) up to [ACCOUNT_EXPANDED_MAX] rows, and if
- * still more accounts remain an overflow row points to the full accounts list.
+ * The per-account breakdown under the hero figure, hidden entirely unless
+ * [expanded]: it reveals (and hides) as one block, a top gap and hairline
+ * divider that set it off from the sparkline, then the account rows up to
+ * [ACCOUNT_EXPANDED_MAX]; if still more accounts remain an overflow row points
+ * to the full accounts list. The reveal/hide is animated (expand + fade) so the
+ * hero card grows and shrinks smoothly around it.
  */
 @Composable
 private fun AccountsBreakdownSection(
@@ -353,25 +360,32 @@ private fun AccountsBreakdownSection(
     onShowAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth().animateContentSize()) {
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        Spacer(Modifier.height(BALANCE_BREAKDOWN_TOP_GAP))
-        val limit = if (expanded) ACCOUNT_EXPANDED_MAX else ACCOUNT_PREVIEW_COUNT
-        // Reserve the second amount line for the whole list only when at least
-        // one account diverges, so every row stays the same height (no ragged
-        // list, no jump) while the common case keeps its compact rows.
-        val reserveTodayLine = accounts.any { it.balanceAsOfToday != null }
-        accounts.take(limit).forEach { item ->
-            AccountBreakdownRow(
-                item = item,
-                primaryCurrency = primaryCurrency,
-                reserveTodayLine = reserveTodayLine,
-                onClick = { onAccountClick(item.account.id) },
-            )
-        }
-        val overflow = accounts.size - ACCOUNT_EXPANDED_MAX
-        if (expanded && overflow > 0) {
-            OverflowAccountsRow(count = overflow, onClick = onShowAll)
+    AnimatedVisibility(
+        visible = expanded && accounts.isNotEmpty(),
+        enter = fadeIn() + expandVertically(),
+        exit = fadeOut() + shrinkVertically(),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Spacer(Modifier.height(BALANCE_SECTION_GAP))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Spacer(Modifier.height(BALANCE_BREAKDOWN_TOP_GAP))
+            // Reserve the second amount line for the whole list only when at
+            // least one account diverges, so every row stays the same height (no
+            // ragged list, no jump) while the common case keeps its compact rows.
+            val reserveTodayLine = accounts.any { it.balanceAsOfToday != null }
+            accounts.take(ACCOUNT_EXPANDED_MAX).forEach { item ->
+                AccountBreakdownRow(
+                    item = item,
+                    primaryCurrency = primaryCurrency,
+                    reserveTodayLine = reserveTodayLine,
+                    onClick = { onAccountClick(item.account.id) },
+                )
+            }
+            val overflow = accounts.size - ACCOUNT_EXPANDED_MAX
+            if (overflow > 0) {
+                OverflowAccountsRow(count = overflow, onClick = onShowAll)
+            }
         }
     }
 }
@@ -516,26 +530,22 @@ private fun AccountBreakdownRow(
             .clip(MaterialTheme.shapes.small)
             .clickable(onClick = onClick)
             .semantics { onClick(label = openLabel, action = null) }
-            // When any account shows the "as of today" line, pin every row to the
-            // two-line height so a diverging row never grows taller than its peers.
-            .then(if (reserveTodayLine) Modifier.heightIn(min = BALANCE_ROW_TWO_LINE_HEIGHT) else Modifier)
+            // Keep a comfortable touch/read height: the two-line height when any
+            // account shows the "as of today" line (so a diverging row never
+            // grows taller than its peers), the tighter single-line one otherwise.
+            .heightIn(min = if (reserveTodayLine) BALANCE_ROW_TWO_LINE_HEIGHT else BALANCE_ROW_MIN_HEIGHT)
             .padding(vertical = BALANCE_ROW_PADDING_VERTICAL),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(AvatarShape)
-                .background(color.copy(alpha = AVATAR_TINT_ALPHA)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = AccountVisuals.icon(account.icon),
-                contentDescription = null,
-                tint = color,
-                modifier = Modifier.size(20.dp),
-            )
-        }
+        // Bare tinted glyph (no chip), sized and left-aligned like the card
+        // header icons so every leading icon on the dashboard shares one column.
+        Icon(
+            imageVector = AccountVisuals.icon(account.icon),
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(BALANCE_ACCOUNT_ICON),
+        )
+        Spacer(Modifier.width(BALANCE_ACCOUNT_ICON_GAP))
         Text(
             text = account.name,
             style = MaterialTheme.typography.bodyLarge,
@@ -543,7 +553,7 @@ private fun AccountBreakdownRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 12.dp),
+                .padding(end = 12.dp),
         )
         AccountBreakdownMarkers(
             currency = account.currency,
@@ -565,22 +575,8 @@ private fun AccountBreakdownRow(
                 },
             )
             item.balanceAsOfToday?.let { today ->
-                Text(
-                    text = stringResource(
-                        R.string.dashboard_balance_as_of_today,
-                        MoneyFormatter.format(today, account.currency),
-                    ),
-                    style = MaterialTheme.typography.labelSmall.tabularNumbers(),
-                    // Red only when negative (today is in the red); otherwise it
-                    // stays muted, so the secondary line keeps its low profile.
-                    color = if (today.signum() < 0) {
-                        MaterialTheme.moneyColors.negative
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                // Same compact calendar-glyph treatment as the accounts screen.
+                AsOfTodayAmount(amount = today, currency = account.currency)
             }
         }
     }
@@ -632,20 +628,17 @@ private fun OverflowAccountsRow(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.small)
             .clickable(onClick = onClick)
+            .heightIn(min = BALANCE_ROW_MIN_HEIGHT)
             .padding(vertical = BALANCE_ROW_PADDING_VERTICAL),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier.size(36.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.MoreHoriz,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
-            )
-        }
+        Icon(
+            imageVector = Icons.Outlined.MoreHoriz,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(BALANCE_ACCOUNT_ICON),
+        )
+        Spacer(Modifier.width(BALANCE_ACCOUNT_ICON_GAP))
         Text(
             text = pluralStringResource(R.plurals.dashboard_accounts_overflow, count, count),
             style = MaterialTheme.typography.bodyMedium,
@@ -654,7 +647,7 @@ private fun OverflowAccountsRow(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 12.dp),
+                .padding(end = 12.dp),
         )
     }
 }
@@ -1183,8 +1176,6 @@ private fun netColor(value: BigDecimal): Color = when {
     else -> MaterialTheme.colorScheme.onSurface
 }
 
-private const val AVATAR_TINT_ALPHA = 0.16f
-
 // Money figures auto-size within these bounds so large amounts shrink to fit
 // instead of truncating, while typical values keep the target size. Hero: the
 // safe-to-spend figure on its full-width card; compact: the half-width
@@ -1204,23 +1195,30 @@ private val BALANCE_MONEY_MAX = 34.sp
 private val BALANCE_AMOUNT_TOP_GAP = 4.dp
 private val BALANCE_SPARKLINE_TOP_GAP = 8.dp
 private val BALANCE_SECTION_GAP = 12.dp
-private val BALANCE_BREAKDOWN_TOP_GAP = 8.dp
+private val BALANCE_BREAKDOWN_TOP_GAP = 4.dp
 
 /** Size of the calendar glyph and its gap on the "as of today" secondary line. */
 private val BALANCE_TODAY_ICON = 16.dp
 private val BALANCE_TODAY_ICON_GAP = 4.dp
 
-// Vertical padding of a tappable account (or overflow) row in the breakdown:
-// with the 36dp avatar a row lands exactly on the 48dp Material touch target.
-private val BALANCE_ROW_PADDING_VERTICAL = 6.dp
+// Leading account glyph in the breakdown: a bare 24dp icon (matching the card
+// header icons) plus an 8dp gap, so its left edge and the name column line up
+// with the header's icon and title down the whole card.
+private val BALANCE_ACCOUNT_ICON = 24.dp
+private val BALANCE_ACCOUNT_ICON_GAP = 8.dp
+
+// Vertical padding of a tappable account (or overflow) row in the breakdown.
+// Without the old 36dp avatar chip the rows sit tighter; the min height keeps a
+// usable touch target for a dense, secondary list. Deliberately below Material's
+// 48dp on this card only: the bare glyph left too much air at 48dp.
+private val BALANCE_ROW_PADDING_VERTICAL = 2.dp
+private val BALANCE_ROW_MIN_HEIGHT = 40.dp
 
 // Height a breakdown row is pinned to while the "as of today" line can appear,
 // so a diverging (two-line) row never grows past its single-line peers: the
-// bodyLarge amount and the labelSmall today line plus the row's vertical padding.
-private val BALANCE_ROW_TWO_LINE_HEIGHT = 52.dp
-
-/** How many accounts the collapsed breakdown shows before the expand chevron. */
-private const val ACCOUNT_PREVIEW_COUNT = 2
+// bodyLarge amount and the labelSmall today line just fit here, so this is the
+// floor for that case (going lower would clip the second line or ragged the list).
+private val BALANCE_ROW_TWO_LINE_HEIGHT = 44.dp
 
 /** How many accounts the expanded breakdown shows before the overflow row. */
 private const val ACCOUNT_EXPANDED_MAX = 10

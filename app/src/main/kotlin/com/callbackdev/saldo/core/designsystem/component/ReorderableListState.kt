@@ -32,6 +32,7 @@ class ReorderableListState internal constructor(
     private val onMove: (from: Int, to: Int) -> Unit,
     private val onSettle: () -> Unit,
     private val onPickUp: () -> Unit,
+    private val canMove: (from: Int, to: Int) -> Boolean = { _, _ -> true },
 ) {
 
     /** Index of the item under the finger, or null when idle. */
@@ -73,7 +74,10 @@ class ReorderableListState internal constructor(
         val target = listState.layoutInfo.visibleItemsInfo.firstOrNull { item ->
             item.index != fromIndex && middle.toInt() in item.offset..(item.offset + item.size)
         }
-        if (target != null) {
+        // The guard confines the drag (e.g. to within a group): a rejected target
+        // is skipped, so a non-reorderable item like a section header acts as a
+        // barrier the dragged row cannot cross.
+        if (target != null && canMove(fromIndex, target.index)) {
             onMove(fromIndex, target.index)
             draggingItemIndex = target.index
         }
@@ -128,16 +132,19 @@ class ReorderableListState internal constructor(
 /**
  * Remembers a [ReorderableListState]. [onMove] reorders the caller's backing
  * list (a move from one index to another); [onSettle] fires once at drop to
- * persist the final order.
+ * persist the final order. [canMove] optionally confines moves (e.g. within a
+ * type group); it defaults to allowing every target.
  */
 @Composable
 fun rememberReorderableListState(
     listState: LazyListState,
     onMove: (from: Int, to: Int) -> Unit,
     onSettle: () -> Unit,
+    canMove: (from: Int, to: Int) -> Boolean = { _, _ -> true },
 ): ReorderableListState {
     val latestOnMove by rememberUpdatedState(onMove)
     val latestOnSettle by rememberUpdatedState(onSettle)
+    val latestCanMove by rememberUpdatedState(canMove)
     val haptics = LocalHapticFeedback.current
     val state = remember(listState) {
         ReorderableListState(
@@ -148,6 +155,7 @@ fun rememberReorderableListState(
                 latestOnSettle()
             },
             onPickUp = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) },
+            canMove = { from, to -> latestCanMove(from, to) },
         )
     }
     LaunchedEffect(state.isDragging) {
