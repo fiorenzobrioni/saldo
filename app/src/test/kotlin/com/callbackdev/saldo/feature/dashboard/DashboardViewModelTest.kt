@@ -121,11 +121,15 @@ class DashboardViewModelTest {
         clock: Clock = this.clock,
         dismissedRecapMonth: java.time.YearMonth? = null,
         previousMonthTotals: List<com.callbackdev.saldo.core.domain.model.MonthlyTotal> = emptyList(),
+        balanceAccountsExpandedByDefault: Boolean = true,
     ): DashboardViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         every { accountRepository.observeAccountsWithBalanceAsOfToday(any()) } returns flowOf(accounts)
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
         every { userPreferences.dashboardCardPreferences } returns flowOf(cardPrefs)
+        every {
+            userPreferences.balanceAccountsExpandedByDefault
+        } returns flowOf(balanceAccountsExpandedByDefault)
         every { userPreferences.dismissedRecapMonth } returns flowOf(dismissedRecapMonth)
         every {
             transactionRepository.observeMonthlyTotals(any(), any(), any())
@@ -529,6 +533,7 @@ class DashboardViewModelTest {
         )
         every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
         every { userPreferences.dashboardCardPreferences } returns flowOf(DashboardCardPreferences())
+        every { userPreferences.balanceAccountsExpandedByDefault } returns flowOf(true)
         every {
             transactionRepository.observeDashboardTotals(capture(windows), eur)
         } returns flowOf(DashboardTotals())
@@ -746,6 +751,58 @@ class DashboardViewModelTest {
             val state = awaitLoaded()
             assertFalse(state.hasAccounts)
             assertTrue(state.recent.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `balance accounts breakdown starts from the settings default when expanded`() = runTest {
+        val viewModel = viewModel(balanceAccountsExpandedByDefault = true)
+
+        viewModel.balanceAccountsExpanded.test {
+            // The stateIn initial (false) may or may not be observed before the
+            // combine settles on the persisted default, depending on conflation;
+            // either way the flow settles on the default (expanded).
+            var value = awaitItem()
+            while (!value) value = awaitItem()
+            assertTrue(value)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `balance accounts breakdown starts from the settings default when collapsed`() = runTest {
+        val viewModel = viewModel(balanceAccountsExpandedByDefault = false)
+
+        viewModel.balanceAccountsExpanded.test {
+            // The default is off, matching the initial value: a single emission.
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `toggling the balance accounts breakdown flips it regardless of the default`() = runTest {
+        val viewModel = viewModel(balanceAccountsExpandedByDefault = false)
+
+        viewModel.balanceAccountsExpanded.test {
+            assertFalse(awaitItem())
+            viewModel.toggleBalanceAccountsExpanded()
+            assertTrue(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `safe to spend breakdown starts collapsed and toggles`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
+        )
+
+        viewModel.safeToSpendExpanded.test {
+            assertFalse(awaitItem())
+            viewModel.toggleSafeToSpendExpanded()
+            assertTrue(awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }

@@ -922,6 +922,8 @@
 
     <!-- Dashboard visibility settings -->
     <string name="settings_section_dashboard">Dashboard</string>
+    <string name="settings_dashboard_accounts_expanded">Dettaglio conti aperto</string>
+    <string name="settings_dashboard_accounts_expanded_hint">All\'avvio mostra l\'elenco dei conti nella card Saldo totale</string>
     <string name="settings_dashboard_show_sts">Scheda spendibile oggi</string>
     <string name="settings_dashboard_show_sts_hint">Mostra quanto puoi ancora spendere oggi (richiede un budget mensile)</string>
     <string name="settings_dashboard_show_budget">Scheda budget</string>

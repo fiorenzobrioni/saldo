@@ -85,6 +85,15 @@ class SettingsViewModel @Inject constructor(
                 initialValue = DashboardCardPreferences(),
             )
 
+    /** Whether the Total-balance card opens with its accounts expanded (on by default). */
+    val balanceAccountsExpandedByDefault: StateFlow<Boolean> =
+        userPreferences.balanceAccountsExpandedByDefault
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                initialValue = true,
+            )
+
     /** Persists the primary-currency choice; null returns to automatic. */
     fun onPrimaryCurrencySelected(currency: Currency?) {
         viewModelScope.launch { userPreferences.setPrimaryCurrencyOverride(currency) }
@@ -133,6 +142,10 @@ class SettingsViewModel @Inject constructor(
 
     fun onShowSavingsGoalsChanged(shown: Boolean) {
         viewModelScope.launch { userPreferences.setShowSavingsGoalsCard(shown) }
+    }
+
+    fun onBalanceAccountsExpandedDefaultChanged(expanded: Boolean) {
+        viewModelScope.launch { userPreferences.setBalanceAccountsExpandedByDefault(expanded) }
     }
 
     private companion object {

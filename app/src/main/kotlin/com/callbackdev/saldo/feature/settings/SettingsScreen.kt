@@ -95,6 +95,8 @@ fun SettingsScreen(
     val themePreferences by viewModel.themePreferences.collectAsStateWithLifecycle()
     val renewalReminder by viewModel.renewalReminderPreferences.collectAsStateWithLifecycle()
     val dashboardCards by viewModel.dashboardCardPreferences.collectAsStateWithLifecycle()
+    val balanceAccountsExpandedDefault by viewModel.balanceAccountsExpandedByDefault
+        .collectAsStateWithLifecycle()
     val primaryCurrency by viewModel.primaryCurrencyOverride.collectAsStateWithLifecycle()
     val activeAccounts by viewModel.activeAccounts.collectAsStateWithLifecycle()
     val defaultAccountId by viewModel.defaultAccountId.collectAsStateWithLifecycle()
@@ -161,6 +163,12 @@ fun SettingsScreen(
 
             SettingsSectionHeader(stringResource(R.string.settings_section_dashboard))
             SettingsGroup {
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dashboard_accounts_expanded),
+                    hint = stringResource(R.string.settings_dashboard_accounts_expanded_hint),
+                    checked = balanceAccountsExpandedDefault,
+                    onCheckedChange = viewModel::onBalanceAccountsExpandedDefaultChanged,
+                )
                 SettingsSwitchRow(
                     title = stringResource(R.string.settings_dashboard_show_sts),
                     hint = stringResource(R.string.settings_dashboard_show_sts_hint),

@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-22 - Card Saldo totale: dettaglio conti configurabile e stato persistente
+
+**Fatto:** cinque interventi sulla card Saldo totale, su richiesta utente. (1) Le icone dei conti nel breakdown perdono il chip colorato: ora sono glifi tinti col colore del conto, 24dp, allineati al bordo sinistro come le icone header delle card, cosi icona e nome cadono nella stessa colonna lungo tutta la Dashboard (stesso trattamento per la riga di overflow). (2) Righe piu compatte: padding verticale 6dp -> 4dp, altezza minima 44dp (prima 48dp erano dettati dal chip 36dp), riga a due righe "ad oggi" 52dp -> 48dp, gap divisore-prima riga 8dp -> 4dp. (3) Chiuso non mostra piu 2 conti ma nessuno: il breakdown e una sezione rivelata solo da espansa con `AnimatedVisibility` (expand + fade, comprende gap e divisore), e il chevron nell'header e sempre presente quando c'e almeno un conto. (4) Lo stato di apertura del breakdown conti e del dettaglio Spendibile oggi passa dal composable al `DashboardViewModel` (`StateFlow` + toggle): sopravvive allo scroll e alla navigazione tra schermate, torna al default solo alla riapertura dell'app. (5) Nuova preferenza `balance_accounts_expanded_default` (DataStore, default aperto) con switch "Dettaglio conti aperto" in Impostazioni > Dashboard.
+
+**Decisioni:** stato di apertura nel ViewModel invece che in `rememberSaveable`: e l'unico modo per avere la semantica richiesta in modo deterministico (persiste per tutta la sessione, incluso scroll e cambio schermata perche il tab tiene vivi i ViewModel, ma si azzera al processo nuovo). `rememberSaveable` sopravviverebbe anche alla process death via saved instance state, quindi non tornerebbe al default in modo prevedibile. Il default conti e un `combine(override, defaultDaSettings)` con override null = "segue il default": cambiare il default in Impostazioni aggiorna la card live finche l'utente non tocca il chevron in quella sessione. Spendibile oggi resta senza default persistito (parte sempre chiuso), coerente con la richiesta che chiedeva solo di renderne lo stato non volatile durante lo scroll/navigazione. Altezza riga 44dp invece di 48dp: scelta di compromesso: senza il chip 36dp il vecchio 48dp lasciava troppa aria attorno al glifo nudo (il punto della richiesta), 44dp resta un target ampio; segnalato all'utente come lieve scostamento dal minimo Material 48dp, reversibile.
+
+**Problemi:** build locale non eseguibile col wrapper (il proxy risponde 403 sul download della distribuzione Gradle da github); usato il Gradle di sistema 8.14.3 (stessa versione del wrapper) che scarica plugin e dipendenze dai repo Maven attraverso il proxy.
+
+**Verificato:** gate `assembleDebug testDebugUnitTest lint` (Gradle di sistema). versionCode 113 -> 114, versionName 0.9.74 -> 0.9.75.
+
+**Prossimo:** eventuale rifinitura ulteriore della compattezza righe se l'utente vuole spingersi sotto i 44dp.
+
+---
+
 ## 2026-07-21 - Card Ricorrenti: spese mensili dal rosso al ruolo expense
 
 **Fatto:** nella card Ricorrenti il totale mensile delle spese ricorrenti passa da `moneyColors.negative` (rosso, applicato ogni volta che il totale era > 0, cioe quasi sempre) al ruolo `moneyColors.expense` (neutro, `onSurface`): il segno meno porta la direzione. Il ramo condizionale sparisce: entrambe le alternative convergevano sullo stesso colore. Entrate ricorrenti invariate (verdi se > 0).

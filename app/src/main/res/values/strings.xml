@@ -905,6 +905,8 @@
 
     <!-- Dashboard visibility settings -->
     <string name="settings_section_dashboard">Dashboard</string>
+    <string name="settings_dashboard_accounts_expanded">Accounts expanded by default</string>
+    <string name="settings_dashboard_accounts_expanded_hint">Open the accounts list in the Total balance card when the app starts</string>
     <string name="settings_dashboard_show_sts">Safe to spend card</string>
     <string name="settings_dashboard_show_sts_hint">Show what you can still spend today (needs a monthly budget)</string>
     <string name="settings_dashboard_show_budget">Budgets card</string>

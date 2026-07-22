@@ -249,6 +249,21 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_RECAP_TEASER] = shown }
     }
 
+    /**
+     * Whether the Total-balance card opens with its per-account breakdown
+     * already expanded. On by default (a fresh install shows the accounts). This
+     * is only the starting state each time the app opens: the in-session
+     * open/close toggle lives in the dashboard ViewModel, so it survives
+     * scrolling and navigation and falls back to this default on a fresh launch.
+     */
+    val balanceAccountsExpandedByDefault: Flow<Boolean> = dataStore.data.map { preferences ->
+        preferences[BALANCE_ACCOUNTS_EXPANDED_DEFAULT] ?: true
+    }.distinctUntilChanged()
+
+    suspend fun setBalanceAccountsExpandedByDefault(expanded: Boolean) {
+        dataStore.edit { preferences -> preferences[BALANCE_ACCOUNTS_EXPANDED_DEFAULT] = expanded }
+    }
+
     /** Column separator of the CSV export; semicolon by default (Excel friendly). */
     val csvSeparator: Flow<CsvSeparator> = dataStore.data.map { preferences ->
         preferences[CSV_SEPARATOR]
@@ -299,6 +314,8 @@ class UserPreferencesRepository @Inject constructor(
             booleanPreferencesKey("dashboard_show_recent_transactions")
         val DASHBOARD_SHOW_SAVINGS_GOALS = booleanPreferencesKey("dashboard_show_savings_goals")
         val DASHBOARD_SHOW_RECAP_TEASER = booleanPreferencesKey("dashboard_show_recap_teaser")
+        val BALANCE_ACCOUNTS_EXPANDED_DEFAULT =
+            booleanPreferencesKey("balance_accounts_expanded_default")
         val DISMISSED_RECAP_MONTH = stringPreferencesKey("recap_dismissed_month")
     }
 }

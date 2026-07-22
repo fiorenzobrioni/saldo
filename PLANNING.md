@@ -420,6 +420,17 @@
 - [x] Test strumentato `SaldoDatabaseTest.balancesAsOfExcludeMovementsDatedAfterCutoff` (futuro escluso, oggi contato); stub MockK aggiornati (Accounts/Dashboard VM). Gate `assembleDebug testDebugUnitTest lint` verde
 - [x] Riga "ad oggi" in rosso (`moneyColors.negative`) quando negativa, altrimenti grigia attenuata; per-conto e riga globale della hero card (icona + testo coerenti). Rosso solo nel negativo per non trasformare il positivo in un secondo numero forte (versionCode 107 -> 108, versionName 0.9.68 -> 0.9.69)
 
+## Fase 10.7 - Card Saldo totale: dettaglio conti configurabile e stato di apertura persistente (luglio 2026)
+
+> Richiesta utente (versionCode 113 -> 114, versionName 0.9.74 -> 0.9.75). Rifinitura della card Saldo totale: dettaglio conti come sezione rivelabile (chiuso non mostra alcun conto), icone di conto senza sfondo allineate in colonna con le icone delle altre card, righe piu compatte, stato di apertura tenuto nel ViewModel e default configurabile in Impostazioni. Nessun cambio di schema o query.
+
+- [x] Icona di conto nel breakdown senza chip colorato: glifo `AccountVisuals.icon` tinto col colore del conto, 24dp, allineato al bordo sinistro come le icone header delle card, cosi icona e nome stanno nella stessa colonna dell'icona e del titolo lungo tutta la card. Stesso trattamento per la riga di overflow (`MoreHoriz`). Rimossi `AVATAR_TINT_ALPHA` e la `Box` avatar in `AccountBreakdownRow`
+- [x] Righe piu compatte: padding verticale 6dp -> 4dp e altezza minima 44dp (era 48dp, dettata dal chip 36dp), riga a due righe "ad oggi" 52dp -> 48dp, gap divisore-prima riga 8dp -> 4dp
+- [x] Chiuso = nessun conto (prima ne mostrava sempre 2): il breakdown e ora una sezione mostrata solo da espansa, con `AnimatedVisibility` (expand + fade) che comprende gap superiore e divisore; il chevron nell'header e sempre presente quando esiste almeno un conto. Rimosso `ACCOUNT_PREVIEW_COUNT`
+- [x] Stato di apertura del breakdown conti e del dettaglio Spendibile oggi spostato dal composable (`remember`/`rememberSaveable`) al `DashboardViewModel` (`StateFlow` + toggle): sopravvive allo scroll fuori dalla lista e alla navigazione tra schermate/tab (il tab tiene i ViewModel vivi), torna al default solo alla riapertura dell'app (ViewModel nuovo). Supera la nota "stato non persistito (si riapre chiusa)" della Fase 9.14
+- [x] Nuova preferenza `balance_accounts_expanded_default` (DataStore, default true = aperto alla prima installazione): switch "Dettaglio conti aperto" nella sezione Dashboard delle Impostazioni. Il `DashboardViewModel` combina l'override di sessione col default persistito (override null = segue il default live finche l'utente non tocca il chevron)
+- [x] Stringhe IT/EN; unit test `DashboardViewModel` (breakdown conti dal default aperto/chiuso, toggle conti, toggle spendibile). Gate `assembleDebug testDebugUnitTest lint` verde
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.
