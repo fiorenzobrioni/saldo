@@ -2,21 +2,14 @@ package com.callbackdev.saldo.feature.recurring
 
 import android.text.format.DateFormat
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
@@ -38,21 +31,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.toUtcLocalDate
 import com.callbackdev.saldo.core.common.date.toUtcMillis
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
+import com.callbackdev.saldo.core.designsystem.component.ColorSwatchPicker
+import com.callbackdev.saldo.core.designsystem.component.IconSwatchPicker
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
-import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
@@ -327,35 +319,14 @@ internal fun SubscriptionColorPicker(
     onColorSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        CategoryVisuals.colors.forEachIndexed { index, color ->
-            val isSelected = color == selected
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(CategoryVisuals.color(color))
-                    .selectable(
-                        selected = isSelected,
-                        role = Role.RadioButton,
-                        onClick = { onColorSelected(color) },
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (isSelected) {
-                    Icon(
-                        imageVector = Icons.Outlined.Check,
-                        contentDescription = stringResource(R.string.subscription_editor_color_option, index + 1),
-                        tint = contentColorOn(CategoryVisuals.color(color)),
-                    )
-                }
-            }
-        }
-    }
+    ColorSwatchPicker(
+        colors = CategoryVisuals.colors,
+        selected = selected,
+        onColorSelected = onColorSelected,
+        resolveColor = CategoryVisuals::color,
+        optionLabelRes = R.string.subscription_editor_color_option,
+        modifier = modifier,
+    )
 }
 
 /** Grid of the shared icon set; the selected icon uses the chosen color. */
@@ -366,44 +337,15 @@ internal fun SubscriptionIconPicker(
     onIconSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        CategoryVisuals.iconKeys.forEachIndexed { index, key ->
-            val isSelected = key == selectedIcon
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (isSelected) {
-                            CategoryVisuals.color(selectedColor)
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainerHigh
-                        },
-                    )
-                    .selectable(
-                        selected = isSelected,
-                        role = Role.RadioButton,
-                        onClick = { onIconSelected(key) },
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = CategoryVisuals.icon(key),
-                    contentDescription = stringResource(R.string.subscription_editor_icon_option, index + 1),
-                    tint = if (isSelected) {
-                        contentColorOn(CategoryVisuals.color(selectedColor))
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(22.dp),
-                )
-            }
-        }
-    }
+    IconSwatchPicker(
+        iconKeys = CategoryVisuals.iconKeys,
+        selectedIcon = selectedIcon,
+        selectedColor = CategoryVisuals.color(selectedColor),
+        onIconSelected = onIconSelected,
+        resolveIcon = CategoryVisuals::icon,
+        optionLabelRes = R.string.subscription_editor_icon_option,
+        modifier = modifier,
+    )
 }
 
 /**
