@@ -9,11 +9,16 @@ import java.util.Currency
 
 /**
  * One account-type section of the accounts list: the [type] and its accounts,
- * already sorted alphabetically by name.
+ * already ordered (manual position, then name). [subtotal] sums the group's
+ * balances for the section header, in [currency]; both are null when the group
+ * mixes currencies (a single figure would be meaningless), so the header then
+ * shows the type label alone.
  */
 data class AccountTypeGroup(
     val type: AccountType,
     val accounts: List<AccountWithBalance>,
+    val subtotal: BigDecimal? = null,
+    val currency: Currency? = null,
 )
 
 /** Immutable UI state for the accounts list screen. */

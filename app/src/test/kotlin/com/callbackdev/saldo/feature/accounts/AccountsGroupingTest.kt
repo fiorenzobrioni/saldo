@@ -4,6 +4,7 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.util.Currency
@@ -16,15 +17,19 @@ class AccountsGroupingTest {
         id: Long,
         name: String,
         type: AccountType,
+        balance: BigDecimal = BigDecimal.ZERO,
+        currency: Currency = eur,
+        sortOrder: Int = 0,
     ) = AccountWithBalance(
         account = Account(
             id = id,
             name = name,
             type = type,
-            currency = eur,
+            currency = currency,
             initialBalance = BigDecimal.ZERO,
+            sortOrder = sortOrder,
         ),
-        balance = BigDecimal.ZERO,
+        balance = balance,
     )
 
     @Test
@@ -86,5 +91,45 @@ class AccountsGroupingTest {
         val names = items.sortedByTypeThenName().map { it.account.name }
 
         assertEquals(listOf("Alpha bank", "Beta bank", "Alpha cash", "Zed cash"), names)
+    }
+
+    @Test
+    fun `within a group manual position wins over name`() {
+        val items = listOf(
+            item(1, "Alpha", AccountType.CHECKING, sortOrder = 2),
+            item(2, "Beta", AccountType.CHECKING, sortOrder = 0),
+            item(3, "Gamma", AccountType.CHECKING, sortOrder = 1),
+        )
+
+        val names = buildAccountTypeGroups(items).single().accounts.map { it.account.name }
+
+        assertEquals(listOf("Beta", "Gamma", "Alpha"), names)
+    }
+
+    @Test
+    fun `a single-currency group carries the balance subtotal`() {
+        val items = listOf(
+            item(1, "A", AccountType.CHECKING, balance = BigDecimal("10.00")),
+            item(2, "B", AccountType.CHECKING, balance = BigDecimal("-4.50")),
+        )
+
+        val group = buildAccountTypeGroups(items).single()
+
+        assertEquals(BigDecimal("5.50"), group.subtotal)
+        assertEquals(eur, group.currency)
+    }
+
+    @Test
+    fun `a mixed-currency group has no subtotal`() {
+        val usd = Currency.getInstance("USD")
+        val items = listOf(
+            item(1, "A", AccountType.CHECKING, balance = BigDecimal("10.00")),
+            item(2, "B", AccountType.CHECKING, balance = BigDecimal("5.00"), currency = usd),
+        )
+
+        val group = buildAccountTypeGroups(items).single()
+
+        assertNull(group.subtotal)
+        assertNull(group.currency)
     }
 }

@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-22 - Schermata Conti: sottototali per tipo e riordino manuale con drag
+
+**Fatto:** due rifiniture "premium" alla schermata Conti, dopo una valutazione condivisa con l'utente (punti 1, 2, 3). (1) Ogni intestazione di sezione tipo mostra ora il sottototale del gruppo (somma dei saldi delle righe), attenuato e rosso solo se negativo (es. carta di credito a metà ciclo), omesso quando il gruppo mescola valute. Niente grande totale in cima (scelta dell'utente): i sottototali fanno da riepilogo, così non si duplica l'hero della Dashboard. (2) Riordino manuale dei conti col trascinamento, confinato dentro ciascun gruppo di tipo: il raggruppamento e i sottototali restano coerenti, e l'ordine è condiviso con il breakdown della card Saldo totale in Dashboard (stesso comparatore).
+
+**Decisioni:** riuso del componente in-repo `ReorderableListState` (già usato dalle Categorie), non una libreria esterna: l'utente chiedeva "la cosa più premium", ma guardando le Categorie si è visto che il drag è già un componente custom robusto del design system, quindi zero nuove dipendenze e due schermate unificate per costruzione. Esteso il componente con una guardia opzionale `canMove(from, to)` (default sempre true, Categorie invariate): per i Conti confina il target ai soli conti dello stesso tipo, così l'intestazione fa da barriera e il conto non esce dal gruppo. Lista attiva ristrutturata da "una card per gruppo" a righe-card individuali con intestazioni di sezione separate (stile Categorie), necessario perché il drag opera su item distinti della `LazyColumn`; archiviati invariati (card unica). Persistenza: nessuna migrazione, la colonna `sortOrder` esisteva già (schema, DAO, mapper) ma era di fatto inutilizzata (tutti a 0, la UI riordinava per tipo+nome); ora `accountOrder` ordina per `sortOrder` poi nome, `RoomAccountRepository.reorder` riscrive l'indice per-tipo, e un conto nuovo prende `nextSortOrder(type)` per accodarsi al suo gruppo. Sottototale: somma delle righe visibili (non filtrato per "escluso dal totale", coerente con le righe di questa schermata che non attenuano gli esclusi), solo se il gruppo è monovaluta.
+
+**Problemi:** nessuno. Il target del drag poteva cadere su un'intestazione o su un altro gruppo: risolto con la guardia `canMove`, che salta i target non validi senza spostare (l'item torna al suo posto se si trascina oltre il bordo del gruppo).
+
+**Verificato:** gate `assembleDebug testDebugUnitTest lint` verde (Gradle di sistema). Nuovi unit test in `AccountsGroupingTest` (posizione manuale vince sul nome, sottototale monovaluta, nessun sottototale multivaluta) e stub `nextSortOrder` nell'editor test. versionCode 115 -> 116, versionName 0.9.76 -> 0.9.77.
+
+**Prossimo:** eventuale riordino anche dei gruppi tra loro (oggi l'ordine dei tipi è fisso: conto corrente per primo), se emergerà la richiesta.
+
+---
+
 ## 2026-07-22 - Righe conti piu compatte e colore predefinito per tipo di conto
 
 **Fatto:** due rifiniture dopo il feedback su screenshot. (1) Righe del breakdown conti piu compatte: padding verticale 4dp -> 2dp, altezza minima 44dp -> 40dp, e soprattutto altezza a due righe (caso "ad oggi") 48dp -> 44dp. Nello screenshot dell'utente un conto aveva la riga "ad oggi", che fissa tutte le righe all'altezza a due righe: e li che si vedeva l'aria, ora recuperata. (2) Alla creazione di un conto (non in modifica) la selezione del tipo preimposta anche un colore di default, con la stessa logica gia usata per l'icona (`userPickedColor` come guardia; in edit e in load il flag parte true, quindi non sovrascrive mai una scelta persistita). Nuovo `AccountVisuals.defaultColorFor(type)`. Allineato anche il conto creato in onboarding (sempre CHECKING) al nuovo default.

@@ -3,22 +3,25 @@ package com.callbackdev.saldo.feature.accounts
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.designsystem.visuals.labelRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,33 +44,43 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
+import com.callbackdev.saldo.core.designsystem.component.ReorderableListState
 import com.callbackdev.saldo.core.designsystem.component.SaldoCard
+import com.callbackdev.saldo.core.designsystem.component.SaldoCardDefaults
+import com.callbackdev.saldo.core.designsystem.component.rememberReorderableListState
+import com.callbackdev.saldo.core.designsystem.component.reorderableHandle
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.Account
-import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.usecase.DueStatement
+import kotlinx.coroutines.flow.first
 
 /**
  * Account list: active accounts with their computed balance, a collapsible
@@ -170,6 +183,7 @@ fun AccountsScreen(
                 uiState = uiState,
                 onAccountClick = { viewModel.onAccountSelected(it.account.id) },
                 onSettleStatement = viewModel::settleStatement,
+                onReorder = viewModel::persistOrder,
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             )
         }
@@ -200,40 +214,91 @@ fun AccountsScreen(
     )
 }
 
+/**
+ * Active accounts as a reorderable list: each type is a non-draggable section
+ * header (label + balance subtotal) followed by its accounts as individual
+ * cards a drag handle can rearrange. The reorder is confined to within a type
+ * (the header acts as a barrier), so the grouping and its subtotals stay
+ * coherent, and the order is shared with the dashboard balance breakdown. The
+ * archived accounts keep their single collapsed card below.
+ */
 @Composable
 private fun AccountsList(
     uiState: AccountsUiState,
     onAccountClick: (AccountWithBalance) -> Unit,
     onSettleStatement: (Long) -> Unit,
+    onReorder: (List<Long>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var archivedExpanded by rememberSaveable { mutableStateOf(false) }
+    val entries = remember { uiState.activeGroups.toEntries().toMutableStateList() }
+    val listState = rememberLazyListState()
+    val reorderState = rememberReorderableListState(
+        listState = listState,
+        // Confine the drag to within a type: only another account row of the
+        // same type is a valid target, so headers bound each group.
+        canMove = { from, to ->
+            val fromRow = entries.getOrNull(from) as? ActiveEntry.Row
+            val toRow = entries.getOrNull(to) as? ActiveEntry.Row
+            fromRow != null && toRow != null &&
+                fromRow.item.account.type == toRow.item.account.type
+        },
+        onMove = { from, to -> entries.add(to, entries.removeAt(from)) },
+        onSettle = {
+            onReorder(entries.filterIsInstance<ActiveEntry.Row>().map { it.item.account.id })
+        },
+    )
+    LaunchedActiveResync(uiState.activeGroups, reorderState, entries)
 
     LazyColumn(
+        state = listState,
         modifier = modifier,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // Active accounts: one type header plus its grouped card, mirroring the
-        // day header / card rhythm of the movements ledger.
-        uiState.activeGroups.forEach { group ->
-            item(key = "type-header-${group.type}", contentType = "type-header") {
-                Column(modifier = Modifier.animateItem()) {
-                    AccountTypeHeader(type = group.type)
-                    Spacer(Modifier.height(6.dp))
-                }
-            }
-            item(key = "type-card-${group.type}", contentType = "type-card") {
-                AccountsCard(
-                    items = group.accounts,
-                    uiState = uiState,
-                    onAccountClick = onAccountClick,
-                    onSettleStatement = onSettleStatement,
-                    modifier = Modifier.animateItem(),
-                    showType = false,
+        itemsIndexed(
+            entries,
+            key = { _, entry -> entry.key },
+            contentType = { _, entry -> if (entry is ActiveEntry.Header) "header" else "account" },
+        ) { index, entry ->
+            when (entry) {
+                is ActiveEntry.Header -> AccountTypeHeader(
+                    group = entry.group,
+                    modifier = Modifier
+                        .animateItem()
+                        .padding(top = if (index == 0) 0.dp else 10.dp),
                 )
-            }
-            item(key = "type-spacer-${group.type}", contentType = "type-spacer") {
-                Spacer(Modifier.height(SaldoDimens.cardSpacing))
+
+                is ActiveEntry.Row -> {
+                    val isDragging = reorderState.draggingItemIndex == index
+                    val rowModifier = if (isDragging) {
+                        Modifier
+                            .zIndex(1f)
+                            .graphicsLayer { translationY = reorderState.draggingItemOffset }
+                    } else {
+                        Modifier.animateItem()
+                    }
+                    // Read lazily via a stable holder so the handle's pointerInput,
+                    // keyed on the id, always sees the row's current index.
+                    val currentIndex by rememberUpdatedState(index)
+                    AccountReorderableRow(
+                        item = entry.item,
+                        dueStatement = uiState.dueStatement(entry.item.account.id),
+                        elevated = isDragging,
+                        onClick = { onAccountClick(entry.item) },
+                        onSettleStatement = { onSettleStatement(entry.item.account.id) },
+                        dragHandle = {
+                            AccountDragHandle(
+                                modifier = Modifier.reorderableHandle(
+                                    state = reorderState,
+                                    key = entry.key,
+                                    index = { currentIndex },
+                                ),
+                            )
+                        },
+                        modifier = rowModifier,
+                    )
+                }
             }
         }
 
@@ -243,6 +308,7 @@ private fun AccountsList(
                     count = uiState.archived.size,
                     expanded = archivedExpanded,
                     onToggle = { archivedExpanded = !archivedExpanded },
+                    modifier = Modifier.animateItem(),
                 )
             }
             if (archivedExpanded) {
@@ -260,19 +326,140 @@ private fun AccountsList(
     }
 }
 
-/** Section header for an account-type group: the type label, ledger-style. */
+/** One entry in the reorderable active list: a section header or an account row. */
+private sealed interface ActiveEntry {
+    val key: String
+
+    data class Header(val group: AccountTypeGroup) : ActiveEntry {
+        override val key: String get() = "header-${group.type}"
+    }
+
+    data class Row(val item: AccountWithBalance) : ActiveEntry {
+        override val key: String get() = "account-${item.account.id}"
+    }
+}
+
+/** Flattens the type groups into header + row entries for the reorderable list. */
+private fun List<AccountTypeGroup>.toEntries(): List<ActiveEntry> = buildList {
+    this@toEntries.forEach { group ->
+        add(ActiveEntry.Header(group))
+        group.accounts.forEach { add(ActiveEntry.Row(it)) }
+    }
+}
+
+/**
+ * Adopts a freshly built entry list once any in-progress drag has settled, so a
+ * balance update or the persisted order replaces the live list, while a drop
+ * that has not yet round-tripped through the database does not revert.
+ */
 @Composable
-private fun AccountTypeHeader(
-    type: AccountType,
+private fun LaunchedActiveResync(
+    groups: List<AccountTypeGroup>,
+    reorderState: ReorderableListState,
+    entries: MutableList<ActiveEntry>,
+) {
+    LaunchedEffect(groups) {
+        snapshotFlow { reorderState.isDragging }.first { !it }
+        val next = groups.toEntries()
+        if (entries.toList() != next) {
+            entries.clear()
+            entries.addAll(next)
+        }
+    }
+}
+
+/** One active account as a card the drag handle can rearrange within its group. */
+@Composable
+private fun AccountReorderableRow(
+    item: AccountWithBalance,
+    dueStatement: DueStatement?,
+    elevated: Boolean,
+    onClick: () -> Unit,
+    onSettleStatement: () -> Unit,
+    dragHandle: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Text(
-        text = stringResource(type.labelRes()),
-        style = MaterialTheme.typography.titleMedium,
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = SaldoCardDefaults.containerColor,
+        border = BorderStroke(SaldoCardDefaults.BorderWidth, MaterialTheme.saldoSurfaces.cardBorder),
+        shadowElevation = if (elevated) 6.dp else 0.dp,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(start = SaldoDimens.rowPaddingHorizontal, end = 4.dp),
+            ) {
+                AccountRowContent(
+                    item = item,
+                    showType = false,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(vertical = SaldoDimens.rowPaddingVertical),
+                )
+                dragHandle()
+            }
+            CreditCardRowExtras(
+                item = item,
+                dueStatement = dueStatement,
+                onSettleStatement = onSettleStatement,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AccountDragHandle(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier.size(48.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.DragHandle,
+            contentDescription = stringResource(R.string.accounts_reorder),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * Section header for an account-type group: the type label plus the group's
+ * balance subtotal. The subtotal stays muted (a quiet summary under the label)
+ * and turns red only when the whole group is below zero; it is omitted when the
+ * group mixes currencies, where a single figure would be meaningless.
+ */
+@Composable
+private fun AccountTypeHeader(
+    group: AccountTypeGroup,
+    modifier: Modifier = Modifier,
+) {
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 4.dp, end = 4.dp, top = 4.dp),
-    )
+            .padding(start = 4.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(group.type.labelRes()),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f),
+        )
+        val subtotal = group.subtotal
+        val currency = group.currency
+        if (subtotal != null && currency != null) {
+            Text(
+                text = MoneyFormatter.format(subtotal, currency),
+                style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
+                color = if (subtotal.signum() < 0) {
+                    MaterialTheme.moneyColors.negative
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+    }
 }
 
 /** All accounts of a section in one grouped card, split by hairline dividers. */

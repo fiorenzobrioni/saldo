@@ -85,6 +85,23 @@ class AccountsViewModel @Inject constructor(
         selectedAccountId.value = accountId
     }
 
+    /**
+     * Persists a manual reorder of the active accounts. [orderedActiveIds] is the
+     * full active list in its new display order (grouped by type); the repository
+     * rewrites each account's position within its own type.
+     */
+    fun persistOrder(orderedActiveIds: List<Long>) {
+        val byId = uiState.value.activeGroups
+            .flatMap { it.accounts }
+            .associateBy { it.account.id }
+        val ordered = orderedActiveIds.mapNotNull { byId[it]?.account }
+        if (ordered.isEmpty()) return
+        viewModelScope.launch {
+            suspendRunCatching { accountRepository.reorder(ordered) }
+                .onFailure { _events.send(AccountsEvent.WriteFailed) }
+        }
+    }
+
     fun archive(account: Account) {
         closeModals()
         viewModelScope.launch {

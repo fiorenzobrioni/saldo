@@ -440,6 +440,16 @@
 - [x] `AccountEditorViewModel`: alla creazione il cambio tipo preimposta il colore (guardia `userPickedColor`, gemella di `userPickedIcon`; in edit/load parte true e non sovrascrive mai la scelta persistita). Stato iniziale e fallback usano `defaultColorFor`. Onboarding (conto CHECKING) allineato al nuovo default
 - [x] Unit test `type changes drive the color until the user picks one` (gemello di quello sull'icona). Gate `assembleDebug testDebugUnitTest lint` verde
 
+## Fase 10.9 - Schermata Conti: sottototali per tipo e riordino manuale (luglio 2026)
+
+> Richiesta utente (versionCode 115 -> 116, versionName 0.9.76 -> 0.9.77), dopo una valutazione condivisa. Due rifiniture premium alla schermata Conti: sottototale del gruppo in ogni intestazione di tipo e riordino manuale dei conti col trascinamento, confinato dentro il gruppo. Nessuna migrazione: la colonna `sortOrder` esisteva gia (era inutilizzata, tutti a 0).
+
+- [x] Sottototale per tipo nell'intestazione di sezione (`AccountTypeGroup.subtotal/currency` calcolati in `buildAccountTypeGroups`): somma delle righe del gruppo, attenuato e rosso solo se negativo, omesso quando il gruppo mescola valute. Nessun grande totale in cima (scelta utente): i sottototali fanno da riepilogo senza duplicare l'hero della Dashboard
+- [x] Riordino manuale col drag riusando il componente in-repo `ReorderableListState` (già delle Categorie, nessuna libreria esterna). Esteso con una guardia opzionale `canMove(from, to)` (default sempre true): per i Conti confina il target ai conti dello stesso tipo, così l'intestazione fa da barriera e il conto resta nel suo gruppo. Categorie invariate
+- [x] Lista attiva ristrutturata a righe-card individuali con intestazioni di sezione (stile Categorie), necessario perché il drag opera su item distinti della `LazyColumn`; archiviati invariati (card unica collassabile)
+- [x] Persistenza dell'ordine: `accountOrder` ordina per `sortOrder` poi nome (tutti a 0 = comportamento attuale, nessun salto); `AccountRepository.reorder(orderedActive)` riscrive l'indice per-tipo; un conto nuovo prende `nextSortOrder(type)` per accodarsi al suo gruppo. L'ordine è condiviso con il breakdown della card Saldo totale in Dashboard (stesso `sortedByTypeThenName`)
+- [x] Stringhe IT/EN (`accounts_reorder`); unit test `AccountsGroupingTest` (posizione manuale vince sul nome, sottototale monovaluta, nessun sottototale multivaluta). Gate `assembleDebug testDebugUnitTest lint` verde
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.

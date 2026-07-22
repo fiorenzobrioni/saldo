@@ -39,6 +39,7 @@ class AccountEditorViewModelTest {
 
     private fun viewModel(route: AccountEditorRoute = AccountEditorRoute()): AccountEditorViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(emptyList())
+        coEvery { accountRepository.nextSortOrder(any()) } returns 0
         return AccountEditorViewModel(route, accountRepository, transactionRepository, clock)
     }
 

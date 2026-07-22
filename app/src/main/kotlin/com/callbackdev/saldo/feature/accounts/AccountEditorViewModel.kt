@@ -342,7 +342,14 @@ class AccountEditorViewModel @AssistedInject constructor(
         )
         isSaving = true
         viewModelScope.launch {
-            val result = suspendRunCatching { accountRepository.upsert(account) }
+            // A new account appends to the end of its type group; an edit keeps
+            // the account's manually arranged position untouched.
+            val toSave = if (base == null) {
+                account.copy(sortOrder = accountRepository.nextSortOrder(account.type))
+            } else {
+                account
+            }
+            val result = suspendRunCatching { accountRepository.upsert(toSave) }
             isSaving = false
             _events.send(
                 if (result.isSuccess) AccountEditorEvent.Saved else AccountEditorEvent.WriteFailed,
