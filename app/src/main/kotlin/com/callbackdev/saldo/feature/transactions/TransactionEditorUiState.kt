@@ -9,6 +9,7 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.Currency
 
 /** Immutable UI state of the transaction editor form. */
@@ -30,6 +31,7 @@ data class TransactionEditorUiState(
     val categories: List<Category> = emptyList(),
     val categoryId: Long? = null,
     val date: LocalDate = LocalDate.ofEpochDay(0),
+    val time: LocalTime = LocalTime.MIDNIGHT,
     val description: String = "",
     val allTags: List<Tag> = emptyList(),
     val selectedTags: List<Tag> = emptyList(),

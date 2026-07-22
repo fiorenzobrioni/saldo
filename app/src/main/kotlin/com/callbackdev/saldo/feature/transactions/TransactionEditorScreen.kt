@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -121,6 +122,7 @@ fun TransactionEditorScreen(
 
     var activeSheet by rememberSaveable { mutableStateOf(EditorSheet.NONE) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -175,6 +177,7 @@ fun TransactionEditorScreen(
                 onAccountChipClick = { activeSheet = EditorSheet.ACCOUNT },
                 onToAccountChipClick = { activeSheet = EditorSheet.TO_ACCOUNT },
                 onDateChipClick = { showDatePicker = true },
+                onTimeChipClick = { showTimePicker = true },
                 onAddTagClick = { activeSheet = EditorSheet.TAGS },
                 onShowAllCategories = { activeSheet = EditorSheet.CATEGORY },
                 modifier = Modifier
@@ -249,6 +252,17 @@ fun TransactionEditorScreen(
         )
     }
 
+    if (showTimePicker) {
+        TransactionTimePickerDialog(
+            initialTime = uiState.time,
+            onConfirm = { time ->
+                viewModel.onTimeSelected(time)
+                showTimePicker = false
+            },
+            onDismiss = { showTimePicker = false },
+        )
+    }
+
     if (showDeleteDialog) {
         DeleteTransactionDialog(
             onConfirm = {
@@ -294,6 +308,7 @@ private fun EditorForm(
     onAccountChipClick: () -> Unit,
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
+    onTimeChipClick: () -> Unit,
     onAddTagClick: () -> Unit,
     onShowAllCategories: () -> Unit,
     modifier: Modifier = Modifier,
@@ -377,6 +392,7 @@ private fun EditorForm(
             onAccountChipClick = onAccountChipClick,
             onToAccountChipClick = onToAccountChipClick,
             onDateChipClick = onDateChipClick,
+            onTimeChipClick = onTimeChipClick,
             onSwapAccounts = viewModel::onSwapAccounts,
         )
         AnimatedSection(visible = uiState.hasCategorySection) {
@@ -464,6 +480,7 @@ private fun ContextChips(
     onAccountChipClick: () -> Unit,
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
+    onTimeChipClick: () -> Unit,
     onSwapAccounts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -520,6 +537,13 @@ private fun ContextChips(
             label = chipDayLabel(uiState.date, LocalDate.now()),
             isError = false,
             onClick = onDateChipClick,
+            modifier = Modifier.align(Alignment.CenterVertically),
+        )
+        EditorChip(
+            icon = Icons.Outlined.Schedule,
+            label = timeLabel(uiState.time),
+            isError = false,
+            onClick = onTimeChipClick,
             modifier = Modifier.align(Alignment.CenterVertically),
         )
     }

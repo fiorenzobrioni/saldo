@@ -10,7 +10,9 @@ import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 
 /** The primary locale, read observably so composables recompose on change. */
@@ -86,6 +88,17 @@ fun compactDayLabel(date: LocalDate, today: LocalDate): String = when (date) {
     today -> stringResource(R.string.date_today)
     today.minusDays(1) -> stringResource(R.string.date_yesterday)
     else -> shortDayLabel(date, today)
+}
+
+/** Localized short time for the editor's time chip: "14:30" / "2:30 PM". */
+@Composable
+fun timeLabel(time: LocalTime): String {
+    val locale = currentLocale()
+    return remember(time, locale) {
+        time.format(
+            DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale),
+        )
+    }
 }
 
 /**

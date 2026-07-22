@@ -208,6 +208,10 @@ class TransactionEditorViewModel @AssistedInject constructor(
         form.update { it.copy(date = date) }
     }
 
+    fun onTimeSelected(time: LocalTime) {
+        form.update { it.copy(time = time) }
+    }
+
     fun onDescriptionChanged(description: String) {
         form.update { it.copy(description = description) }
     }
@@ -325,6 +329,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
             }.orEmpty(),
             categoryId = current.categoryId,
             date = current.date,
+            time = current.time,
             description = current.description,
             allTags = tags,
             selectedTags = tags.filter { it.id in current.selectedTagIds },

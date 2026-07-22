@@ -373,6 +373,7 @@
     <string name="transaction_editor_sent_amount">Sent (%1$s)</string>
     <string name="transaction_editor_received_amount">Received (%1$s)</string>
     <string name="transaction_editor_swap_accounts">Swap accounts</string>
+    <string name="transaction_editor_time">Time</string>
     <string name="transaction_editor_implied_rate" translatable="false">1 %1$s ≈ %2$s %3$s</string>
     <string name="transaction_editor_category">Category</string>
     <string name="transaction_editor_category_error">Choose a category</string>

@@ -26,10 +26,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +59,7 @@ import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
 import java.time.LocalDate
+import java.time.LocalTime
 
 /**
  * Bottom sheet listing the pickable accounts with their current balance.
@@ -246,7 +251,11 @@ internal fun CategoryPickerSheet(
     }
 }
 
-/** Material date picker preset on the movement's current date. */
+/**
+ * Material date picker preset on the movement's current date, with quick
+ * "Today"/"Yesterday" chips on top: they cover most date corrections and
+ * confirm immediately, skipping the calendar.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TransactionDatePickerDialog(
@@ -275,9 +284,58 @@ internal fun TransactionDatePickerDialog(
             }
         },
     ) {
+        val today = LocalDate.now()
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp),
+        ) {
+            SuggestionChip(
+                onClick = { onConfirm(today) },
+                label = { Text(stringResource(R.string.date_today)) },
+            )
+            SuggestionChip(
+                onClick = { onConfirm(today.minusDays(1)) },
+                label = { Text(stringResource(R.string.date_yesterday)) },
+            )
+        }
         // Calendar-only: the input/calendar mode toggle animates slowly and janky,
         // and typing a date adds little here.
         DatePicker(state = state, showModeToggle = false)
+    }
+}
+
+/** Material time picker preset on the movement's current time. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun TransactionTimePickerDialog(
+    initialTime: LocalTime,
+    onConfirm: (LocalTime) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val state = rememberTimePickerState(
+        initialHour = initialTime.hour,
+        initialMinute = initialTime.minute,
+    )
+    TimePickerDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.transaction_editor_time),
+                style = MaterialTheme.typography.labelMedium,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(LocalTime.of(state.hour, state.minute)) }) {
+                Text(stringResource(R.string.action_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.action_cancel))
+            }
+        },
+    ) {
+        TimePicker(state = state)
     }
 }
 

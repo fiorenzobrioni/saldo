@@ -40,6 +40,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Currency
@@ -273,6 +274,45 @@ class TransactionEditorViewModelTest {
         assertEquals(BigDecimal("900.00"), transaction.amount)
         // Same wall-clock time (12:15) moved to the picked day, still UTC+2.
         assertEquals(Instant.parse("2026-07-05T10:15:00Z"), transaction.timestamp)
+    }
+
+    @Test
+    fun `picking a time saves the combined date and time with the zone offset`() = runTest {
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        viewModel.onAmountChanged("5")
+        viewModel.onCategorySelected(groceries.id)
+        viewModel.onDateSelected(LocalDate.of(2026, 7, 5))
+        viewModel.onTimeSelected(LocalTime.of(8, 45))
+        viewModel.save()
+
+        // 08:45 in Rome on 5 July (UTC+2) = 06:45 UTC.
+        assertEquals(Instant.parse("2026-07-05T06:45:00Z"), saved.captured.timestamp)
+        assertEquals(ZoneOffset.ofHours(2), saved.captured.zoneOffset)
+    }
+
+    @Test
+    fun `editing exposes the stored local time of the movement`() = runTest {
+        val existing = Transaction(
+            id = 7L,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-12.00"),
+            currency = eur,
+            accountId = checking.id,
+            timestamp = Instant.parse("2026-07-01T10:00:00Z"),
+            zoneOffset = ZoneOffset.ofHours(2),
+            categoryId = groceries.id,
+        )
+        coEvery { transactionRepository.getTransaction(7L) } returns existing
+        every { tagRepository.observeTagsForTransaction(7L) } returns flowOf(emptyList())
+        val viewModel = viewModel(route = TransactionEditorRoute(7L))
+        collectState(viewModel)
+
+        // 10:00 UTC at the stored +2 offset is 12:00 local.
+        assertEquals(LocalTime.of(12, 0), viewModel.uiState.value.time)
     }
 
     @Test
