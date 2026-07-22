@@ -263,7 +263,6 @@ fun TransactionEditorScreen(
             onDismiss = { showTimePicker = false },
         )
     }
-
 }
 
 private fun editorTitleRes(uiState: TransactionEditorUiState): Int = when {

@@ -466,6 +466,18 @@
 - [x] Componente condiviso `AsOfTodayAmount(amount, currency)` in `core/designsystem/component`: unica sorgente per riga conti, intestazione di gruppo (schermata Conti) e breakdown della Dashboard. Rimossa la copia privata `AsOfTodayLine`, sostituito il `Text` "%1$s ad oggi" nel breakdown della `AccountBreakdownRow`
 - [x] Hero card (`BalanceAsOfTodayLabel`, riga prominente sotto la cifra) lasciata com'e (icona + parola "ad oggi"): contesto piu grande dove la parola aiuta. Gate `assembleDebug testDebugUnitTest lint` verde
 
+## Fase 10.12 - Editor movimenti "premium" (luglio 2026)
+
+> Review UI/UX delle schermate di inserimento/modifica movimenti richiesta dall'utente (versionCode 118 -> 119, versionName 0.9.79 -> 0.9.80). Un solo editor riusato per tutti i tipi; interventi scelti dall'utente tra le proposte della review. Nessun cambio di dominio o schema (l'ora del movimento esisteva gia nel modello).
+
+- [x] Campo importo "hero": borderless, centrato, `displayMedium` con cifre tabulari e simbolo valuta a fianco; errore a colore + testo di supporto al tentativo di salvataggio; sign-toggle per la rettifica; variante compatta per la seconda gamba cross-currency. Tastiera di sistema invariata (ADR 16)
+- [x] Bottone Salva sempre attivo: al tap la validazione mostra tutti gli errori insieme (prima il bottone era muto e disabilitato senza importo)
+- [x] Trasferimenti: freccia direzionale tra i chip conto, tappabile per invertire le gambe (gli importi seguono la propria valuta); tasso di cambio implicito sotto il secondo importo nei cross-currency (calcolo locale, unit test)
+- [x] Chip ora accanto al chip data (`TimePickerDialog` M3) e quick date "Oggi"/"Ieri" nel date picker con conferma immediata
+- [x] Eliminazione dall'editor senza dialog di conferma: undo cross-screen via `TransactionUndoCoordinator` (singleton) + `SnackbarHost` a livello app in `SaldoApp`, stessa semantica di ripristino dello swipe-delete del registro
+- [x] Coerenza design system: celle categoria a `AvatarShape`, cifre tabulari nei saldi del picker conti, `LoadingState` condiviso; sezioni del form animate al cambio tipo (con rispetto di `rememberMotionEnabled`)
+- [x] Picker colore/icona consolidati: `ColorSwatchPicker`/`IconSwatchPicker` condivisi in `core/designsystem/component`, i tre editor (categorie, conti, abbonamenti) delegano
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.
