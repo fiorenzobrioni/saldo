@@ -13,19 +13,28 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
+import com.callbackdev.saldo.R
 import com.callbackdev.saldo.feature.about.AboutScreen
 import com.callbackdev.saldo.feature.accounts.AccountEditorScreen
 import com.callbackdev.saldo.feature.backup.BackupScreen
@@ -45,6 +54,7 @@ import com.callbackdev.saldo.feature.settings.SettingsScreen
 import com.callbackdev.saldo.feature.stats.FilteredTransactionsScreen
 import com.callbackdev.saldo.feature.stats.StatsScreen
 import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
+import com.callbackdev.saldo.feature.transactions.TransactionUndoViewModel
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -89,6 +99,29 @@ fun SaldoApp(
         if (quickAction != null) {
             nav.navigate(TransactionEditorRoute(initialTypeName = quickAction.name))
             onQuickActionHandled()
+        }
+    }
+
+    // A movement deleted from its editor is announced here, after the editor
+    // has closed: the undo snackbar shows on whatever screen it returned to.
+    val undoViewModel: TransactionUndoViewModel = hiltViewModel()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val resources = LocalResources.current
+    LaunchedEffect(undoViewModel) {
+        undoViewModel.events.collect { event ->
+            val result = snackbarHostState.showSnackbar(
+                message = resources.getString(R.string.transactions_snackbar_deleted),
+                actionLabel = resources.getString(R.string.action_undo),
+                duration = SnackbarDuration.Short,
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                undoViewModel.undo(event)
+            }
+        }
+    }
+    LaunchedEffect(undoViewModel) {
+        undoViewModel.undoFailed.collect {
+            snackbarHostState.showSnackbar(resources.getString(R.string.editor_write_failed))
         }
     }
 
@@ -282,6 +315,16 @@ fun SaldoApp(
                 onSelect = { nav.switchTab(it) },
             )
         }
+
+        // Above the bottom bar on the top-level screens, above the system bar
+        // elsewhere (the editors are closed by the time the snackbar shows).
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = if (isTopLevel) BottomBarHeight else 0.dp),
+        )
     }
 }
 

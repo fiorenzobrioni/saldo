@@ -247,8 +247,6 @@
     <string name="transaction_type_adjustment">Rettifica saldo</string>
     <string name="transaction_uncategorized">Senza categoria</string>
     <string name="transaction_refund_label">Rimborso</string>
-    <string name="transaction_delete_title">Eliminare il movimento?</string>
-    <string name="transaction_delete_body">Il movimento verrà eliminato definitivamente.</string>
 
     <!-- Ricerca e filtri (Fase 7) -->
     <string name="transactions_search">Cerca nei movimenti</string>

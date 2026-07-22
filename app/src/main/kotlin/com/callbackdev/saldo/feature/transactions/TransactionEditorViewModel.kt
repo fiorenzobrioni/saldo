@@ -56,6 +56,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
     private val tagRepository: TagRepository,
     private val recurringRuleRepository: RecurringRuleRepository,
     private val userPreferences: UserPreferencesRepository,
+    private val undoCoordinator: TransactionUndoCoordinator,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -285,13 +286,27 @@ class TransactionEditorViewModel @AssistedInject constructor(
         }
     }
 
+    /**
+     * Deletes immediately (no confirmation dialog: undo is offered instead,
+     * matching the ledger's swipe-delete), capturing the tags first so the
+     * app-level snackbar can restore the movement.
+     */
     fun delete() {
         val transaction = existing ?: return
         viewModelScope.launch {
-            val result = suspendRunCatching { transactionRepository.delete(transaction) }
-            _events.send(
-                if (result.isSuccess) TransactionEditorEvent.Deleted else TransactionEditorEvent.WriteFailed,
-            )
+            suspendRunCatching {
+                val tagIds = tagRepository.observeTagsForTransaction(transaction.id).first()
+                    .map { it.id }
+                transactionRepository.delete(transaction)
+                tagIds
+            }
+                .onSuccess { tagIds ->
+                    undoCoordinator.publish(
+                        TransactionUndoCoordinator.DeletedTransaction(transaction, tagIds),
+                    )
+                    _events.send(TransactionEditorEvent.Deleted)
+                }
+                .onFailure { _events.send(TransactionEditorEvent.WriteFailed) }
         }
     }
 

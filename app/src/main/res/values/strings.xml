@@ -246,8 +246,6 @@
     <string name="transaction_uncategorized">No category</string>
     <string name="transaction_transfer_route" translatable="false">%1$s → %2$s</string>
     <string name="transaction_refund_label">Refund</string>
-    <string name="transaction_delete_title">Delete transaction?</string>
-    <string name="transaction_delete_body">The transaction will be permanently deleted.</string>
 
     <!-- Search and filters (Phase 7) -->
     <string name="transactions_search">Search transactions</string>

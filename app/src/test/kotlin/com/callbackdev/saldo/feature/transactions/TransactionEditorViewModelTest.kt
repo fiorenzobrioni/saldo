@@ -65,6 +65,7 @@ class TransactionEditorViewModelTest {
     private val tagRepository = mockk<TagRepository>(relaxUnitFun = true)
     private val recurringRuleRepository = mockk<RecurringRuleRepository>(relaxUnitFun = true)
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true)
+    private val undoCoordinator = TransactionUndoCoordinator()
 
     private fun account(
         id: Long,
@@ -123,6 +124,7 @@ class TransactionEditorViewModelTest {
             tagRepository = tagRepository,
             recurringRuleRepository = recurringRuleRepository,
             userPreferences = userPreferences,
+            undoCoordinator = undoCoordinator,
             clock = clock,
         )
     }
@@ -575,7 +577,7 @@ class TransactionEditorViewModelTest {
     }
 
     @Test
-    fun `deleting an edited movement removes it and emits the event`() = runTest {
+    fun `deleting an edited movement removes it and hands it to the undo coordinator`() = runTest {
         val existing = Transaction(
             id = 7L,
             type = TransactionType.EXPENSE,
@@ -587,13 +589,20 @@ class TransactionEditorViewModelTest {
             categoryId = groceries.id,
         )
         coEvery { transactionRepository.getTransaction(7L) } returns existing
-        every { tagRepository.observeTagsForTransaction(7L) } returns flowOf(emptyList())
+        every { tagRepository.observeTagsForTransaction(7L) } returns
+            flowOf(listOf(Tag("work", id = 5L)))
         val viewModel = viewModel(route = TransactionEditorRoute(7L))
         collectState(viewModel)
 
         viewModel.delete()
 
         coVerify { transactionRepository.delete(existing) }
+        undoCoordinator.events.test {
+            val event = awaitItem()
+            assertEquals(existing, event.transaction)
+            assertEquals(listOf(5L), event.tagIds)
+            cancelAndIgnoreRemainingEvents()
+        }
         viewModel.events.test {
             assertEquals(TransactionEditorEvent.Deleted, awaitItem())
             cancelAndIgnoreRemainingEvents()

@@ -123,7 +123,6 @@ fun TransactionEditorScreen(
     var activeSheet by rememberSaveable { mutableStateOf(EditorSheet.NONE) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
-    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
@@ -143,7 +142,9 @@ fun TransactionEditorScreen(
                 },
                 actions = {
                     if (!uiState.isNew) {
-                        IconButton(onClick = { showDeleteDialog = true }) {
+                        // Deletes right away: the app shell shows an undo snackbar
+                        // on the screen the editor returns to, so no confirm dialog.
+                        IconButton(onClick = viewModel::delete) {
                             Icon(
                                 imageVector = Icons.Outlined.DeleteOutline,
                                 contentDescription =
@@ -263,15 +264,6 @@ fun TransactionEditorScreen(
         )
     }
 
-    if (showDeleteDialog) {
-        DeleteTransactionDialog(
-            onConfirm = {
-                showDeleteDialog = false
-                viewModel.delete()
-            },
-            onDismiss = { showDeleteDialog = false },
-        )
-    }
 }
 
 private fun editorTitleRes(uiState: TransactionEditorUiState): Int = when {
