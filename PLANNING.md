@@ -450,6 +450,15 @@
 - [x] Persistenza dell'ordine: `accountOrder` ordina per `sortOrder` poi nome (tutti a 0 = comportamento attuale, nessun salto); `AccountRepository.reorder(orderedActive)` riscrive l'indice per-tipo; un conto nuovo prende `nextSortOrder(type)` per accodarsi al suo gruppo. L'ordine è condiviso con il breakdown della card Saldo totale in Dashboard (stesso `sortedByTypeThenName`)
 - [x] Stringhe IT/EN (`accounts_reorder`); unit test `AccountsGroupingTest` (posizione manuale vince sul nome, sottototale monovaluta, nessun sottototale multivaluta). Gate `assembleDebug testDebugUnitTest lint` verde
 
+## Fase 10.10 - Schermata Conti: spazio al nome, info riordino, "ad oggi" nei gruppi (luglio 2026)
+
+> Richiesta utente (versionCode 116 -> 117, versionName 0.9.77 -> 0.9.78), tre rifiniture dopo feedback su screenshot. Nessun cambio di schema o query.
+
+- [x] Piu spazio al nome del conto: la riga secondaria "%1$s ad oggi" era piu larga dell'importo e dettava la larghezza della colonna a destra. La parola "ad oggi" e sostituita dal glifo calendario (`Today`, come nella hero card) accanto all'importo (`AsOfTodayLine`, componente condiviso riga+intestazione): il nome guadagna ~3 caratteri. Maniglia di drag piu stretta (40dp, alta 48) e padding del nome ridotto; `contentDescription` mantiene la frase completa per TalkBack
+- [x] `InfoBanner` in cima all'elenco (stesso componente della schermata Budget) che chiarisce che il riordino e solo dentro lo stesso gruppo (non un bug). Mostrato solo quando un gruppo ha >= 2 conti, e tenuto fuori dalla `LazyColumn` per non disallineare lo spazio degli indici del drag
+- [x] Sottototale "ad oggi" nell'intestazione di gruppo sotto il totale (`AccountTypeGroup.subtotalAsOfToday`), stesso glifo, mostrato solo alla divergenza (qualche conto del gruppo ha movimenti datati nel futuro)
+- [x] Stringhe IT/EN (`accounts_reorder_info`); unit test `AccountsGroupingTest` (sottototale "ad oggi" solo alla divergenza). Gate `assembleDebug testDebugUnitTest lint` verde
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.

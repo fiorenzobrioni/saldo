@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-22 - Schermata Conti: piu spazio al nome, info sul riordino, "ad oggi" nei gruppi
+
+**Fatto:** tre rifiniture alla schermata Conti dopo feedback su screenshot. (1) Il nome del conto veniva troncato: la causa principale era la riga secondaria "-2.115,89 € ad oggi", piu larga dell'importo, che dettava la larghezza della colonna a destra. Sostituita la parola "ad oggi" con il glifo calendario (`Today`, lo stesso che la hero card usa per "ad oggi") accanto all'importo: la colonna si stringe e il nome guadagna ~3 caratteri. Aggiunti anche una maniglia di drag piu stretta (40dp invece di 48, sempre alta 48 per il target) e padding del nome ridotto. Accessibilita preservata: il `contentDescription` recita la frase completa "X ad oggi". (2) `InfoBanner` in cima all'elenco (stesso componente della schermata Budget) che spiega che il riordino e possibile solo dentro lo stesso gruppo, cosi l'utente sa che non e un bug; mostrato solo quando un gruppo ha almeno 2 conti (riordino effettivamente possibile) e tenuto fuori dalla `LazyColumn` per non alterare lo spazio degli indici del drag. (3) Sottototale "ad oggi" nell'intestazione di gruppo sotto il totale, con lo stesso glifo, mostrato solo alla divergenza (qualche conto del gruppo ha movimenti datati nel futuro).
+
+**Decisioni:** icona al posto della parola "ad oggi" sulle righe conto: e la leva a maggiore impatto sullo spazio del nome (recupera ~3 caratteri, contro ~1 di maniglia+padding) ed e coerente col glifo calendario gia usato dalla hero card. Piccolo componente condiviso `AsOfTodayLine` (icona + importo, rosso solo se negativo) riusato da riga e intestazione. Sottototale "ad oggi" solo alla divergenza, come tutte le righe "ad oggi" dell'app (niente rumore nel caso comune). Banner mostrato solo quando serve (un gruppo con >= 2 conti) e sopra la lista, non come primo item: cosi l'indice locale di `itemsIndexed` resta uguale all'indice assoluto della `LazyColumn` e il drag non si rompe.
+
+**Problemi:** nessuno. Attenzione tenuta sul fatto che aggiungere un item prima della lista riordinabile avrebbe disallineato lo spazio degli indici del componente di drag: risolto tenendo il banner fuori dalla `LazyColumn`.
+
+**Verificato:** gate `assembleDebug testDebugUnitTest lint` verde (Gradle di sistema). Nuovi unit test in `AccountsGroupingTest` (sottototale "ad oggi" solo alla divergenza, e assente altrimenti). versionCode 116 -> 117, versionName 0.9.77 -> 0.9.78.
+
+**Prossimo:** eventuale allineamento della stessa treatment "ad oggi" (icona invece di parola) anche nel breakdown della card Saldo totale in Dashboard, per uniformita, se richiesto.
+
+---
+
 ## 2026-07-22 - Schermata Conti: sottototali per tipo e riordino manuale con drag
 
 **Fatto:** due rifiniture "premium" alla schermata Conti, dopo una valutazione condivisa con l'utente (punti 1, 2, 3). (1) Ogni intestazione di sezione tipo mostra ora il sottototale del gruppo (somma dei saldi delle righe), attenuato e rosso solo se negativo (es. carta di credito a metà ciclo), omesso quando il gruppo mescola valute. Niente grande totale in cima (scelta dell'utente): i sottototali fanno da riepilogo, così non si duplica l'hero della Dashboard. (2) Riordino manuale dei conti col trascinamento, confinato dentro ciascun gruppo di tipo: il raggruppamento e i sottototali restano coerenti, e l'ordine è condiviso con il breakdown della card Saldo totale in Dashboard (stesso comparatore).

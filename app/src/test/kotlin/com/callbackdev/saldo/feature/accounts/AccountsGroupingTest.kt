@@ -20,6 +20,7 @@ class AccountsGroupingTest {
         balance: BigDecimal = BigDecimal.ZERO,
         currency: Currency = eur,
         sortOrder: Int = 0,
+        balanceAsOfToday: BigDecimal? = null,
     ) = AccountWithBalance(
         account = Account(
             id = id,
@@ -30,6 +31,7 @@ class AccountsGroupingTest {
             sortOrder = sortOrder,
         ),
         balance = balance,
+        balanceAsOfToday = balanceAsOfToday,
     )
 
     @Test
@@ -131,5 +133,34 @@ class AccountsGroupingTest {
 
         assertNull(group.subtotal)
         assertNull(group.currency)
+    }
+
+    @Test
+    fun `the group as-of-today subtotal appears only on divergence`() {
+        val items = listOf(
+            item(1, "A", AccountType.CHECKING, balance = BigDecimal("100.00")),
+            // Future-dated movements make this account run ahead of today.
+            item(
+                2, "B", AccountType.CHECKING,
+                balance = BigDecimal("50.00"),
+                balanceAsOfToday = BigDecimal("20.00"),
+            ),
+        )
+
+        val group = buildAccountTypeGroups(items).single()
+
+        assertEquals(BigDecimal("150.00"), group.subtotal)
+        // 100 (no divergence, so its own balance) + 20 (as of today) = 120.
+        assertEquals(BigDecimal("120.00"), group.subtotalAsOfToday)
+    }
+
+    @Test
+    fun `the group as-of-today subtotal is null when nothing diverges`() {
+        val items = listOf(
+            item(1, "A", AccountType.CHECKING, balance = BigDecimal("100.00")),
+            item(2, "B", AccountType.CHECKING, balance = BigDecimal("50.00")),
+        )
+
+        assertNull(buildAccountTypeGroups(items).single().subtotalAsOfToday)
     }
 }

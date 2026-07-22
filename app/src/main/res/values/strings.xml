@@ -133,6 +133,7 @@
     <string name="accounts_title">Accounts</string>
     <string name="accounts_new">New account</string>
     <string name="accounts_reorder">Drag to reorder</string>
+    <string name="accounts_reorder_info">Drag the handle to reorder accounts, only within the same type group.</string>
     <string name="accounts_create_first">Create your first account</string>
     <string name="accounts_empty_title">No accounts yet</string>
     <string name="accounts_empty_body">Create your first account to start tracking your money: a bank account, a card or your cash.</string>

@@ -21,13 +21,23 @@ internal fun buildAccountTypeGroups(
     .groupBy { it.account.type }
     .map { (type, group) ->
         val currency = group.map { it.account.currency }.distinct().singleOrNull()
+        // Only a single-currency group has a meaningful sum; otherwise the
+        // header shows the type label alone.
+        val subtotal = currency?.let {
+            group.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.balance) }
+        }
         AccountTypeGroup(
             type = type,
             accounts = group.sortedWith(accountOrder),
-            // Only a single-currency group has a meaningful sum; otherwise the
-            // header shows the type label alone.
-            subtotal = currency?.let { group.fold(BigDecimal.ZERO) { acc, item -> acc.add(item.balance) } },
+            subtotal = subtotal,
             currency = currency,
+            // The group's balance as of today, shown only when it diverges from
+            // the subtotal (some account holds future-dated movements).
+            subtotalAsOfToday = subtotal?.let {
+                group
+                    .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.balanceAsOfToday ?: item.balance) }
+                    .takeIf { today -> today.compareTo(subtotal) != 0 }
+            },
         )
     }
     .sortedBy { it.type.ordinal }

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Today
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -58,6 +59,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -66,6 +69,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
+import com.callbackdev.saldo.core.designsystem.component.InfoBanner
 import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
 import com.callbackdev.saldo.core.designsystem.component.ReorderableListState
 import com.callbackdev.saldo.core.designsystem.component.SaldoCard
@@ -81,6 +85,8 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import kotlinx.coroutines.flow.first
+import java.math.BigDecimal
+import java.util.Currency
 
 /**
  * Account list: active accounts with their computed balance, a collapsible
@@ -250,12 +256,25 @@ private fun AccountsList(
     )
     LaunchedActiveResync(uiState.activeGroups, reorderState, entries)
 
-    LazyColumn(
-        state = listState,
-        modifier = modifier,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
+    Column(modifier = modifier) {
+        // Set expectations up front: reorder is deliberately within a group, so a
+        // failed cross-group drag reads as a rule, not a bug. Shown only when a
+        // group actually holds enough accounts to reorder, and kept above the
+        // list (not a list item) so the drag index space stays 1:1 with entries.
+        if (uiState.activeGroups.any { it.accounts.size >= 2 }) {
+            InfoBanner(
+                text = stringResource(R.string.accounts_reorder_info),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+            )
+        }
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
         itemsIndexed(
             entries,
             key = { _, entry -> entry.key },
@@ -323,6 +342,7 @@ private fun AccountsList(
                 }
             }
         }
+    }
     }
 }
 
@@ -413,7 +433,9 @@ private fun AccountReorderableRow(
 @Composable
 private fun AccountDragHandle(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier.size(48.dp),
+        // Narrower than the 48dp square (still a 48dp-tall grab target) to give
+        // the account name a couple more characters of room.
+        modifier = modifier.size(width = 40.dp, height = 48.dp),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -449,16 +471,61 @@ private fun AccountTypeHeader(
         val subtotal = group.subtotal
         val currency = group.currency
         if (subtotal != null && currency != null) {
-            Text(
-                text = MoneyFormatter.format(subtotal, currency),
-                style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
-                color = if (subtotal.signum() < 0) {
-                    MaterialTheme.moneyColors.negative
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = MoneyFormatter.format(subtotal, currency),
+                    style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
+                    color = if (subtotal.signum() < 0) {
+                        MaterialTheme.moneyColors.negative
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+                group.subtotalAsOfToday?.let { today ->
+                    AsOfTodayLine(amount = today, currency = currency)
+                }
+            }
         }
+    }
+}
+
+/**
+ * The compact "as of today" figure: the calendar glyph the dashboard hero uses
+ * for the same meaning plus the amount, red only when negative. Dropping the
+ * "ad oggi" word (the glyph carries it) keeps the trailing column narrow, so the
+ * account name keeps its room; the spoken label restores the full phrase.
+ */
+@Composable
+private fun AsOfTodayLine(
+    amount: BigDecimal,
+    currency: Currency,
+    modifier: Modifier = Modifier,
+) {
+    val amountText = MoneyFormatter.format(amount, currency)
+    val description = stringResource(R.string.dashboard_balance_as_of_today, amountText)
+    val color = if (amount.signum() < 0) {
+        MaterialTheme.moneyColors.negative
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        modifier = modifier.semantics(mergeDescendants = true) { contentDescription = description },
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.Today,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(13.dp),
+        )
+        Text(
+            text = amountText,
+            style = MaterialTheme.typography.labelSmall.tabularNumbers(),
+            color = color,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -556,7 +623,7 @@ internal fun AccountRowContent(
         Column(
             modifier = Modifier
                 .weight(1f)
-                .padding(horizontal = 12.dp),
+                .padding(start = 12.dp, end = 8.dp),
         ) {
             Text(
                 text = account.name,
@@ -589,22 +656,7 @@ internal fun AccountRowContent(
                 },
             )
             item.balanceAsOfToday?.let { today ->
-                Text(
-                    text = stringResource(
-                        R.string.dashboard_balance_as_of_today,
-                        MoneyFormatter.format(today, account.currency),
-                    ),
-                    style = MaterialTheme.typography.labelSmall.tabularNumbers(),
-                    // Red only when negative (today is in the red); otherwise it
-                    // stays muted, so the secondary line keeps its low profile.
-                    color = if (today.signum() < 0) {
-                        MaterialTheme.moneyColors.negative
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                AsOfTodayLine(amount = today, currency = account.currency)
             }
         }
     }

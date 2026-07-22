@@ -133,6 +133,7 @@
     <string name="accounts_title">Conti</string>
     <string name="accounts_new">Nuovo conto</string>
     <string name="accounts_reorder">Trascina per riordinare</string>
+    <string name="accounts_reorder_info">Trascina la maniglia per riordinare i conti, solo all\'interno dello stesso gruppo.</string>
     <string name="accounts_create_first">Crea il primo conto</string>
     <string name="accounts_empty_title">Nessun conto</string>
     <string name="accounts_empty_body">Crea il primo conto per iniziare a tracciare i tuoi soldi: banca, carta o contanti.</string>
