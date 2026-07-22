@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Category
@@ -29,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
@@ -42,7 +40,6 @@ import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Currency
 
 @Composable
 internal fun NameField(
@@ -61,33 +58,6 @@ internal fun NameField(
         isError = showError,
         supportingText = if (showError) {
             { Text(stringResource(R.string.subscription_editor_name_error)) }
-        } else {
-            null
-        },
-        modifier = modifier.fillMaxWidth(),
-    )
-}
-
-@Composable
-internal fun AmountField(
-    input: String,
-    currency: Currency?,
-    showError: Boolean,
-    onChanged: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = input,
-        onValueChange = onChanged,
-        label = { Text(stringResource(R.string.subscription_editor_amount)) },
-        placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
-        prefix = currency?.let { { Text(it.symbol) } },
-        singleLine = true,
-        isError = showError,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        textStyle = MaterialTheme.typography.headlineSmall,
-        supportingText = if (showError) {
-            { Text(stringResource(R.string.subscription_editor_amount_error)) }
         } else {
             null
         },

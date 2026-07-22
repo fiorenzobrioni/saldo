@@ -320,6 +320,9 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
 
     fun confirmDelete() {
         val rule = existing ?: return
+        // Dismiss first, like the other editors: on a failed delete the user
+        // lands back on the form with the snackbar, not on a stale dialog.
+        _uiState.update { it.copy(showDeleteDialog = false) }
         viewModelScope.launch {
             val result = suspendRunCatching { recurringRuleRepository.delete(rule) }
             _events.send(
