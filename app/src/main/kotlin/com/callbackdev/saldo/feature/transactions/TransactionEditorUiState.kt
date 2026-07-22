@@ -6,7 +6,10 @@ import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.Currency
 
 /** Immutable UI state of the transaction editor form. */
@@ -28,6 +31,7 @@ data class TransactionEditorUiState(
     val categories: List<Category> = emptyList(),
     val categoryId: Long? = null,
     val date: LocalDate = LocalDate.ofEpochDay(0),
+    val time: LocalTime = LocalTime.MIDNIGHT,
     val description: String = "",
     val allTags: List<Tag> = emptyList(),
     val selectedTags: List<Tag> = emptyList(),
@@ -70,7 +74,25 @@ data class TransactionEditorUiState(
     val isValid: Boolean
         get() = isAmountValid && isAccountValid && isToAccountValid &&
             isToAmountValid && isCategoryValid
+
+    /** Rate implied by the two legs of a cross-currency transfer, or null. */
+    val impliedRate: BigDecimal?
+        get() = if (isCrossCurrency) impliedExchangeRate(amountInput, toAmountInput) else null
 }
+
+/**
+ * Destination units per source unit implied by the two typed amounts of a
+ * cross-currency transfer; null until both parse to a non-zero value. A local
+ * plausibility check, never persisted.
+ */
+internal fun impliedExchangeRate(sentInput: String, receivedInput: String): BigDecimal? {
+    val sent = MoneyInput.parse(sentInput)?.abs() ?: return null
+    val received = MoneyInput.parse(receivedInput)?.abs() ?: return null
+    if (sent.signum() == 0 || received.signum() == 0) return null
+    return received.divide(sent, IMPLIED_RATE_SCALE, RoundingMode.HALF_UP)
+}
+
+private const val IMPLIED_RATE_SCALE = 4
 
 /** One-shot events consumed by the editor screen. */
 sealed interface TransactionEditorEvent {

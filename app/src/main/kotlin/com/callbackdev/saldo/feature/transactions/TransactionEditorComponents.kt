@@ -13,15 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Notes
-import androidx.compose.material.icons.outlined.Exposure
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -33,21 +28,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
-import java.util.Currency
 
 /** User-facing label for a [TransactionType]. */
 @StringRes
@@ -77,52 +69,6 @@ internal fun TypeSelector(
         }
     }
 }
-
-/**
- * The prominent amount field. A system-keyboard [OutlinedTextField] with a large
- * text style so the amount stays the focal point, the currency symbol as prefix,
- * and (for a balance adjustment) a sign-toggle trailing icon. The raw text is
- * sanitized by the ViewModel, so both `.` and `,` are accepted while typing.
- */
-@Composable
-internal fun AmountField(
-    input: String,
-    currency: Currency?,
-    isError: Boolean,
-    showSignToggle: Boolean,
-    onValueChange: (String) -> Unit,
-    label: String,
-    modifier: Modifier = Modifier,
-    focusRequester: FocusRequester? = null,
-) {
-    OutlinedTextField(
-        value = input,
-        onValueChange = onValueChange,
-        label = { Text(label) },
-        placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
-        prefix = currency?.let { { Text(it.symbol) } },
-        singleLine = true,
-        isError = isError,
-        textStyle = MaterialTheme.typography.headlineMedium,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        trailingIcon = if (showSignToggle) {
-            {
-                IconButton(onClick = { onValueChange(toggleSign(input)) }) {
-                    Icon(
-                        imageVector = Icons.Outlined.Exposure,
-                        contentDescription = stringResource(R.string.action_toggle_sign),
-                    )
-                }
-            }
-        } else {
-            null
-        },
-        modifier = (focusRequester?.let { modifier.focusRequester(it) } ?: modifier).fillMaxWidth(),
-    )
-}
-
-private fun toggleSign(input: String): String =
-    if (input.startsWith("-")) input.removePrefix("-") else "-$input"
 
 /** Borderless inline description field with a leading icon, matching the amount's flat look. */
 @Composable
@@ -208,7 +154,7 @@ private fun CategoryCell(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(46.dp)
-                .clip(CircleShape)
+                .clip(AvatarShape)
                 .background(if (isSelected) color else color.copy(alpha = 0.16f)),
         ) {
             Icon(

@@ -13,18 +13,15 @@ import androidx.compose.material.icons.outlined.Archive
 import androidx.compose.material.icons.outlined.Balance
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Exposure
 import androidx.compose.material.icons.outlined.Unarchive
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,17 +30,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.text.KeyboardOptions
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.HeroAmountField
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 
@@ -253,24 +249,15 @@ private fun AdjustBalanceDialog(
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = dialog.input,
+                HeroAmountField(
+                    input = dialog.input,
+                    currencySymbol = currency.symbol,
+                    isError = false,
                     onValueChange = onInputChanged,
-                    label = { Text(stringResource(R.string.accounts_adjust_real_balance)) },
-                    suffix = { Text(currency.symbol) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    trailingIcon = {
-                        IconButton(onClick = { onInputChanged(toggleSign(dialog.input)) }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Exposure,
-                                contentDescription = stringResource(R.string.action_toggle_sign),
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester),
+                    showSignToggle = true,
+                    label = stringResource(R.string.accounts_adjust_real_balance),
+                    compact = true,
+                    focusRequester = focusRequester,
                 )
                 Spacer(Modifier.height(8.dp))
                 when {
@@ -286,7 +273,7 @@ private fun AdjustBalanceDialog(
                             R.string.accounts_adjust_preview,
                             MoneyFormatter.formatSigned(delta, currency),
                         ),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodySmall.tabularNumbers(),
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
@@ -311,6 +298,3 @@ private fun AdjustBalanceDialog(
         focusRequester.requestFocus()
     }
 }
-
-private fun toggleSign(input: String): String =
-    if (input.startsWith("-")) input.removePrefix("-") else "-$input"

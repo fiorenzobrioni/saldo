@@ -246,8 +246,6 @@
     <string name="transaction_uncategorized">No category</string>
     <string name="transaction_transfer_route" translatable="false">%1$s → %2$s</string>
     <string name="transaction_refund_label">Refund</string>
-    <string name="transaction_delete_title">Delete transaction?</string>
-    <string name="transaction_delete_body">The transaction will be permanently deleted.</string>
 
     <!-- Search and filters (Phase 7) -->
     <string name="transactions_search">Search transactions</string>
@@ -368,9 +366,12 @@
     <string name="transaction_editor_account">Account</string>
     <string name="transaction_editor_from_account">From account</string>
     <string name="transaction_editor_to_account">To account</string>
-    <string name="transaction_editor_amount">Amount</string>
+    <string name="transaction_editor_amount_error">Enter a valid amount</string>
     <string name="transaction_editor_sent_amount">Sent (%1$s)</string>
     <string name="transaction_editor_received_amount">Received (%1$s)</string>
+    <string name="transaction_editor_swap_accounts">Swap accounts</string>
+    <string name="transaction_editor_time">Time</string>
+    <string name="transaction_editor_implied_rate" translatable="false">1 %1$s ≈ %2$s %3$s</string>
     <string name="transaction_editor_category">Category</string>
     <string name="transaction_editor_category_error">Choose a category</string>
     <string name="transaction_editor_description">Description</string>
@@ -614,6 +615,7 @@
 
     <!-- Shared editor feedback -->
     <string name="editor_write_failed">Something went wrong. Please try again.</string>
+    <string name="editor_amount">Amount</string>
     <string name="editor_amount_placeholder" translatable="false">0</string>
 
     <!-- Discard unsaved changes -->
@@ -851,8 +853,7 @@
     <string name="budgets_editor_info" formatted="false">A budget covers the calendar month and resets on the 1st. It measures actual spending: refunds reduce it, while transfers, balance adjustments and accounts excluded from the budget never count. At 80% and past the limit you get a notification.</string>
     <string name="budgets_editor_amount_error">Enter an amount greater than zero.</string>
     <string name="budgets_editor_delete">Delete budget</string>
-    <string name="budgets_delete_dialog_title">Delete this budget?</string>
-    <string name="budgets_delete_dialog_body">Your transactions are not affected; only the cap and its alerts go away.</string>
+    <string name="budgets_snackbar_deleted">Budget deleted</string>
     <string name="settings_budgets">Budgets</string>
     <string name="settings_budgets_hint">Monthly caps and alerts</string>
 
@@ -961,8 +962,7 @@
     <!-- Shown when savings accounts exist but each already has a goal (one goal per account). -->
     <string name="savings_editor_all_taken_title">Your savings accounts are all in use</string>
     <string name="savings_editor_all_taken_body">Each goal links to its own savings account, and all of yours already have one. Create another savings account for a new goal, or edit an existing goal.</string>
-    <string name="savings_delete_title">Delete this goal?</string>
-    <string name="savings_delete_body">The goal is removed. The linked savings account and its transactions stay.</string>
+    <string name="savings_snackbar_deleted">Goal deleted</string>
     <string name="savings_delete_action">Delete</string>
 
     <!-- Savings goals dashboard card -->

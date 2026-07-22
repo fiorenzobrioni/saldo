@@ -247,8 +247,6 @@
     <string name="transaction_type_adjustment">Rettifica saldo</string>
     <string name="transaction_uncategorized">Senza categoria</string>
     <string name="transaction_refund_label">Rimborso</string>
-    <string name="transaction_delete_title">Eliminare il movimento?</string>
-    <string name="transaction_delete_body">Il movimento verrà eliminato definitivamente.</string>
 
     <!-- Ricerca e filtri (Fase 7) -->
     <string name="transactions_search">Cerca nei movimenti</string>
@@ -373,9 +371,11 @@
     <string name="transaction_editor_account">Conto</string>
     <string name="transaction_editor_from_account">Conto di partenza</string>
     <string name="transaction_editor_to_account">Conto di arrivo</string>
-    <string name="transaction_editor_amount">Importo</string>
+    <string name="transaction_editor_amount_error">Inserisci un importo valido</string>
     <string name="transaction_editor_sent_amount">In uscita (%1$s)</string>
     <string name="transaction_editor_received_amount">In entrata (%1$s)</string>
+    <string name="transaction_editor_swap_accounts">Inverti i conti</string>
+    <string name="transaction_editor_time">Ora</string>
     <string name="transaction_editor_category">Categoria</string>
     <string name="transaction_editor_category_error">Scegli una categoria</string>
     <string name="transaction_editor_description">Descrizione</string>
@@ -632,6 +632,7 @@
 
     <!-- Shared editor feedback -->
     <string name="editor_write_failed">Operazione non riuscita. Riprova.</string>
+    <string name="editor_amount">Importo</string>
 
     <!-- Modifiche non salvate -->
     <string name="discard_changes_title">Scartare le modifiche?</string>
@@ -863,8 +864,7 @@
     <string name="budgets_editor_info" formatted="false">Il budget vale per il mese di calendario e riparte il giorno 1. Misura la spesa effettiva: i rimborsi la riducono, mentre trasferimenti, rettifiche saldo e conti esclusi dal budget non contano mai. All\'80% e al superamento del limite ricevi una notifica.</string>
     <string name="budgets_editor_amount_error">Inserisci un importo maggiore di zero.</string>
     <string name="budgets_editor_delete">Elimina budget</string>
-    <string name="budgets_delete_dialog_title">Eliminare questo budget?</string>
-    <string name="budgets_delete_dialog_body">I movimenti non vengono toccati; spariscono solo il tetto e i suoi avvisi.</string>
+    <string name="budgets_snackbar_deleted">Budget eliminato</string>
     <string name="settings_budgets">Budget</string>
     <string name="settings_budgets_hint">Tetti mensili e avvisi</string>
 
@@ -978,8 +978,7 @@
     <!-- Mostrato quando esistono conti di risparmio ma ognuno ha già un obiettivo (un obiettivo per conto). -->
     <string name="savings_editor_all_taken_title">I tuoi conti di risparmio sono tutti in uso</string>
     <string name="savings_editor_all_taken_body">Ogni obiettivo si lega a un suo conto di risparmio, e tutti i tuoi ne hanno già uno. Crea un altro conto di risparmio per un nuovo obiettivo, oppure modifica un obiettivo esistente.</string>
-    <string name="savings_delete_title">Eliminare l\'obiettivo?</string>
-    <string name="savings_delete_body">L\'obiettivo viene rimosso. Il conto di risparmio collegato e i suoi movimenti restano.</string>
+    <string name="savings_snackbar_deleted">Obiettivo eliminato</string>
     <string name="savings_delete_action">Elimina</string>
 
     <!-- Scheda dashboard obiettivi di risparmio -->

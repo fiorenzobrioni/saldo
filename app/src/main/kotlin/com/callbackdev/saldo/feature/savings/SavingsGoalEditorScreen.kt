@@ -19,8 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Savings
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,7 +28,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -53,16 +50,19 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.AnimatedSection
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
+import com.callbackdev.saldo.core.designsystem.component.HeroAmountField
+import com.callbackdev.saldo.core.designsystem.component.LoadingState
+import com.callbackdev.saldo.core.designsystem.component.SaldoDatePickerDialog
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.feature.recurring.DateField
-import com.callbackdev.saldo.feature.recurring.RecurringDatePickerDialog
 import com.callbackdev.saldo.feature.recurring.SubscriptionColorPicker
 import com.callbackdev.saldo.feature.recurring.SubscriptionIconPicker
 import com.callbackdev.saldo.navigation.SavingsGoalEditorRoute
@@ -134,7 +134,9 @@ fun SavingsGoalEditorScreen(
                 },
                 actions = {
                     if (!uiState.isNew) {
-                        IconButton(onClick = viewModel::requestDelete) {
+                        // Deletes right away: the app shell shows an undo snackbar
+                        // on the screen the editor returns to, so no confirm dialog.
+                        IconButton(onClick = viewModel::delete) {
                             Icon(
                                 imageVector = Icons.Outlined.DeleteOutline,
                                 contentDescription = stringResource(R.string.savings_delete_action),
@@ -157,12 +159,7 @@ fun SavingsGoalEditorScreen(
         },
     ) { innerPadding ->
         when {
-            uiState.isLoading -> Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            uiState.isLoading -> LoadingState(modifier = Modifier.padding(innerPadding))
 
             uiState.noAvailableAccounts -> EmptyState(
                 icon = Icons.Outlined.Savings,
@@ -200,7 +197,7 @@ fun SavingsGoalEditorScreen(
     }
 
     if (showDatePicker) {
-        RecurringDatePickerDialog(
+        SaldoDatePickerDialog(
             initialDate = uiState.targetDate ?: LocalDate.now().plusMonths(DEFAULT_TARGET_MONTHS),
             minDate = LocalDate.now(),
             onConfirm = {
@@ -208,12 +205,6 @@ fun SavingsGoalEditorScreen(
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false },
-        )
-    }
-    if (uiState.showDeleteDialog) {
-        DeleteGoalDialog(
-            onConfirm = viewModel::confirmDelete,
-            onDismiss = viewModel::dismissDeleteDialog,
         )
     }
 }
@@ -235,14 +226,16 @@ private fun EditorForm(
             showError = uiState.showValidation && !uiState.isNameValid,
             onNameChanged = viewModel::onNameChanged,
         )
-        Spacer(Modifier.height(12.dp))
-        SavingsTargetField(
+        Spacer(Modifier.height(20.dp))
+        HeroAmountField(
             input = uiState.targetInput,
-            currency = uiState.currency,
-            showError = uiState.showValidation && !uiState.isTargetValid,
-            onChanged = viewModel::onTargetChanged,
+            currencySymbol = uiState.currency.symbol,
+            isError = uiState.showValidation && !uiState.isTargetValid,
+            onValueChange = viewModel::onTargetChanged,
+            label = stringResource(R.string.savings_editor_target),
+            errorText = stringResource(R.string.savings_editor_target_error),
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(20.dp))
         SavingsAccountField(
             accounts = uiState.availableAccounts,
             selectedId = uiState.accountId,
@@ -321,14 +314,16 @@ private fun TargetDateControl(
             Spacer(Modifier.size(16.dp))
             Switch(checked = targetDate != null, onCheckedChange = null)
         }
-        if (targetDate != null) {
-            Spacer(Modifier.height(8.dp))
-            DateField(
-                label = stringResource(R.string.savings_editor_target_date),
-                date = targetDate,
-                placeholder = "",
-                onClick = onDateClick,
-            )
+        AnimatedSection(visible = targetDate != null) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Spacer(Modifier.height(8.dp))
+                DateField(
+                    label = stringResource(R.string.savings_editor_target_date),
+                    date = targetDate,
+                    placeholder = "",
+                    onClick = onDateClick,
+                )
+            }
         }
     }
 }
@@ -374,26 +369,6 @@ private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
         style = MaterialTheme.typography.titleSmall,
         color = MaterialTheme.colorScheme.primary,
         modifier = modifier.padding(top = 24.dp, bottom = 12.dp),
-    )
-}
-
-@Composable
-private fun DeleteGoalDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.savings_delete_title)) },
-        text = { Text(stringResource(R.string.savings_delete_body)) },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(
-                    text = stringResource(R.string.savings_delete_action),
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-        },
     )
 }
 

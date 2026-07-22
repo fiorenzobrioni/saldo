@@ -21,7 +21,6 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,9 +55,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.AnimatedSection
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
+import com.callbackdev.saldo.core.designsystem.component.HeroAmountField
+import com.callbackdev.saldo.core.designsystem.component.LoadingState
+import com.callbackdev.saldo.core.designsystem.component.SaldoDatePickerDialog
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
@@ -145,19 +148,16 @@ fun RecurringRuleEditorScreen(
                     EditorSaveButton(
                         text = stringResource(editorSaveRes(uiState.type)),
                         onClick = viewModel::save,
-                        enabled = !uiState.isLoading,
+                        // Always tappable: a failed tap surfaces every field error at
+                        // once, which explains more than a disabled button ever could.
+                        enabled = true,
                     )
                 }
             }
         },
     ) { innerPadding ->
         if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            LoadingState(modifier = Modifier.padding(innerPadding))
         } else {
             EditorForm(
                 uiState = uiState,
@@ -174,7 +174,7 @@ fun RecurringRuleEditorScreen(
     }
 
     if (showStartPicker) {
-        RecurringDatePickerDialog(
+        SaldoDatePickerDialog(
             initialDate = uiState.startDate,
             onConfirm = {
                 viewModel.onStartDateSelected(it)
@@ -184,7 +184,7 @@ fun RecurringRuleEditorScreen(
         )
     }
     if (showEndPicker) {
-        RecurringDatePickerDialog(
+        SaldoDatePickerDialog(
             initialDate = uiState.endDate ?: uiState.startDate,
             minDate = uiState.startDate,
             onConfirm = {
@@ -212,7 +212,9 @@ private fun AmountAndModeSection(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        if (uiState.isVariableAmount) {
+        // The fixed amount and the variable-amount note swap with the toggle;
+        // both animate so the form never snaps.
+        AnimatedSection(visible = uiState.isVariableAmount) {
             VariableAmountNote(
                 text = stringResource(
                     if (isIncome) {
@@ -222,12 +224,16 @@ private fun AmountAndModeSection(
                     },
                 ),
             )
-        } else {
-            AmountField(
+        }
+        AnimatedSection(visible = !uiState.isVariableAmount) {
+            HeroAmountField(
                 input = uiState.amountInput,
-                currency = uiState.currency,
-                showError = uiState.showValidation && !uiState.isAmountValid,
-                onChanged = viewModel::onAmountChanged,
+                currencySymbol = uiState.currency?.symbol,
+                isError = uiState.showValidation && !uiState.isAmountValid,
+                onValueChange = viewModel::onAmountChanged,
+                label = stringResource(R.string.subscription_editor_amount),
+                errorText = stringResource(R.string.subscription_editor_amount_error),
+                modifier = Modifier.padding(vertical = 8.dp),
             )
         }
         if (uiState.showVariableAmount) {
@@ -245,14 +251,21 @@ private fun AmountAndModeSection(
                 onToggle = viewModel::onVariableAmountToggled,
             )
         }
-        if (uiState.showModeSelector) {
-            SectionLabel(stringResource(R.string.subscription_editor_section_mode))
-            ModeSelector(mode = uiState.mode, onModeChanged = viewModel::onModeChanged)
-        } else if (uiState.isCrossCurrency) {
+        AnimatedSection(visible = uiState.showModeSelector) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                SectionLabel(stringResource(R.string.subscription_editor_section_mode))
+                ModeSelector(mode = uiState.mode, onModeChanged = viewModel::onModeChanged)
+            }
+        }
+        AnimatedSection(visible = !uiState.showModeSelector && uiState.isCrossCurrency) {
             // The received amount cannot be fixed up front (the rate drifts), so the
             // rule confirms it at each occurrence instead of running automatically.
-            Spacer(Modifier.height(12.dp))
-            VariableAmountNote(text = stringResource(R.string.transfer_editor_cross_currency_note))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Spacer(Modifier.height(12.dp))
+                VariableAmountNote(
+                    text = stringResource(R.string.transfer_editor_cross_currency_note),
+                )
+            }
         }
     }
 }
@@ -384,14 +397,16 @@ private fun EndDateControl(
             checked = endDate != null,
             onToggle = onToggle,
         )
-        if (endDate != null) {
-            Spacer(Modifier.height(8.dp))
-            DateField(
-                label = stringResource(R.string.subscription_editor_end_date),
-                date = endDate,
-                placeholder = "",
-                onClick = onDateClick,
-            )
+        AnimatedSection(visible = endDate != null) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Spacer(Modifier.height(8.dp))
+                DateField(
+                    label = stringResource(R.string.subscription_editor_end_date),
+                    date = endDate,
+                    placeholder = "",
+                    onClick = onDateClick,
+                )
+            }
         }
     }
 }

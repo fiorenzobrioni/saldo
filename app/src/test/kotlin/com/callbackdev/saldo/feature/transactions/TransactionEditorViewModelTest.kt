@@ -17,6 +17,8 @@ import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.undo.UndoDeleteCoordinator
+import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.coEvery
@@ -40,6 +42,7 @@ import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Currency
@@ -64,6 +67,7 @@ class TransactionEditorViewModelTest {
     private val tagRepository = mockk<TagRepository>(relaxUnitFun = true)
     private val recurringRuleRepository = mockk<RecurringRuleRepository>(relaxUnitFun = true)
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true)
+    private val undoCoordinator = UndoDeleteCoordinator()
 
     private fun account(
         id: Long,
@@ -122,6 +126,7 @@ class TransactionEditorViewModelTest {
             tagRepository = tagRepository,
             recurringRuleRepository = recurringRuleRepository,
             userPreferences = userPreferences,
+            undoCoordinator = undoCoordinator,
             clock = clock,
         )
     }
@@ -276,6 +281,45 @@ class TransactionEditorViewModelTest {
     }
 
     @Test
+    fun `picking a time saves the combined date and time with the zone offset`() = runTest {
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        viewModel.onAmountChanged("5")
+        viewModel.onCategorySelected(groceries.id)
+        viewModel.onDateSelected(LocalDate.of(2026, 7, 5))
+        viewModel.onTimeSelected(LocalTime.of(8, 45))
+        viewModel.save()
+
+        // 08:45 in Rome on 5 July (UTC+2) = 06:45 UTC.
+        assertEquals(Instant.parse("2026-07-05T06:45:00Z"), saved.captured.timestamp)
+        assertEquals(ZoneOffset.ofHours(2), saved.captured.zoneOffset)
+    }
+
+    @Test
+    fun `editing exposes the stored local time of the movement`() = runTest {
+        val existing = Transaction(
+            id = 7L,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-12.00"),
+            currency = eur,
+            accountId = checking.id,
+            timestamp = Instant.parse("2026-07-01T10:00:00Z"),
+            zoneOffset = ZoneOffset.ofHours(2),
+            categoryId = groceries.id,
+        )
+        coEvery { transactionRepository.getTransaction(7L) } returns existing
+        every { tagRepository.observeTagsForTransaction(7L) } returns flowOf(emptyList())
+        val viewModel = viewModel(route = TransactionEditorRoute(7L))
+        collectState(viewModel)
+
+        // 10:00 UTC at the stored +2 offset is 12:00 local.
+        assertEquals(LocalTime.of(12, 0), viewModel.uiState.value.time)
+    }
+
+    @Test
     fun `a transfer is a single record with both legs`() = runTest {
         val saved = slot<Transaction>()
         val viewModel = viewModel(lastUsedAccountId = 1L)
@@ -319,6 +363,53 @@ class TransactionEditorViewModelTest {
         assertEquals(BigDecimal("-50.00"), saved.captured.amount)
         assertEquals(BigDecimal("54.20"), saved.captured.transferAmount)
         assertEquals(usd, saved.captured.transferCurrency)
+    }
+
+    @Test
+    fun `swapping a same-currency transfer keeps the amount on both legs`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        viewModel.onTypeChanged(TransactionType.TRANSFER)
+        viewModel.onToAccountSelected(cash)
+        viewModel.onAmountChanged("50")
+        viewModel.onSwapAccounts()
+
+        val state = viewModel.uiState.value
+        assertEquals(cash, state.account)
+        assertEquals(checking, state.toAccount)
+        assertEquals("50", state.amountInput)
+    }
+
+    @Test
+    fun `swapping a cross-currency transfer moves each amount with its account`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        viewModel.onTypeChanged(TransactionType.TRANSFER)
+        viewModel.onToAccountSelected(dollars)
+        viewModel.onAmountChanged("50")
+        viewModel.onToAmountChanged("54.2")
+        viewModel.onSwapAccounts()
+
+        val state = viewModel.uiState.value
+        assertEquals(dollars, state.account)
+        assertEquals(checking, state.toAccount)
+        assertEquals("54.2", state.amountInput)
+        assertEquals("50", state.toAmountInput)
+    }
+
+    @Test
+    fun `swapping is ignored outside a transfer`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        viewModel.onAmountChanged("12.5")
+        viewModel.onSwapAccounts()
+
+        val state = viewModel.uiState.value
+        assertEquals(checking, state.account)
+        assertEquals("12.5", state.amountInput)
     }
 
     @Test
@@ -488,7 +579,7 @@ class TransactionEditorViewModelTest {
     }
 
     @Test
-    fun `deleting an edited movement removes it and emits the event`() = runTest {
+    fun `deleting an edited movement removes it and hands it to the undo coordinator`() = runTest {
         val existing = Transaction(
             id = 7L,
             type = TransactionType.EXPENSE,
@@ -500,13 +591,20 @@ class TransactionEditorViewModelTest {
             categoryId = groceries.id,
         )
         coEvery { transactionRepository.getTransaction(7L) } returns existing
-        every { tagRepository.observeTagsForTransaction(7L) } returns flowOf(emptyList())
+        every { tagRepository.observeTagsForTransaction(7L) } returns
+            flowOf(listOf(Tag("work", id = 5L)))
         val viewModel = viewModel(route = TransactionEditorRoute(7L))
         collectState(viewModel)
 
         viewModel.delete()
 
         coVerify { transactionRepository.delete(existing) }
+        undoCoordinator.events.test {
+            val event = awaitItem() as UndoableDelete.Movement
+            assertEquals(existing, event.transaction)
+            assertEquals(listOf(5L), event.tagIds)
+            cancelAndIgnoreRemainingEvents()
+        }
         viewModel.events.test {
             assertEquals(TransactionEditorEvent.Deleted, awaitItem())
             cancelAndIgnoreRemainingEvents()

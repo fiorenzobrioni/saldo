@@ -466,6 +466,33 @@
 - [x] Componente condiviso `AsOfTodayAmount(amount, currency)` in `core/designsystem/component`: unica sorgente per riga conti, intestazione di gruppo (schermata Conti) e breakdown della Dashboard. Rimossa la copia privata `AsOfTodayLine`, sostituito il `Text` "%1$s ad oggi" nel breakdown della `AccountBreakdownRow`
 - [x] Hero card (`BalanceAsOfTodayLabel`, riga prominente sotto la cifra) lasciata com'e (icona + parola "ad oggi"): contesto piu grande dove la parola aiuta. Gate `assembleDebug testDebugUnitTest lint` verde
 
+## Fase 10.12 - Editor movimenti "premium" (luglio 2026)
+
+> Review UI/UX delle schermate di inserimento/modifica movimenti richiesta dall'utente (versionCode 118 -> 119, versionName 0.9.79 -> 0.9.80). Un solo editor riusato per tutti i tipi; interventi scelti dall'utente tra le proposte della review. Nessun cambio di dominio o schema (l'ora del movimento esisteva gia nel modello).
+
+- [x] Campo importo "hero": borderless, centrato, `displayMedium` con cifre tabulari e simbolo valuta a fianco; errore a colore + testo di supporto al tentativo di salvataggio; sign-toggle per la rettifica; variante compatta per la seconda gamba cross-currency. Tastiera di sistema invariata (ADR 16)
+- [x] Bottone Salva sempre attivo: al tap la validazione mostra tutti gli errori insieme (prima il bottone era muto e disabilitato senza importo)
+- [x] Trasferimenti: freccia direzionale tra i chip conto, tappabile per invertire le gambe (gli importi seguono la propria valuta); tasso di cambio implicito sotto il secondo importo nei cross-currency (calcolo locale, unit test)
+- [x] Chip ora accanto al chip data (`TimePickerDialog` M3) e quick date "Oggi"/"Ieri" nel date picker con conferma immediata
+- [x] Eliminazione dall'editor senza dialog di conferma: undo cross-screen via `TransactionUndoCoordinator` (singleton) + `SnackbarHost` a livello app in `SaldoApp`, stessa semantica di ripristino dello swipe-delete del registro
+- [x] Coerenza design system: celle categoria a `AvatarShape`, cifre tabulari nei saldi del picker conti, `LoadingState` condiviso; sezioni del form animate al cambio tipo (con rispetto di `rememberMotionEnabled`)
+- [x] Picker colore/icona consolidati: `ColorSwatchPicker`/`IconSwatchPicker` condivisi in `core/designsystem/component`, i tre editor (categorie, conti, abbonamenti) delegano
+
+## Fase 10.13 - Coerenza "premium" per tutti gli editor (luglio 2026)
+
+> Estensione della review della Fase 10.12 a tutti gli altri editor (versionCode 119 -> 120, versionName 0.9.80 -> 0.9.81): conto, rettifica saldo, budget, obiettivo di risparmio, ricorrenze (3 tipi), categoria. Scelte utente: importo hero solo dove l'importo e il dato principale; undo al posto della conferma solo per budget e obiettivo (le ricorrenze mantengono il dialog: eliminare una regola stacca definitivamente i movimenti gia generati, un undo non li ricollegherebbe). Nessun cambio di schema.
+
+- [x] Componenti promossi in `core/designsystem/component`: `HeroAmountField` (dal campo importo dei movimenti, ora prende il simbolo valuta come stringa), `AnimatedSection`, `SaldoDatePickerDialog` (unifica i due date dialog esistenti, chip rapidi Oggi/Ieri opzionali e nascosti sotto `minDate`)
+- [x] Importo hero in: limite mensile budget, target obiettivo, importo ricorrenza (con swap animato verso la nota importo variabile), saldo reale della rettifica (variante compatta nel dialog)
+- [x] Salva sempre attivo con validazione differita in tutti gli editor (conto, categoria, budget, ricorrenze; obiettivo lo era gia); la rettifica mantiene l'abilitazione live perche il preview del delta spiega gia lo stato
+- [x] `LoadingState` condiviso in tutti e cinque gli editor a schermata piena (prima spinner grezzo)
+- [x] Cifre tabulari su ogni campo/preview monetario rimasto `OutlinedTextField` (saldo iniziale, massimale carta, preview rettifica)
+- [x] Sezioni animate: saldo iniziale <-> sezione carta di credito nell'editor conto (rimosso anche un import `animateContentSize` morto), data obiettivo nel risparmio, importo variabile/mode selector/nota cross-currency/data fine nelle ricorrenze
+- [x] Undo cross-screen generalizzato: `UndoDeleteCoordinator` in `core/domain/undo` con `UndoableDelete` sealed (Movement, Budget, Goal) e `UndoDeleteViewModel` in `navigation`; snackbar con messaggio per entita. Budget ripristinato via write path transazionali del repository (i watermark di notifica ripartono), obiettivo re-inserito com'era
+- [x] Fix minori: dialog di eliminazione ricorrenza chiuso prima del delete (come gli altri editor)
+- [x] Test: nuovo `BudgetEditorViewModelTest` (mancava del tutto), `UndoDeleteViewModelTest` sui tre percorsi di ripristino, test delete/undo per obiettivo
+- [x] Follow-up forma squircle (versionCode 120 -> 121): `ColorSwatchPicker`/`IconSwatchPicker` e il segnaposto avatar degli skeleton passano da cerchio ad `AvatarShape`. Restano deliberatamente rotondi: barre pill, dot di legenda e indicatori pagina (a 4-10dp la forma non si distingue), FAB/speed dial (spec M3), ripple sulle icone, badge illustrativi onboarding, colonne pill dei grafici
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.

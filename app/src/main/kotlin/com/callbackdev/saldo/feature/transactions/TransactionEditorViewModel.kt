@@ -18,6 +18,8 @@ import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.undo.UndoDeleteCoordinator
+import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -56,6 +58,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
     private val tagRepository: TagRepository,
     private val recurringRuleRepository: RecurringRuleRepository,
     private val userPreferences: UserPreferencesRepository,
+    private val undoCoordinator: UndoDeleteCoordinator,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -183,12 +186,33 @@ class TransactionEditorViewModel @AssistedInject constructor(
         }
     }
 
+    /**
+     * Swaps the two legs of a transfer. On a cross-currency transfer the typed
+     * amounts travel with their currency, so each account keeps its own figure.
+     */
+    fun onSwapAccounts() {
+        val wasCrossCurrency = uiState.value.isCrossCurrency
+        form.update { current ->
+            if (current.type != TransactionType.TRANSFER) return@update current
+            current.copy(
+                accountId = current.toAccountId,
+                toAccountId = current.accountId,
+                amountInput = if (wasCrossCurrency) current.toAmountInput else current.amountInput,
+                toAmountInput = if (wasCrossCurrency) current.amountInput else current.toAmountInput,
+            )
+        }
+    }
+
     fun onCategorySelected(categoryId: Long) {
         form.update { it.copy(categoryId = categoryId) }
     }
 
     fun onDateSelected(date: LocalDate) {
         form.update { it.copy(date = date) }
+    }
+
+    fun onTimeSelected(time: LocalTime) {
+        form.update { it.copy(time = time) }
     }
 
     fun onDescriptionChanged(description: String) {
@@ -264,13 +288,25 @@ class TransactionEditorViewModel @AssistedInject constructor(
         }
     }
 
+    /**
+     * Deletes immediately (no confirmation dialog: undo is offered instead,
+     * matching the ledger's swipe-delete), capturing the tags first so the
+     * app-level snackbar can restore the movement.
+     */
     fun delete() {
         val transaction = existing ?: return
         viewModelScope.launch {
-            val result = suspendRunCatching { transactionRepository.delete(transaction) }
-            _events.send(
-                if (result.isSuccess) TransactionEditorEvent.Deleted else TransactionEditorEvent.WriteFailed,
-            )
+            suspendRunCatching {
+                val tagIds = tagRepository.observeTagsForTransaction(transaction.id).first()
+                    .map { it.id }
+                transactionRepository.delete(transaction)
+                tagIds
+            }
+                .onSuccess { tagIds ->
+                    undoCoordinator.publish(UndoableDelete.Movement(transaction, tagIds))
+                    _events.send(TransactionEditorEvent.Deleted)
+                }
+                .onFailure { _events.send(TransactionEditorEvent.WriteFailed) }
         }
     }
 
@@ -308,6 +344,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
             }.orEmpty(),
             categoryId = current.categoryId,
             date = current.date,
+            time = current.time,
             description = current.description,
             allTags = tags,
             selectedTags = tags.filter { it.id in current.selectedTagIds },

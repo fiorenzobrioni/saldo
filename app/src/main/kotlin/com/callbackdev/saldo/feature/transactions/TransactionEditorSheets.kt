@@ -16,9 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
@@ -29,7 +26,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDialog
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,16 +43,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
-import com.callbackdev.saldo.core.common.date.toUtcLocalDate
-import com.callbackdev.saldo.core.common.date.toUtcMillis
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
-import java.time.LocalDate
+import java.time.LocalTime
 
 /**
  * Bottom sheet listing the pickable accounts with their current balance.
@@ -145,7 +143,7 @@ private fun AccountPickerRow(
             )
             Text(
                 text = MoneyFormatter.format(item.balance, account.currency),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -245,26 +243,28 @@ internal fun CategoryPickerSheet(
     }
 }
 
-/** Material date picker preset on the movement's current date. */
+/** Material time picker preset on the movement's current time. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun TransactionDatePickerDialog(
-    initialDate: LocalDate,
-    onConfirm: (LocalDate) -> Unit,
+internal fun TransactionTimePickerDialog(
+    initialTime: LocalTime,
+    onConfirm: (LocalTime) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val state = rememberDatePickerState(initialSelectedDateMillis = initialDate.toUtcMillis())
-    DatePickerDialog(
+    val state = rememberTimePickerState(
+        initialHour = initialTime.hour,
+        initialMinute = initialTime.minute,
+    )
+    TimePickerDialog(
         onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.transaction_editor_time),
+                style = MaterialTheme.typography.labelMedium,
+            )
+        },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    state.selectedDateMillis?.let { millis ->
-                        onConfirm(millis.toUtcLocalDate())
-                    }
-                },
-                enabled = state.selectedDateMillis != null,
-            ) {
+            TextButton(onClick = { onConfirm(LocalTime.of(state.hour, state.minute)) }) {
                 Text(stringResource(R.string.action_save))
             }
         },
@@ -274,31 +274,6 @@ internal fun TransactionDatePickerDialog(
             }
         },
     ) {
-        // Calendar-only: the input/calendar mode toggle animates slowly and janky,
-        // and typing a date adds little here.
-        DatePicker(state = state, showModeToggle = false)
+        TimePicker(state = state)
     }
-}
-
-/** Confirmation before permanently deleting the movement being edited. */
-@Composable
-internal fun DeleteTransactionDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.transaction_delete_title)) },
-        text = { Text(stringResource(R.string.transaction_delete_body)) },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(stringResource(R.string.transaction_editor_delete))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
-    )
 }

@@ -1,8 +1,8 @@
 package com.callbackdev.saldo.feature.transactions
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,12 +16,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowRightAlt
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -52,10 +53,15 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.AnimatedSection
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
+import com.callbackdev.saldo.core.designsystem.component.HeroAmountField
 import com.callbackdev.saldo.core.designsystem.component.InfoBanner
+import com.callbackdev.saldo.core.designsystem.component.LoadingState
+import com.callbackdev.saldo.core.designsystem.component.SaldoDatePickerDialog
+import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.Category
@@ -111,7 +117,7 @@ fun TransactionEditorScreen(
 
     var activeSheet by rememberSaveable { mutableStateOf(EditorSheet.NONE) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
-    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
@@ -131,7 +137,9 @@ fun TransactionEditorScreen(
                 },
                 actions = {
                     if (!uiState.isNew) {
-                        IconButton(onClick = { showDeleteDialog = true }) {
+                        // Deletes right away: the app shell shows an undo snackbar
+                        // on the screen the editor returns to, so no confirm dialog.
+                        IconButton(onClick = viewModel::delete) {
                             Icon(
                                 imageVector = Icons.Outlined.DeleteOutline,
                                 contentDescription =
@@ -148,19 +156,16 @@ fun TransactionEditorScreen(
                     EditorSaveButton(
                         text = stringResource(saveLabelRes(uiState.type)),
                         onClick = viewModel::save,
-                        enabled = uiState.isAmountValid,
+                        // Always tappable: a failed tap surfaces every field error at
+                        // once, which explains more than a disabled button ever could.
+                        enabled = true,
                     )
                 }
             }
         },
     ) { innerPadding ->
         if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            LoadingState(modifier = Modifier.padding(innerPadding))
         } else {
             EditorForm(
                 uiState = uiState,
@@ -168,6 +173,7 @@ fun TransactionEditorScreen(
                 onAccountChipClick = { activeSheet = EditorSheet.ACCOUNT },
                 onToAccountChipClick = { activeSheet = EditorSheet.TO_ACCOUNT },
                 onDateChipClick = { showDatePicker = true },
+                onTimeChipClick = { showTimePicker = true },
                 onAddTagClick = { activeSheet = EditorSheet.TAGS },
                 onShowAllCategories = { activeSheet = EditorSheet.CATEGORY },
                 modifier = Modifier
@@ -232,23 +238,25 @@ fun TransactionEditorScreen(
     }
 
     if (showDatePicker) {
-        TransactionDatePickerDialog(
+        SaldoDatePickerDialog(
             initialDate = uiState.date,
             onConfirm = { date ->
                 viewModel.onDateSelected(date)
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false },
+            showQuickDates = true,
         )
     }
 
-    if (showDeleteDialog) {
-        DeleteTransactionDialog(
-            onConfirm = {
-                showDeleteDialog = false
-                viewModel.delete()
+    if (showTimePicker) {
+        TransactionTimePickerDialog(
+            initialTime = uiState.time,
+            onConfirm = { time ->
+                viewModel.onTimeSelected(time)
+                showTimePicker = false
             },
-            onDismiss = { showDeleteDialog = false },
+            onDismiss = { showTimePicker = false },
         )
     }
 }
@@ -287,6 +295,7 @@ private fun EditorForm(
     onAccountChipClick: () -> Unit,
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
+    onTimeChipClick: () -> Unit,
     onAddTagClick: () -> Unit,
     onShowAllCategories: () -> Unit,
     modifier: Modifier = Modifier,
@@ -324,35 +333,44 @@ private fun EditorForm(
             )
             Spacer(Modifier.height(16.dp))
         }
-        AmountField(
+        Spacer(Modifier.height(8.dp))
+        HeroAmountField(
             input = uiState.amountInput,
-            currency = uiState.currency,
+            currencySymbol = uiState.currency?.symbol,
             isError = uiState.showValidation && !uiState.isAmountValid,
             showSignToggle = uiState.type == TransactionType.ADJUSTMENT,
             onValueChange = viewModel::onAmountChanged,
             focusRequester = amountFocus,
+            errorText = stringResource(R.string.transaction_editor_amount_error),
             label = if (uiState.isCrossCurrency) {
                 stringResource(
                     R.string.transaction_editor_sent_amount,
                     uiState.account?.currency?.currencyCode.orEmpty(),
                 )
             } else {
-                stringResource(R.string.transaction_editor_amount)
+                null
             },
         )
-        if (uiState.isCrossCurrency) {
-            Spacer(Modifier.height(8.dp))
-            AmountField(
-                input = uiState.toAmountInput,
-                currency = uiState.toAccount?.currency,
-                isError = uiState.showValidation && !uiState.isToAmountValid,
-                showSignToggle = false,
-                onValueChange = viewModel::onToAmountChanged,
-                label = stringResource(
-                    R.string.transaction_editor_received_amount,
-                    uiState.toAccount?.currency?.currencyCode.orEmpty(),
-                ),
-            )
+        AnimatedSection(visible = uiState.isCrossCurrency) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Spacer(Modifier.height(12.dp))
+                HeroAmountField(
+                    input = uiState.toAmountInput,
+                    currencySymbol = uiState.toAccount?.currency?.symbol,
+                    isError = uiState.showValidation && !uiState.isToAmountValid,
+                    onValueChange = viewModel::onToAmountChanged,
+                    errorText = stringResource(R.string.transaction_editor_amount_error),
+                    compact = true,
+                    label = stringResource(
+                        R.string.transaction_editor_received_amount,
+                        uiState.toAccount?.currency?.currencyCode.orEmpty(),
+                    ),
+                )
+                ImpliedRateLabel(uiState)
+            }
         }
         Spacer(Modifier.height(16.dp))
         ContextChips(
@@ -360,8 +378,10 @@ private fun EditorForm(
             onAccountChipClick = onAccountChipClick,
             onToAccountChipClick = onToAccountChipClick,
             onDateChipClick = onDateChipClick,
+            onTimeChipClick = onTimeChipClick,
+            onSwapAccounts = viewModel::onSwapAccounts,
         )
-        if (uiState.hasCategorySection) {
+        AnimatedSection(visible = uiState.hasCategorySection) {
             CategorySection(
                 uiState = uiState,
                 onSelect = viewModel::onCategorySelected,
@@ -375,25 +395,48 @@ private fun EditorForm(
         )
         Spacer(Modifier.height(12.dp))
         TagsRow(uiState = uiState, onToggle = viewModel::onTagToggled, onAddClick = onAddTagClick)
-        if (uiState.hasCategorySection) {
-            Spacer(Modifier.height(8.dp))
-            if (uiState.type == TransactionType.INCOME) {
+        AnimatedSection(visible = uiState.hasCategorySection) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Spacer(Modifier.height(8.dp))
+                AnimatedSection(visible = uiState.type == TransactionType.INCOME) {
+                    EditorSwitchRow(
+                        title = stringResource(R.string.transaction_editor_refund),
+                        subtitle = stringResource(R.string.transaction_editor_refund_hint),
+                        checked = uiState.isRefund,
+                        onCheckedChange = viewModel::onRefundChanged,
+                    )
+                }
                 EditorSwitchRow(
-                    title = stringResource(R.string.transaction_editor_refund),
-                    subtitle = stringResource(R.string.transaction_editor_refund_hint),
-                    checked = uiState.isRefund,
-                    onCheckedChange = viewModel::onRefundChanged,
+                    title = stringResource(R.string.transaction_editor_exclude_stats),
+                    subtitle = stringResource(R.string.transaction_editor_exclude_stats_hint),
+                    checked = uiState.isExcludedFromStats,
+                    onCheckedChange = viewModel::onExcludedFromStatsChanged,
                 )
             }
-            EditorSwitchRow(
-                title = stringResource(R.string.transaction_editor_exclude_stats),
-                subtitle = stringResource(R.string.transaction_editor_exclude_stats_hint),
-                checked = uiState.isExcludedFromStats,
-                onCheckedChange = viewModel::onExcludedFromStatsChanged,
-            )
         }
         Spacer(Modifier.height(24.dp))
     }
+}
+
+/**
+ * Rate implied by the two legs of a cross-currency transfer ("1 EUR ≈ 1,08
+ * CHF"): a plausibility check for the typed amounts, computed locally.
+ */
+@Composable
+private fun ImpliedRateLabel(uiState: TransactionEditorUiState, modifier: Modifier = Modifier) {
+    val rate = uiState.impliedRate ?: return
+    Spacer(Modifier.height(4.dp))
+    Text(
+        text = stringResource(
+            R.string.transaction_editor_implied_rate,
+            uiState.account?.currency?.currencyCode.orEmpty(),
+            rateLabel(rate),
+            uiState.toAccount?.currency?.currencyCode.orEmpty(),
+        ),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -402,12 +445,17 @@ private fun ContextChips(
     onAccountChipClick: () -> Unit,
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
+    onTimeChipClick: () -> Unit,
+    onSwapAccounts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val accountError = uiState.showValidation && !uiState.isAccountValid
+    val motionEnabled = rememberMotionEnabled()
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(if (motionEnabled) Modifier.animateContentSize() else Modifier),
     ) {
         if (uiState.isTransfer) {
             EditorChip(
@@ -416,13 +464,28 @@ private fun ContextChips(
                     ?: stringResource(R.string.transaction_editor_from_account),
                 isError = accountError,
                 onClick = onAccountChipClick,
+                modifier = Modifier.align(Alignment.CenterVertically),
             )
+            // The arrow states the direction of the transfer; tapping it swaps
+            // the two accounts, the quickest fix for a reversed entry.
+            IconButton(
+                onClick = onSwapAccounts,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Outlined.ArrowRightAlt,
+                    contentDescription =
+                    stringResource(R.string.transaction_editor_swap_accounts),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             EditorChip(
                 icon = AccountVisuals.icon(uiState.toAccount?.icon),
                 label = uiState.toAccount?.name
                     ?: stringResource(R.string.transaction_editor_to_account),
                 isError = uiState.showValidation && !uiState.isToAccountValid,
                 onClick = onToAccountChipClick,
+                modifier = Modifier.align(Alignment.CenterVertically),
             )
         } else {
             EditorChip(
@@ -431,6 +494,7 @@ private fun ContextChips(
                     ?: stringResource(R.string.transaction_editor_account),
                 isError = accountError,
                 onClick = onAccountChipClick,
+                modifier = Modifier.align(Alignment.CenterVertically),
             )
         }
         EditorChip(
@@ -438,6 +502,14 @@ private fun ContextChips(
             label = chipDayLabel(uiState.date, LocalDate.now()),
             isError = false,
             onClick = onDateChipClick,
+            modifier = Modifier.align(Alignment.CenterVertically),
+        )
+        EditorChip(
+            icon = Icons.Outlined.Schedule,
+            label = timeLabel(uiState.time),
+            isError = false,
+            onClick = onTimeChipClick,
+            modifier = Modifier.align(Alignment.CenterVertically),
         )
     }
 }
@@ -532,16 +604,14 @@ private fun CategorySection(
                 }
             }
         }
-        if (hasError) {
+        AnimatedSection(visible = hasError) {
             Text(
                 text = stringResource(R.string.transaction_editor_category_error),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(bottom = 8.dp),
             )
-        } else {
-            Spacer(Modifier.height(12.dp))
         }
+        Spacer(Modifier.height(12.dp))
         CategoryGrid(
             categories = visible,
             selectedId = uiState.categoryId,

@@ -14,6 +14,48 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-22 - Squircle ovunque sia un avatar: swatch picker e skeleton
+
+**Fatto:** dopo feedback utente (icone/categorie ancora rotonde in alcune schermate), censimento completo di `CircleShape` nel codice (12 file) e correzione dei due casi che rappresentano avatar: (1) `ColorSwatchPicker` e `IconSwatchPicker` in `core/designsystem` (usati da editor categoria, conto, abbonamenti, obiettivi) passano ad `AvatarShape`: le celle icona sono di fatto una griglia di avatar e lo swatch colore fa da anteprima dello sfondo avatar; (2) il segnaposto avatar 40dp di `SkeletonRow` passa ad `AvatarShape`, cosi la forma non salta quando arrivano i dati reali.
+
+**Decisioni:** restano deliberatamente rotondi (motivati all'utente): barre pill (recap, share card, statistiche, `ThresholdProgressBar`, skeleton del selettore periodo: `CircleShape` su un rettangolo produce estremita a pill, non un cerchio), dot di legenda e indicatori di pagina (4-10dp, squircle indistinguibile), FAB e speed dial (spec Material 3), ripple tondo sulle icone (feedback touch standard), badge decorativo dell'illustrazione onboarding, colonne pill dei grafici.
+
+**Problemi:** nessuno.
+
+**Verificato:** verifica statica + gate CI GitHub. Nessun test nuovo (cambio di sola forma). versionCode 120 -> 121, versionName 0.9.81 -> 0.9.82.
+
+**Prossimo:** verifica visiva su device dei picker colore/icona nei quattro editor che li usano.
+
+---
+
+## 2026-07-22 - Coerenza "premium" per tutti gli editor (conto, rettifica, budget, obiettivo, ricorrenze, categoria)
+
+**Fatto:** estesa la review della Fase 10.12 a tutti gli altri editor (Fase 10.13 in PLANNING.md), su branch `claude/editors-premium-polish` basato su quello dei movimenti (non ancora mergiato, ne riusa i componenti). Cinque commit: (1) promozione in `core/designsystem/component` di `HeroAmountField`, `AnimatedSection` e `SaldoDatePickerDialog` (unifica i due date dialog, chip rapidi opzionali), con l'editor movimenti che delega; (2) editor conto: `LoadingState`, cifre tabulari su saldo iniziale e massimale carta, cross-fade animato tra saldo iniziale e sezione carta di credito, Salva sempre attivo; rettifica saldo con importo hero compatto nel dialog e preview a cifre tabulari; editor categoria allineato (LoadingState, Salva); (3) budget: limite mensile hero, Salva sempre attivo, eliminazione senza dialog con undo cross-screen, coordinator generalizzato (`core/domain/undo/UndoDeleteCoordinator` con sealed `UndoableDelete` e `UndoDeleteViewModel` in `navigation`, snackbar con messaggio per entita); (4) obiettivo di risparmio: target hero, reveal animato della data obiettivo, eliminazione con undo; (5) ricorrenze: importo hero con swap animato verso la nota importo variabile, sezioni animate (mode selector, nota cross-currency, data fine), `LoadingState`, Salva sempre attivo.
+
+**Decisioni:** importo hero solo dove l'importo e il dato principale della schermata (scelta utente): nel form conto saldo iniziale e massimale restano `OutlinedTextField` con cifre tabulari, i protagonisti li sono nome e tipo. Undo al posto della conferma solo per budget e obiettivo (ripristino totale); le ricorrenze mantengono il dialog perche eliminare una regola stacca definitivamente i movimenti gia generati e un undo non li ricollegherebbe (dialog piu onesto); categorie (riassegnazione) e conti (flusso archivia/elimina della lista) invariati. Ripristino budget via write path transazionali del repository (setOverallBudget/upsertCategoryBudget): i watermark di notifica ripartono, accettabile e anzi desiderabile. La rettifica mantiene il bottone abilitato in modo eager: il preview del delta ("Nessuna modifica" / delta firmato) spiega gia lo stato, meglio di una validazione al tap in un dialog.
+
+**Problemi:** nessuno bloccante. Attenzione alla compilabilita dei singoli commit: le stringhe del dialog obiettivi sono state rimosse solo nel commit che rimuove il dialog.
+
+**Verificato:** nessun SDK su questa macchina: verifica statica accurata + gate CI GitHub (`assembleDebug testDebugUnitTest lint`). Test nuovi/aggiornati: `BudgetEditorViewModelTest` (mancava del tutto: scope in create, save, validazione, edit, delete+undo), `UndoDeleteViewModelTest` (ripristino movimento/budget overall/budget categoria/obiettivo, fallimento), delete+undo nell'editor obiettivi, costruttori aggiornati. versionCode 119 -> 120, versionName 0.9.80 -> 0.9.81. Da verificare visivamente su device: i sei editor, gli stati di errore al tap su Salva, undo di budget e obiettivo dalle schermate di provenienza, rettifica con campo hero.
+
+**Prossimo:** verifica visiva sull'APK debug dal device di test; eventuali micro-correzioni da screenshot.
+
+---
+
+## 2026-07-22 - Editor movimenti "premium": importo hero, ora, quick date, undo, consolidamenti
+
+**Fatto:** giro di rifinitura dell'editor movimenti (Fase 10.12 in PLANNING.md) nato da una review UI/UX richiesta dall'utente sulle schermate di inserimento/modifica (spesa, entrata, trasferimento, rettifica: un solo editor riusato). Quattro commit separati sul branch. (1) Campo importo "hero" borderless e centrato (`displayMedium` + cifre tabulari, simbolo valuta a fianco, placeholder 0), errore a colore + testo di supporto, sign-toggle per la rettifica, variante compatta per la seconda gamba cross-currency; bottone Salva sempre attivo con validazione completa al tap; freccia direzionale tra i chip conto dei trasferimenti che inverte le gambe al tap; tasso di cambio implicito sotto il secondo importo nei trasferimenti cross-currency; celle categoria a `AvatarShape` (erano cerchi, incoerenti con registro e lista categorie), cifre tabulari nei saldi del picker conti, `LoadingState` condiviso; sezioni del form animate al cambio tipo. (2) Quick date "Oggi"/"Ieri" nel date picker con conferma immediata e nuovo chip ora con `TimePickerDialog` M3 (l'ora esisteva gia nel modello, ora e visibile e modificabile). (3) Picker colore/icona consolidati in `core/designsystem/component/SwatchPickers.kt`: categorie, conti e abbonamenti delegano ai componenti condivisi (erano tre copie identiche). (4) Eliminazione dall'editor senza dialog di conferma: `TransactionUndoCoordinator` singleton porta il movimento eliminato (con i tag) all'app shell, `SnackbarHost` a livello app in `SaldoApp` mostra l'undo sulla schermata di provenienza, ripristino con la stessa semantica dello swipe-delete del registro.
+
+**Decisioni:** tastiera di sistema invariata sull'importo (ADR 16), il restyle e solo presentazionale (il VM continua a ricevere la stringa raw). Salva sempre attivo perche un bottone disabilitato non spiega il motivo: la validazione differita al tap mostra tutti gli errori insieme, incluso l'importo (nuova stringa `transaction_editor_amount_error`). Undo al posto della conferma di eliminazione come da VISION (l'editor era l'ultimo punto con dialog); niente Scaffold a livello app (scelta esistente rispettata): lo `SnackbarHost` e nel Box overlay, sopra la bottom bar sui top-level. `TimePickerDialog` verificato disponibile in material3 1.4.0 (BOM 2026.02.01). Animazioni con gating `rememberMotionEnabled`.
+
+**Problemi:** nessuno bloccante. Attenzione a: larghezza del campo hero con importi lunghi (risolto con `weight(1f, fill = false)` sul campo interno, scroll orizzontale oltre il cap); TalkBack sul campo senza label (contentDescription esplicita "Importo").
+
+**Verificato:** nessun SDK su questa macchina: verifica statica accurata + gate CI GitHub (`assembleDebug testDebugUnitTest lint`) sul branch `claude/transaction-editor-premium-polish`. Nuovi unit test: `ImpliedExchangeRateTest`, `TransactionUndoViewModelTest`, e nel `TransactionEditorViewModelTest` swap gambe (stessa valuta, cross-currency, no-op fuori dai trasferimenti), data+ora combinate nel salvataggio, ora locale esposta in modifica, delete che pubblica al coordinator. versionCode 118 -> 119, versionName 0.9.79 -> 0.9.80. Da verificare visivamente su device: nuovi movimenti (3 tipi), modifica dei 4 tipi, errori al tap su Salva, swap e tasso nei trasferimenti, quick date e ora, eliminazione con undo da registro/dashboard/stats.
+
+**Prossimo:** verifica visiva sull'APK debug dal device di test; eventuali micro-correzioni da screenshot.
+
+---
+
 ## 2026-07-22 - "Ad oggi" a icona anche nel breakdown della Dashboard (uniformita)
 
 **Fatto:** portata la treatment compatta "ad oggi" (glifo calendario + importo, senza la parola) anche nelle righe del breakdown della card Saldo totale in Dashboard, che usavano ancora il testo "%1$s ad oggi". Estratto un componente condiviso `AsOfTodayAmount(amount, currency)` in `core/designsystem/component`, unica fonte per riga conti, intestazione di gruppo e breakdown della Dashboard: rimossa la copia privata `AsOfTodayLine` dalla schermata Conti, sostituito il `Text` nel breakdown. La riga "ad oggi" prominente della hero card (`BalanceAsOfTodayLabel`, icona + testo "ad oggi") resta invariata: e un contesto piu grande e piu esplicito, dove la parola aiuta.

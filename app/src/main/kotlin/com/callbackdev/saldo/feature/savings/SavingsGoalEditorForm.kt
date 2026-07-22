@@ -1,7 +1,6 @@
 package com.callbackdev.saldo.feature.savings
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddCircleOutline
 import androidx.compose.material3.DropdownMenuItem
@@ -11,7 +10,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,11 +19,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.Account
-import java.util.Currency
 
 /** Goal name field with the savings-specific label and error. */
 @Composable
@@ -44,34 +40,6 @@ internal fun SavingsGoalNameField(
         isError = showError,
         supportingText = if (showError) {
             { Text(stringResource(R.string.savings_editor_name_error)) }
-        } else {
-            null
-        },
-        modifier = modifier.fillMaxWidth(),
-    )
-}
-
-/** Target amount field for the goal. */
-@Composable
-internal fun SavingsTargetField(
-    input: String,
-    currency: Currency,
-    showError: Boolean,
-    onChanged: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = input,
-        onValueChange = onChanged,
-        label = { Text(stringResource(R.string.savings_editor_target)) },
-        placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
-        prefix = { Text(currency.symbol) },
-        singleLine = true,
-        isError = showError,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        textStyle = MaterialTheme.typography.headlineSmall,
-        supportingText = if (showError) {
-            { Text(stringResource(R.string.savings_editor_target_error)) }
         } else {
             null
         },
