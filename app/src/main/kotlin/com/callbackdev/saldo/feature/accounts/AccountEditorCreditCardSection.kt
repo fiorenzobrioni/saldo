@@ -1,6 +1,5 @@
 package com.callbackdev.saldo.feature.accounts
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,6 +20,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -219,6 +219,7 @@ private fun CreditLimitField(
         placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
         suffix = { Text(currencySymbol) },
         singleLine = true,
+        textStyle = LocalTextStyle.current.tabularNumbers(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         supportingText = { Text(stringResource(R.string.account_cc_limit_hint)) },
         modifier = modifier.fillMaxWidth(),
