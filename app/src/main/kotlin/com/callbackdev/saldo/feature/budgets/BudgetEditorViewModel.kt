@@ -14,6 +14,8 @@ import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.BudgetRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
+import com.callbackdev.saldo.core.domain.undo.UndoDeleteCoordinator
+import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.navigation.BudgetEditorRoute
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -52,7 +54,6 @@ data class BudgetEditorUiState(
     val amountInput: String = "",
     /** Set on a failed save attempt to surface field errors. */
     val showValidation: Boolean = false,
-    val showDeleteDialog: Boolean = false,
 ) {
     val isScopeValid: Boolean get() = scope != null
     val isAmountValid: Boolean get() = (MoneyInput.parse(amountInput)?.signum() ?: 0) > 0
@@ -85,6 +86,7 @@ class BudgetEditorViewModel @AssistedInject constructor(
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
     private val userPreferences: UserPreferencesRepository,
+    private val undoCoordinator: UndoDeleteCoordinator,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -221,18 +223,20 @@ class BudgetEditorViewModel @AssistedInject constructor(
         }
     }
 
-    fun requestDelete() = _uiState.update { it.copy(showDeleteDialog = true) }
-
-    fun dismissDeleteDialog() = _uiState.update { it.copy(showDeleteDialog = false) }
-
-    fun confirmDelete() {
+    /**
+     * Deletes immediately (no confirmation dialog: undo is offered instead by
+     * the app-level snackbar; restoring a budget rebuilds it entirely, only
+     * the notification watermarks restart).
+     */
+    fun delete() {
         val budget = existing ?: return
-        _uiState.update { it.copy(showDeleteDialog = false) }
         viewModelScope.launch {
-            val result = suspendRunCatching { budgetRepository.deleteBudget(budget.id) }
-            _events.send(
-                if (result.isSuccess) BudgetEditorEvent.Deleted else BudgetEditorEvent.WriteFailed,
-            )
+            suspendRunCatching { budgetRepository.deleteBudget(budget.id) }
+                .onSuccess {
+                    undoCoordinator.publish(UndoableDelete.Budget(budget))
+                    _events.send(BudgetEditorEvent.Deleted)
+                }
+                .onFailure { _events.send(BudgetEditorEvent.WriteFailed) }
         }
     }
 

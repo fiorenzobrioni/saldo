@@ -17,6 +17,8 @@ import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.undo.UndoDeleteCoordinator
+import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.coEvery
@@ -65,7 +67,7 @@ class TransactionEditorViewModelTest {
     private val tagRepository = mockk<TagRepository>(relaxUnitFun = true)
     private val recurringRuleRepository = mockk<RecurringRuleRepository>(relaxUnitFun = true)
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true)
-    private val undoCoordinator = TransactionUndoCoordinator()
+    private val undoCoordinator = UndoDeleteCoordinator()
 
     private fun account(
         id: Long,
@@ -598,7 +600,7 @@ class TransactionEditorViewModelTest {
 
         coVerify { transactionRepository.delete(existing) }
         undoCoordinator.events.test {
-            val event = awaitItem()
+            val event = awaitItem() as UndoableDelete.Movement
             assertEquals(existing, event.transaction)
             assertEquals(listOf(5L), event.tagIds)
             cancelAndIgnoreRemainingEvents()

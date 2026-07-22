@@ -53,8 +53,8 @@ import com.callbackdev.saldo.feature.savings.SavingsGoalsScreen
 import com.callbackdev.saldo.feature.settings.SettingsScreen
 import com.callbackdev.saldo.feature.stats.FilteredTransactionsScreen
 import com.callbackdev.saldo.feature.stats.StatsScreen
+import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
-import com.callbackdev.saldo.feature.transactions.TransactionUndoViewModel
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -102,15 +102,21 @@ fun SaldoApp(
         }
     }
 
-    // A movement deleted from its editor is announced here, after the editor
-    // has closed: the undo snackbar shows on whatever screen it returned to.
-    val undoViewModel: TransactionUndoViewModel = hiltViewModel()
+    // An entity deleted from its editor (movement, budget, savings goal) is
+    // announced here, after the editor has closed: the undo snackbar shows on
+    // whatever screen it returned to.
+    val undoViewModel: UndoDeleteViewModel = hiltViewModel()
     val snackbarHostState = remember { SnackbarHostState() }
     val resources = LocalResources.current
     LaunchedEffect(undoViewModel) {
         undoViewModel.events.collect { event ->
+            val messageRes = when (event) {
+                is UndoableDelete.Movement -> R.string.transactions_snackbar_deleted
+                is UndoableDelete.Budget -> R.string.budgets_snackbar_deleted
+                is UndoableDelete.Goal -> R.string.savings_snackbar_deleted
+            }
             val result = snackbarHostState.showSnackbar(
-                message = resources.getString(R.string.transactions_snackbar_deleted),
+                message = resources.getString(messageRes),
                 actionLabel = resources.getString(R.string.action_undo),
                 duration = SnackbarDuration.Short,
             )

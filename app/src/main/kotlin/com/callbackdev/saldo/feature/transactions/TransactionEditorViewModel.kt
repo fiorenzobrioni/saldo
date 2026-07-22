@@ -18,6 +18,8 @@ import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.undo.UndoDeleteCoordinator
+import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -56,7 +58,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
     private val tagRepository: TagRepository,
     private val recurringRuleRepository: RecurringRuleRepository,
     private val userPreferences: UserPreferencesRepository,
-    private val undoCoordinator: TransactionUndoCoordinator,
+    private val undoCoordinator: UndoDeleteCoordinator,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -301,9 +303,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
                 tagIds
             }
                 .onSuccess { tagIds ->
-                    undoCoordinator.publish(
-                        TransactionUndoCoordinator.DeletedTransaction(transaction, tagIds),
-                    )
+                    undoCoordinator.publish(UndoableDelete.Movement(transaction, tagIds))
                     _events.send(TransactionEditorEvent.Deleted)
                 }
                 .onFailure { _events.send(TransactionEditorEvent.WriteFailed) }

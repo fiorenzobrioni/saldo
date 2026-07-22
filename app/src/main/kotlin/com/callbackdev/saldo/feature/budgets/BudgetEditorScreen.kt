@@ -1,7 +1,6 @@
 package com.callbackdev.saldo.feature.budgets
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
@@ -11,25 +10,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -40,7 +34,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,7 +41,9 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
+import com.callbackdev.saldo.core.designsystem.component.HeroAmountField
 import com.callbackdev.saldo.core.designsystem.component.InfoBanner
+import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.navigation.BudgetEditorRoute
 
@@ -89,13 +84,6 @@ fun BudgetEditorScreen(
 
     DiscardChangesDialog(guard)
 
-    if (uiState.showDeleteDialog) {
-        DeleteBudgetDialog(
-            onConfirm = viewModel::confirmDelete,
-            onDismiss = viewModel::dismissDeleteDialog,
-        )
-    }
-
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -124,7 +112,9 @@ fun BudgetEditorScreen(
                 },
                 actions = {
                     if (!uiState.isNew) {
-                        IconButton(onClick = viewModel::requestDelete) {
+                        // Deletes right away: the app shell shows an undo snackbar
+                        // on the screen the editor returns to, so no confirm dialog.
+                        IconButton(onClick = viewModel::delete) {
                             Icon(
                                 imageVector = Icons.Outlined.DeleteOutline,
                                 contentDescription = stringResource(R.string.budgets_editor_delete),
@@ -140,19 +130,17 @@ fun BudgetEditorScreen(
                     EditorSaveButton(
                         text = stringResource(R.string.budgets_editor_save),
                         onClick = viewModel::save,
-                        enabled = !uiState.isLoading && (uiState.isNew.not() || uiState.scopeOptions.isNotEmpty()),
+                        // Always tappable: a failed tap surfaces the field errors,
+                        // which explains more than a disabled button ever could.
+                        // With no scope available the form itself says why.
+                        enabled = true,
                     )
                 }
             }
         },
     ) { innerPadding ->
         if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            LoadingState(modifier = Modifier.padding(innerPadding))
         } else {
             EditorForm(
                 uiState = uiState,
@@ -255,52 +243,26 @@ private fun AmountField(
     modifier: Modifier = Modifier,
 ) {
     val showError = uiState.showValidation && !uiState.isAmountValid
-    OutlinedTextField(
-        value = uiState.amountInput,
-        onValueChange = onAmountChanged,
-        label = { Text(stringResource(R.string.budgets_editor_amount)) },
-        placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
-        suffix = { Text(uiState.currency.symbol) },
-        singleLine = true,
-        isError = showError,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        supportingText = {
-            Text(
-                stringResource(
-                    if (showError) {
-                        R.string.budgets_editor_amount_error
-                    } else {
-                        R.string.budgets_editor_amount_hint
-                    },
-                ),
-            )
-        },
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxWidth(),
-    )
-}
-
-@Composable
-private fun DeleteBudgetDialog(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    AlertDialog(
-        modifier = modifier,
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.budgets_delete_dialog_title)) },
-        text = { Text(stringResource(R.string.budgets_delete_dialog_body)) },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(stringResource(R.string.budgets_editor_delete))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
-    )
+    ) {
+        HeroAmountField(
+            input = uiState.amountInput,
+            currencySymbol = uiState.currency.symbol,
+            isError = showError,
+            onValueChange = onAmountChanged,
+            label = stringResource(R.string.budgets_editor_amount),
+            errorText = stringResource(R.string.budgets_editor_amount_error),
+        )
+        if (!showError) {
+            Text(
+                text = stringResource(R.string.budgets_editor_amount_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
 }
 
 @Composable

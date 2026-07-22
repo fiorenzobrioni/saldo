@@ -864,8 +864,7 @@
     <string name="budgets_editor_info" formatted="false">Il budget vale per il mese di calendario e riparte il giorno 1. Misura la spesa effettiva: i rimborsi la riducono, mentre trasferimenti, rettifiche saldo e conti esclusi dal budget non contano mai. All\'80% e al superamento del limite ricevi una notifica.</string>
     <string name="budgets_editor_amount_error">Inserisci un importo maggiore di zero.</string>
     <string name="budgets_editor_delete">Elimina budget</string>
-    <string name="budgets_delete_dialog_title">Eliminare questo budget?</string>
-    <string name="budgets_delete_dialog_body">I movimenti non vengono toccati; spariscono solo il tetto e i suoi avvisi.</string>
+    <string name="budgets_snackbar_deleted">Budget eliminato</string>
     <string name="settings_budgets">Budget</string>
     <string name="settings_budgets_hint">Tetti mensili e avvisi</string>
 
@@ -979,6 +978,7 @@
     <!-- Mostrato quando esistono conti di risparmio ma ognuno ha già un obiettivo (un obiettivo per conto). -->
     <string name="savings_editor_all_taken_title">I tuoi conti di risparmio sono tutti in uso</string>
     <string name="savings_editor_all_taken_body">Ogni obiettivo si lega a un suo conto di risparmio, e tutti i tuoi ne hanno già uno. Crea un altro conto di risparmio per un nuovo obiettivo, oppure modifica un obiettivo esistente.</string>
+    <string name="savings_snackbar_deleted">Obiettivo eliminato</string>
     <string name="savings_delete_title">Eliminare l\'obiettivo?</string>
     <string name="savings_delete_body">L\'obiettivo viene rimosso. Il conto di risparmio collegato e i suoi movimenti restano.</string>
     <string name="savings_delete_action">Elimina</string>
