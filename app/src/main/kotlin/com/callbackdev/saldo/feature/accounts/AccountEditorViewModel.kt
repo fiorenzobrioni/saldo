@@ -112,7 +112,7 @@ class AccountEditorViewModel @AssistedInject constructor(
             isNew = route.accountId == null,
             type = initialType,
             currency = fallbackCurrency,
-            color = AccountVisuals.colors.first(),
+            color = AccountVisuals.defaultColorFor(initialType),
             icon = AccountVisuals.defaultIconFor(initialType),
             // Apply the ADR 22 savings preset to the seeded type too, so a
             // preselected savings account opens already excluded from the budget
@@ -162,6 +162,9 @@ class AccountEditorViewModel @AssistedInject constructor(
     /** True once the user picks an icon: type changes stop updating it. */
     private var userPickedIcon = false
 
+    /** True once the user picks a color: type changes stop updating it. */
+    private var userPickedColor = false
+
     /** True once the user touches the budget toggle: type changes stop presetting it. */
     private var userToggledBudget = false
 
@@ -178,7 +181,9 @@ class AccountEditorViewModel @AssistedInject constructor(
                 return@launch
             }
             existing = account
+            // A persisted icon and color are the user's: never preset over them.
             userPickedIcon = true
+            userPickedColor = true
             // A persisted inclusion choice is the user's: never preset over it.
             userToggledBudget = true
             val movementCount = transactionRepository.countForAccount(accountId)
@@ -193,7 +198,7 @@ class AccountEditorViewModel @AssistedInject constructor(
                     initialBalanceInput = account.initialBalance
                         .stripTrailingZeros()
                         .toPlainString(),
-                    color = account.color ?: AccountVisuals.colors.first(),
+                    color = account.color ?: AccountVisuals.defaultColorFor(account.type),
                     icon = account.icon ?: AccountVisuals.defaultIconFor(account.type),
                     isIncludedInTotal = account.isIncludedInTotal,
                     isIncludedInBudget = account.isIncludedInBudget,
@@ -218,6 +223,7 @@ class AccountEditorViewModel @AssistedInject constructor(
             it.copy(
                 type = type,
                 icon = if (userPickedIcon) it.icon else AccountVisuals.defaultIconFor(type),
+                color = if (userPickedColor) it.color else AccountVisuals.defaultColorFor(type),
                 // Savings default to excluded from the budget (dipping into
                 // savings should not consume the month's budget); an explicit
                 // user choice always wins over the preset.
@@ -261,6 +267,7 @@ class AccountEditorViewModel @AssistedInject constructor(
     }
 
     fun onColorSelected(color: Int) {
+        userPickedColor = true
         _uiState.update { it.copy(color = color) }
     }
 

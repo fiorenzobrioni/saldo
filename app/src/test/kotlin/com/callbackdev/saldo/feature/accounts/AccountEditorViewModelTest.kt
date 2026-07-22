@@ -249,6 +249,18 @@ class AccountEditorViewModelTest {
     }
 
     @Test
+    fun `type changes drive the color until the user picks one`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onTypeChanged(AccountType.SAVINGS)
+        assertEquals(AccountVisuals.defaultColorFor(AccountType.SAVINGS), viewModel.uiState.value.color)
+
+        viewModel.onColorSelected(AccountVisuals.colors[5])
+        viewModel.onTypeChanged(AccountType.CREDIT_CARD)
+        assertEquals(AccountVisuals.colors[5], viewModel.uiState.value.color)
+    }
+
+    @Test
     fun `switching to a zero-decimal currency drops typed decimals`() = runTest {
         val viewModel = viewModel()
 

@@ -165,7 +165,7 @@ class OnboardingViewModel @Inject constructor(
                 type = AccountType.CHECKING,
                 currency = state.selectedCurrency,
                 initialBalance = MoneyInput.parse(state.balanceInput) ?: BigDecimal.ZERO,
-                color = AccountVisuals.colors.first(),
+                color = AccountVisuals.defaultColorFor(AccountType.CHECKING),
                 icon = AccountVisuals.defaultIconFor(AccountType.CHECKING),
                 isIncludedInTotal = true,
                 isIncludedInBudget = true,

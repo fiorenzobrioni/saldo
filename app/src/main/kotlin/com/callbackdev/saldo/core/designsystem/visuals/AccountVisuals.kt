@@ -89,6 +89,29 @@ object AccountVisuals {
         AccountType.OTHER -> "account_balance_wallet"
     }
 
+    /**
+     * Default palette color (0xRRGGBB) for a freshly selected account type, so a
+     * new account carries a type-appropriate identity out of the box (mirrors
+     * [defaultIconFor]; an explicit user pick always wins). The choices lean on
+     * common conventions and stay visually distinct across the seven types:
+     * blue for a bank account (the universal finance hue), green for savings
+     * (money/growth), amber for cash (physical coins/notes), cyan for a prepaid
+     * card and indigo for a digital wallet (two card/digital hues kept apart
+     * from checking's blue), deep purple for a credit card (a card feel, and
+     * deliberately not red so it never reads as the app's below-zero warning),
+     * and neutral blue-grey for "other".
+     */
+    @Suppress("MagicNumber")
+    fun defaultColorFor(type: AccountType): Int = when (type) {
+        AccountType.CHECKING -> 0x1E88E5 // blue
+        AccountType.SAVINGS -> 0x43A047 // green
+        AccountType.PREPAID_CARD -> 0x00ACC1 // cyan
+        AccountType.CREDIT_CARD -> 0x7E57C2 // deep purple
+        AccountType.CASH -> 0xF9A825 // amber
+        AccountType.DIGITAL_WALLET -> 0x5C6BC0 // indigo
+        AccountType.OTHER -> 0x546E7A // blue grey
+    }
+
     /** Opaque [Color] for a stored 0xRRGGBB value, defaulting to the first palette entry. */
     @Suppress("MagicNumber")
     fun color(rgb: Int?): Color = Color(0xFF000000L or (rgb ?: colors.first()).toLong())

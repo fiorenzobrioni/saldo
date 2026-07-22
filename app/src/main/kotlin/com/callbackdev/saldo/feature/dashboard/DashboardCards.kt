@@ -1222,14 +1222,16 @@ private val BALANCE_ACCOUNT_ICON_GAP = 8.dp
 
 // Vertical padding of a tappable account (or overflow) row in the breakdown.
 // Without the old 36dp avatar chip the rows sit tighter; the min height keeps a
-// comfortable touch target without padding each bare glyph back out to 48dp.
-private val BALANCE_ROW_PADDING_VERTICAL = 4.dp
-private val BALANCE_ROW_MIN_HEIGHT = 44.dp
+// usable touch target for a dense, secondary list. Deliberately below Material's
+// 48dp on this card only: the bare glyph left too much air at 48dp.
+private val BALANCE_ROW_PADDING_VERTICAL = 2.dp
+private val BALANCE_ROW_MIN_HEIGHT = 40.dp
 
 // Height a breakdown row is pinned to while the "as of today" line can appear,
 // so a diverging (two-line) row never grows past its single-line peers: the
-// bodyLarge amount and the labelSmall today line plus the row's vertical padding.
-private val BALANCE_ROW_TWO_LINE_HEIGHT = 48.dp
+// bodyLarge amount and the labelSmall today line just fit here, so this is the
+// floor for that case (going lower would clip the second line or ragged the list).
+private val BALANCE_ROW_TWO_LINE_HEIGHT = 44.dp
 
 /** How many accounts the expanded breakdown shows before the overflow row. */
 private const val ACCOUNT_EXPANDED_MAX = 10

@@ -431,6 +431,15 @@
 - [x] Nuova preferenza `balance_accounts_expanded_default` (DataStore, default true = aperto alla prima installazione): switch "Dettaglio conti aperto" nella sezione Dashboard delle Impostazioni. Il `DashboardViewModel` combina l'override di sessione col default persistito (override null = segue il default live finche l'utente non tocca il chevron)
 - [x] Stringhe IT/EN; unit test `DashboardViewModel` (breakdown conti dal default aperto/chiuso, toggle conti, toggle spendibile). Gate `assembleDebug testDebugUnitTest lint` verde
 
+## Fase 10.8 - Righe conti piu compatte e colore predefinito per tipo (luglio 2026)
+
+> Richiesta utente (versionCode 114 -> 115, versionName 0.9.75 -> 0.9.76). Due rifiniture dopo il feedback su screenshot: compattazione delle righe del breakdown conti e preimpostazione del colore per tipo alla creazione di un conto, gemella di quella gia esistente per l'icona.
+
+- [x] Righe breakdown conti piu compatte: padding verticale 4dp -> 2dp, altezza minima 40dp e altezza a due righe ("ad oggi") 48dp -> 44dp. Nel caso comune con una riga "ad oggi" tutte le righe sono fissate all'altezza a due righe, quindi 44dp e il pavimento (sotto si taglierebbe la seconda riga o la lista diventerebbe frastagliata). Scelta consapevole sotto il minimo Material 48dp, limitata a questa card
+- [x] `AccountVisuals.defaultColorFor(type)`: colore di palette per tipo (blu conto corrente, verde risparmio, ambra contanti, ciano prepagata, indaco wallet, viola scuro carta di credito - non rosso per non confondersi col "sotto zero" - grigio-blu altro). Tutti membri della palette, cosi il picker evidenzia lo swatch
+- [x] `AccountEditorViewModel`: alla creazione il cambio tipo preimposta il colore (guardia `userPickedColor`, gemella di `userPickedIcon`; in edit/load parte true e non sovrascrive mai la scelta persistita). Stato iniziale e fallback usano `defaultColorFor`. Onboarding (conto CHECKING) allineato al nuovo default
+- [x] Unit test `type changes drive the color until the user picks one` (gemello di quello sull'icona). Gate `assembleDebug testDebugUnitTest lint` verde
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.

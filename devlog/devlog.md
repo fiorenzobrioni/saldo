@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-22 - Righe conti piu compatte e colore predefinito per tipo di conto
+
+**Fatto:** due rifiniture dopo il feedback su screenshot. (1) Righe del breakdown conti piu compatte: padding verticale 4dp -> 2dp, altezza minima 44dp -> 40dp, e soprattutto altezza a due righe (caso "ad oggi") 48dp -> 44dp. Nello screenshot dell'utente un conto aveva la riga "ad oggi", che fissa tutte le righe all'altezza a due righe: e li che si vedeva l'aria, ora recuperata. (2) Alla creazione di un conto (non in modifica) la selezione del tipo preimposta anche un colore di default, con la stessa logica gia usata per l'icona (`userPickedColor` come guardia; in edit e in load il flag parte true, quindi non sovrascrive mai una scelta persistita). Nuovo `AccountVisuals.defaultColorFor(type)`. Allineato anche il conto creato in onboarding (sempre CHECKING) al nuovo default.
+
+**Decisioni:** colori per tipo scelti su convenzioni comuni e per massima distinzione tra i sette tipi: blu per il conto corrente (colore universale della finanza), verde per il risparmio (denaro/crescita), ambra per i contanti (monete/banconote), ciano per la prepagata e indaco per il wallet digitale (due tinte "carta/digitale" tenute distinte dal blu del conto corrente), viola scuro per la carta di credito (feeling da carta, e volutamente non rosso per non confondersi col rosso "sotto zero" dell'app), grigio-blu neutro per "altro". Tutti i default sono membri della palette esistente, cosi il picker evidenzia lo swatch giusto. Altezza righe: 40/44dp sono sotto il minimo Material 48dp, scelta consapevole e limitata a questa card: senza il chip il glifo nudo lasciava troppa aria a 48dp; 44dp e il pavimento nel caso "ad oggi" (sotto si taglierebbe la seconda riga o la lista diventerebbe frastagliata).
+
+**Problemi:** nessuno. Build locale col Gradle di sistema (il wrapper non scarica la distribuzione dietro il proxy).
+
+**Verificato:** gate `assembleDebug testDebugUnitTest lint`. Nuovo unit test `type changes drive the color until the user picks one` (gemello di quello sull'icona). versionCode 114 -> 115, versionName 0.9.75 -> 0.9.76.
+
+**Prossimo:** eventuale ulteriore compattazione righe solo se richiesto (sotto i 44dp servirebbe togliere la riga "ad oggi" o accettare una lista frastagliata).
+
+---
+
 ## 2026-07-22 - Card Saldo totale: dettaglio conti configurabile e stato persistente
 
 **Fatto:** cinque interventi sulla card Saldo totale, su richiesta utente. (1) Le icone dei conti nel breakdown perdono il chip colorato: ora sono glifi tinti col colore del conto, 24dp, allineati al bordo sinistro come le icone header delle card, cosi icona e nome cadono nella stessa colonna lungo tutta la Dashboard (stesso trattamento per la riga di overflow). (2) Righe piu compatte: padding verticale 6dp -> 4dp, altezza minima 44dp (prima 48dp erano dettati dal chip 36dp), riga a due righe "ad oggi" 52dp -> 48dp, gap divisore-prima riga 8dp -> 4dp. (3) Chiuso non mostra piu 2 conti ma nessuno: il breakdown e una sezione rivelata solo da espansa con `AnimatedVisibility` (expand + fade, comprende gap e divisore), e il chevron nell'header e sempre presente quando c'e almeno un conto. (4) Lo stato di apertura del breakdown conti e del dettaglio Spendibile oggi passa dal composable al `DashboardViewModel` (`StateFlow` + toggle): sopravvive allo scroll e alla navigazione tra schermate, torna al default solo alla riapertura dell'app. (5) Nuova preferenza `balance_accounts_expanded_default` (DataStore, default aperto) con switch "Dettaglio conti aperto" in Impostazioni > Dashboard.
