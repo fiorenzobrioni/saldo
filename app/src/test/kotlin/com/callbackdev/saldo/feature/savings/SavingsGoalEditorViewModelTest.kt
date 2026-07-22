@@ -7,9 +7,12 @@ import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.SavingsGoal
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.SavingsGoalRepository
+import com.callbackdev.saldo.core.domain.undo.UndoDeleteCoordinator
+import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.navigation.SavingsGoalEditorRoute
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -28,8 +31,9 @@ import java.util.Currency
 class SavingsGoalEditorViewModelTest {
 
     private val eur = Currency.getInstance("EUR")
-    private val savingsGoalRepository = mockk<SavingsGoalRepository>()
+    private val savingsGoalRepository = mockk<SavingsGoalRepository>(relaxUnitFun = true)
     private val accountRepository = mockk<AccountRepository>()
+    private val undoCoordinator = UndoDeleteCoordinator()
 
     private val savingsAccount = Account(
         id = 9L,
@@ -46,7 +50,39 @@ class SavingsGoalEditorViewModelTest {
     ): SavingsGoalEditorViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         every { savingsGoalRepository.observeGoals() } returns flowOf(goals)
-        return SavingsGoalEditorViewModel(route, savingsGoalRepository, accountRepository)
+        return SavingsGoalEditorViewModel(
+            route,
+            savingsGoalRepository,
+            accountRepository,
+            undoCoordinator,
+        )
+    }
+
+    @Test
+    fun `deleting hands the goal to the undo coordinator and emits the event`() = runTest {
+        val goal = SavingsGoal(
+            name = "Trip",
+            targetAmount = BigDecimal("2000.00"),
+            currency = eur,
+            accountId = savingsAccount.id,
+            id = 5L,
+        )
+        val viewModel = viewModel(
+            route = SavingsGoalEditorRoute(5L),
+            goals = listOf(goal),
+        )
+
+        viewModel.delete()
+
+        coVerify { savingsGoalRepository.deleteGoal(5L) }
+        undoCoordinator.events.test {
+            assertEquals(UndoableDelete.Goal(goal), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        viewModel.events.test {
+            assertEquals(SavingsGoalEditorEvent.Deleted, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test

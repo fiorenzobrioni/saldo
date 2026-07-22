@@ -979,8 +979,6 @@
     <string name="savings_editor_all_taken_title">I tuoi conti di risparmio sono tutti in uso</string>
     <string name="savings_editor_all_taken_body">Ogni obiettivo si lega a un suo conto di risparmio, e tutti i tuoi ne hanno già uno. Crea un altro conto di risparmio per un nuovo obiettivo, oppure modifica un obiettivo esistente.</string>
     <string name="savings_snackbar_deleted">Obiettivo eliminato</string>
-    <string name="savings_delete_title">Eliminare l\'obiettivo?</string>
-    <string name="savings_delete_body">L\'obiettivo viene rimosso. Il conto di risparmio collegato e i suoi movimenti restano.</string>
     <string name="savings_delete_action">Elimina</string>
 
     <!-- Scheda dashboard obiettivi di risparmio -->

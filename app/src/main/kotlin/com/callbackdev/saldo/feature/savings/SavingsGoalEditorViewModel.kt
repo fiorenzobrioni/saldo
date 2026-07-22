@@ -13,6 +13,8 @@ import com.callbackdev.saldo.core.domain.model.fallbackCurrency
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.SavingsGoalRepository
+import com.callbackdev.saldo.core.domain.undo.UndoDeleteCoordinator
+import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.navigation.SavingsGoalEditorRoute
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
@@ -58,7 +60,6 @@ data class SavingsGoalEditorUiState(
      */
     val hasSavingsAccounts: Boolean = false,
     val showValidation: Boolean = false,
-    val showDeleteDialog: Boolean = false,
 ) {
     val selectedAccount: Account? get() = availableAccounts.firstOrNull { it.id == accountId }
     val isNameValid: Boolean get() = name.isNotBlank()
@@ -97,6 +98,7 @@ class SavingsGoalEditorViewModel @AssistedInject constructor(
     @Assisted private val route: SavingsGoalEditorRoute,
     private val savingsGoalRepository: SavingsGoalRepository,
     private val accountRepository: AccountRepository,
+    private val undoCoordinator: UndoDeleteCoordinator,
 ) : ViewModel() {
 
     @AssistedFactory
@@ -258,18 +260,20 @@ class SavingsGoalEditorViewModel @AssistedInject constructor(
 
     fun onIconSelected(icon: String) = _uiState.update { it.copy(icon = icon) }
 
-    fun requestDelete() = _uiState.update { it.copy(showDeleteDialog = true) }
-
-    fun dismissDeleteDialog() = _uiState.update { it.copy(showDeleteDialog = false) }
-
-    fun confirmDelete() {
+    /**
+     * Deletes immediately (no confirmation dialog: undo is offered instead by
+     * the app-level snackbar; the linked account is untouched either way, so
+     * restoring the goal rebuilds everything).
+     */
+    fun delete() {
         val goal = existing ?: return
-        _uiState.update { it.copy(showDeleteDialog = false) }
         viewModelScope.launch {
-            val result = suspendRunCatching { savingsGoalRepository.deleteGoal(goal.id) }
-            _events.send(
-                if (result.isSuccess) SavingsGoalEditorEvent.Deleted else SavingsGoalEditorEvent.WriteFailed,
-            )
+            suspendRunCatching { savingsGoalRepository.deleteGoal(goal.id) }
+                .onSuccess {
+                    undoCoordinator.publish(UndoableDelete.Goal(goal))
+                    _events.send(SavingsGoalEditorEvent.Deleted)
+                }
+                .onFailure { _events.send(SavingsGoalEditorEvent.WriteFailed) }
         }
     }
 

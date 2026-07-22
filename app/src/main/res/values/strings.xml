@@ -963,8 +963,6 @@
     <string name="savings_editor_all_taken_title">Your savings accounts are all in use</string>
     <string name="savings_editor_all_taken_body">Each goal links to its own savings account, and all of yours already have one. Create another savings account for a new goal, or edit an existing goal.</string>
     <string name="savings_snackbar_deleted">Goal deleted</string>
-    <string name="savings_delete_title">Delete this goal?</string>
-    <string name="savings_delete_body">The goal is removed. The linked savings account and its transactions stay.</string>
     <string name="savings_delete_action">Delete</string>
 
     <!-- Savings goals dashboard card -->
