@@ -478,6 +478,20 @@
 - [x] Coerenza design system: celle categoria a `AvatarShape`, cifre tabulari nei saldi del picker conti, `LoadingState` condiviso; sezioni del form animate al cambio tipo (con rispetto di `rememberMotionEnabled`)
 - [x] Picker colore/icona consolidati: `ColorSwatchPicker`/`IconSwatchPicker` condivisi in `core/designsystem/component`, i tre editor (categorie, conti, abbonamenti) delegano
 
+## Fase 10.13 - Coerenza "premium" per tutti gli editor (luglio 2026)
+
+> Estensione della review della Fase 10.12 a tutti gli altri editor (versionCode 119 -> 120, versionName 0.9.80 -> 0.9.81): conto, rettifica saldo, budget, obiettivo di risparmio, ricorrenze (3 tipi), categoria. Scelte utente: importo hero solo dove l'importo e il dato principale; undo al posto della conferma solo per budget e obiettivo (le ricorrenze mantengono il dialog: eliminare una regola stacca definitivamente i movimenti gia generati, un undo non li ricollegherebbe). Nessun cambio di schema.
+
+- [x] Componenti promossi in `core/designsystem/component`: `HeroAmountField` (dal campo importo dei movimenti, ora prende il simbolo valuta come stringa), `AnimatedSection`, `SaldoDatePickerDialog` (unifica i due date dialog esistenti, chip rapidi Oggi/Ieri opzionali e nascosti sotto `minDate`)
+- [x] Importo hero in: limite mensile budget, target obiettivo, importo ricorrenza (con swap animato verso la nota importo variabile), saldo reale della rettifica (variante compatta nel dialog)
+- [x] Salva sempre attivo con validazione differita in tutti gli editor (conto, categoria, budget, ricorrenze; obiettivo lo era gia); la rettifica mantiene l'abilitazione live perche il preview del delta spiega gia lo stato
+- [x] `LoadingState` condiviso in tutti e cinque gli editor a schermata piena (prima spinner grezzo)
+- [x] Cifre tabulari su ogni campo/preview monetario rimasto `OutlinedTextField` (saldo iniziale, massimale carta, preview rettifica)
+- [x] Sezioni animate: saldo iniziale <-> sezione carta di credito nell'editor conto (rimosso anche un import `animateContentSize` morto), data obiettivo nel risparmio, importo variabile/mode selector/nota cross-currency/data fine nelle ricorrenze
+- [x] Undo cross-screen generalizzato: `UndoDeleteCoordinator` in `core/domain/undo` con `UndoableDelete` sealed (Movement, Budget, Goal) e `UndoDeleteViewModel` in `navigation`; snackbar con messaggio per entita. Budget ripristinato via write path transazionali del repository (i watermark di notifica ripartono), obiettivo re-inserito com'era
+- [x] Fix minori: dialog di eliminazione ricorrenza chiuso prima del delete (come gli altri editor)
+- [x] Test: nuovo `BudgetEditorViewModelTest` (mancava del tutto), `UndoDeleteViewModelTest` sui tre percorsi di ripristino, test delete/undo per obiettivo
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.

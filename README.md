@@ -44,7 +44,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - ⚙️ **Preferenze** - valuta principale (automatica o esplicita), conto predefinito per i nuovi movimenti, primo giorno della settimana, scelta delle card visibili in Dashboard e apertura predefinita del dettaglio conti nella card Saldo totale (all'avvio dell'app)
 - 💾 **Backup e ripristino su file** - export JSON versionato dove vuoi tu (nessun account richiesto), ripristino guidato con anteprima del contenuto - più **export CSV** dei movimenti filtrati, condivisibile
 - 📥 **Import CSV** - importa i movimenti da un file CSV, anche di formato diverso da quello esportato: riconoscimento automatico di separatore, decimali e colonne (per nome, IT/EN, in qualsiasi ordine), regole di adattamento (tipo dedotto dal segno, segno normalizzato, valuta dal conto), creazione opzionale di conti/categorie/tag mancanti, rilevazione dei duplicati (contro il registro e nel file), anteprima e report finale. Solo inserimento: non modifica né elimina i movimenti esistenti
-- 🛟 **Niente modifiche perse per sbaglio** - uscendo da un editor (conto, movimento, ricorrenza, budget, categoria) con dati non salvati, l'app chiede conferma prima di scartarli
+- 🛟 **Niente modifiche perse per sbaglio** - uscendo da un editor (conto, movimento, ricorrenza, budget, categoria) con dati non salvati, l'app chiede conferma prima di scartarli; l'eliminazione di movimenti, budget e obiettivi dagli editor si annulla con un tap (undo), senza dialog di conferma
 - 🇮🇹 🇬🇧 Italiano e inglese
 
 ### Roadmap futura (v1.5 / v2.0)
