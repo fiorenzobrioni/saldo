@@ -48,6 +48,7 @@ import com.callbackdev.saldo.core.common.date.toUtcLocalDate
 import com.callbackdev.saldo.core.common.date.toUtcMillis
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
@@ -145,7 +146,7 @@ private fun AccountPickerRow(
             )
             Text(
                 text = MoneyFormatter.format(item.balance, account.currency),
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }

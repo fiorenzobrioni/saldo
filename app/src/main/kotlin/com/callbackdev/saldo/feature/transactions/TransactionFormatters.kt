@@ -7,6 +7,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
+import java.math.BigDecimal
+import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -85,6 +87,25 @@ fun compactDayLabel(date: LocalDate, today: LocalDate): String = when (date) {
     today.minusDays(1) -> stringResource(R.string.date_yesterday)
     else -> shortDayLabel(date, today)
 }
+
+/**
+ * Locale-formatted exchange rate for the implied-rate line of a cross-currency
+ * transfer. Not money (never shown with a currency symbol), so plain number
+ * formatting with enough decimals to be a useful plausibility check.
+ */
+@Composable
+fun rateLabel(rate: BigDecimal): String {
+    val locale = currentLocale()
+    return remember(rate, locale) {
+        NumberFormat.getNumberInstance(locale).apply {
+            minimumFractionDigits = RATE_MIN_DECIMALS
+            maximumFractionDigits = RATE_MAX_DECIMALS
+        }.format(rate)
+    }
+}
+
+private const val RATE_MIN_DECIMALS = 2
+private const val RATE_MAX_DECIMALS = 4
 
 /**
  * Human day label: "Today", "Yesterday", then a localized weekday + date

@@ -183,6 +183,23 @@ class TransactionEditorViewModel @AssistedInject constructor(
         }
     }
 
+    /**
+     * Swaps the two legs of a transfer. On a cross-currency transfer the typed
+     * amounts travel with their currency, so each account keeps its own figure.
+     */
+    fun onSwapAccounts() {
+        val wasCrossCurrency = uiState.value.isCrossCurrency
+        form.update { current ->
+            if (current.type != TransactionType.TRANSFER) return@update current
+            current.copy(
+                accountId = current.toAccountId,
+                toAccountId = current.accountId,
+                amountInput = if (wasCrossCurrency) current.toAmountInput else current.amountInput,
+                toAmountInput = if (wasCrossCurrency) current.amountInput else current.toAmountInput,
+            )
+        }
+    }
+
     fun onCategorySelected(categoryId: Long) {
         form.update { it.copy(categoryId = categoryId) }
     }

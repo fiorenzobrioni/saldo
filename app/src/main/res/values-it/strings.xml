@@ -374,8 +374,10 @@
     <string name="transaction_editor_from_account">Conto di partenza</string>
     <string name="transaction_editor_to_account">Conto di arrivo</string>
     <string name="transaction_editor_amount">Importo</string>
+    <string name="transaction_editor_amount_error">Inserisci un importo valido</string>
     <string name="transaction_editor_sent_amount">In uscita (%1$s)</string>
     <string name="transaction_editor_received_amount">In entrata (%1$s)</string>
+    <string name="transaction_editor_swap_accounts">Inverti i conti</string>
     <string name="transaction_editor_category">Categoria</string>
     <string name="transaction_editor_category_error">Scegli una categoria</string>
     <string name="transaction_editor_description">Descrizione</string>

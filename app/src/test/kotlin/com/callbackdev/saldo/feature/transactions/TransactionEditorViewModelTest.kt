@@ -322,6 +322,53 @@ class TransactionEditorViewModelTest {
     }
 
     @Test
+    fun `swapping a same-currency transfer keeps the amount on both legs`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        viewModel.onTypeChanged(TransactionType.TRANSFER)
+        viewModel.onToAccountSelected(cash)
+        viewModel.onAmountChanged("50")
+        viewModel.onSwapAccounts()
+
+        val state = viewModel.uiState.value
+        assertEquals(cash, state.account)
+        assertEquals(checking, state.toAccount)
+        assertEquals("50", state.amountInput)
+    }
+
+    @Test
+    fun `swapping a cross-currency transfer moves each amount with its account`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        viewModel.onTypeChanged(TransactionType.TRANSFER)
+        viewModel.onToAccountSelected(dollars)
+        viewModel.onAmountChanged("50")
+        viewModel.onToAmountChanged("54.2")
+        viewModel.onSwapAccounts()
+
+        val state = viewModel.uiState.value
+        assertEquals(dollars, state.account)
+        assertEquals(checking, state.toAccount)
+        assertEquals("54.2", state.amountInput)
+        assertEquals("50", state.toAmountInput)
+    }
+
+    @Test
+    fun `swapping is ignored outside a transfer`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        viewModel.onAmountChanged("12.5")
+        viewModel.onSwapAccounts()
+
+        val state = viewModel.uiState.value
+        assertEquals(checking, state.account)
+        assertEquals("12.5", state.amountInput)
+    }
+
+    @Test
     fun `an expense without category is not saved`() = runTest {
         val viewModel = viewModel(lastUsedAccountId = 1L)
         collectState(viewModel)
