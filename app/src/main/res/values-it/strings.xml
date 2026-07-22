@@ -371,7 +371,6 @@
     <string name="transaction_editor_account">Conto</string>
     <string name="transaction_editor_from_account">Conto di partenza</string>
     <string name="transaction_editor_to_account">Conto di arrivo</string>
-    <string name="transaction_editor_amount">Importo</string>
     <string name="transaction_editor_amount_error">Inserisci un importo valido</string>
     <string name="transaction_editor_sent_amount">In uscita (%1$s)</string>
     <string name="transaction_editor_received_amount">In entrata (%1$s)</string>
@@ -633,6 +632,7 @@
 
     <!-- Shared editor feedback -->
     <string name="editor_write_failed">Operazione non riuscita. Riprova.</string>
+    <string name="editor_amount">Importo</string>
 
     <!-- Modifiche non salvate -->
     <string name="discard_changes_title">Scartare le modifiche?</string>

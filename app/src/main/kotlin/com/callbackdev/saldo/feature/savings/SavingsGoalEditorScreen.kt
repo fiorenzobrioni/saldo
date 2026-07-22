@@ -57,12 +57,12 @@ import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
+import com.callbackdev.saldo.core.designsystem.component.SaldoDatePickerDialog
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.feature.recurring.DateField
-import com.callbackdev.saldo.feature.recurring.RecurringDatePickerDialog
 import com.callbackdev.saldo.feature.recurring.SubscriptionColorPicker
 import com.callbackdev.saldo.feature.recurring.SubscriptionIconPicker
 import com.callbackdev.saldo.navigation.SavingsGoalEditorRoute
@@ -200,7 +200,7 @@ fun SavingsGoalEditorScreen(
     }
 
     if (showDatePicker) {
-        RecurringDatePickerDialog(
+        SaldoDatePickerDialog(
             initialDate = uiState.targetDate ?: LocalDate.now().plusMonths(DEFAULT_TARGET_MONTHS),
             minDate = LocalDate.now(),
             onConfirm = {

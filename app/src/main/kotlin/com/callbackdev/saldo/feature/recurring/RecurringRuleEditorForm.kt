@@ -11,9 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Repeat
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -22,10 +19,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,8 +32,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
-import com.callbackdev.saldo.core.common.date.toUtcLocalDate
-import com.callbackdev.saldo.core.common.date.toUtcMillis
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.designsystem.component.ColorSwatchPicker
 import com.callbackdev.saldo.core.designsystem.component.IconSwatchPicker
@@ -346,53 +338,4 @@ internal fun SubscriptionIconPicker(
         optionLabelRes = R.string.subscription_editor_icon_option,
         modifier = modifier,
     )
-}
-
-/**
- * Material date picker locked to calendar mode ([showModeToggle] off): the
- * input/calendar toggle animation was slow and janky, and typing a date adds
- * little here. [minDate] floors the selectable range (for the end date).
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun RecurringDatePickerDialog(
-    initialDate: LocalDate,
-    onConfirm: (LocalDate) -> Unit,
-    onDismiss: () -> Unit,
-    minDate: LocalDate? = null,
-) {
-    val selectableDates = remember(minDate) {
-        if (minDate == null) {
-            DatePickerDefaults.AllDates
-        } else {
-            object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean =
-                    !utcTimeMillis.toUtcLocalDate().isBefore(minDate)
-            }
-        }
-    }
-    val state = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate.toUtcMillis(),
-        selectableDates = selectableDates,
-    )
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    state.selectedDateMillis?.let { millis ->
-                        onConfirm(millis.toUtcLocalDate())
-                    }
-                },
-                enabled = state.selectedDateMillis != null,
-            ) {
-                Text(stringResource(R.string.action_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
-        },
-    ) {
-        DatePicker(state = state, showModeToggle = false)
-    }
 }

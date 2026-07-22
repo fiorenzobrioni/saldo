@@ -1,14 +1,6 @@
 package com.callbackdev.saldo.feature.transactions
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -61,11 +53,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.AnimatedSection
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
+import com.callbackdev.saldo.core.designsystem.component.HeroAmountField
 import com.callbackdev.saldo.core.designsystem.component.InfoBanner
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
+import com.callbackdev.saldo.core.designsystem.component.SaldoDatePickerDialog
 import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
@@ -243,13 +238,14 @@ fun TransactionEditorScreen(
     }
 
     if (showDatePicker) {
-        TransactionDatePickerDialog(
+        SaldoDatePickerDialog(
             initialDate = uiState.date,
             onConfirm = { date ->
                 viewModel.onDateSelected(date)
                 showDatePicker = false
             },
             onDismiss = { showDatePicker = false },
+            showQuickDates = true,
         )
     }
 
@@ -338,9 +334,9 @@ private fun EditorForm(
             Spacer(Modifier.height(16.dp))
         }
         Spacer(Modifier.height(8.dp))
-        AmountField(
+        HeroAmountField(
             input = uiState.amountInput,
-            currency = uiState.currency,
+            currencySymbol = uiState.currency?.symbol,
             isError = uiState.showValidation && !uiState.isAmountValid,
             showSignToggle = uiState.type == TransactionType.ADJUSTMENT,
             onValueChange = viewModel::onAmountChanged,
@@ -361,11 +357,10 @@ private fun EditorForm(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Spacer(Modifier.height(12.dp))
-                AmountField(
+                HeroAmountField(
                     input = uiState.toAmountInput,
-                    currency = uiState.toAccount?.currency,
+                    currencySymbol = uiState.toAccount?.currency?.symbol,
                     isError = uiState.showValidation && !uiState.isToAmountValid,
-                    showSignToggle = false,
                     onValueChange = viewModel::onToAmountChanged,
                     errorText = stringResource(R.string.transaction_editor_amount_error),
                     compact = true,
@@ -421,27 +416,6 @@ private fun EditorForm(
         }
         Spacer(Modifier.height(24.dp))
     }
-}
-
-/**
- * Shared enter/exit for the form sections that appear and disappear when the
- * movement type changes; snaps to the final state when system animations are
- * off.
- */
-@Composable
-private fun AnimatedSection(
-    visible: Boolean,
-    modifier: Modifier = Modifier,
-    content: @Composable AnimatedVisibilityScope.() -> Unit,
-) {
-    val motionEnabled = rememberMotionEnabled()
-    AnimatedVisibility(
-        visible = visible,
-        enter = if (motionEnabled) fadeIn() + expandVertically() else EnterTransition.None,
-        exit = if (motionEnabled) fadeOut() + shrinkVertically() else ExitTransition.None,
-        modifier = modifier,
-        content = content,
-    )
 }
 
 /**

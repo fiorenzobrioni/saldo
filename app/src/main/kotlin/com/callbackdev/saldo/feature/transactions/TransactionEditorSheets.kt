@@ -16,8 +16,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
@@ -25,13 +23,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,8 +43,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
-import com.callbackdev.saldo.core.common.date.toUtcLocalDate
-import com.callbackdev.saldo.core.common.date.toUtcMillis
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
@@ -57,7 +51,6 @@ import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
-import java.time.LocalDate
 import java.time.LocalTime
 
 /**
@@ -247,59 +240,6 @@ internal fun CategoryPickerSheet(
                 onSelect = onSelect,
             )
         }
-    }
-}
-
-/**
- * Material date picker preset on the movement's current date, with quick
- * "Today"/"Yesterday" chips on top: they cover most date corrections and
- * confirm immediately, skipping the calendar.
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-internal fun TransactionDatePickerDialog(
-    initialDate: LocalDate,
-    onConfirm: (LocalDate) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val state = rememberDatePickerState(initialSelectedDateMillis = initialDate.toUtcMillis())
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    state.selectedDateMillis?.let { millis ->
-                        onConfirm(millis.toUtcLocalDate())
-                    }
-                },
-                enabled = state.selectedDateMillis != null,
-            ) {
-                Text(stringResource(R.string.action_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_cancel))
-            }
-        },
-    ) {
-        val today = LocalDate.now()
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp),
-        ) {
-            SuggestionChip(
-                onClick = { onConfirm(today) },
-                label = { Text(stringResource(R.string.date_today)) },
-            )
-            SuggestionChip(
-                onClick = { onConfirm(today.minusDays(1)) },
-                label = { Text(stringResource(R.string.date_yesterday)) },
-            )
-        }
-        // Calendar-only: the input/calendar mode toggle animates slowly and janky,
-        // and typing a date adds little here.
-        DatePicker(state = state, showModeToggle = false)
     }
 }
 

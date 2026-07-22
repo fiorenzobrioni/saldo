@@ -366,7 +366,6 @@
     <string name="transaction_editor_account">Account</string>
     <string name="transaction_editor_from_account">From account</string>
     <string name="transaction_editor_to_account">To account</string>
-    <string name="transaction_editor_amount">Amount</string>
     <string name="transaction_editor_amount_error">Enter a valid amount</string>
     <string name="transaction_editor_sent_amount">Sent (%1$s)</string>
     <string name="transaction_editor_received_amount">Received (%1$s)</string>
@@ -616,6 +615,7 @@
 
     <!-- Shared editor feedback -->
     <string name="editor_write_failed">Something went wrong. Please try again.</string>
+    <string name="editor_amount">Amount</string>
     <string name="editor_amount_placeholder" translatable="false">0</string>
 
     <!-- Discard unsaved changes -->

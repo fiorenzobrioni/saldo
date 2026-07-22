@@ -59,6 +59,7 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
+import com.callbackdev.saldo.core.designsystem.component.SaldoDatePickerDialog
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
@@ -174,7 +175,7 @@ fun RecurringRuleEditorScreen(
     }
 
     if (showStartPicker) {
-        RecurringDatePickerDialog(
+        SaldoDatePickerDialog(
             initialDate = uiState.startDate,
             onConfirm = {
                 viewModel.onStartDateSelected(it)
@@ -184,7 +185,7 @@ fun RecurringRuleEditorScreen(
         )
     }
     if (showEndPicker) {
-        RecurringDatePickerDialog(
+        SaldoDatePickerDialog(
             initialDate = uiState.endDate ?: uiState.startDate,
             minDate = uiState.startDate,
             onConfirm = {
