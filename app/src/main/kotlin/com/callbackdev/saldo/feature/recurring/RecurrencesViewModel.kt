@@ -9,7 +9,10 @@ import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
+import com.callbackdev.saldo.core.domain.model.hasEndedBy
+import com.callbackdev.saldo.core.domain.model.runsInMonthOf
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.common.time.midnightTicker
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
@@ -44,14 +47,21 @@ class RecurrencesViewModel @Inject constructor(
 
     private val sort = MutableStateFlow(SubscriptionSort.NEXT_CHARGE)
 
+    /**
+     * Sort choice and the current day, pre-combined to stay within combine's
+     * arity. The midnight ticker re-anchors "today" so the next charge dates
+     * and the active-rule filter stay correct while the hub is left open.
+     */
+    private val sortAndToday = combine(sort, midnightTicker(clock), ::Pair)
+
     val uiState: StateFlow<RecurrencesUiState> = combine(
         recurringRuleRepository.observeRules(),
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
-        sort,
+        sortAndToday,
         userPreferences.primaryCurrencyOverride,
-    ) { rules, accounts, categories, sortOrder, currencyOverride ->
-        buildState(rules, accounts, categories, sortOrder, currencyOverride)
+    ) { rules, accounts, categories, (sortOrder, today), currencyOverride ->
+        buildState(rules, accounts, categories, sortOrder, currencyOverride, today)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -62,20 +72,24 @@ class RecurrencesViewModel @Inject constructor(
         sort.update { newSort }
     }
 
+    @Suppress("LongParameterList") // One argument per combined source plus the resolved day.
     private fun buildState(
         rules: List<RecurringRule>,
         accounts: List<AccountWithBalance>,
         categories: List<Category>,
         sortOrder: SubscriptionSort,
         currencyOverride: Currency?,
+        today: LocalDate,
     ): RecurrencesUiState {
-        val today = LocalDate.now(clock)
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
 
         fun sectionFor(type: TransactionType): RecurrenceSection {
+            // Listed: everything not yet over. A rule starting next quarter is
+            // real and its first charge date is worth seeing, so it stays on
+            // screen even though it is priced at zero below.
             val items = rules
-                .filter { it.type == type && it.isActiveOn(today) }
+                .filter { it.type == type && !it.hasEndedBy(today) }
                 .map { rule ->
                     rule.toItem(
                         today = today,
@@ -94,8 +108,12 @@ class RecurrencesViewModel @Inject constructor(
                     .eachCount()
                     .maxByOrNull { it.value }?.key
                 ?: fallbackCurrency
-            val primaryItems = items.filter { it.rule.currency == primary }
-            val monthlyTotal = primaryItems
+            // Priced: only the rules that carry a cost into this month. A rule
+            // starting later this month counts (it is a real monthly cost); one
+            // starting next quarter does not, and counting it would inflate the
+            // total and the annual projection from the moment it is created.
+            val running = items.filter { it.rule.currency == primary && it.rule.runsInMonthOf(today) }
+            val monthlyTotal = running
                 .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.monthlyEquivalent) }
 
             return RecurrenceSection(
@@ -103,7 +121,7 @@ class RecurrencesViewModel @Inject constructor(
                 monthlyTotal = monthlyTotal,
                 annualProjection = monthlyTotal.multiply(BigDecimal(MONTHS_PER_YEAR)),
                 // Same scope as monthlyTotal, so "N subscriptions - X/month" is coherent.
-                activeCount = primaryItems.size,
+                activeCount = running.size,
                 currency = primary,
             )
         }
@@ -112,7 +130,8 @@ class RecurrencesViewModel @Inject constructor(
         // Planned savings: the monthly-equivalent of transfers landing in a
         // savings account, the honest seed of Savings Goals (v2.0).
         val savingsItems = transfers.items.filter {
-            accountById[it.rule.transferAccountId]?.type == AccountType.SAVINGS
+            accountById[it.rule.transferAccountId]?.type == AccountType.SAVINGS &&
+                it.rule.runsInMonthOf(today)
         }
         val savingsCurrency = currencyOverride
             ?: savingsItems.groupingBy { it.rule.currency }.eachCount().maxByOrNull { it.value }?.key
@@ -156,9 +175,6 @@ class RecurrencesViewModel @Inject constructor(
         val afterGenerated = lastGeneratedDate?.plusDays(1)
         return if (afterGenerated != null && afterGenerated > today) afterGenerated else today
     }
-
-    private fun RecurringRule.isActiveOn(today: LocalDate): Boolean =
-        endDate == null || endDate >= today
 
     private fun SubscriptionSort.comparator(): Comparator<SubscriptionItem> = when (this) {
         SubscriptionSort.NEXT_CHARGE ->

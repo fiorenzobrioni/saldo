@@ -465,6 +465,10 @@ class TransactionEditorViewModel @AssistedInject constructor(
             isExcludedFromStats = if (hasCategory) current.isExcludedFromStats else false,
             isRefund = current.type == TransactionType.INCOME && current.isRefund,
             recurringRuleId = base?.recurringRuleId,
+            // Carried through rather than defaulted: a pending movement is not
+            // reachable from this editor today, but letting the flag fall back
+            // to false would silently confirm one the day it becomes editable.
+            isPending = base?.isPending ?: false,
             recurringOccurrenceDate = base?.recurringOccurrenceDate,
         )
     }

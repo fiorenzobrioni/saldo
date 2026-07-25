@@ -201,8 +201,14 @@ class SavingsGoalEditorViewModel @AssistedInject constructor(
      * Refreshes the create-mode picker when the account list changes (e.g. after
      * the "create a savings account" shortcut). Preselects the first option when
      * nothing valid is selected yet, so a freshly created account is picked up.
+     *
+     * The preselection is the app's doing, not the user's: on a form still at
+     * its baseline the baseline moves with it, or coming back from the shortcut
+     * would raise the "discard changes?" guard over a form nobody has typed in.
+     * A form the user has already edited keeps its original baseline.
      */
     private fun refreshCreateOptions(freeSavings: List<Account>, hasSavingsAccounts: Boolean) {
+        val wasPristine = baseline.value == null || baseline.value == _uiState.value.snapshot()
         _uiState.update { state ->
             val stillValid = state.accountId != null && freeSavings.any { it.id == state.accountId }
             val accountId = if (stillValid) state.accountId else freeSavings.firstOrNull()?.id
@@ -216,6 +222,7 @@ class SavingsGoalEditorViewModel @AssistedInject constructor(
                 hasSavingsAccounts = hasSavingsAccounts,
             )
         }
+        if (wasPristine) captureBaseline()
     }
 
     fun onNameChanged(name: String) = _uiState.update { it.copy(name = name) }

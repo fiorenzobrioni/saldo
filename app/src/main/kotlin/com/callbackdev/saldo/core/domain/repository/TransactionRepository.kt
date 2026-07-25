@@ -10,6 +10,7 @@ import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.time.Instant
@@ -208,6 +209,13 @@ interface TransactionRepository {
 
     /** Number of movements labelled with [categoryId]. */
     suspend fun countForCategory(categoryId: Long): Int
+
+    /**
+     * The movement types actually filed under [categoryId]; empty when the
+     * category labels nothing. Tells a category deletion which reassignment
+     * targets are compatible: only expenses were filed, only incomes, or both.
+     */
+    suspend fun transactionTypesForCategory(categoryId: Long): Set<TransactionType>
 
     /** Inserts a new movement (id == 0) or updates an existing one. Returns its id. */
     suspend fun upsert(transaction: Transaction): Long

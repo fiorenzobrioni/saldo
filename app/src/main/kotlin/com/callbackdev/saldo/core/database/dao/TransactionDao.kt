@@ -414,48 +414,59 @@ interface TransactionDao {
      * spend, restricted to [currency]. Transfers and adjustments are excluded by
      * the type filter; pending movements never count. Unlike statistics, these
      * are cash figures: movements flagged out of statistics still count.
+     *
+     * Movements on archived accounts are left out, so these cards agree with
+     * the total balance sitting right above them (which drops archived
+     * accounts too). Archiving therefore rewrites these figures retroactively,
+     * exactly like it does for the balance and its history: the two must tell
+     * the same story about the same set of accounts. The budget-exclusion flag
+     * is a different axis and deliberately does not apply here - it only
+     * governs budget progress and safe-to-spend.
      */
     @Suppress("LongParameterList") // One instant per window boundary; a DAO cannot take a POJO.
     @Query(
         """
         SELECT
             SUM(
-                CASE WHEN type = 'EXPENSE'
-                    AND timestampEpochMilli >= :todayStart AND timestampEpochMilli < :todayEnd
-                THEN amountMinor ELSE 0 END
+                CASE WHEN t.type = 'EXPENSE'
+                    AND t.timestampEpochMilli >= :todayStart AND t.timestampEpochMilli < :todayEnd
+                THEN t.amountMinor ELSE 0 END
             ) AS todaySpendMinor,
             SUM(
-                CASE WHEN type = 'INCOME'
-                    AND timestampEpochMilli >= :todayStart AND timestampEpochMilli < :todayEnd
-                THEN amountMinor ELSE 0 END
+                CASE WHEN t.type = 'INCOME'
+                    AND t.timestampEpochMilli >= :todayStart AND t.timestampEpochMilli < :todayEnd
+                THEN t.amountMinor ELSE 0 END
             ) AS todayIncomeMinor,
             SUM(
-                CASE WHEN type = 'EXPENSE'
-                    AND timestampEpochMilli >= :monthStart AND timestampEpochMilli < :monthEnd
-                THEN amountMinor ELSE 0 END
+                CASE WHEN t.type = 'EXPENSE'
+                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :monthEnd
+                THEN t.amountMinor ELSE 0 END
             ) AS monthSpendMinor,
             SUM(
-                CASE WHEN type = 'INCOME'
-                    AND timestampEpochMilli >= :monthStart AND timestampEpochMilli < :monthEnd
-                THEN amountMinor ELSE 0 END
+                CASE WHEN t.type = 'INCOME'
+                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :monthEnd
+                THEN t.amountMinor ELSE 0 END
             ) AS monthIncomeMinor,
             SUM(
-                CASE WHEN type = 'EXPENSE'
-                    AND timestampEpochMilli >= :monthStart AND timestampEpochMilli < :todayEnd
-                THEN amountMinor ELSE 0 END
+                CASE WHEN t.type = 'EXPENSE'
+                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :todayEnd
+                THEN t.amountMinor ELSE 0 END
             ) AS monthToDateSpendMinor,
             SUM(
-                CASE WHEN type = 'EXPENSE' AND recurringRuleId IS NULL
-                    AND timestampEpochMilli >= :monthStart AND timestampEpochMilli < :todayEnd
-                THEN amountMinor ELSE 0 END
+                CASE WHEN t.type = 'EXPENSE' AND t.recurringRuleId IS NULL
+                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :todayEnd
+                THEN t.amountMinor ELSE 0 END
             ) AS monthToDateNonRecurringSpendMinor,
             SUM(
-                CASE WHEN type = 'EXPENSE'
-                    AND timestampEpochMilli >= :previousStart AND timestampEpochMilli < :previousToDateEnd
-                THEN amountMinor ELSE 0 END
+                CASE WHEN t.type = 'EXPENSE'
+                    AND t.timestampEpochMilli >= :previousStart
+                    AND t.timestampEpochMilli < :previousToDateEnd
+                THEN t.amountMinor ELSE 0 END
             ) AS previousToDateSpendMinor
-        FROM transactions
-        WHERE isPending = 0 AND currency = :currency AND type IN ('EXPENSE', 'INCOME')
+        FROM transactions t
+        INNER JOIN accounts a ON a.id = t.accountId
+        WHERE t.isPending = 0 AND t.currency = :currency AND t.type IN ('EXPENSE', 'INCOME')
+            AND a.isArchived = 0
         """,
     )
     fun observeDashboardTotals(
@@ -606,6 +617,10 @@ interface TransactionDao {
 
     @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId")
     suspend fun countForCategory(categoryId: Long): Int
+
+    /** The distinct movement types filed under [categoryId], as stored enum names. */
+    @Query("SELECT DISTINCT type FROM transactions WHERE categoryId = :categoryId")
+    suspend fun distinctTypesForCategory(categoryId: Long): List<String>
 
     /**
      * Signed sum of a single account's own movements in `[startMilli, endMilli)`,

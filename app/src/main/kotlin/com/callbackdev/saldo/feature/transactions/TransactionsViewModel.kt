@@ -7,6 +7,7 @@ import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.di.DefaultDispatcher
 import com.callbackdev.saldo.core.common.prefs.CsvSeparator
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.common.time.midnightTicker
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.Transaction
@@ -80,11 +81,17 @@ class TransactionsViewModel @Inject constructor(
         ::TagData,
     )
 
-    /** Filters plus the week-start setting, pre-combined to stay within combine's arity. */
+    /**
+     * Filters, the week-start setting and the current day, pre-combined to stay
+     * within combine's arity. The midnight ticker re-anchors "today" so the
+     * relative date presets ("This week", "This month") do not keep resolving
+     * against yesterday when the ledger is left open across midnight.
+     */
     private val filterInputs = combine(
         filters,
         userPreferences.firstDayOfWeek,
-        ::Pair,
+        midnightTicker(clock),
+        ::Triple,
     )
 
     val uiState: StateFlow<TransactionsUiState> = combine(
@@ -93,10 +100,9 @@ class TransactionsViewModel @Inject constructor(
         categoryRepository.observeCategories(),
         tagData,
         filterInputs,
-    ) { transactions, accounts, categories, tags, (activeFilters, firstDayOfWeek) ->
+    ) { transactions, accounts, categories, tags, (activeFilters, firstDayOfWeek, today) ->
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
-        val today = LocalDate.now(clock)
         // Compiled once per pass: this loop runs over the whole ledger on
         // every keystroke of the search field.
         val compiled = TransactionFilterEngine.compile(activeFilters, today, firstDayOfWeek)

@@ -839,7 +839,7 @@
     <string name="budgets_section_categories">Category budgets</string>
     <string name="budgets_over_a11y">Budget exceeded</string>
     <string name="budgets_empty_title">No budgets yet</string>
-    <string name="budgets_empty_body">Set a monthly cap for all spending or for single categories: Saldo tracks the progress and warns you at 80% and 100%.</string>
+    <string name="budgets_empty_body" formatted="false">Set a monthly cap for all spending or for single categories: Saldo tracks the progress and warns you at 80% and 100%.</string>
     <string name="budgets_empty_cta">Create a budget</string>
     <string name="budgets_editor_title_new">New budget</string>
     <string name="budgets_editor_title_edit">Edit budget</string>

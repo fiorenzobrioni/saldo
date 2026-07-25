@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.categories
 import app.cash.turbine.test
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.BudgetRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -47,8 +48,13 @@ class CategoryEditorViewModelTest {
         isDefault = isDefault,
     )
 
-    private fun viewModel(route: CategoryEditorRoute = CategoryEditorRoute()) =
-        CategoryEditorViewModel(route, categoryRepository, transactionRepository, budgetRepository)
+    private fun viewModel(route: CategoryEditorRoute = CategoryEditorRoute()): CategoryEditorViewModel {
+        // Default: only expenses filed under the category being deleted. Tests
+        // about the reassignment filter override it.
+        coEvery { transactionRepository.transactionTypesForCategory(any()) } returns
+            setOf(TransactionType.EXPENSE)
+        return CategoryEditorViewModel(route, categoryRepository, transactionRepository, budgetRepository)
+    }
 
     @Test
     fun `a new category adopts the initial type from the route`() = runTest {
@@ -250,6 +256,47 @@ class CategoryEditorViewModelTest {
             assertEquals(CategoryEditorEvent.Deleted, awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `an either category holding both types only offers targets usable for both`() = runTest {
+        val self = category(5L, CategoryType.BOTH)
+        val bothTarget = category(10L, CategoryType.BOTH, name = "Misc")
+        val expenseOnly = category(11L, CategoryType.EXPENSE, name = "Groceries")
+        val incomeOnly = category(12L, CategoryType.INCOME, name = "Salary")
+        coEvery { categoryRepository.getCategory(5L) } returns self
+        coEvery { transactionRepository.countForCategory(5L) } returns 6
+        coEvery { categoryRepository.observeCategories() } returns
+            flowOf(listOf(self, bothTarget, expenseOnly, incomeOnly))
+        val viewModel = viewModel(CategoryEditorRoute(categoryId = 5L))
+        coEvery { transactionRepository.transactionTypesForCategory(5L) } returns
+            setOf(TransactionType.EXPENSE, TransactionType.INCOME)
+
+        viewModel.requestDelete()
+
+        val dialog = viewModel.uiState.value.deleteDialog as CategoryDeleteDialog.Reassign
+        assertEquals(listOf(10L), dialog.candidates.map { it.id })
+    }
+
+    @Test
+    fun `an either category holding only expenses still offers expense targets`() = runTest {
+        val self = category(5L, CategoryType.BOTH)
+        val expenseOnly = category(11L, CategoryType.EXPENSE, name = "Groceries")
+        val incomeOnly = category(12L, CategoryType.INCOME, name = "Salary")
+        coEvery { categoryRepository.getCategory(5L) } returns self
+        coEvery { transactionRepository.countForCategory(5L) } returns 2
+        coEvery { categoryRepository.observeCategories() } returns
+            flowOf(listOf(self, expenseOnly, incomeOnly))
+        val viewModel = viewModel(CategoryEditorRoute(categoryId = 5L))
+        coEvery { transactionRepository.transactionTypesForCategory(5L) } returns
+            setOf(TransactionType.EXPENSE)
+
+        viewModel.requestDelete()
+
+        val dialog = viewModel.uiState.value.deleteDialog as CategoryDeleteDialog.Reassign
+        // The income-only category would have those expenses count against its
+        // own budget and ring slice, so it is never a valid target.
+        assertEquals(listOf(11L), dialog.candidates.map { it.id })
     }
 
     @Test

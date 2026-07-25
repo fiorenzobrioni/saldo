@@ -16,6 +16,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -143,6 +144,62 @@ class SavingsGoalEditorViewModelTest {
             assertEquals(eur, currency)
             assertEquals(9L, accountId)
             assertEquals(LocalDate.of(2026, 12, 31), targetDate)
+        }
+    }
+
+    @Test
+    fun `an account appearing from the shortcut is preselected without dirtying the form`() = runTest {
+        // The "create a savings account" shortcut leaves this editor open and
+        // adds an account, which the observed list delivers as a second
+        // emission. The preselection that follows is the app's doing, not the
+        // user's, so coming back must not raise the discard-changes guard.
+        val accounts = MutableStateFlow<List<AccountWithBalance>>(emptyList())
+        every { accountRepository.observeAccountsWithBalance() } returns accounts
+        every { savingsGoalRepository.observeGoals() } returns flowOf(emptyList())
+        val viewModel = SavingsGoalEditorViewModel(
+            SavingsGoalEditorRoute(),
+            savingsGoalRepository,
+            accountRepository,
+            undoCoordinator,
+        )
+        assertTrue(viewModel.uiState.value.noAvailableAccounts)
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            accounts.value = listOf(AccountWithBalance(savingsAccount, BigDecimal("300.00")))
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+        with(viewModel.uiState.value) {
+            assertEquals(9L, accountId)
+            assertFalse(noAvailableAccounts)
+        }
+    }
+
+    @Test
+    fun `a form the user already edited keeps its baseline when accounts change`() = runTest {
+        val accounts = MutableStateFlow(listOf(AccountWithBalance(savingsAccount, BigDecimal("300.00"))))
+        every { accountRepository.observeAccountsWithBalance() } returns accounts
+        every { savingsGoalRepository.observeGoals() } returns flowOf(emptyList())
+        val viewModel = SavingsGoalEditorViewModel(
+            SavingsGoalEditorRoute(),
+            savingsGoalRepository,
+            accountRepository,
+            undoCoordinator,
+        )
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            viewModel.onNameChanged("Vacanze")
+            assertTrue(awaitItem())
+            // A later account refresh must not swallow the real edit.
+            accounts.value = accounts.value + AccountWithBalance(
+                savingsAccount.copy(id = 10L, name = "Risparmi 2"),
+                BigDecimal.ZERO,
+            )
+            expectNoEvents()
+            assertTrue(viewModel.hasUnsavedChanges.value)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 

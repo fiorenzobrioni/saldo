@@ -5,12 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.money.MoneyInput
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.CreditCardConfig
 import com.callbackdev.saldo.core.domain.creditcard.BillingCycleCalculator
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
+import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -86,6 +89,7 @@ class AccountEditorViewModel @AssistedInject constructor(
     @Assisted private val route: AccountEditorRoute,
     private val accountRepository: AccountRepository,
     private val transactionRepository: TransactionRepository,
+    private val userPreferences: UserPreferencesRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -168,9 +172,35 @@ class AccountEditorViewModel @AssistedInject constructor(
     /** True once the user touches the budget toggle: type changes stop presetting it. */
     private var userToggledBudget = false
 
+    /** True once the user picks a currency: the async preselection stops overriding it. */
+    private var userPickedCurrency = false
+
     init {
         val accountId = route.accountId
-        if (accountId == null) captureBaseline() else loadAccount(accountId)
+        if (accountId == null) preselectPrimaryCurrency() else loadAccount(accountId)
+    }
+
+    /**
+     * A new account opens in the app's primary currency (the explicit Settings
+     * choice, otherwise the plurality of the existing accounts), not the device
+     * locale's. Every aggregate - total balance, today/month cards, statistics,
+     * budgets - is scoped to the primary currency, so an account created in the
+     * wrong one silently disappears from all of them.
+     *
+     * Resolved asynchronously, so the baseline is captured only afterwards and
+     * the preselection never registers as an unsaved edit (same pattern as the
+     * movement editor's default account).
+     */
+    private fun preselectPrimaryCurrency() {
+        viewModelScope.launch {
+            val accounts = accountRepository.observeAccountsWithBalance().first()
+            val override = userPreferences.primaryCurrencyOverride.first()
+            val primary = primaryCurrency(accounts, override)
+            if (!userPickedCurrency) {
+                _uiState.update { it.copy(currency = primary) }
+            }
+            captureBaseline()
+        }
     }
 
     private fun loadAccount(accountId: Long) {
@@ -181,9 +211,10 @@ class AccountEditorViewModel @AssistedInject constructor(
                 return@launch
             }
             existing = account
-            // A persisted icon and color are the user's: never preset over them.
+            // A persisted icon, color and currency are the user's: never preset over them.
             userPickedIcon = true
             userPickedColor = true
+            userPickedCurrency = true
             // A persisted inclusion choice is the user's: never preset over it.
             userToggledBudget = true
             val movementCount = transactionRepository.countForAccount(accountId)
@@ -238,6 +269,7 @@ class AccountEditorViewModel @AssistedInject constructor(
 
     fun onCurrencyChanged(currency: Currency) {
         if (_uiState.value.isCurrencyLocked) return
+        userPickedCurrency = true
         val digits = MoneyMapper.fractionDigits(currency)
         _uiState.update { state ->
             // The new currency may allow fewer decimals (e.g. JPY): rescale the

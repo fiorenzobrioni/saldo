@@ -2,8 +2,10 @@ package com.callbackdev.saldo.feature.accounts
 
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import app.cash.turbine.test
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
+import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.navigation.AccountEditorRoute
@@ -35,13 +37,37 @@ class AccountEditorViewModelTest {
 
     private val accountRepository = mockk<AccountRepository>()
     private val transactionRepository = mockk<TransactionRepository>()
+    private val userPreferences = mockk<UserPreferencesRepository>()
     private val clock = Clock.fixed(fixedInstant, ZoneId.of("Europe/Rome"))
 
-    private fun viewModel(route: AccountEditorRoute = AccountEditorRoute()): AccountEditorViewModel {
-        every { accountRepository.observeAccountsWithBalance() } returns flowOf(emptyList())
+    private fun viewModel(
+        route: AccountEditorRoute = AccountEditorRoute(),
+        currencyOverride: Currency? = null,
+        accounts: List<AccountWithBalance> = emptyList(),
+    ): AccountEditorViewModel {
+        every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
+        every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
         coEvery { accountRepository.nextSortOrder(any()) } returns 0
-        return AccountEditorViewModel(route, accountRepository, transactionRepository, clock)
+        return AccountEditorViewModel(
+            route,
+            accountRepository,
+            transactionRepository,
+            userPreferences,
+            clock,
+        )
     }
+
+    private fun accountWithBalance(id: Long, currency: Currency): AccountWithBalance =
+        AccountWithBalance(
+            account = Account(
+                id = id,
+                name = "Account $id",
+                type = AccountType.CHECKING,
+                currency = currency,
+                initialBalance = BigDecimal.ZERO,
+            ),
+            balance = BigDecimal.ZERO,
+        )
 
     @Test
     fun `saving a new account persists the parsed form`() = runTest {
@@ -364,5 +390,61 @@ class AccountEditorViewModelTest {
         val viewModel = viewModel(AccountEditorRoute(initialTypeName = "NOT_A_TYPE"))
 
         assertEquals(AccountType.CHECKING, viewModel.uiState.value.type)
+    }
+
+    @Test
+    fun `a new account opens in the explicit primary currency, not the locale one`() = runTest {
+        val chf = Currency.getInstance("CHF")
+
+        val viewModel = viewModel(currencyOverride = chf)
+
+        assertEquals(chf, viewModel.uiState.value.currency)
+    }
+
+    @Test
+    fun `without an explicit choice a new account follows the accounts' plurality`() = runTest {
+        val usd = Currency.getInstance("USD")
+
+        val viewModel = viewModel(
+            accounts = listOf(
+                accountWithBalance(1L, usd),
+                accountWithBalance(2L, usd),
+                accountWithBalance(3L, eur),
+            ),
+        )
+
+        assertEquals(usd, viewModel.uiState.value.currency)
+    }
+
+    @Test
+    fun `the preselected currency is the baseline, so the form opens clean`() = runTest {
+        val viewModel = viewModel(currencyOverride = Currency.getInstance("CHF"))
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `editing keeps the account's own currency, whatever the primary one is`() = runTest {
+        val usd = Currency.getInstance("USD")
+        val existing = Account(
+            id = 5L,
+            name = "Revolut USD",
+            type = AccountType.DIGITAL_WALLET,
+            currency = usd,
+            initialBalance = BigDecimal("100.00"),
+            createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
+        coEvery { accountRepository.getAccount(5L) } returns existing
+        coEvery { transactionRepository.countForAccount(5L) } returns 0
+
+        val viewModel = viewModel(
+            route = AccountEditorRoute(accountId = 5L),
+            currencyOverride = Currency.getInstance("CHF"),
+        )
+
+        assertEquals(usd, viewModel.uiState.value.currency)
     }
 }

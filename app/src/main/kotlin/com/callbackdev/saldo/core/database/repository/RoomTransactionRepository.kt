@@ -13,6 +13,7 @@ import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
@@ -232,6 +233,12 @@ class RoomTransactionRepository @Inject constructor(
 
     override suspend fun countForCategory(categoryId: Long): Int =
         transactionDao.countForCategory(categoryId)
+
+    override suspend fun transactionTypesForCategory(categoryId: Long): Set<TransactionType> =
+        transactionDao.distinctTypesForCategory(categoryId)
+            .mapNotNullTo(mutableSetOf()) { name ->
+                runCatching { TransactionType.valueOf(name) }.getOrNull()
+            }
 
     override suspend fun sumOwnMovements(
         accountId: Long,

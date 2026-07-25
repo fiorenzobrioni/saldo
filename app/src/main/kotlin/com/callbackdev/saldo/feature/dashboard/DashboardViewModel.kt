@@ -15,7 +15,9 @@ import com.callbackdev.saldo.core.domain.model.SavingsGoalProgress
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
+import com.callbackdev.saldo.core.domain.model.hasEndedBy
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
+import com.callbackdev.saldo.core.domain.model.runsInMonthOf
 import com.callbackdev.saldo.core.domain.recurrence.BalanceForecastCalculator
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
@@ -469,12 +471,16 @@ class DashboardViewModel @Inject constructor(
         today: LocalDate,
         savingsAccountIds: Set<Long>,
     ): RecurringSummary {
-        val flows = rules.filter { it.isFlow() && it.isActiveOn(today) }
+        // Everything not yet over feeds the "next charge" line: a rule starting
+        // next quarter has a real, useful upcoming date.
+        val flows = rules.filter { it.isFlow() && !it.hasEndedBy(today) }
         val plannedSavings = rules.filter { it.isPlannedSavingsInto(savingsAccountIds, primary, today) }
         if (flows.isEmpty() && plannedSavings.isEmpty()) return RecurringSummary()
 
-        // Totals are scoped to the primary currency, so the figures stay coherent.
-        val primaryFlows = flows.filter { it.currency == primary }
+        // The monthly figures instead price only the rules that carry a cost
+        // into this month, and are scoped to the primary currency: a schedule
+        // that starts next quarter costs nothing now.
+        val primaryFlows = flows.filter { it.currency == primary && it.runsInMonthOf(today) }
         return RecurringSummary(
             monthlyExpenses = primaryFlows
                 .filter { it.type == TransactionType.EXPENSE }
@@ -488,8 +494,6 @@ class DashboardViewModel @Inject constructor(
         )
     }
 
-    private fun RecurringRule.isActiveOn(today: LocalDate): Boolean = endDate == null || endDate >= today
-
     private fun RecurringRule.isFlow(): Boolean =
         type == TransactionType.EXPENSE || type == TransactionType.INCOME
 
@@ -499,7 +503,7 @@ class DashboardViewModel @Inject constructor(
         primary: Currency,
         today: LocalDate,
     ): Boolean = type == TransactionType.TRANSFER && amount != null && currency == primary &&
-        transferAccountId in savingsAccountIds && isActiveOn(today)
+        transferAccountId in savingsAccountIds && runsInMonthOf(today)
 
     private fun List<RecurringRule>.sumMonthlyEquivalent(): BigDecimal = fold(BigDecimal.ZERO) { acc, rule ->
         acc.add(RecurrenceCalculator.monthlyEquivalent(rule) ?: BigDecimal.ZERO)

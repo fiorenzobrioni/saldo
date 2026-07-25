@@ -850,7 +850,7 @@
     <string name="budgets_section_categories">Budget per categoria</string>
     <string name="budgets_over_a11y">Budget superato</string>
     <string name="budgets_empty_title">Nessun budget</string>
-    <string name="budgets_empty_body">Imposta un tetto mensile per tutte le spese o per singole categorie: Saldo segue i progressi e ti avvisa all\'80% e al 100%.</string>
+    <string name="budgets_empty_body" formatted="false">Imposta un tetto mensile per tutte le spese o per singole categorie: Saldo segue i progressi e ti avvisa all\'80% e al 100%.</string>
     <string name="budgets_empty_cta">Crea un budget</string>
     <string name="budgets_editor_title_new">Nuovo budget</string>
     <string name="budgets_editor_title_edit">Modifica budget</string>
