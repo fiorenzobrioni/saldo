@@ -108,6 +108,38 @@ class SettleCreditCardStatementUseCaseTest {
     }
 
     @Test
+    fun `an empty older cycle is skipped so the settlement pays the advertised one`() = runTest {
+        // Two cycles owed (watermark before Jan 20): Jan 20 empty, Feb 20 owing.
+        // The call to action only lists non-empty statements, so settling the
+        // empty one first would look like a button that does nothing.
+        val behind = card.copy(
+            creditCard = card.creditCard!!.copy(lastSettledClosing = LocalDate.of(2023, 12, 20)),
+        )
+        coEvery { accountRepository.getAccount(1L) } returns behind
+        coEvery { accountRepository.getAccount(2L) } returns linked
+        val januaryEnd = LocalDate.of(2024, 1, 21).atStartOfDay(zone).toInstant()
+        coEvery {
+            transactionRepository.sumOwnMovements(eq(1L), any(), match { it <= januaryEnd }, eq(eur))
+        } returns BigDecimal.ZERO
+        coEvery {
+            transactionRepository.sumOwnMovements(eq(1L), any(), match { it > januaryEnd }, eq(eur))
+        } returns BigDecimal("-140.00")
+        val slot = slot<Transaction>()
+        coEvery { transactionRepository.upsert(capture(slot)) } returns 11L
+
+        val result = useCase(1L)
+
+        assertTrue(result is StatementSettlement.Settled)
+        val settled = result as StatementSettlement.Settled
+        assertEquals(BigDecimal("140.00"), settled.amount)
+        assertEquals(LocalDate.of(2024, 2, 20), settled.cycle.closing)
+        assertEquals(BigDecimal("140.00"), slot.captured.transferAmount)
+        // The watermark jumps past the empty January cycle in one go.
+        coVerify { accountRepository.updateSettlementWatermark(1L, LocalDate.of(2024, 2, 20)) }
+        coVerify(exactly = 0) { accountRepository.updateSettlementWatermark(1L, LocalDate.of(2024, 1, 20)) }
+    }
+
+    @Test
     fun `already settled cycle yields nothing due`() = runTest {
         val settled = card.copy(
             creditCard = card.creditCard!!.copy(lastSettledClosing = LocalDate.of(2024, 2, 20)),

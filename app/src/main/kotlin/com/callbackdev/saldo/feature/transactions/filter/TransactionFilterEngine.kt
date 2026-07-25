@@ -112,8 +112,17 @@ object TransactionFilterEngine {
     private fun matchesType(transaction: Transaction, filters: TransactionFilters): Boolean =
         filters.types.isEmpty() || transaction.type in filters.types
 
-    private fun matchesCategory(transaction: Transaction, filters: TransactionFilters): Boolean =
-        filters.categoryIds.isEmpty() || transaction.categoryId in filters.categoryIds
+    /**
+     * The category term is a union of the picked categories and, when
+     * [TransactionFilters.includeUncategorized] is set, the movements with no
+     * category at all. With neither, the term does not restrict anything.
+     */
+    private fun matchesCategory(transaction: Transaction, filters: TransactionFilters): Boolean {
+        if (!filters.hasCategoryFilter) return true
+        val categoryId = transaction.categoryId
+            ?: return filters.includeUncategorized
+        return categoryId in filters.categoryIds
+    }
 
     private fun matchesAccount(transaction: Transaction, filters: TransactionFilters): Boolean =
         filters.accountIds.isEmpty() ||

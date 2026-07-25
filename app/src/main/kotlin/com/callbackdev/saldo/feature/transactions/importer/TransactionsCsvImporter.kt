@@ -8,6 +8,7 @@ import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.Category
+import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -16,6 +17,8 @@ import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRunner
+import com.callbackdev.saldo.feature.categories.usableForExpenses
+import com.callbackdev.saldo.feature.categories.usableForIncomes
 import com.callbackdev.saldo.feature.transactions.localDate
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -157,8 +160,20 @@ class TransactionsCsvImporter @Inject constructor(
                     type = category.type,
                     color = CATEGORY_PALETTE[index % CATEGORY_PALETTE.size],
                     icon = IMPORTED_CATEGORY_ICON,
-                    sortOrder = categoryRepository.nextSortOrder(category.type),
-                    sortOrderIncome = categoryRepository.nextSortOrder(category.type),
+                    // Each tab keeps its own sort key: the category appends to
+                    // the end of the tabs it is usable in and leaves the other
+                    // key inert. Asking for one type's next position twice would
+                    // write the expense order into the income column, and back.
+                    sortOrder = if (category.type.usableForExpenses) {
+                        categoryRepository.nextSortOrder(CategoryType.EXPENSE)
+                    } else {
+                        0
+                    },
+                    sortOrderIncome = if (category.type.usableForIncomes) {
+                        categoryRepository.nextSortOrder(CategoryType.INCOME)
+                    } else {
+                        0
+                    },
                 ),
             )
             ids[normalizeName(category.name)] = id

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
+import com.callbackdev.saldo.core.domain.usecase.AppResetCoordinator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,12 +27,19 @@ enum class LaunchGate { LOADING, ONBOARDING, APP }
 class MainViewModel @Inject constructor(
     private val userPreferences: UserPreferencesRepository,
     accountRepository: AccountRepository,
+    resetCoordinator: AppResetCoordinator,
 ) : ViewModel() {
 
     private val _gate = MutableStateFlow(LaunchGate.LOADING)
     val gate: StateFlow<LaunchGate> = _gate.asStateFlow()
 
     init {
+        // An "erase all data" leaves the app in the state of a fresh install, so
+        // it must also land where a fresh install lands: on the onboarding,
+        // without the user having to restart the app to be asked their currency.
+        viewModelScope.launch {
+            resetCoordinator.events.collect { _gate.value = LaunchGate.ONBOARDING }
+        }
         viewModelScope.launch {
             val completed = runCatching { userPreferences.onboardingCompleted.first() }
                 .getOrDefault(true)

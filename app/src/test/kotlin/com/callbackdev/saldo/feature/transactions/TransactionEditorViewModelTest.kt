@@ -574,8 +574,63 @@ class TransactionEditorViewModelTest {
 
         assertEquals(7L, saved.captured.id)
         assertEquals(BigDecimal("-125.00"), saved.captured.amount)
+        // The note is an editable field now, so it round-trips through the form
+        // rather than being carried over: untouched, it comes back unchanged.
         assertEquals("keep me", saved.captured.note)
         assertEquals(3L, saved.captured.recurringRuleId)
+    }
+
+    @Test
+    fun `a typed note is saved and a blank one persists as no note`() = runTest {
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+        // After viewModel(): its own upsert stub would otherwise replace this one.
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        viewModel.onAmountChanged("10")
+        viewModel.onCategorySelected(groceries.id)
+        viewModel.onNoteChanged("  Diviso con Luca, mi deve 5  ")
+        viewModel.save()
+
+        assertEquals("Diviso con Luca, mi deve 5", saved.captured.note)
+
+        // Whitespace only is not a note: it must not persist as an empty string,
+        // or the ledger search would carry a row with a blank note forever.
+        viewModel.onNoteChanged("   ")
+        viewModel.save()
+        assertNull(saved.captured.note)
+    }
+
+    @Test
+    fun `editing loads the stored note and clearing it marks the form dirty`() = runTest {
+        val existing = Transaction(
+            id = 8L,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-12.00"),
+            currency = eur,
+            accountId = checking.id,
+            timestamp = Instant.parse("2026-07-01T10:00:00Z"),
+            zoneOffset = ZoneOffset.ofHours(2),
+            categoryId = groceries.id,
+            note = "scontrino nel cassetto",
+        )
+        coEvery { transactionRepository.getTransaction(8L) } returns existing
+        every { tagRepository.observeTagsForTransaction(8L) } returns flowOf(emptyList())
+        val viewModel = viewModel(route = TransactionEditorRoute(8L))
+        collectState(viewModel)
+
+        assertEquals("scontrino nel cassetto", viewModel.uiState.value.note)
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            viewModel.onNoteChanged("")
+            assertTrue(awaitItem())
+            // Back to the stored text: the form is clean again.
+            viewModel.onNoteChanged("scontrino nel cassetto")
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test

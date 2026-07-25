@@ -142,11 +142,61 @@ class RecurrencesViewModelTest {
 
         viewModel.uiState.test {
             val state = awaitLoaded()
-            // Income (salary) and the ended rule are excluded from the expenses tab.
-            assertEquals(3, state.expenses.activeCount)
-            // 12.99 + 9.99 + (96.00 / 6) = 38.98
-            assertEquals(BigDecimal("38.98"), state.expenses.monthlyTotal)
-            assertEquals(BigDecimal("467.76"), state.expenses.annualProjection)
+            // Income (salary) and the ended rule are excluded from the expenses
+            // tab; the insurance starts on 15 Sep, so it is listed but not
+            // priced (today is 9 Jul). Spotify starts on 12 Jul: later than
+            // today but inside this month, so it is a real monthly cost.
+            assertEquals(2, state.expenses.activeCount)
+            // 12.99 + 9.99; the insurance starting next quarter adds nothing.
+            assertEquals(BigDecimal("22.98"), state.expenses.monthlyTotal)
+            assertEquals(BigDecimal("275.76"), state.expenses.annualProjection)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a rule starting after this month is listed but priced at zero`() = runTest {
+        val viewModel = viewModel(listOf(netflix, insurance))
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            // Still on screen, with its first charge date: hiding it until
+            // September would make a rule the user just created disappear.
+            assertEquals(2, state.expenses.items.size)
+            assertEquals(LocalDate.of(2026, 9, 15), state.expenses.items.first { it.rule.id == 3L }.nextCharge)
+            // But it costs nothing this month.
+            assertEquals(1, state.expenses.activeCount)
+            assertEquals(BigDecimal("12.99"), state.expenses.monthlyTotal)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a rule starting later this month already counts as a monthly cost`() = runTest {
+        // Today is 9 Jul, Spotify's first charge is 12 Jul: pricing it at zero
+        // until it first charges would understate the month just as badly.
+        val viewModel = viewModel(listOf(spotify))
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(1, state.expenses.activeCount)
+            assertEquals(BigDecimal("9.99"), state.expenses.monthlyTotal)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `planned savings ignores a transfer starting after this month`() = runTest {
+        val future = transfer(11L, "200.00", toAccountId = 2L, startDate = LocalDate.of(2026, 10, 1))
+        val viewModel = viewModel(
+            rules = listOf(transfer(10L, "150.00", toAccountId = 2L), future),
+            accounts = listOf(account(1L, AccountType.CHECKING), account(2L, AccountType.SAVINGS)),
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            // Only the transfer already running feeds the planned-savings rate.
+            assertEquals(BigDecimal("150.00"), state.plannedMonthlySavings)
             cancelAndIgnoreRemainingEvents()
         }
     }

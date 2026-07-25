@@ -14,4 +14,15 @@ interface BackupRepository {
      * are preserved, so every cross-reference in the backup stays valid.
      */
     suspend fun restore(data: BackupData)
+
+    /**
+     * Empties every table and re-seeds the localized default categories, in one
+     * transaction: the result is the database a fresh install would create.
+     *
+     * The re-seed is not optional. The categories are planted by the Room
+     * `onCreate` callback, which never runs again on an existing file, so a
+     * plain wipe would leave the app with no categories at all and no way to
+     * get them back short of reinstalling.
+     */
+    suspend fun eraseAll()
 }

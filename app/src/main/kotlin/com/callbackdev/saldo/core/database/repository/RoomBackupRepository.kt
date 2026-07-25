@@ -7,11 +7,14 @@ import com.callbackdev.saldo.core.database.dao.RecurringRuleDao
 import com.callbackdev.saldo.core.database.dao.SavingsGoalDao
 import com.callbackdev.saldo.core.database.dao.TagDao
 import com.callbackdev.saldo.core.database.dao.TransactionDao
+import android.content.Context
 import com.callbackdev.saldo.core.database.mapper.toBackup
 import com.callbackdev.saldo.core.database.mapper.toEntity
+import com.callbackdev.saldo.core.database.seed.DefaultCategories
 import com.callbackdev.saldo.core.domain.backup.BackupData
 import com.callbackdev.saldo.core.domain.repository.BackupRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRunner
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 /**
@@ -27,6 +30,9 @@ import javax.inject.Inject
  */
 @Suppress("LongParameterList") // One DAO per backed-up table, by design.
 class RoomBackupRepository @Inject constructor(
+    // Only for the localized default categories replanted by eraseAll, the same
+    // resource-backed seed the Room onCreate callback uses.
+    @ApplicationContext private val context: Context,
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
     private val tagDao: TagDao,
@@ -50,16 +56,19 @@ class RoomBackupRepository @Inject constructor(
         )
     }
 
+    override suspend fun eraseAll() {
+        transactionRunner.inTransaction {
+            deleteEverything()
+            // Room's onCreate seed never runs again on an existing file, so the
+            // defaults are replanted here: a wipe must land on the same state a
+            // fresh install starts from, not on an app without categories.
+            categoryDao.insertAll(DefaultCategories.build(context))
+        }
+    }
+
     override suspend fun restore(data: BackupData) {
         transactionRunner.inTransaction {
-            tagDao.deleteAllCrossRefs()
-            transactionDao.deleteAll()
-            recurringRuleDao.deleteAll()
-            budgetDao.deleteAll()
-            savingsGoalDao.deleteAll()
-            tagDao.deleteAll()
-            categoryDao.deleteAll()
-            accountDao.deleteAll()
+            deleteEverything()
 
             accountDao.insertAll(data.accounts.map { it.toEntity() })
             categoryDao.insertAll(data.categories.map { it.toEntity() })
@@ -70,5 +79,17 @@ class RoomBackupRepository @Inject constructor(
             budgetDao.insertAll(data.budgets.map { it.toEntity() })
             savingsGoalDao.insertAll(data.savingsGoals.map { it.toEntity() })
         }
+    }
+
+    /** Empties every table, children first, so no foreign key is ever dangling. */
+    private suspend fun deleteEverything() {
+        tagDao.deleteAllCrossRefs()
+        transactionDao.deleteAll()
+        recurringRuleDao.deleteAll()
+        budgetDao.deleteAll()
+        savingsGoalDao.deleteAll()
+        tagDao.deleteAll()
+        categoryDao.deleteAll()
+        accountDao.deleteAll()
     }
 }

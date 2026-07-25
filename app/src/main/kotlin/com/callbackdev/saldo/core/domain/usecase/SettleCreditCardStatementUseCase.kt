@@ -55,7 +55,19 @@ class SettleCreditCardStatementUseCase @Inject constructor(
 
     private val mutex = Mutex()
 
-    /** Settles the oldest statement of [accountId] that is due on [today]. */
+    /**
+     * Settles the oldest statement of [accountId] that is due on [today] and
+     * actually owes something.
+     *
+     * Empty cycles (a month with no spending on the card) are consumed on the
+     * way: the watermark jumps straight to the first cycle with a balance, so
+     * this lands on the very statement the "pay statement" call to action
+     * advertises. Reporting shows only non-empty statements
+     * ([ObserveDueStatementsUseCase]), so settling the empty ones one tap at a
+     * time would look like a button that does nothing. When every due cycle is
+     * empty the watermark still advances past all of them, keeping the run
+     * idempotent.
+     */
     suspend operator fun invoke(
         accountId: Long,
         today: LocalDate = LocalDate.now(clock),
@@ -66,9 +78,14 @@ class SettleCreditCardStatementUseCase @Inject constructor(
         val linked = accountRepository.getAccount(linkedId)?.takeIf { it.currency == account.currency }
             ?: return StatementSettlement.NotSettleable
 
-        val cycle = BillingCycleCalculator.dueStatements(today, config).firstOrNull()
-            ?: return StatementSettlement.NothingDue
-        val amount = statementAmount(account, cycle)
+        val due = BillingCycleCalculator.dueStatements(today, config)
+        if (due.isEmpty()) return StatementSettlement.NothingDue
+        val owed = due.firstNotNullOfOrNull { cycle ->
+            statementAmount(account, cycle).takeIf { it.signum() > 0 }?.let { cycle to it }
+        }
+        // All due cycles empty: settle through to the newest so the next run
+        // finds nothing due instead of re-walking the same empty statements.
+        val (cycle, amount) = owed ?: (due.last() to BigDecimal.ZERO)
         transactionRunner.inTransaction {
             if (amount.signum() > 0) {
                 transactionRepository.upsert(settlementTransfer(account, linked, cycle, amount))

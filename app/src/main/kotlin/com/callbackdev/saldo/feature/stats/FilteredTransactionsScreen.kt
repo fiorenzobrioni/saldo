@@ -85,12 +85,13 @@ fun FilteredTransactionsScreen(
                 title = {
                     Column {
                         Text(
-                            uiState.title
-                                ?: if (uiState.isUncategorized) {
-                                    stringResource(R.string.transaction_uncategorized)
-                                } else {
-                                    stringResource(R.string.nav_transactions)
+                            uiState.title ?: stringResource(
+                                when {
+                                    uiState.isUncategorized -> R.string.transaction_uncategorized
+                                    uiState.isOtherCurrencies -> R.string.stats_other_currencies_title
+                                    else -> R.string.nav_transactions
                                 },
+                            ),
                         )
                         Text(
                             text = periodLabel,

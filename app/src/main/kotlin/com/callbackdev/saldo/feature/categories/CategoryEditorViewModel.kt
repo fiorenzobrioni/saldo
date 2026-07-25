@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.BudgetRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -283,15 +284,27 @@ class CategoryEditorViewModel @AssistedInject constructor(
         _uiState.update { it.copy(deleteDialog = null) }
     }
 
-    /** Categories that can absorb [category]'s movements (compatible type, not itself). */
-    private suspend fun reassignCandidates(category: Category): List<Category> =
-        categoryRepository.observeCategories().first().filter { candidate ->
-            candidate.id != category.id && when (category.type) {
-                CategoryType.EXPENSE -> candidate.type.usableForExpenses
-                CategoryType.INCOME -> candidate.type.usableForIncomes
-                CategoryType.BOTH -> true
-            }
+    /**
+     * Categories that can absorb [category]'s movements (not itself, and usable
+     * for every movement type actually filed under it).
+     *
+     * The filter keys off the movements, not off the category's declared type:
+     * an "either" category may in practice label only expenses, and offering
+     * only the other "either" categories would needlessly send its history to
+     * the uncategorized bucket. It also blocks the opposite mistake, moving
+     * expenses into an income-only category, which would then have them count
+     * against that category's budget and ring slice.
+     */
+    private suspend fun reassignCandidates(category: Category): List<Category> {
+        val types = transactionRepository.transactionTypesForCategory(category.id)
+        val needsExpenses = TransactionType.EXPENSE in types
+        val needsIncomes = TransactionType.INCOME in types
+        return categoryRepository.observeCategories().first().filter { candidate ->
+            candidate.id != category.id &&
+                (!needsExpenses || candidate.type.usableForExpenses) &&
+                (!needsIncomes || candidate.type.usableForIncomes)
         }
+    }
 
     /** Prefers the seeded "Other" bucket, otherwise the first candidate. */
     private fun defaultTarget(candidates: List<Category>): Category =

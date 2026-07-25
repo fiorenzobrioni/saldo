@@ -57,3 +57,30 @@ data class RecurringRule(
     /** Currency of the destination account for a transfer rule; null otherwise. */
     val transferCurrency: Currency? = null,
 )
+
+/**
+ * Whether the rule carries a cost into the month containing [date]: it has not
+ * ended yet, and its schedule starts no later than that month's last day.
+ *
+ * The start bound is the end of the month, not [date] itself: a subscription
+ * added on the 9th whose first charge lands on the 12th is a real monthly cost
+ * right now, and pricing it at zero until it first charges would be just as
+ * wrong as the opposite. A schedule that only begins next quarter, on the
+ * other hand, costs nothing this month: counting it would inflate the monthly
+ * total, the annual projection and the planned-savings rate from the moment
+ * the rule is created.
+ *
+ * Shared on purpose - the recurrences hub, the dashboard card and the savings
+ * projection must agree on what counts toward a "per month" figure.
+ */
+fun RecurringRule.runsInMonthOf(date: LocalDate): Boolean =
+    !hasEndedBy(date) && startDate <= date.withDayOfMonth(date.lengthOfMonth())
+
+/**
+ * Whether the rule's schedule is over on [date]: no further occurrence will
+ * ever be generated. The weaker companion of [runsInMonthOf], for the places that
+ * *list* rules rather than price them: a rule starting next month still
+ * belongs on screen, with its first charge date, even though it costs nothing
+ * this month.
+ */
+fun RecurringRule.hasEndedBy(date: LocalDate): Boolean = endDate != null && endDate < date

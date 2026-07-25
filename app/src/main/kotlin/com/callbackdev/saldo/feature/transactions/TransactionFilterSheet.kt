@@ -13,9 +13,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.LabelOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -95,17 +100,32 @@ internal fun TransactionFilterSheet(
                 )
             }
 
-            if (categories.isNotEmpty()) {
-                FilterSection(title = stringResource(R.string.categories_title)) {
-                    categories.forEach { category ->
-                        FilterChip(
-                            selected = category.id in draft.categoryIds,
-                            onClick = {
-                                draft = draft.copy(categoryIds = draft.categoryIds.toggled(category.id))
-                            },
-                            label = { Text(category.name) },
+            FilterSection(title = stringResource(R.string.categories_title)) {
+                // First, and set apart by its icon: "no category" is a peer of
+                // the categories, not one of them, and it is the only way to
+                // find the movements that slipped through uncategorized.
+                FilterChip(
+                    selected = draft.includeUncategorized,
+                    onClick = {
+                        draft = draft.copy(includeUncategorized = !draft.includeUncategorized)
+                    },
+                    label = { Text(stringResource(R.string.filter_category_none)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.LabelOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(FilterChipDefaults.IconSize),
                         )
-                    }
+                    },
+                )
+                categories.forEach { category ->
+                    FilterChip(
+                        selected = category.id in draft.categoryIds,
+                        onClick = {
+                            draft = draft.copy(categoryIds = draft.categoryIds.toggled(category.id))
+                        },
+                        label = { Text(category.name) },
+                    )
                 }
             }
 

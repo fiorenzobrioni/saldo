@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.SavingsGoal
 import com.callbackdev.saldo.core.domain.model.SavingsGoalProgress
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.runsInMonthOf
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
@@ -98,7 +99,7 @@ class ObserveSavingsGoalsProgressUseCase @Inject constructor(
                     rule.transferAccountId == goal.accountId &&
                     rule.amount != null &&
                     rule.currency == goal.currency &&
-                    (rule.endDate == null || rule.endDate >= today)
+                    rule.runsInMonthOf(today)
             }
             .fold(0L) { acc, rule ->
                 val monthly = RecurrenceCalculator.monthlyEquivalent(rule) ?: BigDecimal.ZERO

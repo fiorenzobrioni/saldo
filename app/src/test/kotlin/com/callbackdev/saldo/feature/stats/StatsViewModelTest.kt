@@ -78,7 +78,11 @@ class StatsViewModelTest {
         accounts: List<Account> = listOf(checking),
         currencyOverride: Currency? = null,
         expectedCurrency: Currency = eur,
+        otherCurrencyCount: Int = 0,
     ): StatsViewModel {
+        every {
+            transactionRepository.observeOtherCurrencyCount(any(), any(), expectedCurrency)
+        } returns flowOf(otherCurrencyCount)
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
@@ -254,6 +258,52 @@ class StatsViewModelTest {
             val state = loaded()
             assertTrue(state.isEmpty)
             assertFalse(state.hasData)
+            // Nothing at all, in any currency: no notice to show either.
+            assertFalse(state.showsOtherCurrencyNotice)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `movements in other currencies surface as a notice next to the figures`() = runTest {
+        val viewModel = viewModel(
+            categoryTotals = listOf(CategoryTotal(groceries.id, BigDecimal("-40.00"), 2)),
+            otherCurrencyCount = 3,
+        )
+
+        viewModel.uiState.test {
+            val state = loaded()
+            assertEquals(3, state.otherCurrencyCount)
+            assertTrue(state.showsOtherCurrencyNotice)
+            // The charts themselves stay scoped to the primary currency.
+            assertEquals(eur, state.currency)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a period holding only other currencies is empty but still explains itself`() = runTest {
+        val viewModel = viewModel(otherCurrencyCount = 2)
+
+        viewModel.uiState.test {
+            val state = loaded()
+            // The worst version of this bug: "you recorded nothing this month"
+            // on a month with two movements in it.
+            assertTrue(state.isEmpty)
+            assertTrue(state.showsOtherCurrencyNotice)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a single-currency ledger shows no notice`() = runTest {
+        val viewModel = viewModel(
+            categoryTotals = listOf(CategoryTotal(groceries.id, BigDecimal("-40.00"), 2)),
+            otherCurrencyCount = 0,
+        )
+
+        viewModel.uiState.test {
+            assertFalse(loaded().showsOtherCurrencyNotice)
             cancelAndIgnoreRemainingEvents()
         }
     }

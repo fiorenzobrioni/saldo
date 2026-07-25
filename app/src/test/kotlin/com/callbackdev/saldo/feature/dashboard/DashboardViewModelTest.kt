@@ -678,9 +678,12 @@ class DashboardViewModelTest {
         viewModel.uiState.test {
             val state = awaitLoaded()
             assertTrue(state.recurring.hasRules)
-            // 12.99 + 96.00/6 = 28.99
-            assertEquals(BigDecimal("28.99"), state.recurring.monthlyExpenses)
+            // Only Netflix: it starts on 12 Jul, inside the current month, so it
+            // is a real monthly cost. The insurance starts on 15 Sep and carries
+            // no cost into July, so its 96.00/6 must not show up here.
+            assertEquals(BigDecimal("12.99"), state.recurring.monthlyExpenses)
             assertEquals(BigDecimal.ZERO, state.recurring.monthlyIncomes)
+            // It still feeds the "next charge" line, which is about dates, not cost.
             assertEquals("Netflix", state.recurring.next?.name)
             assertEquals(BigDecimal("-12.99"), state.recurring.next?.amount)
             assertEquals(LocalDate.of(2026, 7, 12), state.recurring.next?.date)

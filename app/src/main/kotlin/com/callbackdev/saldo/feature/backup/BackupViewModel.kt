@@ -10,6 +10,7 @@ import com.callbackdev.saldo.core.common.di.IoDispatcher
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.backup.BackupFile
 import com.callbackdev.saldo.core.domain.backup.BackupSummary
+import com.callbackdev.saldo.core.domain.usecase.EraseAllDataUseCase
 import com.callbackdev.saldo.core.domain.usecase.ExportBackupUseCase
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ImportBackupUseCase
@@ -40,6 +41,8 @@ data class BackupUiState(
     val isWorking: Boolean = false,
     /** A validated backup awaiting the user's confirmation, or null. */
     val pendingRestore: BackupSummary? = null,
+    /** True while the erase-everything confirmation is on screen. */
+    val isConfirmingErase: Boolean = false,
 )
 
 /** One-shot outcomes surfaced as snackbars. */
@@ -49,6 +52,13 @@ sealed interface BackupEvent {
     data class RestoreCompleted(val summary: BackupSummary) : BackupEvent
     data object RestoreFailed : BackupEvent
     data class InvalidBackupFile(val error: ImportBackupUseCase.Error) : BackupEvent
+
+    /**
+     * The erase failed and nothing was touched. There is no success twin: a
+     * completed erase sends the app to the onboarding, so a snackbar would be
+     * posted onto a screen that is already gone.
+     */
+    data object EraseFailed : BackupEvent
 }
 
 /**
@@ -65,6 +75,7 @@ class BackupViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val exportBackup: ExportBackupUseCase,
     private val importBackup: ImportBackupUseCase,
+    private val eraseAllData: EraseAllDataUseCase,
     private val generateRecurringMovements: GenerateRecurringMovementsUseCase,
     private val userPreferences: UserPreferencesRepository,
     private val clock: Clock,
@@ -73,6 +84,7 @@ class BackupViewModel @Inject constructor(
 
     private val working = MutableStateFlow(false)
     private val pendingRestore = MutableStateFlow<PendingRestore?>(null)
+    private val confirmingErase = MutableStateFlow(false)
 
     /** A validated file held between inspection and confirmation. */
     private data class PendingRestore(val file: BackupFile, val summary: BackupSummary)
@@ -81,11 +93,13 @@ class BackupViewModel @Inject constructor(
         userPreferences.lastBackupAtEpochMilli.map { it?.let(Instant::ofEpochMilli) },
         working,
         pendingRestore,
-    ) { lastBackupAt, isWorking, pending ->
+        confirmingErase,
+    ) { lastBackupAt, isWorking, pending, isConfirmingErase ->
         BackupUiState(
             lastBackupAt = lastBackupAt,
             isWorking = isWorking,
             pendingRestore = pending?.summary,
+            isConfirmingErase = isConfirmingErase,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -153,6 +167,29 @@ class BackupViewModel @Inject constructor(
 
     fun onRestoreDismissed() {
         pendingRestore.value = null
+    }
+
+    fun onEraseRequested() {
+        confirmingErase.value = true
+    }
+
+    fun onEraseDismissed() {
+        confirmingErase.value = false
+    }
+
+    /**
+     * Wipes everything and returns the app to its first-launch state. On
+     * success the launch gate flips to the onboarding, so this screen is torn
+     * down and only a failure has anything left to report.
+     */
+    fun onEraseConfirmed() {
+        if (!working.compareAndSet(expect = false, update = true)) return
+        confirmingErase.value = false
+        viewModelScope.launch {
+            val result = suspendRunCatching { eraseAllData() }
+            working.value = false
+            result.onFailure { _events.send(BackupEvent.EraseFailed) }
+        }
     }
 
     private suspend fun writeDocument(uri: Uri, content: String) {

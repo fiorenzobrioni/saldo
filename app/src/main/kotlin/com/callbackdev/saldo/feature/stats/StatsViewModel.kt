@@ -87,26 +87,35 @@ class StatsViewModel @Inject constructor(
             val months = trailingMonths(YearMonth.from(inputs.today))
             val trendStart = months.first().atDay(1).atStartOfDay(zone).toInstant()
             val trendEnd = months.last().plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
-            combine(
+            val sources = combine(
                 transactionRepository.observeCategoryTotals(periodStart, periodEnd, currency),
                 transactionRepository.observeAccountSpendTotals(periodStart, periodEnd, currency),
                 transactionRepository.observeMonthlyTotals(trendStart, trendEnd, currency),
                 observeBalanceHistory(currency, months),
                 categoryRepository.observeCategories(),
             ) { categoryTotals, accountTotals, monthlyTotals, balances, categories ->
+                Sources(
+                    categoryTotals = categoryTotals,
+                    accountTotals = accountTotals,
+                    monthlyTotals = monthlyTotals,
+                    balances = balances,
+                    categories = categories,
+                )
+            }
+            // Joined on top rather than inside: the typed combine overloads stop
+            // at five flows.
+            combine(
+                sources,
+                transactionRepository.observeOtherCurrencyCount(periodStart, periodEnd, currency),
+            ) { collapsed, otherCurrencyCount ->
                 buildState(
                     accounts = inputs.accounts,
                     activePeriod = inputs.period,
                     currency = currency,
                     today = inputs.today,
                     months = months,
-                    sources = Sources(
-                        categoryTotals = categoryTotals,
-                        accountTotals = accountTotals,
-                        monthlyTotals = monthlyTotals,
-                        balances = balances,
-                        categories = categories,
-                    ),
+                    sources = collapsed,
+                    otherCurrencyCount = otherCurrencyCount,
                 )
             }
         }
@@ -155,6 +164,7 @@ class StatsViewModel @Inject constructor(
         today: LocalDate,
         months: List<YearMonth>,
         sources: Sources,
+        otherCurrencyCount: Int,
     ): StatsUiState {
         val slices = categorySlices(sources.categoryTotals, sources.categories)
         return StatsUiState(
@@ -162,6 +172,7 @@ class StatsViewModel @Inject constructor(
             period = activePeriod,
             today = today,
             currency = currency,
+            otherCurrencyCount = otherCurrencyCount,
             slices = slices,
             periodSpendTotal = slices.fold(BigDecimal.ZERO) { acc, slice -> acc.add(slice.amount) },
             accountSpends = accountSpends(sources.accountTotals, accounts),

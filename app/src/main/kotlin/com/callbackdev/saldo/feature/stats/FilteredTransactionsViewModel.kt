@@ -43,6 +43,8 @@ data class FilteredTransactionsUiState(
     val title: String? = null,
     /** True when the list shows the uncategorized bucket (title resolved by the screen). */
     val isUncategorized: Boolean = false,
+    /** True when the list shows what the statistics left out for being in another currency. */
+    val isOtherCurrencies: Boolean = false,
     val today: LocalDate = LocalDate.ofEpochDay(0),
     val days: List<TransactionDayGroup> = emptyList(),
     val totals: List<FilteredTotal> = emptyList(),
@@ -85,6 +87,10 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
         customStart = LocalDate.ofEpochDay(route.startEpochDay),
         customEnd = LocalDate.ofEpochDay(route.endEpochDayExclusive - 1),
         categoryIds = setOfNotNull(route.categoryId),
+        // With no category picked, this narrows to exactly the uncategorized
+        // movements: the ring's "No category" slice and the ledger's own
+        // "No category" chip resolve through the same engine predicate.
+        includeUncategorized = route.uncategorizedOnly,
         accountIds = setOfNotNull(route.accountId),
     )
 
@@ -128,6 +134,7 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
             title = route.categoryId?.let { categoryById[it]?.name }
                 ?: route.accountId?.let { accountById[it]?.name },
             isUncategorized = route.uncategorizedOnly,
+            isOtherCurrencies = route.otherCurrenciesOnly,
             today = today,
             days = buildDayGroups(filtered),
             totals = filteredTotals(filtered),
@@ -143,15 +150,19 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
 
     /**
      * Mirrors the statistics queries when the route is stats-scoped: only the
-     * primary currency, never excluded-from-stats rows, only spend rows
+     * primary currency, never excluded-from-stats rows, and only spend rows
      * (expenses plus refunds) charged to the account itself for an account
-     * drill-down, and only uncategorized rows for the uncategorized slice.
+     * drill-down. The uncategorized cut is not here: it rides on the filters,
+     * through the shared engine.
      */
     private fun matchesStatsScope(transaction: Transaction, currency: Currency): Boolean {
         if (!route.statsScope) return true
-        val counted = !transaction.isExcludedFromStats &&
-            transaction.currency == currency &&
-            (!route.uncategorizedOnly || transaction.categoryId == null)
+        val currencyMatches = if (route.otherCurrenciesOnly) {
+            transaction.currency != currency
+        } else {
+            transaction.currency == currency
+        }
+        val counted = !transaction.isExcludedFromStats && currencyMatches
         val isRefund = transaction.type == TransactionType.INCOME && transaction.isRefund
         val typeMatches = if (route.accountId != null) {
             transaction.accountId == route.accountId &&

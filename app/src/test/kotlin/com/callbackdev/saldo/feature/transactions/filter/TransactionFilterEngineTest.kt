@@ -275,6 +275,47 @@ class TransactionFilterEngineTest {
     }
 
     @Test
+    fun `the no-category filter selects exactly the movements without one`() {
+        val filters = TransactionFilters(includeUncategorized = true)
+
+        assertTrue(matches(transaction(categoryId = null), filters))
+        assertFalse(matches(transaction(categoryId = 10L), filters))
+    }
+
+    @Test
+    fun `no-category unions with the picked categories rather than replacing them`() {
+        val filters = TransactionFilters(categoryIds = setOf(10L), includeUncategorized = true)
+
+        assertTrue(matches(transaction(categoryId = 10L), filters))
+        assertTrue(matches(transaction(categoryId = null), filters))
+        assertFalse(matches(transaction(categoryId = 99L), filters))
+    }
+
+    @Test
+    fun `picking categories without the no-category chip still excludes uncategorized`() {
+        val filters = TransactionFilters(categoryIds = setOf(10L))
+
+        assertTrue(matches(transaction(categoryId = 10L), filters))
+        assertFalse(matches(transaction(categoryId = null), filters))
+    }
+
+    @Test
+    fun `neither term set leaves the category unrestricted`() {
+        assertTrue(matches(transaction(categoryId = null), TransactionFilters.NONE))
+        assertTrue(matches(transaction(categoryId = 10L), TransactionFilters.NONE))
+    }
+
+    @Test
+    fun `the no-category chip counts as the category filter group`() {
+        val filters = TransactionFilters(includeUncategorized = true)
+
+        assertEquals(1, filters.activeCount)
+        assertTrue(filters.hasActiveFilters)
+        // Same group as the category chips: picking both is still one term.
+        assertEquals(1, filters.copy(categoryIds = setOf(1L)).activeCount)
+    }
+
+    @Test
     fun `activeCount counts filter groups, not single selections`() {
         val filters = TransactionFilters(
             types = setOf(TransactionType.EXPENSE, TransactionType.INCOME),

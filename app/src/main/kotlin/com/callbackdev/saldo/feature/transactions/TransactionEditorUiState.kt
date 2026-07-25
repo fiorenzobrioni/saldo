@@ -33,6 +33,8 @@ data class TransactionEditorUiState(
     val date: LocalDate = LocalDate.ofEpochDay(0),
     val time: LocalTime = LocalTime.MIDNIGHT,
     val description: String = "",
+    /** The long free-text note; blank means none. */
+    val note: String = "",
     val allTags: List<Tag> = emptyList(),
     val selectedTags: List<Tag> = emptyList(),
     val isExcludedFromStats: Boolean = false,

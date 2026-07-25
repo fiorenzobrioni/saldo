@@ -291,6 +291,16 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { preferences -> preferences[DISMISSED_RECAP_MONTH] = month.toString() }
     }
 
+    /**
+     * Drops every stored preference, returning the app to its first-launch
+     * defaults. Only the "erase all data" action calls this: clearing the
+     * onboarding flag here is what makes the app open on the onboarding again,
+     * exactly as a fresh install would.
+     */
+    suspend fun clear() {
+        dataStore.edit { preferences -> preferences.clear() }
+    }
+
     /** Snaps a stored or requested lead time to the closest offered option. */
     private fun Int.coerceToAllowedLeadDays(): Int =
         RenewalReminderPreferences.allowedLeadDays.minByOrNull { kotlin.math.abs(it - this) }

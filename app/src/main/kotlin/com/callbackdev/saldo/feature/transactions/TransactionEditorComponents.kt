@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,8 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Notes
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -22,15 +25,19 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -101,6 +108,75 @@ internal fun InlineDescriptionField(
         modifier = modifier.fillMaxWidth(),
     )
 }
+
+/**
+ * Borderless multiline note field, the long companion of the description.
+ * Same flat look as the description and the amount, indented to the same text
+ * column so the two read as one block; grows with the text up to
+ * [NOTE_MAX_LINES] and scrolls beyond that, so a long note never pushes the
+ * save button out of reach.
+ */
+@Composable
+internal fun InlineNoteField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    focusRequester: FocusRequester? = null,
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = { Text(stringResource(R.string.transaction_editor_note_hint)) },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Outlined.EditNote,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        minLines = NOTE_MIN_LINES,
+        maxLines = NOTE_MAX_LINES,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        textStyle = MaterialTheme.typography.bodyMedium,
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            errorContainerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier),
+    )
+}
+
+/**
+ * The quiet way in to the note when there is none yet: a text action that sits
+ * where the field will appear, so revealing it does not move anything above.
+ */
+@Composable
+internal fun AddNoteAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    TextButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+        modifier = modifier,
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.EditNote,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.size(8.dp))
+        Text(stringResource(R.string.transaction_editor_add_note))
+    }
+}
+
+/** One line of breathing room when empty; a comfortable block once written in. */
+private const val NOTE_MIN_LINES = 2
+private const val NOTE_MAX_LINES = 6
 
 /** Grid of selectable categories (4 per row), colored per category. */
 @Composable
