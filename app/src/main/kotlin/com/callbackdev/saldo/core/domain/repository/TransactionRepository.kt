@@ -207,6 +207,13 @@ interface TransactionRepository {
         currency: Currency,
     ): BigDecimal
 
+    /**
+     * How many movements in `[start, end)` the statistics skip only because
+     * they are not in [currency]. Feeds the notice that tells the user the
+     * charts are not showing everything the period holds.
+     */
+    fun observeOtherCurrencyCount(start: Instant, end: Instant, currency: Currency): Flow<Int>
+
     /** Number of movements labelled with [categoryId]. */
     suspend fun countForCategory(categoryId: Long): Int
 

@@ -231,6 +231,16 @@ class RoomTransactionRepository @Inject constructor(
     override suspend fun countForAccount(accountId: Long): Int =
         transactionDao.countForAccount(accountId)
 
+    override fun observeOtherCurrencyCount(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<Int> = transactionDao.observeOtherCurrencyCount(
+        start.toEpochMilli(),
+        end.toEpochMilli(),
+        currency.currencyCode,
+    )
+
     override suspend fun countForCategory(categoryId: Long): Int =
         transactionDao.countForCategory(categoryId)
 

@@ -71,9 +71,23 @@ data class StatsUiState(
     val balanceHistory: List<MonthlyBalance> = emptyList(),
     /** False when the ledger holds nothing the statistics can chew on. */
     val hasData: Boolean = false,
+    /**
+     * Movements of the selected period the charts leave out for the sole
+     * reason of being in another currency ([currency] is the only one every
+     * figure here is scoped to). Zero in the ordinary single-currency case.
+     */
+    val otherCurrencyCount: Int = 0,
 ) {
     /** The whole screen's first-run empty state. */
     val isEmpty: Boolean get() = !isLoading && !hasData
+
+    /**
+     * Whether to tell the user the charts are not the whole period. Also true
+     * on an empty screen: a period holding only foreign movements would
+     * otherwise read as "you recorded nothing", which is the most confusing
+     * version of this.
+     */
+    val showsOtherCurrencyNotice: Boolean get() = !isLoading && otherCurrencyCount > 0
 
     /** True when the last 12 months hold nothing for the trend charts. */
     val isTrendEmpty: Boolean

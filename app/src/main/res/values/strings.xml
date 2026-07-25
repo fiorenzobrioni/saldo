@@ -342,6 +342,11 @@
     <string name="stats_balance_title">Balance, last 12 months</string>
     <string name="stats_total_spent_label">Total spent in the period</string>
     <string name="stats_no_data_period">No data for this period.</string>
+    <string name="stats_other_currencies_title">Other currencies</string>
+    <plurals name="stats_other_currencies_notice">
+        <item quantity="one">%1$d transaction in another currency is not counted here: these figures are in %2$s only.</item>
+        <item quantity="other">%1$d transactions in other currencies are not counted here: these figures are in %2$s only.</item>
+    </plurals>
     <string name="stats_view_movements">View transactions for %1$s</string>
     <!-- Chart summaries for screen readers (the charts draw on a silent canvas). -->
     <string name="stats_chart_ring_a11y">Donut chart of expenses by category. The details are in the list below.</string>

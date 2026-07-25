@@ -174,6 +174,32 @@ interface TransactionDao {
     ): Flow<List<MonthlyTotalRow>>
 
     /**
+     * How many movements the statistics of `[startMillis, endMillis)` leave out
+     * for the sole reason of being in another currency: the exact filters of
+     * [observeCategoryTotals] with the currency test inverted.
+     *
+     * Every statistic is scoped to one currency (conversion is a later
+     * feature), so without this the charts would quietly under-report a period
+     * that also holds foreign movements. Zero when there are none, which is the
+     * normal single-currency case.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM transactions
+        WHERE type IN ('EXPENSE', 'INCOME')
+            AND isExcludedFromStats = 0
+            AND isPending = 0
+            AND currency <> :currency
+            AND timestampEpochMilli >= :startMillis AND timestampEpochMilli < :endMillis
+        """,
+    )
+    fun observeOtherCurrencyCount(
+        startMillis: Long,
+        endMillis: Long,
+        currency: String,
+    ): Flow<Int>
+
+    /**
      * Per-account signed spend totals in `[startMillis, endMillis)`, restricted
      * to [currency]. Same statistics rules as [observeMonthlyTotals]: refunds
      * net the spend, transfers/adjustments/excluded/pending never count.

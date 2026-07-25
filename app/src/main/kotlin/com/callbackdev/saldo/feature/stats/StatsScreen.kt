@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.Insights
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -24,6 +27,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -37,6 +41,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -57,6 +62,7 @@ import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.util.Currency
 
 /**
  * Statistics: category ring, per-account spend and 12-month trends over the
@@ -97,12 +103,35 @@ fun StatsScreen(
         when {
             uiState.isLoading -> StatsSkeleton(Modifier.padding(innerPadding))
 
-            uiState.isEmpty -> EmptyState(
-                icon = Icons.Outlined.Insights,
-                title = stringResource(R.string.stats_empty_title),
-                body = stringResource(R.string.stats_empty_body),
+            uiState.isEmpty -> Column(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
-            )
+            ) {
+                EmptyState(
+                    icon = Icons.Outlined.Insights,
+                    title = stringResource(R.string.stats_empty_title),
+                    body = stringResource(R.string.stats_empty_body),
+                    modifier = Modifier.weight(1f),
+                )
+                // The one empty screen that is not really empty: without this,
+                // a period holding only foreign movements reads as "you
+                // recorded nothing this month".
+                if (uiState.showsOtherCurrencyNotice) {
+                    OtherCurrencyNotice(
+                        count = uiState.otherCurrencyCount,
+                        currency = uiState.currency,
+                        onClick = {
+                            onNavigateToFiltered(
+                                periodRoute(
+                                    uiState.period,
+                                    uiState.today,
+                                    otherCurrenciesOnly = true,
+                                ),
+                            )
+                        },
+                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 24.dp),
+                    )
+                }
+            }
 
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
@@ -119,6 +148,25 @@ fun StatsScreen(
                         onPrevious = viewModel::previousPeriod,
                         onNext = viewModel::nextPeriod,
                     )
+                }
+                // Directly under the period selector: it qualifies the period
+                // the whole screen is about, before any figure is read.
+                if (uiState.showsOtherCurrencyNotice) {
+                    item {
+                        OtherCurrencyNotice(
+                            count = uiState.otherCurrencyCount,
+                            currency = uiState.currency,
+                            onClick = {
+                                onNavigateToFiltered(
+                                    periodRoute(
+                                        uiState.period,
+                                        uiState.today,
+                                        otherCurrenciesOnly = true,
+                                    ),
+                                )
+                            },
+                        )
+                    }
                 }
                 item {
                     CategorySharesCard(
@@ -338,6 +386,7 @@ private fun periodRoute(
     categoryId: Long? = null,
     accountId: Long? = null,
     uncategorizedOnly: Boolean = false,
+    otherCurrenciesOnly: Boolean = false,
 ): FilteredTransactionsRoute {
     val range = period.dateRange(today)
     return FilteredTransactionsRoute(
@@ -347,7 +396,63 @@ private fun periodRoute(
         accountId = accountId,
         statsScope = true,
         uncategorizedOnly = uncategorizedOnly,
+        otherCurrenciesOnly = otherCurrenciesOnly,
     )
+}
+
+/**
+ * Every figure on this screen is scoped to one currency, so a period that also
+ * holds foreign movements is being under-reported. This says so in one line and
+ * hands over the list of what is missing, rather than leaving the user to work
+ * out why the totals feel short.
+ *
+ * Deliberately a quiet informational row, not a warning: nothing is wrong, the
+ * charts simply cannot add up two currencies until conversion exists.
+ */
+@Composable
+private fun OtherCurrencyNotice(
+    count: Int,
+    currency: Currency,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.CurrencyExchange,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = pluralStringResource(
+                    R.plurals.stats_other_currencies_notice,
+                    count,
+                    count,
+                    currency.currencyCode,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
 }
 
 /** Line chart of the end-of-month total balance over the last 12 months. */

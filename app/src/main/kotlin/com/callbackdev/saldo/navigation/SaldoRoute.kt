@@ -136,4 +136,10 @@ data class FilteredTransactionsRoute(
     val accountId: Long? = null,
     val statsScope: Boolean = false,
     val uncategorizedOnly: Boolean = false,
+    /**
+     * Inverts the currency test of [statsScope]: the list shows exactly the
+     * movements the statistics left out for being in another currency. Backs
+     * the "not included" notice on the statistics screen.
+     */
+    val otherCurrenciesOnly: Boolean = false,
 ) : NavKey

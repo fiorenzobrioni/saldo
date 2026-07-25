@@ -43,6 +43,8 @@ data class FilteredTransactionsUiState(
     val title: String? = null,
     /** True when the list shows the uncategorized bucket (title resolved by the screen). */
     val isUncategorized: Boolean = false,
+    /** True when the list shows what the statistics left out for being in another currency. */
+    val isOtherCurrencies: Boolean = false,
     val today: LocalDate = LocalDate.ofEpochDay(0),
     val days: List<TransactionDayGroup> = emptyList(),
     val totals: List<FilteredTotal> = emptyList(),
@@ -132,6 +134,7 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
             title = route.categoryId?.let { categoryById[it]?.name }
                 ?: route.accountId?.let { accountById[it]?.name },
             isUncategorized = route.uncategorizedOnly,
+            isOtherCurrencies = route.otherCurrenciesOnly,
             today = today,
             days = buildDayGroups(filtered),
             totals = filteredTotals(filtered),
@@ -154,8 +157,12 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
      */
     private fun matchesStatsScope(transaction: Transaction, currency: Currency): Boolean {
         if (!route.statsScope) return true
-        val counted = !transaction.isExcludedFromStats &&
+        val currencyMatches = if (route.otherCurrenciesOnly) {
+            transaction.currency != currency
+        } else {
             transaction.currency == currency
+        }
+        val counted = !transaction.isExcludedFromStats && currencyMatches
         val isRefund = transaction.type == TransactionType.INCOME && transaction.isRefund
         val typeMatches = if (route.accountId != null) {
             transaction.accountId == route.accountId &&

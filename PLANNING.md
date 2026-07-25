@@ -525,6 +525,18 @@
 - [x] Anche la sezione Categorie del filter sheet non e piu nascosta a lista vuota: senza categorie il chip "Senza categoria" resta l'unico modo di isolare quei movimenti
 - [x] Stringhe IT/EN (parita verificata); test: `EraseAllDataUseCaseTest` (ordine delle scritture, preferenze intatte su fallimento), casi nuovi in `TransactionFilterEngineTest` (unione, solo-senza-categoria, nessun termine, conteggio del badge) e `TransactionEditorViewModelTest` (nota salvata e trimmata, nota di soli spazi -> null, dirty detection). Gate `assembleDebug testDebugUnitTest lint detekt` verde
 
+## Fase 10.16 - Segnalazione multi-valuta nelle Statistiche (luglio 2026)
+
+> Ultimo dei quattro gap della quarta review (versionCode 123 -> 124, versionName 0.9.84 -> 0.9.85). Ogni cifra delle statistiche e scoped alla valuta principale (la conversione e in v2.0), quindi un periodo che contiene anche movimenti in altre valute veniva sotto-riportato in silenzio. Nessun cambio di schema: una query di sola lettura.
+
+- [x] Ricognizione prima di implementare: delle superfici che sembravano scoperte, due lo erano gia solo in apparenza. La card Saldo totale e coperta dalla Fase 9.8 (saldo attenuato + codice ISO sui conti non primari) e il **drill-down delle card Oggi/Mese e il registro sono coperti da `FilteredTotalsBar`, che stampa gia una riga di totali per valuta** (`filteredTotals` raggruppa per valuta). Restava scoperta solo la schermata Statistiche
+- [x] **Dashboard invariata** (scelta utente): niente banner ne riga aggiuntiva sulla schermata piu densa dell'app, dove l'informazione e comunque a un tap di distanza nel drill-down
+- [x] `TransactionDao.observeOtherCurrencyCount`: gli stessi filtri di `observeCategoryTotals` col test sulla valuta invertito, cioe esattamente i movimenti che sarebbero entrati nelle statistiche se solo fossero stati nella valuta principale
+- [x] Riga informativa sotto il selettore di periodo, mostrata solo quando il conteggio e maggiore di zero: "N movimenti in altre valute non sono conteggiati qui: questi dati sono solo in EUR", con chevron e tap che apre il drill-down di quei movimenti. Superficie quieta (`surfaceContainerHigh`, testo `onSurfaceVariant`), non un warning: non c'e niente di rotto, i grafici semplicemente non possono sommare due valute finche non esiste la conversione
+- [x] **La riga compare anche sull'empty state**, ed e il caso che conta di piu: `hasData` guarda solo gli aggregati in valuta principale, quindi un periodo con soli movimenti esteri finiva su "non hai ancora registrato nulla" pur avendo movimenti dentro. Ora l'empty state si spiega
+- [x] Drill-down: nuovo flag `otherCurrenciesOnly` sulla route, che inverte il test di valuta dentro `matchesStatsScope` e da alla schermata il titolo "Altre valute". Riusa la stessa schermata e lo stesso motore filtri degli altri drill-down
+- [x] Stringhe IT/EN con plurals (parita verificata); test in `StatsViewModelTest` (notice accanto alle cifre, empty state che si spiega, nessuna notice a valuta unica, nessuna notice a registro vuoto). Gate `testDebugUnitTest lint detekt` verde
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.

@@ -348,6 +348,12 @@
     <string name="stats_balance_title">Saldo, ultimi 12 mesi</string>
     <string name="stats_total_spent_label">Totale speso nel periodo</string>
     <string name="stats_no_data_period">Nessun dato per questo periodo.</string>
+    <string name="stats_other_currencies_title">Altre valute</string>
+    <plurals name="stats_other_currencies_notice">
+        <item quantity="one">%1$d movimento in un\'altra valuta non è conteggiato qui: questi dati sono solo in %2$s.</item>
+        <item quantity="many">%1$d movimenti in altre valute non sono conteggiati qui: questi dati sono solo in %2$s.</item>
+        <item quantity="other">%1$d movimenti in altre valute non sono conteggiati qui: questi dati sono solo in %2$s.</item>
+    </plurals>
     <string name="stats_view_movements">Vedi i movimenti di %1$s</string>
     <!-- Riassunti dei grafici per gli screen reader (i grafici disegnano su un canvas muto). -->
     <string name="stats_chart_ring_a11y">Grafico ad anello delle spese per categoria. I dettagli sono nell\'elenco qui sotto.</string>

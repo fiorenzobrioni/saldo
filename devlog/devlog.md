@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-25 - Segnalazione multi-valuta nelle Statistiche
+
+**Fatto:** ultimo dei quattro gap della quarta review (Fase 10.16 in PLANNING.md). Nuova query `observeOtherCurrencyCount` (stessi filtri di `observeCategoryTotals`, test sulla valuta invertito) e riga informativa sotto il selettore di periodo delle Statistiche, mostrata solo quando quel periodo contiene movimenti in altre valute; il tap apre il drill-down di quei movimenti tramite un nuovo flag `otherCurrenciesOnly` sulla route, che inverte il test di valuta in `matchesStatsScope`.
+
+**Decisioni:** la ricognizione prima di implementare ha cambiato il piano proposto. Delle quattro superfici che sembravano scoperte due lo erano solo in apparenza: la card Saldo totale e coperta dalla Fase 9.8 e il drill-down delle card Oggi/Mese - insieme al registro - e coperto da `FilteredTotalsBar`, che stampa gia una riga di totali per valuta. Quindi la riga e stata aggiunta solo dove serviva davvero, le Statistiche, e non nel drill-down come inizialmente proposto. Dashboard invariata su scelta dell'utente. La riga e volutamente quieta (`surfaceContainerHigh`, testo attenuato) e non un warning: non c'e niente di rotto, i grafici non possono sommare due valute finche non esiste la conversione (v2.0).
+
+**Problemi:** durante l'implementazione e emerso un caso peggiore di quello per cui era nata la feature. `hasData` guarda solo gli aggregati in valuta principale, quindi un periodo con soli movimenti esteri cadeva nell'empty state "non hai ancora registrato nulla" pur avendo movimenti dentro: il messaggio piu fuorviante possibile. La riga compare quindi anche sull'empty state, che e il posto dove serve di piu; coperto da un test dedicato.
+
+**Verificato:** `testDebugUnitTest lint detekt` verde, 563 test, 0 falliti. Test nuovi in `StatsViewModelTest` (notice accanto alle cifre, empty state che si spiega, nessuna notice a valuta unica, nessuna notice a registro vuoto). versionCode 123 -> 124, versionName 0.9.84 -> 0.9.85.
+
+**Prossimo:** verifica su device con un conto in valuta diversa dalla primaria (riga presente col periodo misto, empty state col periodo di sole valute estere, drill-down "Altre valute"). Con questa si chiudono tutti e quattro i gap di prodotto della quarta review.
+
+---
+
 ## 2026-07-25 - Nota del movimento, cancellazione dati, filtro "senza categoria"
 
 **Fatto:** tre dei quattro gap di prodotto segnalati dalla quarta review, su richiesta utente (Fase 10.15 in PLANNING.md). (1) La nota del movimento diventa scrivibile: esisteva in modello, DB, backup, export/import CSV ed era gia cercata dalla ricerca del registro, ma nessun editor la esponeva. Ora e un campo del form (dirty detection inclusa), salvata con `trim()` e con la nota di soli spazi che persiste come `null`. (2) Cancellazione di tutti i dati: `BackupRepository.eraseAll()` + `EraseAllDataUseCase` + `AppResetCoordinator`, con card "danger zone" in fondo alla schermata Dati e dialog che apre sulla data dell'ultimo backup. (3) Filtro "senza categoria" nel registro, in unione con le categorie scelte, piu unificazione del drill-down statistiche sullo stesso predicato.
