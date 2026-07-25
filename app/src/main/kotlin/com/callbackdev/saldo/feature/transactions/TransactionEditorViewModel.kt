@@ -83,6 +83,8 @@ class TransactionEditorViewModel @AssistedInject constructor(
         val toAccountId: Long? = null,
         val categoryId: Long? = null,
         val description: String = "",
+        /** The long free-text note; blank means "no note" and persists as null. */
+        val note: String = "",
         val selectedTagIds: Set<Long> = emptySet(),
         val isExcludedFromStats: Boolean = false,
         val isRefund: Boolean = false,
@@ -219,6 +221,10 @@ class TransactionEditorViewModel @AssistedInject constructor(
         form.update { it.copy(description = description) }
     }
 
+    fun onNoteChanged(note: String) {
+        form.update { it.copy(note = note) }
+    }
+
     fun onAmountChanged(raw: String) {
         val digits = uiState.value.currency?.let(MoneyMapper::fractionDigits) ?: DEFAULT_FRACTION_DIGITS
         form.update {
@@ -346,6 +352,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
             date = current.date,
             time = current.time,
             description = current.description,
+            note = current.note,
             allTags = tags,
             selectedTags = tags.filter { it.id in current.selectedTagIds },
             isExcludedFromStats = current.isExcludedFromStats,
@@ -415,6 +422,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
                     date = local.toLocalDate(),
                     time = local.toLocalTime(),
                     description = transaction.description.orEmpty(),
+                    note = transaction.note.orEmpty(),
                     selectedTagIds = tagIds,
                     isExcludedFromStats = transaction.isExcludedFromStats,
                     isRefund = transaction.isRefund,
@@ -461,7 +469,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
             transferCurrency = toAccount?.currency,
             categoryId = if (hasCategory) current.categoryId else null,
             description = current.description.trim().ifEmpty { null },
-            note = base?.note,
+            note = current.note.trim().ifEmpty { null },
             isExcludedFromStats = if (hasCategory) current.isExcludedFromStats else false,
             isRefund = current.type == TransactionType.INCOME && current.isRefund,
             recurringRuleId = base?.recurringRuleId,
@@ -524,6 +532,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
         val toAccountId: Long?,
         val categoryId: Long?,
         val description: String,
+        val note: String,
         val selectedTagIds: Set<Long>,
         val isExcludedFromStats: Boolean,
         val isRefund: Boolean,
@@ -539,6 +548,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
         toAccountId = toAccountId,
         categoryId = categoryId,
         description = description,
+        note = note,
         selectedTagIds = selectedTagIds,
         isExcludedFromStats = isExcludedFromStats,
         isRefund = isRefund,

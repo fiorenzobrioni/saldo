@@ -33,17 +33,28 @@ data class TransactionFilters(
     val customEnd: LocalDate? = null,
     val types: Set<TransactionType> = emptySet(),
     val categoryIds: Set<Long> = emptySet(),
+    /**
+     * Whether movements without a category are kept. Combines with
+     * [categoryIds] as a union ("these categories, plus the uncategorized
+     * ones"), so it is a peer of the category chips rather than a mode: on its
+     * own it selects exactly the uncategorized movements, which is what the
+     * statistics ring's "No category" slice drills into.
+     */
+    val includeUncategorized: Boolean = false,
     val accountIds: Set<Long> = emptySet(),
     val tagIds: Set<Long> = emptySet(),
     val amountMin: BigDecimal? = null,
     val amountMax: BigDecimal? = null,
     val origin: TransactionOrigin? = null,
 ) {
+    /** True when the category term restricts the list at all. */
+    val hasCategoryFilter: Boolean get() = categoryIds.isNotEmpty() || includeUncategorized
+
     /** True when anything beyond the search query restricts the list. */
     val hasActiveFilters: Boolean
         get() = datePreset != DatePreset.ALL ||
             types.isNotEmpty() ||
-            categoryIds.isNotEmpty() ||
+            hasCategoryFilter ||
             accountIds.isNotEmpty() ||
             tagIds.isNotEmpty() ||
             amountMin != null ||
@@ -62,7 +73,7 @@ data class TransactionFilters(
         get() = listOf(
             datePreset != DatePreset.ALL && datePreset != DatePreset.THIS_MONTH,
             types.isNotEmpty(),
-            categoryIds.isNotEmpty(),
+            hasCategoryFilter,
             accountIds.isNotEmpty(),
             tagIds.isNotEmpty(),
             amountMin != null || amountMax != null,

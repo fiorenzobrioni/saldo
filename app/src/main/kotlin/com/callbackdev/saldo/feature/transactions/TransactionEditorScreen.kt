@@ -393,6 +393,7 @@ private fun EditorForm(
             value = uiState.description,
             onValueChange = viewModel::onDescriptionChanged,
         )
+        NoteSection(note = uiState.note, onNoteChange = viewModel::onNoteChanged)
         Spacer(Modifier.height(12.dp))
         TagsRow(uiState = uiState, onToggle = viewModel::onTagToggled, onAddClick = onAddTagClick)
         AnimatedSection(visible = uiState.hasCategorySection) {
@@ -415,6 +416,45 @@ private fun EditorForm(
             }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/**
+ * The note, revealed on demand. A movement that already carries one always
+ * shows it; on a new movement the field stays behind a quiet text action, so
+ * the form the typical expense needs (amount, category, save) is not padded
+ * with a large empty box nobody fills in. Once revealed it stays: clearing the
+ * text leaves the field open, ready to be written in again.
+ */
+@Composable
+private fun NoteSection(
+    note: String,
+    onNoteChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var revealed by rememberSaveable { mutableStateOf(false) }
+    val noteFocus = remember { FocusRequester() }
+    val visible = revealed || note.isNotBlank()
+    Column(modifier = modifier.fillMaxWidth()) {
+        AnimatedSection(visible = !visible) {
+            AddNoteAction(
+                onClick = { revealed = true },
+                // Aligned with the description's text column, not its icon.
+                modifier = Modifier.padding(start = 4.dp),
+            )
+        }
+        AnimatedSection(visible = visible) {
+            InlineNoteField(
+                value = note,
+                onValueChange = onNoteChange,
+                focusRequester = noteFocus,
+            )
+        }
+    }
+    // Only when the user asked for it: an existing note must not steal focus
+    // from the amount when an old movement is opened.
+    LaunchedEffect(revealed) {
+        if (revealed) noteFocus.requestFocus()
     }
 }
 

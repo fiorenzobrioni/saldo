@@ -284,6 +284,7 @@
     <string name="filter_section_origin">Origine</string>
     <string name="filter_origin_recurring">Ricorrenti</string>
     <string name="filter_origin_manual">Manuali</string>
+    <string name="filter_category_none">Senza categoria</string>
     <string name="filter_section_amount">Importo</string>
     <string name="filter_amount_min">Minimo</string>
     <string name="filter_amount_max">Massimo</string>
@@ -368,6 +369,8 @@
     <string name="transaction_editor_save_adjustment">Salva rettifica</string>
     <string name="transaction_editor_categories_all">Tutte</string>
     <string name="transaction_editor_description_hint">Aggiungi descrizione…</string>
+    <string name="transaction_editor_add_note">Aggiungi una nota</string>
+    <string name="transaction_editor_note_hint">Nota (facoltativa)</string>
     <string name="transaction_editor_account">Conto</string>
     <string name="transaction_editor_from_account">Conto di partenza</string>
     <string name="transaction_editor_to_account">Conto di arrivo</string>
@@ -671,7 +674,7 @@
     <string name="settings_accounts_hint">Conti, carte e contanti</string>
     <string name="settings_section_data">Dati</string>
     <string name="settings_backup">Backup</string>
-    <string name="settings_backup_hint">Esporta e ripristina i tuoi dati</string>
+    <string name="settings_backup_hint">Esporta, ripristina o cancella i tuoi dati</string>
     <string name="settings_section_about">Informazioni</string>
     <string name="settings_about">Informazioni su Saldo</string>
     <string name="settings_about_hint">Versione %1$s</string>
@@ -703,6 +706,16 @@
     <string name="backup_error_unsupported_version">Questo backup viene da una versione più recente di Saldo. Aggiorna l\'app per ripristinarlo.</string>
     <string name="backup_error_corrupted">Il file di backup è danneggiato e non può essere letto.</string>
     <string name="backup_csv_hint">Per esportare i movimenti in CSV usa l\'icona di condivisione nella schermata Movimenti.</string>
+
+    <string name="backup_erase_title">Cancella tutti i dati</string>
+    <string name="backup_erase_body">Rimuove tutto da questo dispositivo e riporta l\'app a com\'era il primo giorno. Esporta prima un backup se vuoi poter tornare indietro.</string>
+    <string name="backup_erase_action">Cancella tutti i dati</string>
+    <string name="backup_erase_dialog_title">Cancellare tutti i dati?</string>
+    <string name="backup_erase_dialog_body">Vengono eliminati conti, movimenti, categorie, ricorrenze, budget, obiettivi di risparmio, tag e impostazioni. L\'operazione non si può annullare.</string>
+    <string name="backup_erase_dialog_last_backup">Il tuo ultimo backup è del %1$s: ripristinalo per recuperare questi dati.</string>
+    <string name="backup_erase_dialog_no_backup">Non hai mai esportato un backup. Perderai tutto definitivamente.</string>
+    <string name="backup_erase_confirm">Cancella tutto</string>
+    <string name="backup_snackbar_erase_failed">Cancellazione non riuscita. Nessun dato è stato modificato.</string>
 
     <!-- Export CSV (Fase 8) -->
     <string name="csv_export_title">Esporta CSV</string>

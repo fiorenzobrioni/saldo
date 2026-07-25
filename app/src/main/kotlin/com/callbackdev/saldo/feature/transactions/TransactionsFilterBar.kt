@@ -73,7 +73,7 @@ internal fun TransactionsFilterBar(
 }
 
 private val TransactionFilters.hasNonDateFilters: Boolean
-    get() = types.isNotEmpty() || categoryIds.isNotEmpty() || accountIds.isNotEmpty() ||
+    get() = types.isNotEmpty() || hasCategoryFilter || accountIds.isNotEmpty() ||
         tagIds.isNotEmpty() || amountMin != null || amountMax != null || origin != null
 
 @Composable
@@ -157,6 +157,12 @@ private fun ActiveFilterRow(
             RemovableChip(
                 label = stringResource(type.labelRes),
                 onRemove = { onFiltersChange(filters.copy(types = filters.types - type)) },
+            )
+        }
+        if (filters.includeUncategorized) {
+            RemovableChip(
+                label = stringResource(R.string.filter_category_none),
+                onRemove = { onFiltersChange(filters.copy(includeUncategorized = false)) },
             )
         }
         filters.categoryIds.forEach { id ->

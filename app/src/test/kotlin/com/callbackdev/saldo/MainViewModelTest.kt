@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
+import com.callbackdev.saldo.core.domain.usecase.AppResetCoordinator
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.coVerify
 import io.mockk.every
@@ -24,6 +25,7 @@ class MainViewModelTest {
 
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true)
     private val accountRepository = mockk<AccountRepository>()
+    private val resetCoordinator = AppResetCoordinator()
 
     private val someAccount = AccountWithBalance(
         account = Account(
@@ -42,7 +44,7 @@ class MainViewModelTest {
     ): MainViewModel {
         every { userPreferences.onboardingCompleted } returns flowOf(onboardingCompleted)
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
-        return MainViewModel(userPreferences, accountRepository)
+        return MainViewModel(userPreferences, accountRepository, resetCoordinator)
     }
 
     private suspend fun MainViewModel.awaitDecision(): LaunchGate {
@@ -82,7 +84,7 @@ class MainViewModelTest {
     fun `a preferences read failure opens the app rather than blocking the user`() = runTest {
         every { userPreferences.onboardingCompleted } returns flow { error("datastore corrupted") }
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(emptyList())
-        val viewModel = MainViewModel(userPreferences, accountRepository)
+        val viewModel = MainViewModel(userPreferences, accountRepository, resetCoordinator)
 
         assertEquals(LaunchGate.APP, viewModel.awaitDecision())
     }
@@ -91,7 +93,7 @@ class MainViewModelTest {
     fun `an account read failure opens the app rather than risking onboarding an existing user`() = runTest {
         every { userPreferences.onboardingCompleted } returns flowOf(null)
         every { accountRepository.observeAccountsWithBalance() } returns flow { error("db error") }
-        val viewModel = MainViewModel(userPreferences, accountRepository)
+        val viewModel = MainViewModel(userPreferences, accountRepository, resetCoordinator)
 
         assertEquals(LaunchGate.APP, viewModel.awaitDecision())
     }

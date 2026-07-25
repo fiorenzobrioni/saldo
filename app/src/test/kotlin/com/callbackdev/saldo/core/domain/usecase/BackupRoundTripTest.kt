@@ -25,6 +25,12 @@ class BackupRoundTripTest {
         override suspend fun restore(data: BackupData) {
             stored = data
         }
+
+        // Unused by the round trip; the real implementation also replants the
+        // default categories, which is a Room concern and not this contract's.
+        override suspend fun eraseAll() {
+            stored = BackupData()
+        }
     }
 
     @Test
