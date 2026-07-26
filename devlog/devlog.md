@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-26 - Due bug nel widget: la guardia di troppo e il segnale che mancava
+
+**Fatto:** terza prova su device. L'utente riferisce due cose: il selettore di tipo "va una volta e poi non va piu", e appena installata l'app il widget apre sempre l'app anche toccando una categoria. Sono due bug distinti, entrambi trovati leggendo il codice e non ipotizzando.
+
+**Decisioni:** la frase "va una volta e poi non va piu" e stata quella decisiva, perche esclude sia il bersaglio sia lo stato e punta a una condizione che diventa falsa dopo il primo cambio. Era la guardia dentro il `produceState`: `if (inputs != initialInputs) value = load(...)`. `initialInputs` e il valore letto alla creazione della sessione e resta fisso per tutta la sua vita, quindi il primo tocco ricarica (gli input sono diversi) ma il ritorno sullo stato di partenza trova la guardia soddisfatta, il producer non fa nulla e in `value` restano i dati dell'altro tipo. L'avevo scritta per evitare una query ridondante al primo frame: una micro-ottimizzazione che ha rotto il giro di ritorno, e il costo che risparmiava era una query per sessione. Rimossa. Il secondo bug e piu insidioso perche non e in cio che il codice fa ma in cio che non guarda: `WidgetRefreshWatcher` osservava movimenti e categorie e non i conti. Un widget piazzato prima dell'onboarding non ha conti, quindi `isReady` e falso e il widget diventa un unico testo cliccabile largo quanto la tile - da cui "apre sempre l'app". La creazione del primo conto, cioe l'evento che lo rende usabile, non emetteva alcun segnale, e il widget restava una tile morta finche non capitava altro. Colta l'occasione per due cose che rendono il difetto meno probabile in futuro: i segnali sono estratti in `refreshSignals()`, nominati e testabili, perche un'omissione li e invisibile in build; e il selettore si colora da `currentState()` invece che dai dati caricati, cosi il controllo appena premuto risponde subito e la griglia si allinea un istante dopo.
+
+**Problemi:** nessuno. Vale la pena annotare il pattern, perche e la terza volta di fila che il widget si rompe per lo stesso motivo di fondo: in Glance tutto cio che vive fuori dalla composizione e congelato, e ogni scorciatoia che confronta il presente con un valore catturato all'avvio e destinata a sbagliare appena l'utente torna sui suoi passi.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 631 test, 0 falliti. Test nuovi: `WidgetRefreshWatcherTest` (primo conto, categoria, movimento, e nessun segnale per lo stato gia a schermo) e un caso in `QuickAddWidgetDataLoaderTest` che verifica che cambiare tipo e tornare indietro ricarichi entrambe le volte - cioe che il loader resti senza stato, che e la premessa su cui la correzione (1) si regge. versionCode 130 -> 131, versionName 0.9.91 -> 0.9.92.
+
+**Prossimo:** prova su device del selettore avanti e indietro piu volte di seguito, e del percorso da installazione pulita: widget piazzato prima dell'onboarding, creazione del primo conto, e le categorie che devono comparire da sole senza toccare nulla.
+
+---
+
 ## 2026-07-26 - Il selettore del widget non era rotto, era piccolo
 
 **Fatto:** terzo giro sul widget dopo la prova su device. L'utente riferisce che ora passa a Entrata ma non torna a Spesa, e poco dopo che fa fatica anche nell'altro verso. Corretto il bersaglio del selettore di tipo: la pillola diventa un `Box` alto 36dp col testo centrato e tutta l'area cliccabile, invece di un `Text` con padding alto circa 20dp.

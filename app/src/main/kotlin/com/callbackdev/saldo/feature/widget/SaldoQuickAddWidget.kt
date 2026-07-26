@@ -86,14 +86,21 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
         val initialData = loader.load(initialInputs.config, MaxCategorySlots)
         provideContent {
             val inputs = WidgetInputs.from(currentState())
+            // Reloads on every change of the inputs, with no "but we already
+            // have this" shortcut: the state the session starts on is also a
+            // state the user comes back to, and skipping the load there left
+            // the widget showing the type it had just moved away from.
             val data by produceState(initialData, inputs) {
-                if (inputs != initialInputs) value = loader.load(inputs.config, MaxCategorySlots)
+                value = loader.load(inputs.config, MaxCategorySlots)
             }
             val themePreferences by preferences.themePreferences
                 .collectAsState(initial = ThemePreferences())
             val theme = resolveWidgetTheme(LocalContext.current, themePreferences)
             GlanceTheme(colors = theme.providers) {
-                WidgetBody(data, theme)
+                // The selector follows the state, not the loaded data: the
+                // control the user just pressed has to answer immediately, and
+                // the grid catches up a frame later.
+                WidgetBody(inputs.config.type, data, theme)
             }
         }
     }
@@ -153,7 +160,11 @@ private fun layoutFor(size: DpSize): WidgetLayout = when {
 }
 
 @Composable
-private fun WidgetBody(data: QuickAddWidgetData, theme: QuickAddWidgetTheme) {
+private fun WidgetBody(
+    selectedType: TransactionType,
+    data: QuickAddWidgetData,
+    theme: QuickAddWidgetTheme,
+) {
     val layout = layoutFor(LocalSize.current)
     Column(
         modifier = GlanceModifier
@@ -166,7 +177,7 @@ private fun WidgetBody(data: QuickAddWidgetData, theme: QuickAddWidgetTheme) {
     ) {
         if (data.isReady) {
             if (layout.showHeader) {
-                Header(data)
+                Header(selectedType, data)
                 Spacer(GlanceModifier.height(HeaderGap))
             }
             CategoryGrid(data, theme, layout)
@@ -195,7 +206,7 @@ private fun NotReady() {
 }
 
 @Composable
-private fun Header(data: QuickAddWidgetData) {
+private fun Header(selectedType: TransactionType, data: QuickAddWidgetData) {
     val context = LocalContext.current
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
@@ -204,13 +215,13 @@ private fun Header(data: QuickAddWidgetData) {
         TypePill(
             label = context.getString(R.string.widget_quick_add_expense),
             type = TransactionType.EXPENSE,
-            selected = data.type == TransactionType.EXPENSE,
+            selected = selectedType == TransactionType.EXPENSE,
         )
         Spacer(GlanceModifier.width(PillGap))
         TypePill(
             label = context.getString(R.string.widget_quick_add_income),
             type = TransactionType.INCOME,
-            selected = data.type == TransactionType.INCOME,
+            selected = selectedType == TransactionType.INCOME,
         )
         Spacer(GlanceModifier.defaultWeight())
         if (data.todayTotal != null) {

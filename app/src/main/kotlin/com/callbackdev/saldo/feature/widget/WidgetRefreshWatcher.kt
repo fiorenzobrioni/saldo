@@ -6,12 +6,14 @@ import android.content.Context
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
+import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
@@ -39,6 +41,7 @@ class WidgetRefreshWatcher @Inject constructor(
     @ApplicationContext private val context: Context,
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
+    private val accountRepository: AccountRepository,
 ) {
 
     private val hasPlacedWidgets = MutableStateFlow(false)
@@ -51,15 +54,7 @@ class WidgetRefreshWatcher @Inject constructor(
         scope.launch {
             hasPlacedWidgets
                 .flatMapLatest { placed ->
-                    if (!placed) return@flatMapLatest emptyFlow()
-                    combine(
-                        // One row is signal enough: any insert, edit or delete
-                        // moves it, and the redraw re-reads everything anyway.
-                        transactionRepository.observeRecentTransactions(1),
-                        categoryRepository.observeCategories(),
-                    ) { _, _ -> }
-                        // The first emission is the state already on screen.
-                        .drop(1)
+                    if (!placed) emptyFlow() else refreshSignals()
                 }
                 .debounce(DEBOUNCE_MILLIS)
                 .collect { refresh() }
@@ -68,6 +63,26 @@ class WidgetRefreshWatcher @Inject constructor(
         // Application.onCreate on every cold start.
         scope.launch { readPlacement() }
     }
+
+    /**
+     * Everything whose change makes a placed widget wrong. Named and internal so
+     * the set can be asserted: an omission here is invisible in a build and
+     * shows up only as a widget that quietly stops keeping up.
+     */
+    internal fun refreshSignals(): Flow<Unit> = combine(
+        // One row is signal enough: any insert, edit or delete moves it, and
+        // the redraw re-reads everything anyway.
+        transactionRepository.observeRecentTransactions(1),
+        categoryRepository.observeCategories(),
+        // The accounts are not optional. A widget placed before onboarding has
+        // no account, so it renders as the "open Saldo to get started" tile and
+        // every tap opens the app; creating the first account is exactly what
+        // makes it usable, and without this signal that moment went unnoticed
+        // and the widget stayed a dead tile.
+        accountRepository.observeAccountsWithBalance(),
+    ) { _, _, _ -> }
+        // The first emission is the state already on screen.
+        .drop(1)
 
     /** Called when a widget is added or removed, and on every framework update broadcast. */
     fun onWidgetsChanged() {

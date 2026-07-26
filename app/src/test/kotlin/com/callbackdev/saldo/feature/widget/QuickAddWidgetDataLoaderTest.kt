@@ -150,4 +150,27 @@ class QuickAddWidgetDataLoaderTest {
         val data = loader().load(QuickAddWidgetConfig(type = TransactionType.INCOME), categoryLimit = 4)
         assertEquals(TransactionType.INCOME, data.type)
     }
+
+    /**
+     * The widget's composition reloads on every change of its inputs, with no
+     * "we already had this one" shortcut, because the state a session starts on
+     * is also a state the user comes back to. That only holds if the loader is
+     * stateless: the day someone adds a cache in here, switching type and
+     * switching back would leave the widget showing the type it just left.
+     */
+    @Test
+    fun `switching type and back reloads both times`() = runTest {
+        val subject = loader()
+        val expense = QuickAddWidgetConfig(type = TransactionType.EXPENSE)
+        val income = QuickAddWidgetConfig(type = TransactionType.INCOME)
+
+        val first = subject.load(expense, categoryLimit = 4)
+        val second = subject.load(income, categoryLimit = 4)
+        val back = subject.load(expense, categoryLimit = 4)
+
+        assertEquals(TransactionType.EXPENSE, first.type)
+        assertEquals(TransactionType.INCOME, second.type)
+        assertEquals(TransactionType.EXPENSE, back.type)
+        assertEquals(first.categories.map { it.id }, back.categories.map { it.id })
+    }
 }
