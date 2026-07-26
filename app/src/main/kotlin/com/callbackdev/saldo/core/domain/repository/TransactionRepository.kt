@@ -190,6 +190,20 @@ interface TransactionRepository {
         currency: Currency,
     ): Flow<DashboardTotals>
 
+    /**
+     * Ids of the categories used most often for movements of [type] since
+     * [since], most used first. Powers the quick-add widget's grid: it is a
+     * "what do I usually tap" shortcut, so unlike the statistics queries it
+     * counts every currency, every account and even movements excluded from
+     * statistics. Empty on a fresh install, where the caller falls back to the
+     * user's own category order.
+     */
+    suspend fun mostUsedCategoryIds(
+        type: TransactionType,
+        since: Instant,
+        limit: Int,
+    ): List<Long>
+
     suspend fun getTransaction(id: Long): Transaction?
 
     /** Number of movements that touch [accountId] as source or transfer destination. */

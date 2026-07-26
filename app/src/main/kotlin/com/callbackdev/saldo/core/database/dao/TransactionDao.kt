@@ -137,6 +137,34 @@ interface TransactionDao {
     ): Flow<List<CategoryTotalRow>>
 
     /**
+     * The categories used most often for movements of [type] since
+     * [sinceMillis], most used first, ties broken by the most recent use. Drives
+     * the quick-add widget's grid, which is a shortcut list rather than a
+     * statistic: it counts movements of any currency and any account, including
+     * ones excluded from statistics, because "what I usually tap" has nothing to
+     * do with what the charts add up. Pending movements are left out: they were
+     * never confirmed by anyone.
+     */
+    @Query(
+        """
+        SELECT categoryId AS categoryId, 0 AS totalMinor, COUNT(*) AS count
+        FROM transactions
+        WHERE type = :type
+            AND isPending = 0
+            AND categoryId IS NOT NULL
+            AND timestampEpochMilli >= :sinceMillis
+        GROUP BY categoryId
+        ORDER BY count DESC, MAX(timestampEpochMilli) DESC
+        LIMIT :limit
+        """,
+    )
+    suspend fun mostUsedCategories(
+        type: String,
+        sinceMillis: Long,
+        limit: Int,
+    ): List<CategoryTotalRow>
+
+    /**
      * Per-month expense and income totals in `[startMillis, endMillis)` for the
      * statistics trend charts, restricted to [currency]. Months are the
      * movement's own local month (per-row offset, ADR 7). Refunds (INCOME with
