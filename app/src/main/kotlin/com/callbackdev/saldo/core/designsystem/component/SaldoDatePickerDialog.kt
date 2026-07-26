@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.core.designsystem.component
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DatePicker
@@ -29,6 +30,11 @@ import java.time.LocalDate
  * start). [showQuickDates] adds "Today"/"Yesterday" chips above the calendar
  * that confirm immediately, covering the most frequent date corrections;
  * a chip is hidden when its date falls below [minDate].
+ *
+ * The content is wrapped in an explicit [Column] on purpose: `DatePickerDialog`
+ * types its slot as `ColumnScope` but lays it out in a `Box` (verified in the
+ * material3 1.4.0 bytecode), so siblings stack on top of each other. Without
+ * the wrapper the calendar, composed last, simply paints over the quick dates.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,27 +79,29 @@ fun SaldoDatePickerDialog(
             }
         },
     ) {
-        if (showQuickDates) {
-            val today = LocalDate.now()
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp),
-            ) {
-                if (minDate == null || !today.isBefore(minDate)) {
-                    SuggestionChip(
-                        onClick = { onConfirm(today) },
-                        label = { Text(stringResource(R.string.date_today)) },
-                    )
-                }
-                val yesterday = today.minusDays(1)
-                if (minDate == null || !yesterday.isBefore(minDate)) {
-                    SuggestionChip(
-                        onClick = { onConfirm(yesterday) },
-                        label = { Text(stringResource(R.string.date_yesterday)) },
-                    )
+        Column {
+            if (showQuickDates) {
+                val today = LocalDate.now()
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp),
+                ) {
+                    if (minDate == null || !today.isBefore(minDate)) {
+                        SuggestionChip(
+                            onClick = { onConfirm(today) },
+                            label = { Text(stringResource(R.string.date_today)) },
+                        )
+                    }
+                    val yesterday = today.minusDays(1)
+                    if (minDate == null || !yesterday.isBefore(minDate)) {
+                        SuggestionChip(
+                            onClick = { onConfirm(yesterday) },
+                            label = { Text(stringResource(R.string.date_yesterday)) },
+                        )
+                    }
                 }
             }
+            DatePicker(state = state, showModeToggle = false)
         }
-        DatePicker(state = state, showModeToggle = false)
     }
 }

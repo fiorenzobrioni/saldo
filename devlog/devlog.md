@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-26 - Il bug dei chip rapidi (slot Box di material3) e le gambe del trasferimento
+
+**Fatto:** secondo giro di correzioni dalla prova su device. (1) I chip rapidi "Oggi"/"Ieri" nel dialog della data non si sono mai visti dalla Fase 10.12. Causa trovata nel bytecode di material3 1.4.0: `DatePickerDialog` dichiara lo slot come `content: @Composable ColumnScope.() -> Unit` ma lo dispone in un **Box** (`checkcast BoxScope` all'offset 807, con `ColumnScopeInstance` passato come receiver del lambda), quindi i figli si sovrappongono invece di impilarsi verticalmente. Il `DatePicker`, composto per ultimo, copriva i chip. Correzione: una `Column` esplicita dentro lo slot. (2) Nel trasferimento i due chip conto andavano a capo su righe sfalsate, senza nulla che dicesse quale fosse la partenza: ora sono due righe piene allineate su una colonna di etichette ("Da" / "A"), con lo scambio delle gambe accanto come icona verticale (`SwapVert`) invece della freccia in mezzo.
+
+**Decisioni:** la `Column` esplicita e preferita a qualsiasi altra soluzione perche e una riga, non dipende dal comportamento del Box (funziona anche se un domani material3 lo cambiasse in una Column vera) e non tocca il dialog condiviso con obiettivi e ricorrenze. Nel trasferimento due nomi di conto piu una freccia non stanno su una riga a nessuna larghezza realistica: invece di sperare nel wrap si sceglie la disposizione verticale e le si da una struttura, che e anche l'unico modo per etichettare le gambe. Il testo di `EditorChip` passa a `weight(1f, fill = false)` con ellissi: cosi la stessa pillola funziona sia a larghezza libera (chip del conto) sia a larghezza imposta (gamba del trasferimento), e un nome lungo si accorcia invece di spingere la freccia fuori.
+
+**Problemi:** la diagnosi del punto (1) e costata piu della correzione. Le prime due ipotesi (contenuto tagliato per mancanza di spazio, contenuto sotto la piega del dialog) erano incompatibili con lo screenshot, che mostrava calendario e bottoni interi; e stato il dettaglio riferito dall'utente - toccando l'intestazione "Seleziona data" si apriva l'orologio - a indicare la sovrapposizione, perche l'intestazione del `DatePicker` non e cliccabile e il tap cadeva sulla riga sottostante. Il bytecode ha poi confermato.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 576 test, 0 falliti, nessun warning. Nessun test nuovo (entrambe le correzioni sono di layout). versionCode 126 -> 127, versionName 0.9.87 -> 0.9.88.
+
+**Prossimo:** verifica su device: i chip "Oggi"/"Ieri" sopra il calendario, e la schermata del trasferimento con nomi di conto lunghi.
+
+---
+
 ## 2026-07-26 - Due correzioni dalla prova su device: ora scopribile, selettore tipo che respira
 
 **Fatto:** due segnalazioni dell'utente dopo la prova su device della Fase 10.17. (1) Il chip data+ora apriva il dialog della data, che pero non mostrava da nessuna parte come cambiare l'ora: l'utente l'ha trovata per caso toccando l'intestazione "Seleziona data". Il chip diventa quindi due controlli in una pillola sola: meta sinistra (glifo calendario + data) apre il calendario, meta destra (glifo orologio + ora) apre il time picker, separate da un divider verticale. La riga dell'ora dentro il dialog e lo slot `timeRow` di `SaldoDatePickerDialog` sono stati rimossi: il dialog torna esattamente com'era. (2) Nel selettore di tipo la voce "Trasferimento" toccava il bordo del proprio segmento: via il glifo di spunta (`icon = {}`) e label a `labelMedium` con `maxLines = 1`.

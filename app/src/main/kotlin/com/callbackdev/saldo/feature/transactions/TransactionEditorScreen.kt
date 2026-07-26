@@ -15,16 +15,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowRightAlt
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.SwapVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +54,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -563,41 +565,19 @@ private fun ContextChips(
 ) {
     val accountError = uiState.showValidation && !uiState.isAccountValid
     val motionEnabled = rememberMotionEnabled()
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
             .fillMaxWidth()
             .then(if (motionEnabled) Modifier.animateContentSize() else Modifier),
     ) {
         if (uiState.isTransfer) {
-            EditorChip(
-                icon = AccountVisuals.icon(uiState.account?.icon),
-                label = uiState.account?.name
-                    ?: stringResource(R.string.transaction_editor_from_account),
-                isError = accountError,
-                onClick = onAccountChipClick,
-                modifier = Modifier.align(Alignment.CenterVertically),
-            )
-            // The arrow states the direction of the transfer; tapping it swaps
-            // the two accounts, the quickest fix for a reversed entry.
-            IconButton(
-                onClick = onSwapAccounts,
-                modifier = Modifier.align(Alignment.CenterVertically),
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.ArrowRightAlt,
-                    contentDescription =
-                    stringResource(R.string.transaction_editor_swap_accounts),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            EditorChip(
-                icon = AccountVisuals.icon(uiState.toAccount?.icon),
-                label = uiState.toAccount?.name
-                    ?: stringResource(R.string.transaction_editor_to_account),
-                isError = uiState.showValidation && !uiState.isToAccountValid,
-                onClick = onToAccountChipClick,
-                modifier = Modifier.align(Alignment.CenterVertically),
+            TransferAccounts(
+                uiState = uiState,
+                onAccountChipClick = onAccountChipClick,
+                onToAccountChipClick = onToAccountChipClick,
+                onSwapAccounts = onSwapAccounts,
             )
         } else {
             EditorChip(
@@ -606,7 +586,6 @@ private fun ContextChips(
                     ?: stringResource(R.string.transaction_editor_account),
                 isError = accountError,
                 onClick = onAccountChipClick,
-                modifier = Modifier.align(Alignment.CenterVertically),
             )
         }
         DateTimeChip(
@@ -614,10 +593,94 @@ private fun ContextChips(
             time = uiState.time,
             onDateClick = onDateChipClick,
             onTimeClick = onTimeChipClick,
-            modifier = Modifier.align(Alignment.CenterVertically),
         )
     }
 }
+
+/**
+ * The two legs of a transfer, stacked and labelled. Two account names plus an
+ * arrow never fit one line, and left to wrap they landed on ragged rows with
+ * nothing saying which was the source: here they are two full-width rows
+ * sharing a label column, so "from" and "to" read down the same edge. The
+ * swap button sits beside them and still inverts the legs in one tap.
+ */
+@Composable
+private fun TransferAccounts(
+    uiState: TransactionEditorUiState,
+    onAccountChipClick: () -> Unit,
+    onToAccountChipClick: () -> Unit,
+    onSwapAccounts: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.weight(1f),
+        ) {
+            TransferLeg(
+                label = stringResource(R.string.transaction_editor_leg_from),
+                icon = AccountVisuals.icon(uiState.account?.icon),
+                accountName = uiState.account?.name,
+                placeholder = stringResource(R.string.transaction_editor_from_account),
+                isError = uiState.showValidation && !uiState.isAccountValid,
+                onClick = onAccountChipClick,
+            )
+            TransferLeg(
+                label = stringResource(R.string.transaction_editor_leg_to),
+                icon = AccountVisuals.icon(uiState.toAccount?.icon),
+                accountName = uiState.toAccount?.name,
+                placeholder = stringResource(R.string.transaction_editor_to_account),
+                isError = uiState.showValidation && !uiState.isToAccountValid,
+                onClick = onToAccountChipClick,
+            )
+        }
+        IconButton(onClick = onSwapAccounts) {
+            Icon(
+                imageVector = Icons.Outlined.SwapVert,
+                contentDescription = stringResource(R.string.transaction_editor_swap_accounts),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** One leg of a transfer: its role on the left, its account chip filling the rest. */
+@Suppress("LongParameterList")
+@Composable
+private fun TransferLeg(
+    label: String,
+    icon: ImageVector,
+    accountName: String?,
+    placeholder: String,
+    isError: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(LegLabelWidth),
+        )
+        EditorChip(
+            icon = icon,
+            label = accountName ?: placeholder,
+            isError = isError,
+            onClick = onClick,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+/** Enough for "Da"/"A" and "From"/"To", so both chips start on the same edge. */
+private val LegLabelWidth = 36.dp
 
 /**
  * Date and time in one chip, but two controls: the left half opens the
@@ -731,6 +794,12 @@ private fun EditorChip(
                 } else {
                     MaterialTheme.colorScheme.onSurface
                 },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                // Fills a chip that was given a width (a transfer leg), wraps
+                // to its text in the free-standing case; a long account name
+                // ellipsizes instead of pushing the arrow off the pill.
+                modifier = Modifier.weight(1f, fill = false),
             )
             Icon(
                 imageVector = Icons.Outlined.ArrowDropDown,
