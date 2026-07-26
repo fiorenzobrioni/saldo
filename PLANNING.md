@@ -551,7 +551,7 @@
 - [x] **Form a due zone**: la parte che decide un movimento (tipo, importo, conto, data) e fissa, e la zona scorrevole apre con le categorie, cosi su qualsiasi schermo normale due righe di categorie stanno sotto i chip senza scorrere. Prima, con la tastiera aperta, si vedeva mezza riga
 - [x] Griglia categorie: `ScrollingCategoryGrid` mostra **tutte** le categorie in un box alto due righe che scorre da solo (rimossi il cap `CATEGORY_GRID_CAP` e `visibleCategories`, che mostravano le prime otto con la selezionata infilata dentro); "Tutte" resta per l'elenco completo. L'altezza segue il font scale e la griglia sta dentro la zona scorrevole, cosi uno schermo corto scorre invece di tagliare
 - [x] Spaziature ricalibrate nella zona fissa; scroll-to della griglia sulla categoria selezionata quando si apre un movimento esistente
-- [x] Stringhe IT/EN (`keypad_clear`, `keypad_decimal_separator`, `keypad_hide`, `action_paste`, `transaction_editor_date_time_chip`); test JVM `AmountInputEditorTest` (cifre, separatore unico, decimali al limite della valuta, valuta a 0 decimali, backspace, clear, segno, cap delle cifre intere) e casi nuovi in `MoneyInputTest` per `grouped`
+- [x] Stringhe IT/EN (`keypad_clear`, `keypad_decimal_separator`, `keypad_hide`, `action_paste`, `transaction_editor_date_time_chip`); test JVM `AmountInputEditorTest` (cifre, separatore unico, decimali al limite della valuta, valuta a 0 decimali, backspace, clear, segno, cap delle cifre intere) e casi nuovi in `MoneyInputTest` per `grouped`. Gate `assembleDebug testDebugUnitTest lint detekt` verde (576 test, 0 falliti)
 
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 

@@ -8,25 +8,10 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.callbackdev.saldo.core.common.money.AmountInputEditor
-
-/**
- * The amount field the keypad is typing into: its current raw text, the rules
- * that text obeys and where the result goes. Screens build one of these for the
- * field the user tapped and pass it to [AmountKeypadHost]; a null target means
- * the keypad is closed.
- */
-@Immutable
-data class AmountTarget(
-    val value: String,
-    val fractionDigits: Int,
-    val allowNegative: Boolean,
-    val onValueChange: (String) -> Unit,
-)
 
 /**
  * Hosts the in-app keypad for the active amount field (ADR 31). Sits at the

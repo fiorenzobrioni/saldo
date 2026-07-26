@@ -70,9 +70,6 @@ import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.navigation.AccountEditorRoute
 import java.util.Currency
 
-/** Which amount of the account form the in-app keypad is typing into, if any. */
-internal enum class AccountAmountField { INITIAL_BALANCE, CREDIT_LIMIT }
-
 /**
  * Create/edit form for an account: name, type, currency, initial balance,
  * color, icon and inclusion in the total balance.
@@ -110,8 +107,10 @@ fun AccountEditorScreen(
     DiscardChangesDialog(guard)
 
     // The name comes first on this form, so the keypad waits to be asked for.
-    var activeAmount by rememberSaveable { mutableStateOf<AccountAmountField?>(null) }
-    BackHandler(enabled = activeAmount != null) { activeAmount = null }
+    // One flag is enough for both amounts: the initial balance and the credit
+    // limit never coexist, exactly as their two sections cross-fade.
+    var keypadOpen by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = keypadOpen) { keypadOpen = false }
     val fractionDigits = MoneyMapper.fractionDigits(uiState.currency)
     val initialBalanceTarget = AmountTarget(
         value = uiState.initialBalanceInput,
@@ -126,6 +125,7 @@ fun AccountEditorScreen(
         allowNegative = false,
         onValueChange = viewModel::onCreditLimitChanged,
     )
+    val amountTarget = if (uiState.isCreditCard) creditLimitTarget else initialBalanceTarget
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
@@ -159,12 +159,8 @@ fun AccountEditorScreen(
             if (!uiState.isLoading) {
                 EditorBottomBar {
                     AmountKeypadHost(
-                        target = when (activeAmount) {
-                            AccountAmountField.INITIAL_BALANCE -> initialBalanceTarget
-                            AccountAmountField.CREDIT_LIMIT -> creditLimitTarget
-                            null -> null
-                        },
-                        onHide = { activeAmount = null },
+                        target = amountTarget.takeIf { keypadOpen },
+                        onHide = { keypadOpen = false },
                     )
                     EditorSaveButton(
                         text = stringResource(R.string.account_editor_save),
@@ -189,8 +185,8 @@ fun AccountEditorScreen(
                 onCurrencyChanged = viewModel::onCurrencyChanged,
                 initialBalanceTarget = initialBalanceTarget,
                 creditLimitTarget = creditLimitTarget,
-                onActivateAmount = { activeAmount = it },
-                onCloseKeypad = { activeAmount = null },
+                onActivateAmount = { keypadOpen = true },
+                onCloseKeypad = { keypadOpen = false },
                 onColorSelected = viewModel::onColorSelected,
                 onIconSelected = viewModel::onIconSelected,
                 onIncludedInTotalChanged = viewModel::onIncludedInTotalChanged,
@@ -220,7 +216,7 @@ private fun EditorForm(
     onCurrencyChanged: (Currency) -> Unit,
     initialBalanceTarget: AmountTarget,
     creditLimitTarget: AmountTarget,
-    onActivateAmount: (AccountAmountField) -> Unit,
+    onActivateAmount: () -> Unit,
     onCloseKeypad: () -> Unit,
     onColorSelected: (Int) -> Unit,
     onIconSelected: (String) -> Unit,
@@ -263,7 +259,7 @@ private fun EditorForm(
             AmountTextField(
                 target = initialBalanceTarget,
                 label = stringResource(R.string.account_editor_initial_balance),
-                onActivate = { onActivateAmount(AccountAmountField.INITIAL_BALANCE) },
+                onActivate = onActivateAmount,
                 suffix = uiState.currency.symbol,
                 supportingText = stringResource(R.string.account_editor_initial_balance_hint),
                 showSignToggle = true,
@@ -277,7 +273,7 @@ private fun EditorForm(
                 onPaymentDueDayChanged = onPaymentDueDayChanged,
                 onLinkedAccountChanged = onLinkedAccountChanged,
                 creditLimitTarget = creditLimitTarget,
-                onActivateCreditLimit = { onActivateAmount(AccountAmountField.CREDIT_LIMIT) },
+                onActivateCreditLimit = onActivateAmount,
                 onStatementAutoPostChanged = onStatementAutoPostChanged,
             )
         }
