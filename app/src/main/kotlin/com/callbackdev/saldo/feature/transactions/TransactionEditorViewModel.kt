@@ -12,7 +12,9 @@ import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.account.DefaultAccountResolver
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
+import com.callbackdev.saldo.core.domain.money.TransactionSign
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
@@ -375,9 +377,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
             val active = accountRepository.observeAccountsWithBalance().first()
                 .map { it.account }
                 .filter { !it.isArchived }
-            val default = active.firstOrNull { it.id == defaultId }
-                ?: active.firstOrNull { it.id == lastUsedId }
-                ?: active.firstOrNull()
+            val default = DefaultAccountResolver.resolve(active, defaultId, lastUsedId)
             if (default != null) {
                 form.update { if (it.accountId == null) it.copy(accountId = default.id) else it }
             }
@@ -458,7 +458,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
         return Transaction(
             id = base?.id ?: 0L,
             type = current.type,
-            amount = signedAmount(current.type, parsed),
+            amount = TransactionSign.signed(current.type, parsed),
             currency = account.currency,
             accountId = account.id,
             timestamp = dateTime.toInstant(offset),
@@ -479,14 +479,6 @@ class TransactionEditorViewModel @AssistedInject constructor(
             recurringOccurrenceDate = base?.recurringOccurrenceDate,
         )
     }
-
-    /** Sign convention of [Transaction.amount]: the effect on the source account. */
-    private fun signedAmount(type: TransactionType, parsed: BigDecimal): BigDecimal =
-        when (type) {
-            TransactionType.EXPENSE, TransactionType.TRANSFER -> parsed.abs().negate()
-            TransactionType.INCOME -> parsed.abs()
-            TransactionType.ADJUSTMENT -> parsed
-        }
 
     /** The positive effect on the destination account of a transfer. */
     private fun transferAmountFor(
