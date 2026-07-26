@@ -2,6 +2,7 @@
 
 package com.callbackdev.saldo.feature.savings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -50,6 +52,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.designsystem.component.AnimatedSection
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
@@ -62,6 +66,7 @@ import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesG
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.feature.recurring.DateField
 import com.callbackdev.saldo.feature.recurring.SubscriptionColorPicker
 import com.callbackdev.saldo.feature.recurring.SubscriptionIconPicker
@@ -110,6 +115,15 @@ fun SavingsGoalEditorScreen(
     DiscardChangesDialog(guard)
 
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    // The name comes first on this form, so the keypad waits to be asked for.
+    var keypadOpen by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = keypadOpen) { keypadOpen = false }
+    val targetAmount = AmountTarget(
+        value = uiState.targetInput,
+        fractionDigits = MoneyMapper.fractionDigits(uiState.currency),
+        allowNegative = false,
+        onValueChange = viewModel::onTargetChanged,
+    )
 
     val titleRes = if (uiState.isNew) {
         R.string.savings_editor_title_new
@@ -149,6 +163,10 @@ fun SavingsGoalEditorScreen(
         bottomBar = {
             if (!uiState.isLoading && !uiState.noAvailableAccounts) {
                 EditorBottomBar {
+                    AmountKeypadHost(
+                        target = targetAmount.takeIf { keypadOpen },
+                        onHide = { keypadOpen = false },
+                    )
                     EditorSaveButton(
                         text = stringResource(R.string.savings_editor_save),
                         onClick = viewModel::save,
@@ -185,6 +203,10 @@ fun SavingsGoalEditorScreen(
             else -> EditorForm(
                 uiState = uiState,
                 viewModel = viewModel,
+                targetAmount = targetAmount,
+                isKeypadOpen = keypadOpen,
+                onActivateAmount = { keypadOpen = true },
+                onCloseKeypad = { keypadOpen = false },
                 onTargetDateClick = { showDatePicker = true },
                 onCreateAccount = onNavigateToNewAccount,
                 modifier = Modifier
@@ -213,6 +235,10 @@ fun SavingsGoalEditorScreen(
 private fun EditorForm(
     uiState: SavingsGoalEditorUiState,
     viewModel: SavingsGoalEditorViewModel,
+    targetAmount: AmountTarget,
+    isKeypadOpen: Boolean,
+    onActivateAmount: () -> Unit,
+    onCloseKeypad: () -> Unit,
     onTargetDateClick: () -> Unit,
     onCreateAccount: () -> Unit,
     modifier: Modifier = Modifier,
@@ -225,13 +251,16 @@ private fun EditorForm(
             name = uiState.name,
             showError = uiState.showValidation && !uiState.isNameValid,
             onNameChanged = viewModel::onNameChanged,
+            // The name field brings the system IME up: the keypad steps aside.
+            modifier = Modifier.onFocusChanged { if (it.isFocused) onCloseKeypad() },
         )
         Spacer(Modifier.height(20.dp))
         HeroAmountField(
-            input = uiState.targetInput,
+            target = targetAmount,
             currencySymbol = uiState.currency.symbol,
             isError = uiState.showValidation && !uiState.isTargetValid,
-            onValueChange = viewModel::onTargetChanged,
+            isActive = isKeypadOpen,
+            onActivate = onActivateAmount,
             label = stringResource(R.string.savings_editor_target),
             errorText = stringResource(R.string.savings_editor_target_error),
         )

@@ -2,6 +2,7 @@
 
 package com.callbackdev.saldo.feature.recurring
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +49,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,6 +57,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.designsystem.component.AnimatedSection
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
@@ -113,6 +117,15 @@ fun RecurringRuleEditorScreen(
 
     var showStartPicker by rememberSaveable { mutableStateOf(false) }
     var showEndPicker by rememberSaveable { mutableStateOf(false) }
+    // The rule's name comes first on this form: the keypad waits to be asked for.
+    var keypadOpen by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = keypadOpen) { keypadOpen = false }
+    val amountTarget = AmountTarget(
+        value = uiState.amountInput,
+        fractionDigits = uiState.amountFractionDigits,
+        allowNegative = false,
+        onValueChange = viewModel::onAmountChanged,
+    )
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
@@ -145,6 +158,10 @@ fun RecurringRuleEditorScreen(
         bottomBar = {
             if (!uiState.isLoading) {
                 EditorBottomBar {
+                    AmountKeypadHost(
+                        target = amountTarget.takeIf { keypadOpen && !uiState.isVariableAmount },
+                        onHide = { keypadOpen = false },
+                    )
                     EditorSaveButton(
                         text = stringResource(editorSaveRes(uiState.type)),
                         onClick = viewModel::save,
@@ -162,6 +179,10 @@ fun RecurringRuleEditorScreen(
             EditorForm(
                 uiState = uiState,
                 viewModel = viewModel,
+                amountTarget = amountTarget,
+                isKeypadOpen = keypadOpen,
+                onActivateAmount = { keypadOpen = true },
+                onCloseKeypad = { keypadOpen = false },
                 onStartDateClick = { showStartPicker = true },
                 onEndDateClick = { showEndPicker = true },
                 modifier = Modifier
@@ -204,11 +225,15 @@ fun RecurringRuleEditorScreen(
 }
 
 /** Amount field (or variable-amount note), the variable-amount switch, and the recording mode. */
+@Suppress("LongParameterList")
 @Composable
 private fun AmountAndModeSection(
     uiState: RecurringRuleEditorUiState,
     viewModel: RecurringRuleEditorViewModel,
     isIncome: Boolean,
+    amountTarget: AmountTarget,
+    isKeypadOpen: Boolean,
+    onActivateAmount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -227,10 +252,11 @@ private fun AmountAndModeSection(
         }
         AnimatedSection(visible = !uiState.isVariableAmount) {
             HeroAmountField(
-                input = uiState.amountInput,
+                target = amountTarget,
                 currencySymbol = uiState.currency?.symbol,
                 isError = uiState.showValidation && !uiState.isAmountValid,
-                onValueChange = viewModel::onAmountChanged,
+                isActive = isKeypadOpen,
+                onActivate = onActivateAmount,
                 label = stringResource(R.string.subscription_editor_amount),
                 errorText = stringResource(R.string.subscription_editor_amount_error),
                 modifier = Modifier.padding(vertical = 8.dp),
@@ -310,10 +336,15 @@ private fun AccountsSection(
     }
 }
 
+@Suppress("LongParameterList")
 @Composable
 private fun EditorForm(
     uiState: RecurringRuleEditorUiState,
     viewModel: RecurringRuleEditorViewModel,
+    amountTarget: AmountTarget,
+    isKeypadOpen: Boolean,
+    onActivateAmount: () -> Unit,
+    onCloseKeypad: () -> Unit,
     onStartDateClick: () -> Unit,
     onEndDateClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -333,9 +364,18 @@ private fun EditorForm(
             },
             showError = uiState.showValidation && !uiState.isNameValid,
             onNameChanged = viewModel::onNameChanged,
+            // The name field brings the system IME up: the keypad steps aside.
+            modifier = Modifier.onFocusChanged { if (it.isFocused) onCloseKeypad() },
         )
         Spacer(Modifier.height(12.dp))
-        AmountAndModeSection(uiState = uiState, viewModel = viewModel, isIncome = isIncome)
+        AmountAndModeSection(
+            uiState = uiState,
+            viewModel = viewModel,
+            isIncome = isIncome,
+            amountTarget = amountTarget,
+            isKeypadOpen = isKeypadOpen,
+            onActivateAmount = onActivateAmount,
+        )
         Spacer(Modifier.height(12.dp))
         AccountsSection(uiState = uiState, viewModel = viewModel, isTransfer = isTransfer)
         Spacer(Modifier.height(12.dp))

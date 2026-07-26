@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.transactions
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -47,12 +48,15 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.designsystem.component.AnimatedSection
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
@@ -72,6 +76,9 @@ import java.time.LocalDate
 
 /** Which modal surface of the editor is open. */
 private enum class EditorSheet { NONE, ACCOUNT, TO_ACCOUNT, TAGS, CATEGORY }
+
+/** Which amount the in-app keypad is typing into, if any. */
+private enum class AmountField { PRIMARY, SECONDARY }
 
 /**
  * Create/edit form for a movement. The amount is the prominent focal point at
@@ -118,6 +125,27 @@ fun TransactionEditorScreen(
     var activeSheet by rememberSaveable { mutableStateOf(EditorSheet.NONE) }
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    var activeAmount by rememberSaveable { mutableStateOf<AmountField?>(null) }
+
+    // What the user came here to type: the keypad is up from the first frame.
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading && uiState.isNew) activeAmount = AmountField.PRIMARY
+    }
+    // Back closes the keypad first, before the unsaved-changes guard.
+    BackHandler(enabled = activeAmount != null) { activeAmount = null }
+
+    val primaryAmount = AmountTarget(
+        value = uiState.amountInput,
+        fractionDigits = uiState.amountFractionDigits,
+        allowNegative = uiState.allowsNegativeAmount,
+        onValueChange = viewModel::onAmountChanged,
+    )
+    val secondaryAmount = AmountTarget(
+        value = uiState.toAmountInput,
+        fractionDigits = uiState.toAmountFractionDigits,
+        allowNegative = false,
+        onValueChange = viewModel::onToAmountChanged,
+    )
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
@@ -153,6 +181,14 @@ fun TransactionEditorScreen(
         bottomBar = {
             if (!uiState.isLoading) {
                 EditorBottomBar {
+                    AmountKeypadHost(
+                        target = when (activeAmount) {
+                            AmountField.PRIMARY -> primaryAmount
+                            AmountField.SECONDARY -> secondaryAmount
+                            null -> null
+                        },
+                        onHide = { activeAmount = null },
+                    )
                     EditorSaveButton(
                         text = stringResource(saveLabelRes(uiState.type)),
                         onClick = viewModel::save,
@@ -170,6 +206,11 @@ fun TransactionEditorScreen(
             EditorForm(
                 uiState = uiState,
                 viewModel = viewModel,
+                primaryAmount = primaryAmount,
+                secondaryAmount = secondaryAmount,
+                activeAmount = activeAmount,
+                onActivateAmount = { activeAmount = it },
+                onCloseKeypad = { activeAmount = null },
                 onAccountChipClick = { activeSheet = EditorSheet.ACCOUNT },
                 onToAccountChipClick = { activeSheet = EditorSheet.TO_ACCOUNT },
                 onDateChipClick = { showDatePicker = true },
@@ -292,6 +333,11 @@ private fun saveLabelRes(type: TransactionType): Int = when (type) {
 private fun EditorForm(
     uiState: TransactionEditorUiState,
     viewModel: TransactionEditorViewModel,
+    primaryAmount: AmountTarget,
+    secondaryAmount: AmountTarget,
+    activeAmount: AmountField?,
+    onActivateAmount: (AmountField) -> Unit,
+    onCloseKeypad: () -> Unit,
     onAccountChipClick: () -> Unit,
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
@@ -300,12 +346,6 @@ private fun EditorForm(
     onShowAllCategories: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val amountFocus = remember { FocusRequester() }
-    // On a new movement the amount is what the user came to type: take focus so
-    // the keyboard is up immediately, matching the old always-on keypad.
-    LaunchedEffect(Unit) {
-        if (uiState.isNew) amountFocus.requestFocus()
-    }
     Column(modifier = modifier) {
         if (uiState.isRecurring) {
             Spacer(Modifier.height(16.dp))
@@ -335,12 +375,12 @@ private fun EditorForm(
         }
         Spacer(Modifier.height(8.dp))
         HeroAmountField(
-            input = uiState.amountInput,
+            target = primaryAmount,
             currencySymbol = uiState.currency?.symbol,
             isError = uiState.showValidation && !uiState.isAmountValid,
+            isActive = activeAmount == AmountField.PRIMARY,
+            onActivate = { onActivateAmount(AmountField.PRIMARY) },
             showSignToggle = uiState.type == TransactionType.ADJUSTMENT,
-            onValueChange = viewModel::onAmountChanged,
-            focusRequester = amountFocus,
             errorText = stringResource(R.string.transaction_editor_amount_error),
             label = if (uiState.isCrossCurrency) {
                 stringResource(
@@ -358,10 +398,11 @@ private fun EditorForm(
             ) {
                 Spacer(Modifier.height(12.dp))
                 HeroAmountField(
-                    input = uiState.toAmountInput,
+                    target = secondaryAmount,
                     currencySymbol = uiState.toAccount?.currency?.symbol,
                     isError = uiState.showValidation && !uiState.isToAmountValid,
-                    onValueChange = viewModel::onToAmountChanged,
+                    isActive = activeAmount == AmountField.SECONDARY,
+                    onActivate = { onActivateAmount(AmountField.SECONDARY) },
                     errorText = stringResource(R.string.transaction_editor_amount_error),
                     compact = true,
                     label = stringResource(
@@ -389,11 +430,18 @@ private fun EditorForm(
             )
         }
         Spacer(Modifier.height(20.dp))
+        // Any text field taking focus brings up the system IME, which has to
+        // replace the keypad rather than stack with it.
         InlineDescriptionField(
             value = uiState.description,
             onValueChange = viewModel::onDescriptionChanged,
+            modifier = Modifier.onFocusChanged { if (it.isFocused) onCloseKeypad() },
         )
-        NoteSection(note = uiState.note, onNoteChange = viewModel::onNoteChanged)
+        NoteSection(
+            note = uiState.note,
+            onNoteChange = viewModel::onNoteChanged,
+            onNoteFocused = onCloseKeypad,
+        )
         Spacer(Modifier.height(12.dp))
         TagsRow(uiState = uiState, onToggle = viewModel::onTagToggled, onAddClick = onAddTagClick)
         AnimatedSection(visible = uiState.hasCategorySection) {
@@ -430,6 +478,7 @@ private fun EditorForm(
 private fun NoteSection(
     note: String,
     onNoteChange: (String) -> Unit,
+    onNoteFocused: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var revealed by rememberSaveable { mutableStateOf(false) }
@@ -448,6 +497,7 @@ private fun NoteSection(
                 value = note,
                 onValueChange = onNoteChange,
                 focusRequester = noteFocus,
+                modifier = Modifier.onFocusChanged { if (it.isFocused) onNoteFocused() },
             )
         }
     }

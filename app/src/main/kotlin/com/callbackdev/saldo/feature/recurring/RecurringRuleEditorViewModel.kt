@@ -68,6 +68,11 @@ data class RecurringRuleEditorUiState(
 ) {
     val account: Account? get() = accounts.firstOrNull { it.id == accountId }
     val currency: Currency? get() = account?.currency
+
+    /** Decimals the amount input accepts, from the source account's currency. */
+    val amountFractionDigits: Int
+        get() = currency?.let(MoneyMapper::fractionDigits) ?: DEFAULT_FRACTION_DIGITS
+
     val category: Category? get() = categories.firstOrNull { it.id == categoryId }
     val isTransfer: Boolean get() = type == TransactionType.TRANSFER
 
@@ -94,6 +99,9 @@ data class RecurringRuleEditorUiState(
     val showModeSelector: Boolean get() = !isVariableAmount && !isCrossCurrency
 
     companion object {
+        /** Decimals assumed while no account (hence no currency) is chosen yet. */
+        const val DEFAULT_FRACTION_DIGITS = 2
+
         const val DEFAULT_ICON = "subscriptions"
         const val DEFAULT_INCOME_ICON = "payments"
         const val DEFAULT_TRANSFER_ICON = "currency_exchange"
@@ -260,13 +268,19 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
     fun onNameChanged(name: String) = _uiState.update { it.copy(name = name) }
 
     fun onAmountChanged(raw: String) = _uiState.update {
-        val digits = it.currency?.let(MoneyMapper::fractionDigits) ?: DEFAULT_FRACTION_DIGITS
-        it.copy(amountInput = MoneyInput.sanitize(raw, digits, allowNegative = false))
+        it.copy(
+            amountInput = MoneyInput.sanitize(
+                raw,
+                it.amountFractionDigits,
+                allowNegative = false,
+            ),
+        )
     }
 
     fun onAccountSelected(accountId: Long) = _uiState.update { state ->
         val currency = state.accounts.firstOrNull { it.id == accountId }?.currency
-        val digits = currency?.let(MoneyMapper::fractionDigits) ?: DEFAULT_FRACTION_DIGITS
+        val digits = currency?.let(MoneyMapper::fractionDigits)
+            ?: RecurringRuleEditorUiState.DEFAULT_FRACTION_DIGITS
         // Rescale the typed amount to the new currency's precision (e.g. EUR->JPY).
         val parsed = MoneyInput.parse(state.amountInput)
         val input = if (parsed != null && parsed.scale() > digits) {
@@ -499,7 +513,6 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
     )
 
     private companion object {
-        const val DEFAULT_FRACTION_DIGITS = 2
         const val STOP_TIMEOUT_MILLIS = 5_000L
     }
 }

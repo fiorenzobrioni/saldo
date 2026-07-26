@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -47,6 +48,16 @@ data class TransactionEditorUiState(
     val showValidation: Boolean = false,
 ) {
     val currency: Currency? get() = account?.currency
+
+    /** Decimals the two amount inputs accept, from their own account's currency. */
+    val amountFractionDigits: Int
+        get() = currency?.let(MoneyMapper::fractionDigits) ?: DEFAULT_FRACTION_DIGITS
+
+    val toAmountFractionDigits: Int
+        get() = toAccount?.currency?.let(MoneyMapper::fractionDigits) ?: DEFAULT_FRACTION_DIGITS
+
+    /** Only a balance adjustment can be negative: it restates a balance, up or down. */
+    val allowsNegativeAmount: Boolean get() = type == TransactionType.ADJUSTMENT
 
     val isTransfer: Boolean get() = type == TransactionType.TRANSFER
 
@@ -95,6 +106,9 @@ internal fun impliedExchangeRate(sentInput: String, receivedInput: String): BigD
 }
 
 private const val IMPLIED_RATE_SCALE = 4
+
+/** Decimals assumed while no account (hence no currency) is chosen yet. */
+internal const val DEFAULT_FRACTION_DIGITS = 2
 
 /** One-shot events consumed by the editor screen. */
 sealed interface TransactionEditorEvent {

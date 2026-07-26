@@ -226,7 +226,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
     }
 
     fun onAmountChanged(raw: String) {
-        val digits = uiState.value.currency?.let(MoneyMapper::fractionDigits) ?: DEFAULT_FRACTION_DIGITS
+        val digits = uiState.value.amountFractionDigits
         form.update {
             it.copy(
                 amountInput = MoneyInput.sanitize(
@@ -239,8 +239,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
     }
 
     fun onToAmountChanged(raw: String) {
-        val digits = uiState.value.toAccount?.currency?.let(MoneyMapper::fractionDigits)
-            ?: DEFAULT_FRACTION_DIGITS
+        val digits = uiState.value.toAmountFractionDigits
         form.update { it.copy(toAmountInput = MoneyInput.sanitize(raw, digits, allowNegative = false)) }
     }
 
@@ -570,6 +569,5 @@ class TransactionEditorViewModel @AssistedInject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
-        const val DEFAULT_FRACTION_DIGITS = 2
     }
 }
