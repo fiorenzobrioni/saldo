@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.TaskAlt
@@ -27,7 +26,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -51,7 +49,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -60,7 +57,10 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.common.money.MoneyInput
+import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
+import com.callbackdev.saldo.core.designsystem.component.HeroAmountField
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.component.SaldoCard
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
@@ -255,6 +255,12 @@ private fun ConfirmSheet(
         mutableStateOf(if (item.needsAmountEntry) "" else item.magnitude.stripTrailingZeros().toPlainString())
     }
     val magnitude = MoneyInput.parse(amountInput)?.takeIf { it.signum() > 0 }
+    val amountTarget = AmountTarget(
+        value = amountInput,
+        fractionDigits = digits,
+        allowNegative = false,
+        onValueChange = { amountInput = it },
+    )
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -286,28 +292,26 @@ private fun ConfirmSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(20.dp))
-            OutlinedTextField(
-                value = amountInput,
-                onValueChange = { amountInput = MoneyInput.sanitize(it, digits, allowNegative = false) },
-                label = {
-                    Text(
-                        stringResource(
-                            if (item.isCrossCurrencyTransfer) {
-                                R.string.transfer_received_amount
-                            } else {
-                                R.string.subscription_editor_amount
-                            },
-                        ),
-                    )
-                },
-                placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
-                prefix = { Text(currency.symbol) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                textStyle = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.fillMaxWidth(),
+            // The amount is what this sheet exists for, so it gets the hero
+            // treatment and the keypad is up with it, no tap needed.
+            HeroAmountField(
+                target = amountTarget,
+                currencySymbol = currency.symbol,
+                isError = false,
+                isActive = true,
+                onActivate = {},
+                compact = true,
+                label = stringResource(
+                    if (item.isCrossCurrencyTransfer) {
+                        R.string.transfer_received_amount
+                    } else {
+                        R.string.subscription_editor_amount
+                    },
+                ),
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(8.dp))
+            AmountKeypadHost(target = amountTarget, compact = true)
+            Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(onClick = onSkip, modifier = Modifier.weight(1f)) {
                     Text(stringResource(R.string.pending_skip))

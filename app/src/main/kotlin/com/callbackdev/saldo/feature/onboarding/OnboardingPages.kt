@@ -24,14 +24,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
+import com.callbackdev.saldo.core.designsystem.component.AmountTextField
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
 import java.util.Currency
 
@@ -119,7 +121,9 @@ internal fun CurrencyPage(
 internal fun AccountPage(
     uiState: OnboardingUiState,
     onNameChanged: (String) -> Unit,
-    onBalanceChanged: (String) -> Unit,
+    balanceTarget: AmountTarget,
+    onActivateBalance: () -> Unit,
+    onCloseKeypad: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -144,18 +148,18 @@ internal fun AccountPage(
                 label = { Text(stringResource(R.string.onboarding_account_name_label)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                modifier = Modifier.fillMaxWidth(),
+                // The name field brings the system IME up: the keypad steps aside.
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { if (it.isFocused) onCloseKeypad() },
             )
-            OutlinedTextField(
-                value = uiState.balanceInput,
-                onValueChange = onBalanceChanged,
-                label = { Text(stringResource(R.string.onboarding_account_balance_label)) },
-                placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
-                suffix = { Text(uiState.selectedCurrency.currencyCode) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                supportingText = { Text(stringResource(R.string.onboarding_account_balance_hint)) },
-                modifier = Modifier.fillMaxWidth(),
+            AmountTextField(
+                target = balanceTarget,
+                label = stringResource(R.string.onboarding_account_balance_label),
+                onActivate = onActivateBalance,
+                suffix = uiState.selectedCurrency.currencyCode,
+                supportingText = stringResource(R.string.onboarding_account_balance_hint),
+                showSignToggle = true,
             )
         }
         Spacer(Modifier.height(16.dp))
