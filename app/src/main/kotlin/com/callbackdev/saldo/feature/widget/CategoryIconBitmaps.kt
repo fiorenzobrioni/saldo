@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.vector.VectorPath
 import androidx.compose.ui.graphics.vector.toPath
 import androidx.compose.ui.graphics.Color as ComposeColor
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
-import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 
 /**
  * Draws the app's category avatar as a bitmap, because Glance renders through
@@ -42,91 +41,61 @@ object CategoryIconBitmaps {
     /** The glyph occupies 55% of the tile, the same optical ratio as the in-app avatars. */
     private const val GLYPH_RATIO = 0.55f
 
-    /** Outline weight of an action tile, as a fraction of the side (2dp at 40dp). */
-    private const val STROKE_RATIO = 0.05f
+    /** The 16% wash of `CategoryCell`, so a widget tile and an app tile are the same tile. */
+    private const val TINT_ALPHA = 0.16f
 
     private const val CACHE_ENTRIES = 64
 
     private val cache = LruCache<String, Bitmap>(CACHE_ENTRIES)
 
     /**
-     * A category tile: filled squircle in the category color plus its glyph.
-     * [colorRgb] is the stored 0xRRGGBB category color, [sizePx] the side in
-     * pixels.
+     * A category tile, drawn exactly as the app draws an unselected category
+     * cell: the squircle tinted with the category color at [TINT_ALPHA] and the
+     * glyph in that same color at full strength. The widget used to fill the
+     * squircle and put a white glyph on it, which is how the app draws the
+     * *selected* cell - so every tile looked selected and none of them looked
+     * like the app.
+     *
+     * The tint keeps its alpha in the bitmap rather than being flattened onto a
+     * background color, so a translucent widget composites correctly over the
+     * wallpaper.
      */
     fun categoryTile(iconKey: String?, colorRgb: Int?, sizePx: Int): Bitmap {
-        val background = CategoryVisuals.color(colorRgb)
-        return cached("category|$iconKey|${background.toArgb()}|$sizePx") {
-            draw(
-                vector = CategoryVisuals.icon(iconKey),
-                fillArgb = background.toArgb(),
-                strokeArgb = null,
-                glyphArgb = contentColorOn(background).toArgb(),
-                sizePx = sizePx,
-            )
+        val color = CategoryVisuals.color(colorRgb)
+        return cached("category|$iconKey|${color.toArgb()}|$sizePx") {
+            draw(vector = CategoryVisuals.icon(iconKey), color = color, sizePx = sizePx)
         }
     }
 
     /**
-     * An action tile: the same squircle drawn as an *outline* in a theme color,
-     * so the eye reads it as a control rather than as one more category. Used by
-     * the "more" entry, which sits in the same grid as the categories and must
-     * not be mistaken for one.
+     * An action tile in the same language as the categories, for the "open the
+     * app" entry. It reads as its own thing through the brand color, the glyph
+     * and its label rather than through a different shape.
      */
-    fun actionTile(vector: ImageVector, stroke: ComposeColor, glyph: ComposeColor, sizePx: Int): Bitmap =
-        cached("action|${vector.name}|${stroke.toArgb()}|${glyph.toArgb()}|$sizePx") {
-            draw(
-                vector = vector,
-                fillArgb = null,
-                strokeArgb = stroke.toArgb(),
-                glyphArgb = glyph.toArgb(),
-                sizePx = sizePx,
-            )
+    fun actionTile(vector: ImageVector, color: ComposeColor, sizePx: Int): Bitmap =
+        cached("action|${vector.name}|${color.toArgb()}|$sizePx") {
+            draw(vector = vector, color = color, sizePx = sizePx)
         }
 
     private fun cached(key: String, build: () -> Bitmap): Bitmap =
         cache.get(key) ?: build().also { cache.put(key, it) }
 
-    private fun draw(
-        vector: ImageVector,
-        fillArgb: Int?,
-        strokeArgb: Int?,
-        glyphArgb: Int,
-        sizePx: Int,
-    ): Bitmap {
+    private fun draw(vector: ImageVector, color: ComposeColor, sizePx: Int): Bitmap {
         val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val paint = Paint(Paint.ANTI_ALIAS_FLAG)
         val radius = sizePx * CORNER_PERCENT
-        if (fillArgb != null) {
-            paint.color = fillArgb
-            paint.style = Paint.Style.FILL
-            canvas.drawRoundRect(RectF(0f, 0f, sizePx.toFloat(), sizePx.toFloat()), radius, radius, paint)
-        }
-        if (strokeArgb != null) {
-            // Inset by half the stroke so the outline lands inside the tile
-            // instead of being clipped at the bitmap edge.
-            val width = sizePx * STROKE_RATIO
-            val half = width / 2f
-            paint.color = strokeArgb
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = width
-            canvas.drawRoundRect(
-                RectF(half, half, sizePx - half, sizePx - half),
-                radius - half,
-                radius - half,
-                paint,
-            )
-        }
+        paint.color = color.copy(alpha = TINT_ALPHA).toArgb()
+        paint.style = Paint.Style.FILL
+        canvas.drawRoundRect(RectF(0f, 0f, sizePx.toFloat(), sizePx.toFloat()), radius, radius, paint)
 
         val glyphSize = sizePx * GLYPH_RATIO
         val inset = (sizePx - glyphSize) / 2f
         canvas.save()
         canvas.translate(inset, inset)
-        paint.color = glyphArgb
-        paint.style = Paint.Style.FILL
+        paint.color = color.toArgb()
         // A malformed vector must not take the widget down with it: the tile
-        // degrades to the bare squircle instead.
+        // degrades to the bare tinted squircle instead.
         runCatching {
             val scale = glyphSize / vector.viewportWidth
             canvas.scale(scale, scale)

@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-26 - Il widget prende l'aspetto dell'app, e poi lo si puo cambiare
+
+**Fatto:** tre richieste dell'utente dopo che il widget ha iniziato a funzionare. (1) Icone categoria nello stile dell'app. (2) Sfondo uguale a quello della Dashboard nei due temi. (3) In configurazione: forzatura del tema, colore di sfondo a scelta (bianco e nero puri inclusi) e slider di trasparenza. Aggiunta anche un'anteprima live in cima alla schermata.
+
+**Decisioni:** la richiesta (1) si e chiarita guardando il codice invece che lo screenshot. `CategoryCell` disegna una categoria **non selezionata** come squircle col colore al 16% e glifo nel colore pieno, e quella **selezionata** come squircle pieno con glifo bianco. Il widget usava la seconda per tutte: ecco perche stonava, ogni tile sembrava selezionata. Ora usa la prima, con la velatura che resta nel canale alfa del bitmap invece di essere appiattita su un colore di sfondo - condizione perche un widget trasparente si componga bene sul wallpaper. Sulla (3) il modello e un unico quadrivio (Sistema / Chiaro / Scuro / Colore) invece di due impostazioni separate, perche l'utente ha scritto "oppure" e due controlli che si contraddicono sono peggio di uno. La parte che vale la pena annotare e come si sceglie l'inchiostro: con un colore personalizzato lo schema viene deciso dalla **luminanza del colore scelto** e non dalle impostazioni dell'app, altrimenti un widget nero su app chiara avrebbe etichette scure su nero. L'opacita tocca solo lo sfondo: le tile tengono la propria velatura e il testo resta pieno, quindi un widget trasparente resta leggibile per costruzione. L'anteprima non e un ornamento: l'opacita non si sceglie alla cieca, un numero da solo non dice nulla. E su scacchiera perche leggere il wallpaper vero costerebbe un permesso che questa app non chiede - e su quel punto l'anteprima e onesta, mostra la trasparenza ma non puo promettere la leggibilita sopra la *tua* foto. Il tema dell'anteprima passa dalla stessa `resolveWidgetTheme` del widget, cosi non puo divergere.
+
+**Problemi:** una conseguenza dichiarata: la tile "Apri Saldo" era volutamente disegnata a contorno per non somigliare a una categoria, e la richiesta (1) chiedeva esplicitamente lo stesso stile anche per lei. Ora la distinzione regge su colore brand, glifo `MoreHoriz` ed etichetta, non piu sulla forma. E abbastanza, ma e un margine in meno di quello di prima. L'opacita ha un rischio suo, gestito: un valore fuori range renderebbe il widget invisibile e la configurazione si raggiunge dal widget, quindi il valore e clampato in lettura oltre che in scrittura.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 638 test, 0 falliti. Test JVM nuovi in `QuickAddWidgetPrefsTest` (round-trip dell'aspetto, aspetto sconosciuto che ricade su Sistema, opacita clampata, palette che contiene bianco e nero puri). Strumentati nuovi `QuickAddWidgetThemeTest` (sfondo dell'app come default, widget scuro su app chiara, nero puro che prende lo schema scuro, bianco puro che prende quello chiaro su app scura, opacita che tocca solo lo sfondo) e casi riscritti in `CategoryIconBitmapsTest` per la velatura. versionCode 131 -> 132, versionName 0.9.92 -> 0.9.93.
+
+**Prossimo:** verifica su device delle tile nel nuovo stile accanto alla schermata di inserimento (devono essere indistinguibili), dello sfondo nei due temi contro la Dashboard, e dell'anteprima mentre si trascina lo slider. Da guardare con attenzione: un'opacita bassa su wallpaper chiaro con tema chiaro, che e il caso peggiore per la leggibilita e quello in cui l'anteprima aiuta di meno.
+
+---
+
 ## 2026-07-26 - Due bug nel widget: la guardia di troppo e il segnale che mancava
 
 **Fatto:** terza prova su device. L'utente riferisce due cose: il selettore di tipo "va una volta e poi non va piu", e appena installata l'app il widget apre sempre l'app anche toccando una categoria. Sono due bug distinti, entrambi trovati leggendo il codice e non ipotizzando.

@@ -1061,4 +1061,13 @@
     <string name="widget_config_pinned">Categories on the widget</string>
     <string name="widget_config_today_total">Show today\'s spending</string>
     <string name="widget_config_today_total_caption">The amount spent today, next to the type selector.</string>
+    <string name="widget_config_appearance">Background</string>
+    <string name="widget_config_appearance_system">System</string>
+    <string name="widget_config_appearance_light">Light</string>
+    <string name="widget_config_appearance_dark">Dark</string>
+    <string name="widget_config_appearance_custom">Colour</string>
+    <string name="widget_config_opacity">Opacity</string>
+    <string name="widget_config_opacity_value">%1$d%%</string>
+    <string name="widget_config_preview_a11y">Preview of the widget with the current settings</string>
+    <string name="widget_config_colour_a11y">Background colour %1$d of %2$d</string>
 </resources>

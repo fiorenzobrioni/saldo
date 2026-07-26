@@ -89,6 +89,20 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
         }
     }
 
+    fun onAppearanceSelected(appearance: WidgetAppearance) {
+        config.update { it.copy(appearance = appearance) }
+    }
+
+    fun onBackgroundColorSelected(color: Int) {
+        // Picking a swatch is the whole intent of the custom mode, so it selects
+        // the mode too rather than leaving the choice inert until a second tap.
+        config.update { it.copy(appearance = WidgetAppearance.CUSTOM, backgroundColor = color) }
+    }
+
+    fun onBackgroundOpacityChanged(percent: Int) {
+        config.update { it.copy(backgroundOpacity = percent.coerceIn(0, QuickAddWidgetConfig.FULLY_OPAQUE)) }
+    }
+
     fun onCategoryToggled(categoryId: Long) {
         config.update { current ->
             val pinned = current.pinnedCategoryIds

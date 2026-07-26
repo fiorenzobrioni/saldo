@@ -67,6 +67,51 @@ class QuickAddWidgetPrefsTest {
         assertTrue(QuickAddWidgetPrefs.read(preferences).usesMostUsed)
     }
 
+    @Test
+    fun `an unconfigured widget follows the system and is fully opaque`() {
+        val config = QuickAddWidgetPrefs.read(mutablePreferencesOf())
+        assertEquals(WidgetAppearance.SYSTEM, config.appearance)
+        assertEquals(QuickAddWidgetConfig.FULLY_OPAQUE, config.backgroundOpacity)
+        assertEquals(WidgetPalette.default, config.backgroundColor)
+    }
+
+    @Test
+    fun `the appearance round-trips`() {
+        val preferences = mutablePreferencesOf(
+            QuickAddWidgetPrefs.Appearance to WidgetAppearance.CUSTOM.name,
+            QuickAddWidgetPrefs.BackgroundColor to 0x000000,
+            QuickAddWidgetPrefs.BackgroundOpacity to 40,
+        )
+        val config = QuickAddWidgetPrefs.read(preferences)
+        assertEquals(WidgetAppearance.CUSTOM, config.appearance)
+        assertEquals(0x000000, config.backgroundColor)
+        assertEquals(40, config.backgroundOpacity)
+    }
+
+    @Test
+    fun `an unknown appearance falls back to following the system`() {
+        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.Appearance to "NEON")
+        assertEquals(WidgetAppearance.SYSTEM, QuickAddWidgetPrefs.read(preferences).appearance)
+    }
+
+    /**
+     * An opacity out of range would render a widget nobody can see, and the only
+     * way back is the settings screen you need to see the widget to reach.
+     */
+    @Test
+    fun `an out of range opacity is clamped on read, not trusted`() {
+        val tooHigh = mutablePreferencesOf(QuickAddWidgetPrefs.BackgroundOpacity to 900)
+        val negative = mutablePreferencesOf(QuickAddWidgetPrefs.BackgroundOpacity to -30)
+        assertEquals(QuickAddWidgetConfig.FULLY_OPAQUE, QuickAddWidgetPrefs.read(tooHigh).backgroundOpacity)
+        assertEquals(0, QuickAddWidgetPrefs.read(negative).backgroundOpacity)
+    }
+
+    @Test
+    fun `the palette offers pure white and pure black, which is what a wallpaper asks for`() {
+        assertTrue(WidgetPalette.colors.contains(0xFFFFFF))
+        assertTrue(WidgetPalette.colors.contains(0x000000))
+    }
+
     /**
      * The revision is how a data change reaches a Glance session at all: the
      * composition only listens to its own widget state, so if this key were

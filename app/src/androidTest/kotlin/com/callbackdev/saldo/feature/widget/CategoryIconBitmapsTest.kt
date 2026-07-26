@@ -35,7 +35,7 @@ class CategoryIconBitmapsTest {
             assertEquals(size, bitmap.height)
             assertTrue(
                 "Icon '$key' rendered as a bare tile: no glyph pixels",
-                bitmap.hasGlyph(background = CategoryVisuals.color(green).toArgbInt()),
+                bitmap.hasGlyph(tint = CategoryVisuals.color(green).toArgbInt()),
             )
         }
     }
@@ -69,40 +69,41 @@ class CategoryIconBitmapsTest {
     }
 
     @Test
-    fun theActionTileIsOutlinedRatherThanFilled() {
-        val action = CategoryIconBitmaps.actionTile(
-            vector = Icons.Outlined.MoreHoriz,
-            stroke = ComposeColor(0xFF00696D),
-            glyph = ComposeColor(0xFF00696D),
-            sizePx = size,
-        )
-        // The point of the action tile is that it does not read as a category
-        // avatar: the middle of a filled squircle is opaque, an outlined one is
-        // empty between the border and the glyph.
-        assertEquals(Color.TRANSPARENT, action.getPixel(size / 2, size / 4))
-        // The border itself is drawn: a horizontal scan through the middle must
-        // hit paint near both edges.
-        assertTrue(Color.alpha(action.getPixel(1, size / 2)) > 0)
-        assertTrue(Color.alpha(action.getPixel(size - 2, size / 2)) > 0)
+    fun aCategoryTileIsTintedRatherThanFilled() {
+        val bitmap = CategoryIconBitmaps.categoryTile(iconKey = "shopping_cart", colorRgb = green, sizePx = size)
+        // The app draws an unselected category as a 16% wash of its colour, not
+        // as a solid block: an opaque pixel here would mean the widget went back
+        // to drawing every category as if it were the selected one.
+        val wash = bitmap.getPixel(size / 2, size / 6)
+        assertTrue("The tile background should be translucent", Color.alpha(wash) in 1..128)
     }
 
     @Test
-    fun theActionTileStillDrawsItsGlyph() {
-        val action = CategoryIconBitmaps.actionTile(
-            vector = Icons.Outlined.MoreHoriz,
-            stroke = ComposeColor(0xFF00696D),
-            glyph = ComposeColor(0xFF00696D),
-            sizePx = size,
-        )
-        // Dead centre of a "more" glyph is its middle dot.
-        assertTrue(Color.alpha(action.getPixel(size / 2, size / 2)) > 0)
+    fun aCategoryGlyphIsDrawnInTheCategoryColourAtFullStrength() {
+        val bitmap = CategoryIconBitmaps.categoryTile(iconKey = "shopping_cart", colorRgb = green, sizePx = size)
+        val opaque = (0 until size).any { y -> Color.alpha(bitmap.getPixel(size / 2, y)) > 200 }
+        assertTrue("The glyph should be the solid category colour", opaque)
     }
 
-    /** True when some pixel differs from the tile background, i.e. a glyph was drawn. */
-    private fun Bitmap.hasGlyph(background: Int): Boolean {
+    @Test
+    fun theActionTileUsesTheSameLanguageAsTheCategories() {
+        val action = CategoryIconBitmaps.actionTile(
+            vector = Icons.Outlined.MoreHoriz,
+            color = ComposeColor(0xFF00696D),
+            sizePx = size,
+        )
+        assertEquals(size, action.width)
+        // Same tinted squircle, and the glyph in the middle: the "open Saldo"
+        // entry is told apart by its colour, glyph and label, not by its shape.
+        assertTrue(Color.alpha(action.getPixel(size / 2, size / 6)) in 1..128)
+        assertTrue(Color.alpha(action.getPixel(size / 2, size / 2)) > 200)
+    }
+
+    /** True when the tile holds pixels of the solid tint, i.e. a glyph was drawn. */
+    private fun Bitmap.hasGlyph(tint: Int): Boolean {
         val pixels = IntArray(width * height)
         getPixels(pixels, 0, width, 0, 0, width, height)
-        return pixels.any { it != background && Color.alpha(it) > 0 }
+        return pixels.any { it == tint }
     }
 
     private fun androidx.compose.ui.graphics.Color.toArgbInt(): Int =

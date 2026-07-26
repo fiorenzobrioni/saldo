@@ -66,11 +66,21 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                 val state by viewModel.uiState.collectAsStateWithLifecycle()
                 QuickAddWidgetConfigScreen(
                     state = state,
+                    // Resolved here, from the same function the widget uses, so
+                    // the preview cannot drift from what actually gets drawn.
+                    theme = resolveWidgetTheme(
+                        context = this@QuickAddWidgetConfigActivity,
+                        preferences = themePreferences,
+                        config = state.config,
+                    ),
                     onAccountSelected = viewModel::onAccountSelected,
                     onTypeSelected = viewModel::onTypeSelected,
                     onShowTodayTotalChanged = viewModel::onShowTodayTotalChanged,
                     onUseMostUsedChanged = viewModel::onUseMostUsedChanged,
                     onCategoryToggled = viewModel::onCategoryToggled,
+                    onAppearanceSelected = viewModel::onAppearanceSelected,
+                    onBackgroundColorSelected = viewModel::onBackgroundColorSelected,
+                    onBackgroundOpacityChanged = viewModel::onBackgroundOpacityChanged,
                     onConfirm = ::confirm,
                     onCancel = ::finish,
                 )
@@ -102,6 +112,9 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     prefs[QuickAddWidgetPrefs.PinnedCategoryIds] =
                         QuickAddWidgetPrefs.encodePinned(config.pinnedCategoryIds)
                     prefs[QuickAddWidgetPrefs.ShowTodayTotal] = config.showTodayTotal
+                    prefs[QuickAddWidgetPrefs.Appearance] = config.appearance.name
+                    prefs[QuickAddWidgetPrefs.BackgroundColor] = config.backgroundColor
+                    prefs[QuickAddWidgetPrefs.BackgroundOpacity] = config.backgroundOpacity
                 }
                 SaldoQuickAddWidget().update(this@QuickAddWidgetConfigActivity, glanceId)
             }

@@ -1077,4 +1077,13 @@
     <string name="widget_config_pinned">Categorie sul widget</string>
     <string name="widget_config_today_total">Mostra le spese di oggi</string>
     <string name="widget_config_today_total_caption">Quanto hai speso oggi, accanto al selettore del tipo.</string>
+    <string name="widget_config_appearance">Sfondo</string>
+    <string name="widget_config_appearance_system">Sistema</string>
+    <string name="widget_config_appearance_light">Chiaro</string>
+    <string name="widget_config_appearance_dark">Scuro</string>
+    <string name="widget_config_appearance_custom">Colore</string>
+    <string name="widget_config_opacity">Opacità</string>
+    <string name="widget_config_opacity_value">%1$d%%</string>
+    <string name="widget_config_preview_a11y">Anteprima del widget con le impostazioni correnti</string>
+    <string name="widget_config_colour_a11y">Colore di sfondo %1$d di %2$d</string>
 </resources>

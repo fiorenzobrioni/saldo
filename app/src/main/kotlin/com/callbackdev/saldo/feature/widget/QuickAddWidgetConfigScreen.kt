@@ -1,13 +1,19 @@
 package com.callbackdev.saldo.feature.widget
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -17,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -26,14 +33,21 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import kotlin.math.roundToInt
 
 /**
  * The widget's optional setup: which account it adds to, whether it starts on
@@ -44,11 +58,15 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 @Composable
 fun QuickAddWidgetConfigScreen(
     state: QuickAddWidgetConfigUiState,
+    theme: QuickAddWidgetTheme,
     onAccountSelected: (Long?) -> Unit,
     onTypeSelected: (TransactionType) -> Unit,
     onShowTodayTotalChanged: (Boolean) -> Unit,
     onUseMostUsedChanged: (Boolean) -> Unit,
     onCategoryToggled: (Long) -> Unit,
+    onAppearanceSelected: (WidgetAppearance) -> Unit,
+    onBackgroundColorSelected: (Int) -> Unit,
+    onBackgroundOpacityChanged: (Int) -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -84,6 +102,27 @@ fun QuickAddWidgetConfigScreen(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
+            item {
+                // The preview leads: opacity and colour mean nothing as numbers,
+                // and every control below changes what is drawn here.
+                QuickAddWidgetPreview(theme = theme, categories = state.categories)
+            }
+            item {
+                Section(stringResource(R.string.widget_config_appearance)) {
+                    AppearanceSelector(state.config.appearance, onAppearanceSelected)
+                    ColourSwatches(
+                        selected = state.config.backgroundColor.takeIf {
+                            state.config.appearance == WidgetAppearance.CUSTOM
+                        },
+                        onSelect = onBackgroundColorSelected,
+                    )
+                }
+            }
+            item {
+                Section(stringResource(R.string.widget_config_opacity)) {
+                    OpacitySlider(state.config.backgroundOpacity, onBackgroundOpacityChanged)
+                }
+            }
             item {
                 Section(stringResource(R.string.widget_config_type)) {
                     TypeSelector(state.config.type, onTypeSelected)
@@ -223,3 +262,92 @@ private fun SwitchRow(
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppearanceSelector(selected: WidgetAppearance, onSelect: (WidgetAppearance) -> Unit) {
+    val options = listOf(
+        WidgetAppearance.SYSTEM to stringResource(R.string.widget_config_appearance_system),
+        WidgetAppearance.LIGHT to stringResource(R.string.widget_config_appearance_light),
+        WidgetAppearance.DARK to stringResource(R.string.widget_config_appearance_dark),
+        WidgetAppearance.CUSTOM to stringResource(R.string.widget_config_appearance_custom),
+    )
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, (appearance, label) ->
+            SegmentedButton(
+                selected = appearance == selected,
+                onClick = { onSelect(appearance) },
+                shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                icon = {},
+            ) {
+                Text(text = label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+            }
+        }
+    }
+}
+
+/**
+ * Pure white and pure black lead the row because they are what a wallpaper most
+ * often asks for; the rest are neutrals, since the colour on this widget belongs
+ * to the category icons and a tinted background would compete with them.
+ */
+@Composable
+private fun ColourSwatches(selected: Int?, onSelect: (Int) -> Unit) {
+    val label = stringResource(R.string.widget_config_colour_a11y)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        WidgetPalette.colors.forEachIndexed { index, rgb ->
+            val colour = Color(OPAQUE or (rgb and RGB_MASK))
+            val isSelected = rgb == selected
+            Box(
+                modifier = Modifier
+                    .size(SwatchSize)
+                    .clip(CircleShape)
+                    .background(colour)
+                    .border(
+                        width = if (isSelected) 3.dp else 1.dp,
+                        color = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.outlineVariant
+                        },
+                        shape = CircleShape,
+                    )
+                    .selectable(
+                        selected = isSelected,
+                        role = Role.RadioButton,
+                        onClick = { onSelect(rgb) },
+                    )
+                    .semantics {
+                        contentDescription = label.format(index + 1, WidgetPalette.colors.size)
+                    },
+            )
+        }
+    }
+}
+
+@Composable
+private fun OpacitySlider(percent: Int, onChange: (Int) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Slider(
+            value = percent.toFloat(),
+            onValueChange = { onChange(it.roundToInt()) },
+            valueRange = 0f..QuickAddWidgetConfig.FULLY_OPAQUE.toFloat(),
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = stringResource(R.string.widget_config_opacity_value, percent),
+            style = MaterialTheme.typography.labelLarge.tabularNumbers(),
+        )
+    }
+}
+
+private val SwatchSize = 32.dp
+private const val OPAQUE = 0xFF000000.toInt()
+private const val RGB_MASK = 0xFFFFFF

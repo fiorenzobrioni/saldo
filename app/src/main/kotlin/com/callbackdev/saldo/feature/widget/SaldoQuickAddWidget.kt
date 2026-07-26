@@ -95,7 +95,7 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
             }
             val themePreferences by preferences.themePreferences
                 .collectAsState(initial = ThemePreferences())
-            val theme = resolveWidgetTheme(LocalContext.current, themePreferences)
+            val theme = resolveWidgetTheme(LocalContext.current, themePreferences, inputs.config)
             GlanceTheme(colors = theme.providers) {
                 // The selector follows the state, not the loaded data: the
                 // control the user just pressed has to answer immediately, and
@@ -169,7 +169,7 @@ private fun WidgetBody(
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.widgetBackground)
+            .background(theme.background)
             .cornerRadius(WidgetCornerRadius)
             .padding(WidgetPadding),
         verticalAlignment = Alignment.Vertical.CenterVertically,
@@ -348,8 +348,7 @@ private fun MoreTile(data: QuickAddWidgetData, theme: QuickAddWidgetTheme, layou
         provider = ImageProvider(
             CategoryIconBitmaps.actionTile(
                 vector = MoreIcon,
-                stroke = theme.scheme.primary,
-                glyph = theme.scheme.primary,
+                color = theme.scheme.primary,
                 sizePx = context.pxOf(layout.tileSize),
             ),
         ),
