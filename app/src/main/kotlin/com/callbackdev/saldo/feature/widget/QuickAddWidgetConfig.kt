@@ -32,6 +32,14 @@ object QuickAddWidgetPrefs {
     val PinnedCategoryIds = stringPreferencesKey("quick_add_pinned_category_ids")
     val ShowTodayTotal = booleanPreferencesKey("quick_add_show_today_total")
 
+    /**
+     * Bumped by [WidgetRefreshWatcher] when the underlying data moves. The
+     * widget state is the only channel a Glance session listens to, so a
+     * movement being recorded has to arrive as a state change or the
+     * recomposition would render the very same snapshot.
+     */
+    val Revision = longPreferencesKey("quick_add_revision")
+
     /** Absent account id is stored as [NO_ACCOUNT] because DataStore has no nullable Long. */
     private const val NO_ACCOUNT = -1L
     private const val SEPARATOR = ","

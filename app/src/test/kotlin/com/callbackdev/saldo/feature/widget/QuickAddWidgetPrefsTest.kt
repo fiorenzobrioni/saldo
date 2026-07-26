@@ -66,4 +66,21 @@ class QuickAddWidgetPrefsTest {
         val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.PinnedCategoryIds to "")
         assertTrue(QuickAddWidgetPrefs.read(preferences).usesMostUsed)
     }
+
+    /**
+     * The revision is how a data change reaches a Glance session at all: the
+     * composition only listens to its own widget state, so if this key were
+     * ever dropped from the state the widget would render a frozen snapshot
+     * for the whole life of the session.
+     */
+    @Test
+    fun `the refresh revision lives in the same widget state as the configuration`() {
+        val preferences = mutablePreferencesOf(
+            QuickAddWidgetPrefs.Type to TransactionType.INCOME.name,
+            QuickAddWidgetPrefs.Revision to 7L,
+        )
+        assertEquals(7L, preferences[QuickAddWidgetPrefs.Revision])
+        // Bumping it must not disturb the configuration next to it.
+        assertEquals(TransactionType.INCOME, QuickAddWidgetPrefs.read(preferences).type)
+    }
 }

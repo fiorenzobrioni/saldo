@@ -3,9 +3,16 @@ package com.callbackdev.saldo.feature.widget
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -24,6 +31,7 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.background
+import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -42,6 +50,7 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import kotlinx.coroutines.flow.first
@@ -55,9 +64,13 @@ import kotlinx.coroutines.flow.first
  * launcher, which a keypad would make the user feel on every single digit. What
  * a widget does well - one tap on glanceable content - it keeps.
  *
- * Rendering is a snapshot: Glance composes in a session driven from the app
- * process and cannot keep observing flows, so [WidgetRefreshWatcher] asks for a
- * redraw when the underlying data moves.
+ * Everything the widget draws is read *inside* the composition, and that is
+ * load-bearing rather than stylistic. `provideGlance` runs once, when the
+ * session is created: an update sends `UpdateGlanceState`, which re-reads the
+ * widget state into the session's `MutableState` and lets recomposition do the
+ * rest. Anything captured before `provideContent` is therefore frozen for the
+ * life of the session, which is why the state arrives through [currentState]
+ * and the data through [produceState] keyed on it.
  */
 class SaldoQuickAddWidget : GlanceAppWidget() {
 
@@ -65,11 +78,20 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val entryPoint = context.widgetEntryPoint()
-        val config = QuickAddWidgetPrefs.read(getAppWidgetState(context, id))
-        // Loaded once for the widest bucket; the narrower layouts take what fits.
-        val data = entryPoint.quickAddWidgetDataLoader().load(config, MaxCategorySlots)
-        val theme = resolveWidgetTheme(context, entryPoint.userPreferences().themePreferences.first())
+        val loader = entryPoint.quickAddWidgetDataLoader()
+        val preferences = entryPoint.userPreferences()
+        // Loaded once up front purely so the first frame is already right: the
+        // composition below owns every read from here on.
+        val initialInputs = WidgetInputs.from(getAppWidgetState(context, id))
+        val initialData = loader.load(initialInputs.config, MaxCategorySlots)
         provideContent {
+            val inputs = WidgetInputs.from(currentState())
+            val data by produceState(initialData, inputs) {
+                if (inputs != initialInputs) value = loader.load(inputs.config, MaxCategorySlots)
+            }
+            val themePreferences by preferences.themePreferences
+                .collectAsState(initial = ThemePreferences())
+            val theme = resolveWidgetTheme(LocalContext.current, themePreferences)
             GlanceTheme(colors = theme.providers) {
                 WidgetBody(data, theme)
             }
@@ -83,6 +105,21 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
 
         /** The largest bucket shows 4x2 tiles, one of which is always "more". */
         const val MaxCategorySlots = 7
+    }
+}
+
+/**
+ * Everything that makes the widget reload. The configuration is the user's
+ * doing; [QuickAddWidgetConfig] alone would not notice a movement being
+ * recorded, so [WidgetRefreshWatcher] bumps a revision through the same widget
+ * state and this carries it into the composition.
+ */
+private data class WidgetInputs(val config: QuickAddWidgetConfig, val revision: Long) {
+    companion object {
+        fun from(preferences: Preferences) = WidgetInputs(
+            config = QuickAddWidgetPrefs.read(preferences),
+            revision = preferences[QuickAddWidgetPrefs.Revision] ?: 0L,
+        )
     }
 }
 
@@ -228,7 +265,7 @@ private fun ColumnScope.CategoryGrid(
             row.forEach { category ->
                 Box(modifier = GlanceModifier.defaultWeight()) {
                     if (category == null) {
-                        MoreTile(theme, layout)
+                        MoreTile(data, theme, layout)
                     } else {
                         CategoryTile(category, data, layout)
                     }
@@ -248,7 +285,7 @@ private fun CategoryTile(category: Category, data: QuickAddWidgetData, layout: W
     val context = LocalContext.current
     Tile(
         provider = ImageProvider(
-            CategoryIconBitmaps.tile(
+            CategoryIconBitmaps.categoryTile(
                 iconKey = category.icon,
                 colorRgb = category.color,
                 sizePx = context.pxOf(layout.tileSize),
@@ -268,25 +305,40 @@ private fun CategoryTile(category: Category, data: QuickAddWidgetData, layout: W
     )
 }
 
+/**
+ * The way out to the full editor. Drawn as an outlined tile in the brand color
+ * with a "more" glyph, deliberately unlike a category avatar (a filled squircle
+ * from the category palette): the default seed ships a category actually named
+ * "Altro"/"Other", and two identical-looking tiles with the same label is the
+ * one confusion this grid cannot afford.
+ */
 @Composable
-private fun MoreTile(theme: QuickAddWidgetTheme, layout: WidgetLayout) {
+private fun MoreTile(data: QuickAddWidgetData, theme: QuickAddWidgetTheme, layout: WidgetLayout) {
     val context = LocalContext.current
     Tile(
         provider = ImageProvider(
-            CategoryIconBitmaps.themedTile(
-                iconKey = MoreIconKey,
-                background = theme.scheme.surfaceVariant,
-                glyph = theme.scheme.onSurfaceVariant,
+            CategoryIconBitmaps.actionTile(
+                vector = MoreIcon,
+                stroke = theme.scheme.primary,
+                glyph = theme.scheme.primary,
                 sizePx = context.pxOf(layout.tileSize),
             ),
         ),
-        label = context.getString(R.string.widget_quick_add_more).takeIf { layout.showLabels },
-        contentDescription = context.getString(R.string.widget_quick_add_more_a11y),
+        label = context.getString(R.string.widget_quick_add_open).takeIf { layout.showLabels },
+        contentDescription = context.getString(R.string.widget_quick_add_open_a11y),
         tileSize = layout.tileSize,
+        // The editor has to open on the type the widget is showing: an income
+        // widget that lands the user on a new expense is worse than no shortcut.
         action = actionStartActivity(
-            Intent(context, MainActivity::class.java).setAction(MainActivity.ACTION_ADD_EXPENSE),
+            Intent(context, MainActivity::class.java).setAction(quickActionFor(data.type)),
         ),
     )
+}
+
+/** The launcher-shortcut action that opens the editor already set to [type]. */
+internal fun quickActionFor(type: TransactionType): String = when (type) {
+    TransactionType.INCOME -> MainActivity.ACTION_ADD_INCOME
+    else -> MainActivity.ACTION_ADD_EXPENSE
 }
 
 @Composable
@@ -336,5 +388,5 @@ private val PillPaddingVertical = 4.dp
 private val LabelFontSize = 12.sp
 private val TileLabelFontSize = 11.sp
 
-/** The "more" entry borrows the app's own generic category glyph. */
-private const val MoreIconKey = "category"
+/** Reads as "more options" in any launcher, and is in no category icon set. */
+private val MoreIcon: ImageVector = Icons.Outlined.MoreHoriz

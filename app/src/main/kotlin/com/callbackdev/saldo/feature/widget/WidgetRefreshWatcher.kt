@@ -3,6 +3,8 @@ package com.callbackdev.saldo.feature.widget
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -80,11 +82,29 @@ class WidgetRefreshWatcher @Inject constructor(
         }.getOrDefault(false)
     }
 
-    /** One-shot redraw for callers that already know something changed (the daily worker). */
+    /**
+     * One-shot redraw for callers that already know something changed (the
+     * daily worker).
+     *
+     * The revision bump is not ceremony. A Glance session composes once and
+     * only reacts to its own widget state, so `updateAll` on its own would
+     * re-render the identical snapshot; moving the revision is what makes the
+     * composition re-read the database.
+     */
     suspend fun refresh() {
         // A failed redraw must not kill the watcher: the next change, or the
         // daily worker, picks it up.
-        runCatching { SaldoQuickAddWidget().updateAll(context) }
+        runCatching {
+            val widget = SaldoQuickAddWidget()
+            GlanceAppWidgetManager(context).getGlanceIds(SaldoQuickAddWidget::class.java)
+                .forEach { glanceId ->
+                    updateAppWidgetState(context, glanceId) { preferences ->
+                        val current = preferences[QuickAddWidgetPrefs.Revision] ?: 0L
+                        preferences[QuickAddWidgetPrefs.Revision] = current + 1
+                    }
+                }
+            widget.updateAll(context)
+        }
     }
 
     private companion object {

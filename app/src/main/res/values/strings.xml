@@ -1044,8 +1044,8 @@
     <string name="widget_quick_add_description">Record an expense or income from the home screen.</string>
     <string name="widget_quick_add_expense">Expense</string>
     <string name="widget_quick_add_income">Income</string>
-    <string name="widget_quick_add_more">More</string>
-    <string name="widget_quick_add_more_a11y">Open the full editor</string>
+    <string name="widget_quick_add_open">Open Saldo</string>
+    <string name="widget_quick_add_open_a11y">Open Saldo for the full editor</string>
     <string name="widget_quick_add_category_a11y">Add to %1$s</string>
     <string name="widget_quick_add_setup">Open Saldo to get started</string>
     <string name="widget_quick_entry_saved">Saved</string>

@@ -1060,8 +1060,8 @@
     <string name="widget_quick_add_description">Registra una spesa o un\'entrata dalla schermata home.</string>
     <string name="widget_quick_add_expense">Spesa</string>
     <string name="widget_quick_add_income">Entrata</string>
-    <string name="widget_quick_add_more">Altro</string>
-    <string name="widget_quick_add_more_a11y">Apri l\'editor completo</string>
+    <string name="widget_quick_add_open">Apri Saldo</string>
+    <string name="widget_quick_add_open_a11y">Apri Saldo per l\'editor completo</string>
     <string name="widget_quick_add_category_a11y">Aggiungi a %1$s</string>
     <string name="widget_quick_add_setup">Apri Saldo per iniziare</string>
     <string name="widget_quick_entry_saved">Salvato</string>
