@@ -90,6 +90,19 @@ fun compactDayLabel(date: LocalDate, today: LocalDate): String = when (date) {
     else -> shortDayLabel(date, today)
 }
 
+/**
+ * The editor's single date-and-time chip: "Today, 6 Jul - 14:30". The time
+ * rides along with the date instead of claiming a chip (and a whole row) of
+ * its own, and stays editable from inside the date dialog.
+ */
+@Composable
+fun chipDayTimeLabel(date: LocalDate, time: LocalTime, today: LocalDate): String =
+    stringResource(
+        R.string.transaction_editor_date_time_chip,
+        chipDayLabel(date, today),
+        timeLabel(time),
+    )
+
 /** Localized short time for the editor's time chip: "14:30" / "2:30 PM". */
 @Composable
 fun timeLabel(time: LocalTime): String {

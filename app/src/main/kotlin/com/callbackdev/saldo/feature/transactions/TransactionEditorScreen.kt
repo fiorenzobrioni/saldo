@@ -23,7 +23,6 @@ import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -214,7 +213,6 @@ fun TransactionEditorScreen(
                 onAccountChipClick = { activeSheet = EditorSheet.ACCOUNT },
                 onToAccountChipClick = { activeSheet = EditorSheet.TO_ACCOUNT },
                 onDateChipClick = { showDatePicker = true },
-                onTimeChipClick = { showTimePicker = true },
                 onAddTagClick = { activeSheet = EditorSheet.TAGS },
                 onShowAllCategories = { activeSheet = EditorSheet.CATEGORY },
                 modifier = Modifier
@@ -287,6 +285,10 @@ fun TransactionEditorScreen(
             },
             onDismiss = { showDatePicker = false },
             showQuickDates = true,
+            // The time lives here now, one tap deeper than the date it belongs to.
+            timeRow = {
+                EditorTimeRow(time = uiState.time, onClick = { showTimePicker = true })
+            },
         )
     }
 
@@ -341,7 +343,6 @@ private fun EditorForm(
     onAccountChipClick: () -> Unit,
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
-    onTimeChipClick: () -> Unit,
     onAddTagClick: () -> Unit,
     onShowAllCategories: () -> Unit,
     modifier: Modifier = Modifier,
@@ -419,7 +420,6 @@ private fun EditorForm(
             onAccountChipClick = onAccountChipClick,
             onToAccountChipClick = onToAccountChipClick,
             onDateChipClick = onDateChipClick,
-            onTimeChipClick = onTimeChipClick,
             onSwapAccounts = viewModel::onSwapAccounts,
         )
         AnimatedSection(visible = uiState.hasCategorySection) {
@@ -535,7 +535,6 @@ private fun ContextChips(
     onAccountChipClick: () -> Unit,
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
-    onTimeChipClick: () -> Unit,
     onSwapAccounts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -587,18 +586,13 @@ private fun ContextChips(
                 modifier = Modifier.align(Alignment.CenterVertically),
             )
         }
+        // One chip for both: the time is a passenger of the date, editable
+        // from inside the date dialog.
         EditorChip(
             icon = Icons.Outlined.CalendarToday,
-            label = chipDayLabel(uiState.date, LocalDate.now()),
+            label = chipDayTimeLabel(uiState.date, uiState.time, LocalDate.now()),
             isError = false,
             onClick = onDateChipClick,
-            modifier = Modifier.align(Alignment.CenterVertically),
-        )
-        EditorChip(
-            icon = Icons.Outlined.Schedule,
-            label = timeLabel(uiState.time),
-            isError = false,
-            onClick = onTimeChipClick,
             modifier = Modifier.align(Alignment.CenterVertically),
         )
     }
