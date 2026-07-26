@@ -48,6 +48,7 @@ fun QuickAddWidgetConfigScreen(
     onAccountSelected: (Long?) -> Unit,
     onTypeSelected: (TransactionType) -> Unit,
     onShowTodayTotalChanged: (Boolean) -> Unit,
+    onShowAppShortcutChanged: (Boolean) -> Unit,
     onUseMostUsedChanged: (Boolean) -> Unit,
     onCategoryToggled: (Long) -> Unit,
     onAppearanceSelected: (WidgetAppearance) -> Unit,
@@ -70,13 +71,10 @@ fun QuickAddWidgetConfigScreen(
         },
         bottomBar = {
             EditorSaveButton(
-                text = stringResource(
-                    if (state.isConfigured) {
-                        R.string.widget_config_update
-                    } else {
-                        R.string.widget_config_confirm
-                    },
-                ),
+                // Always "update": the launcher has already created the widget
+                // by the time this screen opens, so even the first visit is
+                // editing something that exists.
+                text = stringResource(R.string.widget_config_update),
                 onClick = onConfirm,
                 enabled = !state.isLoading,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -93,9 +91,14 @@ fun QuickAddWidgetConfigScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             item {
-                // The preview leads: opacity and colour mean nothing as numbers,
-                // and every control below changes what is drawn here.
-                QuickAddWidgetPreview(theme = theme, categories = state.categories)
+                // The preview leads: every control below changes what is drawn
+                // here, so the choice is made by looking rather than by placing
+                // the widget and coming back.
+                QuickAddWidgetPreview(
+                    theme = theme,
+                    categories = state.categories,
+                    showAppShortcut = state.config.showAppShortcut,
+                )
             }
             item {
                 Section(stringResource(R.string.widget_config_appearance)) {
@@ -126,6 +129,14 @@ fun QuickAddWidgetConfigScreen(
                         CategoryChips(state.categories, state.config.pinnedCategoryIds, onCategoryToggled)
                     }
                 }
+            }
+            item {
+                SwitchRow(
+                    title = stringResource(R.string.widget_config_app_shortcut),
+                    subtitle = stringResource(R.string.widget_config_app_shortcut_caption),
+                    checked = state.config.showAppShortcut,
+                    onCheckedChange = onShowAppShortcutChanged,
+                )
             }
             item {
                 SwitchRow(

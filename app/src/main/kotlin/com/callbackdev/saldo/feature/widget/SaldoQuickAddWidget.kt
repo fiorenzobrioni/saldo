@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.widget
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -106,7 +107,7 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
                 // The selector follows the state, not the loaded data: the
                 // control the user just pressed has to answer immediately, and
                 // the grid catches up a frame later.
-                WidgetBody(inputs.config.type, data, theme)
+                WidgetBody(inputs.config.type, data, theme, inputs.config.showAppShortcut)
             }
         }
     }
@@ -150,6 +151,14 @@ internal data class WidgetLayout(
     val showHeader: Boolean = false,
     val showLabels: Boolean = false,
     val tileSize: Int = 0,
+    /**
+     * The inset between the widget edge and its content. The grid is short of
+     * vertical room and spends less of it there; the single row has none of that
+     * pressure, so its inset is even on all four sides - an uneven frame around
+     * two big buttons is the first thing the eye picks up.
+     */
+    val paddingHorizontal: Int = 12,
+    val paddingVertical: Int = 8,
 ) {
     /** One slot is always the "more" tile, the way out to the full editor. */
     val categorySlots: Int get() = columns * rows - 1
@@ -166,7 +175,8 @@ internal enum class WidgetStyle { GRID, ACTIONS }
 internal fun layoutFor(size: DpSize): WidgetLayout = when {
     // Height first: a widget one row high can be any number of columns wide,
     // and none of those widths can hold a grid.
-    size.height < SaldoQuickAddWidget.Small.height -> WidgetLayout(style = WidgetStyle.ACTIONS)
+    size.height < SaldoQuickAddWidget.Small.height ->
+        WidgetLayout(style = WidgetStyle.ACTIONS, paddingHorizontal = 14, paddingVertical = 14)
     size.width >= SaldoQuickAddWidget.Medium.width && size.height >= SaldoQuickAddWidget.Large.height ->
         WidgetLayout(WidgetStyle.GRID, columns = 4, rows = 2, showHeader = true, showLabels = true, tileSize = 44)
     // One row only, and the header costs 34dp: the tile gives back 4dp rather
@@ -184,6 +194,7 @@ private fun WidgetBody(
     selectedType: TransactionType,
     data: QuickAddWidgetData,
     theme: QuickAddWidgetTheme,
+    showAppShortcut: Boolean,
 ) {
     val layout = layoutFor(LocalSize.current)
     Column(
@@ -191,13 +202,16 @@ private fun WidgetBody(
             .fillMaxSize()
             .background(theme.background)
             .cornerRadius(WidgetCornerRadius)
-            .padding(horizontal = WidgetPaddingHorizontal, vertical = WidgetPaddingVertical),
+            .padding(
+                horizontal = layout.paddingHorizontal.dp,
+                vertical = layout.paddingVertical.dp,
+            ),
         verticalAlignment = Alignment.Vertical.CenterVertically,
         horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
     ) {
         when {
             !data.isReady -> NotReady()
-            layout.style == WidgetStyle.ACTIONS -> MoneyActions(data, theme)
+            layout.style == WidgetStyle.ACTIONS -> MoneyActions(data, theme, showAppShortcut)
             else -> {
                 if (layout.showHeader) {
                     Header(selectedType, data)
@@ -308,7 +322,11 @@ private fun TypePill(label: String, type: TransactionType, selected: Boolean) {
  * job, done in the sheet because there is no room for it out here.
  */
 @Composable
-private fun ColumnScope.MoneyActions(data: QuickAddWidgetData, theme: QuickAddWidgetTheme) {
+private fun ColumnScope.MoneyActions(
+    data: QuickAddWidgetData,
+    theme: QuickAddWidgetTheme,
+    showAppShortcut: Boolean,
+) {
     val context = LocalContext.current
     Row(
         modifier = GlanceModifier.fillMaxSize(),
@@ -328,6 +346,38 @@ private fun ColumnScope.MoneyActions(data: QuickAddWidgetData, theme: QuickAddWi
             accent = theme.incomeAccent,
             accountId = data.account?.id,
             type = TransactionType.INCOME,
+        )
+        if (showAppShortcut) {
+            Spacer(GlanceModifier.width(ActionGap))
+            AppShortcutButton()
+        }
+    }
+}
+
+/**
+ * The way into the app from the single-row layout, which has no room for the
+ * "open Saldo" tile the taller ones carry. No background of its own: the app
+ * icon is already a shape and a colour, and a third tinted button beside the two
+ * that matter would compete with them.
+ *
+ * It matches the buttons' height by filling it. The width is fixed rather than
+ * squared off it, because `SizeMode.Responsive` reports the matched bucket and
+ * not the real widget, so the exact button height is not knowable here.
+ */
+@Composable
+private fun RowScope.AppShortcutButton() {
+    val context = LocalContext.current
+    Box(
+        modifier = GlanceModifier
+            .width(AppShortcutWidth)
+            .fillMaxHeight()
+            .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            provider = ImageProvider(Icon.createWithResource(context, R.mipmap.ic_launcher)),
+            contentDescription = context.getString(R.string.widget_quick_add_open_a11y),
+            modifier = GlanceModifier.size(AppShortcutIconSize),
         )
     }
 }
@@ -516,15 +566,6 @@ private fun Context.pxOf(dp: Int): Int = (dp * resources.displayMetrics.density)
 
 private val WidgetCornerRadius = 24.dp
 
-/**
- * The vertical budget is tight and deliberate. At the large bucket (250x190dp)
- * the content box is 174dp: a 34dp selector and its gap leave 134, which is two
- * rows of 64 - a 44dp tile, its gap and a 12sp label. Horizontal padding is
- * larger than vertical because it has no budget to fight over, and because the
- * amount on the right needs it.
- */
-private val WidgetPaddingHorizontal = 12.dp
-private val WidgetPaddingVertical = 8.dp
 private val HeaderGap = 6.dp
 private val RowGap = 6.dp
 private val LabelGap = 3.dp
@@ -548,6 +589,8 @@ private val ActionIconGap = 6.dp
 private val ActionFontSize = 15.sp
 private const val ActionIconSize = 20
 private const val ActionTintAlpha = 0.16f
+private val AppShortcutWidth = 52.dp
+private val AppShortcutIconSize = 40.dp
 
 /** The same pair the dashboard speed-dial uses, so the gesture reads the same everywhere. */
 private val ExpenseIcon: ImageVector = Icons.AutoMirrored.Outlined.TrendingDown

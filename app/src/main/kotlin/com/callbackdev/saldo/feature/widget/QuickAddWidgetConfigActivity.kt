@@ -76,6 +76,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     onAccountSelected = viewModel::onAccountSelected,
                     onTypeSelected = viewModel::onTypeSelected,
                     onShowTodayTotalChanged = viewModel::onShowTodayTotalChanged,
+                    onShowAppShortcutChanged = viewModel::onShowAppShortcutChanged,
                     onUseMostUsedChanged = viewModel::onUseMostUsedChanged,
                     onCategoryToggled = viewModel::onCategoryToggled,
                     onAppearanceSelected = viewModel::onAppearanceSelected,
@@ -91,10 +92,10 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
             runCatching {
                 val glanceId = GlanceAppWidgetManager(this@QuickAddWidgetConfigActivity)
                     .getGlanceIdBy(appWidgetId)
-                val stored: androidx.datastore.preferences.core.Preferences =
-                    SaldoQuickAddWidget().getAppWidgetState(this@QuickAddWidgetConfigActivity, glanceId)
-                QuickAddWidgetPrefs.read(stored) to QuickAddWidgetPrefs.isConfigured(stored)
-            }.onSuccess { (stored, isConfigured) -> viewModel.initialize(stored, isConfigured) }
+                QuickAddWidgetPrefs.read(
+                    SaldoQuickAddWidget().getAppWidgetState(this@QuickAddWidgetConfigActivity, glanceId),
+                )
+            }.onSuccess(viewModel::initialize)
         }
     }
 
@@ -111,7 +112,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                         QuickAddWidgetPrefs.encodePinned(config.pinnedCategoryIds)
                     prefs[QuickAddWidgetPrefs.ShowTodayTotal] = config.showTodayTotal
                     prefs[QuickAddWidgetPrefs.Appearance] = config.appearance.name
-                    prefs[QuickAddWidgetPrefs.Configured] = true
+                    prefs[QuickAddWidgetPrefs.ShowAppShortcut] = config.showAppShortcut
                 }
                 SaldoQuickAddWidget().update(this@QuickAddWidgetConfigActivity, glanceId)
             }

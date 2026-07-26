@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-26 - Cornice pari, icona dell'app opzionale, e sempre "Aggiorna"
+
+**Fatto:** tre rifiniture dopo lo screenshot del formato a riga. Margine uniforme e piu largo attorno ai due bottoni, icona dell'app opzionale alla loro destra per aprire Saldo, e l'azione della configurazione che dice sempre "Aggiorna il widget".
+
+**Decisioni:** il padding smette di essere una costante globale e diventa un campo di `WidgetLayout`, perche i due stili hanno vincoli opposti: la griglia ha un budget verticale da difendere e continua a spendere meno in alto e in basso, la riga non ce l'ha e prende 14dp pari sui quattro lati. Era la scelta giusta anche a prescindere dalla segnalazione - una cornice sbilenca attorno a due bottoni grandi e la prima cosa che l'occhio nota, mentre in una griglia fitta non si vede. Sull'icona dell'app: nessuno sfondo proprio, perche l'icona e gia una forma e un colore e un terzo bottone tinto accanto ai due che contano competerebbe con loro; di default e spenta, perche i formati piu alti hanno gia la tile "Apri Saldo" e la riga e la dimensione dove ogni elemento deve guadagnarsi la larghezza. Un limite dichiarato: l'utente l'ha chiesta quadrata, con il lato pari all'altezza dei bottoni, e l'altezza si ottiene con `fillMaxHeight`, ma la larghezza no - `SizeMode.Responsive` riporta il bucket che ha fatto match e non la dimensione reale del widget, quindi l'altezza effettiva non e conoscibile in composizione e il quadrato esatto non e calcolabile. La larghezza e fissa a 52dp, che a un'altezza di riga tipica legge quadrata. Sul testo dell'azione l'utente ha ragione e la motivazione e piu pulita di quella che avevo implementato: quando la schermata si apre il launcher **ha gia creato** il widget, quindi anche la prima visita sta modificando qualcosa che esiste. Il marcatore `Configured`, che serviva solo a distinguere i due casi, e stato rimosso invece di restare come stato morto.
+
+**Problemi:** nessuno. L'anteprima nella configurazione mostra anche l'icona quando l'interruttore e acceso, altrimenti l'unico controllo nuovo sarebbe stato l'unico a non avere riscontro visivo nel posto costruito apposta per darlo.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 645 test, 0 falliti. `QuickAddWidgetPrefsTest` perde il caso sul marcatore rimosso e guadagna quello sull'icona (spenta finche non la si chiede, e round-trip). versionCode 134 -> 135, versionName 0.9.95 -> 0.9.96.
+
+**Prossimo:** prova su device del margine pari a una riga e dell'icona accesa - in particolare se i 52dp fissi leggano davvero quadrati all'altezza di riga di questo launcher, che e l'unica cosa che non ho potuto calcolare.
+
+---
+
 ## 2026-07-26 - Il widget a una riga: due bottoni e basta
 
 **Fatto:** su richiesta dell'utente il widget si ridimensiona fino a una riga di launcher, e a quell'altezza cambia natura: niente griglia, due soli bottoni Spesa ed Entrata che si dividono la larghezza e crescono con le colonne. Rosso e verde tenui, icone `TrendingDown`/`TrendingUp`, e il tap apre la stessa sheet dell'importo che l'utente ha detto di apprezzare.

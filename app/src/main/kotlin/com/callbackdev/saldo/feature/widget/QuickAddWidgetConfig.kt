@@ -22,6 +22,12 @@ data class QuickAddWidgetConfig(
     val pinnedCategoryIds: List<Long> = emptyList(),
     val showTodayTotal: Boolean = true,
     val appearance: WidgetAppearance = WidgetAppearance.SYSTEM,
+    /**
+     * The app icon beside the two buttons of the single-row layout. Off by
+     * default: the taller layouts already carry an "open Saldo" tile, and the
+     * row is the size where every element has to earn its width.
+     */
+    val showAppShortcut: Boolean = false,
 ) {
     val usesMostUsed: Boolean get() = pinnedCategoryIds.isEmpty()
 }
@@ -53,14 +59,7 @@ object QuickAddWidgetPrefs {
     val Revision = longPreferencesKey("quick_add_revision")
 
     val Appearance = stringPreferencesKey("quick_add_appearance")
-
-    /**
-     * Written once the configuration screen is confirmed, so that screen knows
-     * whether it is placing a widget or editing one already on the home screen.
-     * Android gives no flag of its own: the same activity and the same intent
-     * serve both, and only the stored state can tell them apart.
-     */
-    val Configured = booleanPreferencesKey("quick_add_configured")
+    val ShowAppShortcut = booleanPreferencesKey("quick_add_show_app_shortcut")
 
     /** Absent account id is stored as [NO_ACCOUNT] because DataStore has no nullable Long. */
     private const val NO_ACCOUNT = -1L
@@ -79,9 +78,8 @@ object QuickAddWidgetPrefs {
         appearance = preferences[Appearance]?.let { stored ->
             WidgetAppearance.entries.firstOrNull { it.name == stored }
         } ?: WidgetAppearance.SYSTEM,
+        showAppShortcut = preferences[ShowAppShortcut] ?: false,
     )
-
-    fun isConfigured(preferences: Preferences): Boolean = preferences[Configured] == true
 
     fun encodeAccountId(accountId: Long?): Long = accountId ?: NO_ACCOUNT
 

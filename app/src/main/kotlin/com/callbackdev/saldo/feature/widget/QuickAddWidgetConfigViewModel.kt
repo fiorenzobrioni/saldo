@@ -22,8 +22,6 @@ data class QuickAddWidgetConfigUiState(
     val config: QuickAddWidgetConfig = QuickAddWidgetConfig(),
     val accounts: List<Account> = emptyList(),
     val categories: List<Category> = emptyList(),
-    /** True when this widget has been through here before, so the action reads "update". */
-    val isConfigured: Boolean = false,
 ) {
     /** Null means the widget follows the app's default account, which is the default. */
     val selectedAccount: Account? get() = accounts.firstOrNull { it.id == config.accountId }
@@ -41,21 +39,18 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val config = MutableStateFlow(QuickAddWidgetConfig())
-    private val configured = MutableStateFlow(false)
 
     val uiState: StateFlow<QuickAddWidgetConfigUiState> = combine(
         config,
-        configured,
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
-    ) { current, isConfigured, accounts, categories ->
+    ) { current, accounts, categories ->
         val type = if (current.type == TransactionType.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
         QuickAddWidgetConfigUiState(
             isLoading = false,
             config = current,
             accounts = accounts.map { it.account }.filter { !it.isArchived },
             categories = categories.filter { it.type == type || it.type == CategoryType.BOTH },
-            isConfigured = isConfigured,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -64,9 +59,8 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
     )
 
     /** Seeds the form from the stored state when reconfiguring an existing widget. */
-    fun initialize(stored: QuickAddWidgetConfig, isConfigured: Boolean) {
+    fun initialize(stored: QuickAddWidgetConfig) {
         config.value = stored
-        configured.value = isConfigured
     }
 
     fun onAccountSelected(accountId: Long?) {
@@ -81,6 +75,10 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
 
     fun onShowTodayTotalChanged(show: Boolean) {
         config.update { it.copy(showTodayTotal = show) }
+    }
+
+    fun onShowAppShortcutChanged(show: Boolean) {
+        config.update { it.copy(showAppShortcut = show) }
     }
 
     fun onUseMostUsedChanged(useMostUsed: Boolean) {

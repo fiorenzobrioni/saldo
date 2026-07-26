@@ -85,15 +85,11 @@ class QuickAddWidgetPrefsTest {
         assertEquals(WidgetAppearance.SYSTEM, QuickAddWidgetPrefs.read(preferences).appearance)
     }
 
-    /**
-     * Android hands the same activity and the same intent to a first placement
-     * and to a later edit, so the stored marker is the only thing that can tell
-     * the settings screen whether its action reads "add" or "update".
-     */
     @Test
-    fun `a widget is not configured until its settings are confirmed`() {
-        assertTrue(!QuickAddWidgetPrefs.isConfigured(mutablePreferencesOf()))
-        assertTrue(QuickAddWidgetPrefs.isConfigured(mutablePreferencesOf(QuickAddWidgetPrefs.Configured to true)))
+    fun `the app shortcut is off until it is asked for`() {
+        assertTrue(!QuickAddWidgetPrefs.read(mutablePreferencesOf()).showAppShortcut)
+        val enabled = mutablePreferencesOf(QuickAddWidgetPrefs.ShowAppShortcut to true)
+        assertTrue(QuickAddWidgetPrefs.read(enabled).showAppShortcut)
     }
 
     /**

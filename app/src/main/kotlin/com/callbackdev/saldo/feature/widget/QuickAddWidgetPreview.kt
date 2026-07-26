@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.widget
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -43,6 +45,7 @@ import com.callbackdev.saldo.core.domain.model.Category
 fun QuickAddWidgetPreview(
     theme: QuickAddWidgetTheme,
     categories: List<Category>,
+    showAppShortcut: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val description = stringResource(R.string.widget_config_preview_a11y)
@@ -69,6 +72,13 @@ fun QuickAddWidgetPreview(
             ) {
                 PreviewPill(stringResource(R.string.widget_quick_add_expense), theme, selected = true)
                 PreviewPill(stringResource(R.string.widget_quick_add_income), theme, selected = false)
+                if (showAppShortcut) {
+                    Image(
+                        painter = painterResource(R.mipmap.ic_launcher),
+                        contentDescription = null,
+                        modifier = Modifier.size(30.dp),
+                    )
+                }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
