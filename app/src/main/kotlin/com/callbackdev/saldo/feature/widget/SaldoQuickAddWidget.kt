@@ -7,7 +7,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.TrendingDown
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -37,7 +40,9 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
+import androidx.glance.layout.RowScope
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -48,6 +53,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
+import androidx.glance.color.ColorProvider
 import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
@@ -74,7 +80,7 @@ import kotlinx.coroutines.flow.first
  */
 class SaldoQuickAddWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(setOf(Small, Medium, Large))
+    override val sizeMode = SizeMode.Responsive(setOf(Bar, Small, Medium, Large))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val entryPoint = context.widgetEntryPoint()
@@ -106,6 +112,8 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
     }
 
     companion object {
+        /** One launcher row: no room for a grid, so it becomes two buttons. */
+        val Bar = DpSize(120.dp, 50.dp)
         val Small = DpSize(120.dp, 120.dp)
         val Medium = DpSize(250.dp, 120.dp)
         val Large = DpSize(250.dp, 190.dp)
@@ -135,28 +143,40 @@ private data class WidgetInputs(val config: QuickAddWidgetConfig, val revision: 
  * hard split per bucket rather than a fluid layout: `RemoteViews` gives no
  * measuring pass to fall back on, so each size is designed rather than squeezed.
  */
-private data class WidgetLayout(
-    val columns: Int,
-    val rows: Int,
-    val showHeader: Boolean,
-    val showLabels: Boolean,
-    val tileSize: Int,
+internal data class WidgetLayout(
+    val style: WidgetStyle,
+    val columns: Int = 0,
+    val rows: Int = 0,
+    val showHeader: Boolean = false,
+    val showLabels: Boolean = false,
+    val tileSize: Int = 0,
 ) {
     /** One slot is always the "more" tile, the way out to the full editor. */
     val categorySlots: Int get() = columns * rows - 1
 }
 
-private fun layoutFor(size: DpSize): WidgetLayout = when {
+/**
+ * [WidgetStyle.ACTIONS] is not a smaller grid, it is a different widget: at one
+ * launcher row high there is no room for a category, so the two movement types
+ * become the content and the category is picked in the sheet that opens.
+ */
+internal enum class WidgetStyle { GRID, ACTIONS }
+
+/** Internal so the size-to-layout decision, which is silent when wrong, can be asserted. */
+internal fun layoutFor(size: DpSize): WidgetLayout = when {
+    // Height first: a widget one row high can be any number of columns wide,
+    // and none of those widths can hold a grid.
+    size.height < SaldoQuickAddWidget.Small.height -> WidgetLayout(style = WidgetStyle.ACTIONS)
     size.width >= SaldoQuickAddWidget.Medium.width && size.height >= SaldoQuickAddWidget.Large.height ->
-        WidgetLayout(columns = 4, rows = 2, showHeader = true, showLabels = true, tileSize = 44)
-    // One row only, and the header now costs 36dp: the tile gives back the 4dp
-    // rather than letting the label be clipped.
+        WidgetLayout(WidgetStyle.GRID, columns = 4, rows = 2, showHeader = true, showLabels = true, tileSize = 44)
+    // One row only, and the header costs 34dp: the tile gives back 4dp rather
+    // than letting the label be clipped.
     size.width >= SaldoQuickAddWidget.Medium.width ->
-        WidgetLayout(columns = 4, rows = 1, showHeader = true, showLabels = true, tileSize = 40)
+        WidgetLayout(WidgetStyle.GRID, columns = 4, rows = 1, showHeader = true, showLabels = true, tileSize = 40)
     // A 2x2 is about 110dp square: a header plus labels would leave the tiles
     // unusable, so this size shows four icons and takes its type from the
     // widget's own configuration instead of a selector.
-    else -> WidgetLayout(columns = 2, rows = 2, showHeader = false, showLabels = false, tileSize = 52)
+    else -> WidgetLayout(WidgetStyle.GRID, columns = 2, rows = 2, tileSize = 52)
 }
 
 @Composable
@@ -175,14 +195,16 @@ private fun WidgetBody(
         verticalAlignment = Alignment.Vertical.CenterVertically,
         horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
     ) {
-        if (data.isReady) {
-            if (layout.showHeader) {
-                Header(selectedType, data)
-                Spacer(GlanceModifier.height(HeaderGap))
+        when {
+            !data.isReady -> NotReady()
+            layout.style == WidgetStyle.ACTIONS -> MoneyActions(data, theme)
+            else -> {
+                if (layout.showHeader) {
+                    Header(selectedType, data)
+                    Spacer(GlanceModifier.height(HeaderGap))
+                }
+                CategoryGrid(data, theme, layout)
             }
-            CategoryGrid(data, theme, layout)
-        } else {
-            NotReady()
         }
     }
 }
@@ -274,6 +296,93 @@ private fun TypePill(label: String, type: TransactionType, selected: Boolean) {
             ),
             maxLines = 1,
         )
+    }
+}
+
+
+/**
+ * The single-row layout: expense and income share the width and grow with it,
+ * so the same widget works at two launcher columns and at five. Tapping one
+ * opens the amount sheet on the category the user reaches for most, which is
+ * shown at the top of the sheet and is one tap from being changed - the grid's
+ * job, done in the sheet because there is no room for it out here.
+ */
+@Composable
+private fun ColumnScope.MoneyActions(data: QuickAddWidgetData, theme: QuickAddWidgetTheme) {
+    val context = LocalContext.current
+    Row(
+        modifier = GlanceModifier.fillMaxSize(),
+        verticalAlignment = Alignment.Vertical.CenterVertically,
+    ) {
+        MoneyActionButton(
+            label = context.getString(R.string.widget_quick_add_expense),
+            icon = ExpenseIcon,
+            accent = theme.expenseAccent,
+            accountId = data.account?.id,
+            type = TransactionType.EXPENSE,
+        )
+        Spacer(GlanceModifier.width(ActionGap))
+        MoneyActionButton(
+            label = context.getString(R.string.widget_quick_add_income),
+            icon = IncomeIcon,
+            accent = theme.incomeAccent,
+            accountId = data.account?.id,
+            type = TransactionType.INCOME,
+        )
+    }
+}
+
+@Composable
+private fun RowScope.MoneyActionButton(
+    label: String,
+    icon: ImageVector,
+    accent: Color,
+    accountId: Long?,
+    type: TransactionType,
+) {
+    val context = LocalContext.current
+    Box(
+        modifier = GlanceModifier
+            .defaultWeight()
+            .fillMaxHeight()
+            .background(accent.copy(alpha = ActionTintAlpha))
+            .cornerRadius(ActionCornerRadius)
+            .clickable(
+                actionStartActivity(
+                    QuickEntryActivity.intent(
+                        context = context,
+                        type = type,
+                        // No category: the sheet preselects the most used one.
+                        categoryId = null,
+                        accountId = accountId,
+                    ),
+                ),
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
+            // The icon is not decoration: the project requires expense and
+            // income to be told apart by more than colour.
+            Image(
+                provider = ImageProvider(
+                    CategoryIconBitmaps.glyph(icon, accent, context.pxOf(ActionIconSize)),
+                ),
+                contentDescription = label,
+                modifier = GlanceModifier.size(ActionIconSize.dp),
+            )
+            Spacer(GlanceModifier.width(ActionIconGap))
+            Text(
+                text = label,
+                style = TextStyle(
+                    // The accent is already resolved for the widget's own theme,
+                    // so the same colour serves both branches.
+                    color = ColorProvider(day = accent, night = accent),
+                    fontSize = ActionFontSize,
+                    fontWeight = FontWeight.Medium,
+                ),
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -432,6 +541,17 @@ private val AmountEndPadding = 4.dp
 
 private val LabelFontSize = 13.sp
 private val TileLabelFontSize = 12.sp
+
+private val ActionGap = 8.dp
+private val ActionCornerRadius = 18.dp
+private val ActionIconGap = 6.dp
+private val ActionFontSize = 15.sp
+private const val ActionIconSize = 20
+private const val ActionTintAlpha = 0.16f
+
+/** The same pair the dashboard speed-dial uses, so the gesture reads the same everywhere. */
+private val ExpenseIcon: ImageVector = Icons.AutoMirrored.Outlined.TrendingDown
+private val IncomeIcon: ImageVector = Icons.AutoMirrored.Outlined.TrendingUp
 
 /** Reads as "more options" in any launcher, and is in no category icon set. */
 private val MoreIcon: ImageVector = Icons.Outlined.MoreHoriz

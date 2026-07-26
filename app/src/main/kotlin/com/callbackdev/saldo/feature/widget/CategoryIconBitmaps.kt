@@ -81,6 +81,26 @@ object CategoryIconBitmaps {
             draw(vector = vector, color = color, sizePx = sizePx)
         }
 
+    /**
+     * The glyph on its own, with no squircle behind it: the single-row layout's
+     * buttons carry their own tinted background, so a second one inside would
+     * read as a tile within a tile.
+     */
+    fun glyph(vector: ImageVector, color: ComposeColor, sizePx: Int): Bitmap =
+        cached("glyph|${vector.name}|${color.toArgb()}|$sizePx") {
+            val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                this.color = color.toArgb()
+                style = Paint.Style.FILL
+            }
+            runCatching {
+                canvas.scale(sizePx / vector.viewportWidth, sizePx / vector.viewportHeight)
+                drawNode(canvas, paint, vector.root)
+            }
+            bitmap
+        }
+
     private fun cached(key: String, build: () -> Bitmap): Bitmap =
         cache.get(key) ?: build().also { cache.put(key, it) }
 

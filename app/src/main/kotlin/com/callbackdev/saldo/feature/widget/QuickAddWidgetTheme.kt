@@ -11,6 +11,8 @@ import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.designsystem.theme.BrandDarkColorScheme
 import com.callbackdev.saldo.core.designsystem.theme.BrandLightColorScheme
+import com.callbackdev.saldo.core.designsystem.theme.MoneyColors
+import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import androidx.glance.material3.ColorProviders as GlanceColorProviders
 
 /** The palette a placed widget draws in. */
@@ -18,6 +20,19 @@ data class QuickAddWidgetTheme(
     val scheme: ColorScheme,
     val providers: ColorProviders,
     val background: Color,
+    /**
+     * The accents of the single-row layout's two buttons.
+     *
+     * A deliberate, narrow exception to [MoneyColors], which keeps `expense`
+     * neutral on purpose: colouring every expense in a ledger would shout, and
+     * there the minus sign and the icon carry the distinction. Two action
+     * buttons alone on a widget are not a ledger - there is no other context to
+     * read them by - so the colour does the fast work and the icons still do the
+     * accessible work. `income` is the app's own green; the red is the scheme's
+     * only one, worn as a 16% wash so it reads as soft rather than as an alarm.
+     */
+    val expenseAccent: Color,
+    val incomeAccent: Color,
 )
 
 /**
@@ -54,6 +69,8 @@ fun resolveWidgetTheme(
         // The app's Dashboard sits on colorScheme.background, so a widget meant
         // to look like the app sits on it too.
         background = scheme.background,
+        expenseAccent = scheme.error,
+        incomeAccent = moneyColors(scheme, dark).income,
     )
 }
 

@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-26 - Il widget a una riga: due bottoni e basta
+
+**Fatto:** su richiesta dell'utente il widget si ridimensiona fino a una riga di launcher, e a quell'altezza cambia natura: niente griglia, due soli bottoni Spesa ed Entrata che si dividono la larghezza e crescono con le colonne. Rosso e verde tenui, icone `TrendingDown`/`TrendingUp`, e il tap apre la stessa sheet dell'importo che l'utente ha detto di apprezzare.
+
+**Decisioni:** la struttura chiave e che `layoutFor` decide **prima sull'altezza**: un widget alto una riga puo essere largo due colonne o cinque, e nessuna di quelle larghezze regge una griglia, quindi la larghezza li non ha voce. I bottoni usano `defaultWeight()`, percio il ridimensionamento in colonne e gratis e non serve un bucket per ogni larghezza. Sul colore c'e una deroga dichiarata: `MoneyColors` tiene `expense` neutro di proposito, documentando che colorare ogni spesa in un registro urlerebbe e che segno e icona portano la distinzione. Qui pero non c'e un registro: due bottoni soli su un widget non hanno altro contesto con cui essere letti, e il colore e il discriminante piu rapido. La deroga e stata segnalata all'utente prima di scriverla, ed e comunque parziale - le icone restano, perche la regola di accessibilita del progetto (spese ed entrate distinte anche da segno o icona) non e negoziabile e vale a maggior ragione dove il colore fa piu lavoro. Il rosso e `scheme.error`, l'unico del tema, ma indossato come velatura al 16%: a quella intensita legge come tenue e non come allarme. Il punto meno ovvio e cosa succede al tap: quei bottoni non sanno dire una categoria, e una sheet senza categoria non puo salvare, quindi i due bottoni sarebbero decorativi. La sheet preseleziona la piu usata per quel tipo, con la stessa finestra di 60 giorni della griglia - una supposizione, ma in piena vista, in cima alla sheet e a un tap dall'essere cambiata.
+
+**Problemi:** nessuno. `layoutFor` e diventata `internal` e ha i suoi test: quale layout tocca a quale dimensione e una decisione silenziosa, sbagliarla non rompe niente e non la segnala nessun build.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 647 test, 0 falliti. Test nuovi: `WidgetLayoutTest` (una riga e due bottoni a qualunque larghezza, due righe tornano griglia, il bucket grande tiene sette categorie, crescere non fa mai perdere tile) e tre casi in `QuickEntryViewModelTest` sulla preselezione (piu usata, ricaduta sulla prima senza storia, e la categoria mandata dal widget mai sovrascritta dalla supposizione). versionCode 133 -> 134, versionName 0.9.94 -> 0.9.95.
+
+**Prossimo:** prova su device del ridimensionamento continuo dall'alto verso una riga, del passaggio griglia/bottoni mentre si trascina, e dei due colori sul wallpaper in tema chiaro e scuro - il rosso al 16% su sfondo scuro e il caso in cui la velatura ha meno contrasto da spendere.
+
+---
+
 ## 2026-07-26 - Il widget dimagrisce di opzioni e ingrassa di corpo
 
 **Fatto:** quarto giro sul widget dopo la prova su device. L'utente chiede di rimuovere il colore di sfondo personalizzato e lo slider di opacita, segnala che l'azione della schermata dovrebbe dire "Aggiorna" quando il widget esiste gia, e chiede icone e testi piu grandi piu un po' d'aria a destra dell'importo.

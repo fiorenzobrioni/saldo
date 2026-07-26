@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /** What the quick entry sheet renders. */
@@ -89,7 +90,7 @@ class QuickEntryViewModel @AssistedInject constructor(
     @Assisted private val route: QuickEntryRoute,
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
-    categoryRepository: CategoryRepository,
+    private val categoryRepository: CategoryRepository,
     private val userPreferences: UserPreferencesRepository,
     private val clock: Clock,
 ) : ViewModel() {
@@ -121,10 +122,12 @@ class QuickEntryViewModel @AssistedInject constructor(
         else -> CategoryType.EXPENSE
     }
 
+    private val categories = categoryRepository.observeCategories(categoryType)
+
     val uiState: StateFlow<QuickEntryUiState> = combine(
         form,
         accountRepository.observeAccountsWithBalance(),
-        categoryRepository.observeCategories(categoryType),
+        categories,
     ) { current, accounts, categories ->
         val pickable = accounts.filter { !it.account.isArchived || it.account.id == current.accountId }
         val account = pickable.firstOrNull { it.account.id == current.accountId }
@@ -150,6 +153,11 @@ class QuickEntryViewModel @AssistedInject constructor(
         // deleted since, fall back to the app's own default chain rather than
         // opening a sheet that cannot save.
         if (route.accountId == null) preselectAccount()
+        // The single-row widget has no grid, so it sends no category: the sheet
+        // opens on the one this user actually reaches for. It is shown at the
+        // top of the sheet and is one tap from being changed - a guess in plain
+        // sight, not a decision made for them.
+        if (route.categoryId == null) preselectCategory()
     }
 
     fun onAmountChanged(value: String) {
@@ -200,6 +208,19 @@ class QuickEntryViewModel @AssistedInject constructor(
         }
     }
 
+    private fun preselectCategory() {
+        viewModelScope.launch {
+            val available = categories.first()
+            if (available.isEmpty()) return@launch
+            val since = LocalDate.now(clock).minusDays(MOST_USED_WINDOW_DAYS).atStartOfDay(clock.zone).toInstant()
+            val mostUsed = runCatching {
+                transactionRepository.mostUsedCategoryIds(route.type, since, 1).firstOrNull()
+            }.getOrNull()
+            val chosen = available.firstOrNull { it.id == mostUsed } ?: available.first()
+            form.update { if (it.categoryId == null) it.copy(categoryId = chosen.id) else it }
+        }
+    }
+
     private fun preselectAccount() {
         viewModelScope.launch {
             val active = accountRepository.observeAccountsWithBalance().first()
@@ -218,5 +239,8 @@ class QuickEntryViewModel @AssistedInject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+
+        /** The same window the widget's own grid uses, so both agree on "most used". */
+        const val MOST_USED_WINDOW_DAYS = 60L
     }
 }

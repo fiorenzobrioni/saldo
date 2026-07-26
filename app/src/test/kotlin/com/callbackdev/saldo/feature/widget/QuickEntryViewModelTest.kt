@@ -65,6 +65,13 @@ class QuickEntryViewModelTest {
         color = 0x66BB6A,
         icon = "shopping_cart",
     )
+    private val transport = Category(
+        id = 11L,
+        name = "Transport",
+        type = CategoryType.EXPENSE,
+        color = 0x42A5F5,
+        icon = "commute",
+    )
 
     private fun viewModel(
         route: QuickEntryRoute = QuickEntryRoute(TransactionType.EXPENSE, groceries.id, checking.id),
@@ -72,6 +79,7 @@ class QuickEntryViewModelTest {
         categories: List<Category> = listOf(groceries),
         defaultAccountId: Long? = null,
         lastUsedAccountId: Long? = null,
+        mostUsed: List<Long> = emptyList(),
     ): QuickEntryViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
@@ -79,6 +87,7 @@ class QuickEntryViewModelTest {
         every { userPreferences.defaultAccountId } returns flowOf(defaultAccountId)
         every { userPreferences.lastUsedAccountId } returns flowOf(lastUsedAccountId)
         coEvery { transactionRepository.upsert(any()) } returns SAVED_ID
+        coEvery { transactionRepository.mostUsedCategoryIds(any(), any(), any()) } returns mostUsed
         return QuickEntryViewModel(
             route = route,
             transactionRepository = transactionRepository,
@@ -173,6 +182,48 @@ class QuickEntryViewModelTest {
             // Locale-dependent formatting, so assert the digits are there
             // rather than pinning a separator the test machine chooses.
             assertTrue(state.savedAmount.orEmpty().contains("12"))
+        }
+    }
+
+    /**
+     * The single-row widget has no grid, so it opens the sheet with no category
+     * at all. Landing on a sheet that cannot save would make those two buttons
+     * useless, so the most used category is preselected - visibly, at the top of
+     * the sheet, one tap from being changed.
+     */
+    @Test
+    fun `with no category from the widget the most used one is preselected`() = runTest {
+        val viewModel = viewModel(
+            route = QuickEntryRoute(TransactionType.EXPENSE, categoryId = null, accountId = checking.id),
+            categories = listOf(groceries, transport),
+            mostUsed = listOf(transport.id),
+        )
+        viewModel.uiState.test {
+            assertEquals(transport, expectMostRecentItem().category)
+        }
+    }
+
+    @Test
+    fun `with no history at all it falls back to the first category rather than none`() = runTest {
+        val viewModel = viewModel(
+            route = QuickEntryRoute(TransactionType.EXPENSE, categoryId = null, accountId = checking.id),
+            categories = listOf(groceries, transport),
+            mostUsed = emptyList(),
+        )
+        viewModel.uiState.test {
+            assertEquals(groceries, expectMostRecentItem().category)
+        }
+    }
+
+    @Test
+    fun `a category the widget did send is never overridden by the guess`() = runTest {
+        val viewModel = viewModel(
+            route = QuickEntryRoute(TransactionType.EXPENSE, groceries.id, checking.id),
+            categories = listOf(groceries, transport),
+            mostUsed = listOf(transport.id),
+        )
+        viewModel.uiState.test {
+            assertEquals(groceries, expectMostRecentItem().category)
         }
     }
 
