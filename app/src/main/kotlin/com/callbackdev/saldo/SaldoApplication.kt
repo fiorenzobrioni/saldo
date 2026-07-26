@@ -7,6 +7,7 @@ import com.callbackdev.saldo.budget.BudgetNotifier
 import com.callbackdev.saldo.budget.BudgetThresholdWatcher
 import com.callbackdev.saldo.core.common.di.ApplicationScope
 import com.callbackdev.saldo.creditcard.CreditCardNotifier
+import com.callbackdev.saldo.feature.widget.WidgetRefreshWatcher
 import com.callbackdev.saldo.recurring.RecurringNotifier
 import com.callbackdev.saldo.recurring.RecurringWorkScheduler
 import dagger.hilt.android.HiltAndroidApp
@@ -32,6 +33,9 @@ class SaldoApplication : Application(), Configuration.Provider {
     lateinit var budgetThresholdWatcher: BudgetThresholdWatcher
 
     @Inject
+    lateinit var widgetRefreshWatcher: WidgetRefreshWatcher
+
+    @Inject
     @ApplicationScope
     lateinit var applicationScope: CoroutineScope
 
@@ -48,6 +52,7 @@ class SaldoApplication : Application(), Configuration.Provider {
         budgetNotifier.createChannel()
         creditCardNotifier.createChannel()
         budgetThresholdWatcher.start(applicationScope)
+        widgetRefreshWatcher.start(applicationScope)
         RecurringWorkScheduler.schedule(this)
     }
 }

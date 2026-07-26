@@ -2,4 +2,18 @@
 <resources>
     <!-- Startup theme only: Compose owns the UI once MainActivity sets content. -->
     <style name="Theme.Saldo" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!--
+        The quick-entry sheet opened from the home screen widget. The window is
+        translucent and unanimated so what the user sees is a sheet rising over
+        their launcher, not the app opening: the sheet animates itself in Compose
+        and a window transition on top would compete with it.
+    -->
+    <style name="Theme.Saldo.Transparent" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
 </resources>

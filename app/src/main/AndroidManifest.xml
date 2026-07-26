@@ -30,6 +30,40 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
+        <!--
+            Home screen quick-add widget. The receiver is exported because the
+            launcher has to reach it; the two activities below are not, since
+            only the widget's own in-app actions start them.
+        -->
+        <receiver
+            android:name=".feature.widget.SaldoQuickAddWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_quick_add_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_add_widget_info" />
+        </receiver>
+
+        <!-- The amount step: a translucent sheet over the launcher, not the app. -->
+        <activity
+            android:name=".feature.widget.QuickEntryActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:noHistory="true"
+            android:theme="@style/Theme.Saldo.Transparent" />
+
+        <activity
+            android:name=".feature.widget.QuickAddWidgetConfigActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <!-- Shares CSV exports from the cache directory via the system Share Sheet. -->
         <provider
             android:name="androidx.core.content.FileProvider"

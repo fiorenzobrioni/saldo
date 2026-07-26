@@ -16,11 +16,17 @@ import androidx.compose.ui.platform.LocalContext
  * and store screenshots), with Material 3 dynamic color as an opt-in from
  * Settings. minSdk is 33, so when [dynamicColor] is on no availability check
  * is needed (revised ADR 9 in PLANNING.md).
+ *
+ * [applyBackground] draws the opaque themed backdrop described below. It is on
+ * everywhere the app owns the whole window, and off in the one place that must
+ * let the surface behind show through: the quick-entry sheet, whose translucent
+ * window sits over the launcher.
  */
 @Composable
 fun SaldoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
+    applyBackground: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -44,11 +50,15 @@ fun SaldoTheme(
             // window background shows through the Nav 3 fade transitions when the
             // in-app theme is dark but the system (hence the XML window theme) is
             // light, causing a white flash between screens.
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = colorScheme.background,
-                content = content,
-            )
+            if (applyBackground) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = colorScheme.background,
+                    content = content,
+                )
+            } else {
+                content()
+            }
         }
     }
 }
