@@ -55,11 +55,11 @@ fun AmountTextField(
         readOnly = true,
         label = { Text(label) },
         placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
-        suffix = suffix?.let { { Text(it) } },
+        suffix = suffix?.let { text -> { Text(text) } },
         singleLine = true,
         isError = isError,
         textStyle = LocalTextStyle.current.tabularNumbers(),
-        supportingText = supportingText?.let { { Text(it) } },
+        supportingText = supportingText?.let { text -> { Text(text) } },
         trailingIcon = if (showSignToggle) {
             {
                 IconButton(
