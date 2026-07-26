@@ -29,10 +29,6 @@ import java.time.LocalDate
  * start). [showQuickDates] adds "Today"/"Yesterday" chips above the calendar
  * that confirm immediately, covering the most frequent date corrections;
  * a chip is hidden when its date falls below [minDate].
- *
- * [timeRow] is an optional row drawn under the quick dates: the movement
- * editor puts the time of day there, so it stays next to the date it belongs
- * to instead of spending a chip of its own on the form.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +38,6 @@ fun SaldoDatePickerDialog(
     onDismiss: () -> Unit,
     minDate: LocalDate? = null,
     showQuickDates: Boolean = false,
-    timeRow: @Composable (() -> Unit)? = null,
 ) {
     val selectableDates = remember(minDate) {
         if (minDate == null) {
@@ -99,7 +94,6 @@ fun SaldoDatePickerDialog(
                 }
             }
         }
-        timeRow?.invoke()
         DatePicker(state = state, showModeToggle = false)
     }
 }

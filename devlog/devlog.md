@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-26 - Due correzioni dalla prova su device: ora scopribile, selettore tipo che respira
+
+**Fatto:** due segnalazioni dell'utente dopo la prova su device della Fase 10.17. (1) Il chip data+ora apriva il dialog della data, che pero non mostrava da nessuna parte come cambiare l'ora: l'utente l'ha trovata per caso toccando l'intestazione "Seleziona data". Il chip diventa quindi due controlli in una pillola sola: meta sinistra (glifo calendario + data) apre il calendario, meta destra (glifo orologio + ora) apre il time picker, separate da un divider verticale. La riga dell'ora dentro il dialog e lo slot `timeRow` di `SaldoDatePickerDialog` sono stati rimossi: il dialog torna esattamente com'era. (2) Nel selettore di tipo la voce "Trasferimento" toccava il bordo del proprio segmento: via il glifo di spunta (`icon = {}`) e label a `labelMedium` con `maxLines = 1`.
+
+**Decisioni:** due meta tappabili invece di una riga dentro il dialog perche il problema era di scopribilita, e una riga in fondo a un dialog non la risolve: l'icona dell'orologio accanto all'ora dice cosa fa quel pezzo di chip senza costare una riga del form, che era il vincolo iniziale. Niente chevron sulle due meta (ne servirebbero due): i glifi di testa bastano, e senza chevron la pillola divisa e larga circa quanto quella unita, quindi non torna a capo accanto al chip del conto. Sul selettore, togliere la spunta e la leva vera: il segmento selezionato resta evidente dal contenitore pieno e TalkBack legge comunque lo stato `selected`; il solo restringimento del testo non sarebbe bastato, perche da selezionato la spunta si prende altri 26dp.
+
+**Problemi:** resta un punto aperto che lo screenshot dell'utente fa sospettare ma che non posso verificare senza device: nel dialog della data non compaiono nemmeno i chip rapidi "Oggi"/"Ieri", che stanno nello stesso slot `content` di `DatePickerDialog` dove stava la riga dell'ora. Se e cosi sono invisibili dalla Fase 10.12 e nessuno se n'era accorto. Il bytecode di material3 1.4.0 mostra che quello slot finisce dentro un `Box(Modifier.weight(1f, false))`, quindi un'ipotesi c'e, ma prima di toccare un dialog condiviso da altre tre schermate serve una conferma visiva. Segnalato all'utente, non corretto alla cieca.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 576 test, 0 falliti, nessun warning. Nessun test nuovo: entrambe le correzioni sono presentazionali (la logica di data e ora non e cambiata, `onTimeSelected` ha lo stesso percorso di prima). versionCode 125 -> 126, versionName 0.9.86 -> 0.9.87.
+
+**Prossimo:** verifica su device delle due correzioni e, con lo stesso giro, conferma se i chip "Oggi"/"Ieri" siano visibili sopra il calendario.
+
+---
+
 ## 2026-07-26 - Inserimento movimenti: tastierino in-app, chip data+ora, form a due zone
 
 **Fatto:** review UI/UX della schermata di inserimento movimenti su richiesta utente, partendo dagli screenshot dei due percorsi (Fase 10.17 in PLANNING.md). Quattro commit. (1) Tastierino importi in-app condiviso (`AmountKeypad`, `AmountKeypadHost` + `AmountTarget`, `AmountInputEditor` puro) e `HeroAmountField` che non e piu un `BasicTextField`: display con caret e migliaia raggruppate (`MoneyInput.grouped`), tastiera hardware via `onKeyEvent` e incolla al long-press. (2) Data e ora in un solo chip, con l'ora modificabile da una riga dentro il dialog della data (nuovo slot `timeRow` opzionale su `SaldoDatePickerDialog`). (3) Form a due zone: tipo, importo e chip fissi, zona scorrevole che apre con le categorie; `ScrollingCategoryGrid` mostra tutte le categorie in un box alto due righe che scorre da solo, al posto delle prime otto con la selezionata infilata dentro. (4) `AmountTextField` (read-only che apre il tastierino al tap) sui campi importo non-hero: saldo iniziale, massimale carta, saldo in onboarding, min/max del filtro registro; la conferma dei movimenti pending passa invece al campo hero col tastierino gia aperto.

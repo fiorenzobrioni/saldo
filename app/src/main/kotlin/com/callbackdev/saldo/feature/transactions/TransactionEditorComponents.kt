@@ -2,7 +2,6 @@ package com.callbackdev.saldo.feature.transactions
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,7 +23,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.outlined.EditNote
-import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -52,12 +50,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
-import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.designsystem.visuals.contentColorOn
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
-import java.time.LocalTime
 
 /** User-facing label for a [TransactionType]. */
 @StringRes
@@ -68,7 +64,15 @@ fun TransactionType.labelRes(): Int = when (this) {
     TransactionType.ADJUSTMENT -> R.string.transaction_type_adjustment
 }
 
-/** Segmented selector between the types available for the current mode. */
+/**
+ * Segmented selector between the types available for the current mode.
+ *
+ * No check glyph and a tighter label style, both for width: three Italian
+ * labels have to fit a third of the screen each, and "Trasferimento" was
+ * running into the border of its segment (worse when selected, where the check
+ * ate another 26dp). The selected segment stays obvious from its filled
+ * container, and TalkBack reads the selection from the segment's own semantics.
+ */
 @Composable
 internal fun TypeSelector(
     selected: TransactionType,
@@ -82,7 +86,15 @@ internal fun TypeSelector(
                 selected = type == selected,
                 onClick = { onTypeChanged(type) },
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                label = { Text(stringResource(type.labelRes())) },
+                icon = {},
+                label = {
+                    Text(
+                        text = stringResource(type.labelRes()),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
             )
         }
     }
@@ -188,47 +200,6 @@ internal fun AddNoteAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
 /** One line of breathing room when empty; a comfortable block once written in. */
 private const val NOTE_MIN_LINES = 2
 private const val NOTE_MAX_LINES = 6
-
-/**
- * The time of day, shown inside the date dialog: the movement's date and time
- * are one decision, so they are corrected in one place. Tapping opens the
- * time picker above the calendar, which keeps the date being edited intact.
- */
-@Composable
-internal fun EditorTimeRow(
-    time: LocalTime,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .fillMaxWidth()
-            // Aligned with the dialog's own horizontal padding.
-            .padding(horizontal = 24.dp, vertical = 8.dp)
-            .clip(MaterialTheme.shapes.small)
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Schedule,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp),
-        )
-        Spacer(Modifier.size(12.dp))
-        Text(
-            text = stringResource(R.string.transaction_editor_time),
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            text = timeLabel(time),
-            style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
-            color = MaterialTheme.colorScheme.primary,
-        )
-    }
-}
 
 /**
  * The form's category grid: every category, four per row, in a box two rows

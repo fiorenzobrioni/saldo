@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.transactions
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -71,6 +74,7 @@ import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
 import java.time.LocalDate
+import java.time.LocalTime
 
 /** Which modal surface of the editor is open. */
 private enum class EditorSheet { NONE, ACCOUNT, TO_ACCOUNT, TAGS, CATEGORY }
@@ -212,6 +216,7 @@ fun TransactionEditorScreen(
                 onAccountChipClick = { activeSheet = EditorSheet.ACCOUNT },
                 onToAccountChipClick = { activeSheet = EditorSheet.TO_ACCOUNT },
                 onDateChipClick = { showDatePicker = true },
+                onTimeChipClick = { showTimePicker = true },
                 onAddTagClick = { activeSheet = EditorSheet.TAGS },
                 onShowAllCategories = { activeSheet = EditorSheet.CATEGORY },
                 // No scroll here: the form pins its top half and scrolls only
@@ -285,10 +290,6 @@ fun TransactionEditorScreen(
             },
             onDismiss = { showDatePicker = false },
             showQuickDates = true,
-            // The time lives here now, one tap deeper than the date it belongs to.
-            timeRow = {
-                EditorTimeRow(time = uiState.time, onClick = { showTimePicker = true })
-            },
         )
     }
 
@@ -343,6 +344,7 @@ private fun EditorForm(
     onAccountChipClick: () -> Unit,
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
+    onTimeChipClick: () -> Unit,
     onAddTagClick: () -> Unit,
     onShowAllCategories: () -> Unit,
     modifier: Modifier = Modifier,
@@ -423,6 +425,7 @@ private fun EditorForm(
             onAccountChipClick = onAccountChipClick,
             onToAccountChipClick = onToAccountChipClick,
             onDateChipClick = onDateChipClick,
+            onTimeChipClick = onTimeChipClick,
             onSwapAccounts = viewModel::onSwapAccounts,
         )
         // The categories open the scrolling zone, so on any normal screen two
@@ -547,12 +550,14 @@ private fun ImpliedRateLabel(uiState: TransactionEditorUiState, modifier: Modifi
     )
 }
 
+@Suppress("LongParameterList")
 @Composable
 private fun ContextChips(
     uiState: TransactionEditorUiState,
     onAccountChipClick: () -> Unit,
     onToAccountChipClick: () -> Unit,
     onDateChipClick: () -> Unit,
+    onTimeChipClick: () -> Unit,
     onSwapAccounts: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -604,14 +609,82 @@ private fun ContextChips(
                 modifier = Modifier.align(Alignment.CenterVertically),
             )
         }
-        // One chip for both: the time is a passenger of the date, editable
-        // from inside the date dialog.
-        EditorChip(
-            icon = Icons.Outlined.CalendarToday,
-            label = chipDayTimeLabel(uiState.date, uiState.time, LocalDate.now()),
-            isError = false,
-            onClick = onDateChipClick,
+        DateTimeChip(
+            date = uiState.date,
+            time = uiState.time,
+            onDateClick = onDateChipClick,
+            onTimeClick = onTimeChipClick,
             modifier = Modifier.align(Alignment.CenterVertically),
+        )
+    }
+}
+
+/**
+ * Date and time in one chip, but two controls: the left half opens the
+ * calendar, the right half the time picker. They share a pill so the form
+ * spends one row on both, and the divider plus the clock glyph say that the
+ * time is its own tap target - buried inside the date dialog, nobody found it.
+ */
+@Composable
+private fun DateTimeChip(
+    date: LocalDate,
+    time: LocalTime,
+    onDateClick: () -> Unit,
+    onTimeClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = modifier,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ChipHalf(
+                icon = Icons.Outlined.CalendarToday,
+                label = chipDayLabel(date, LocalDate.now()),
+                clickLabel = stringResource(R.string.transaction_editor_change_date),
+                onClick = onDateClick,
+            )
+            VerticalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier.height(20.dp),
+            )
+            ChipHalf(
+                icon = Icons.Outlined.Schedule,
+                label = timeLabel(time),
+                clickLabel = stringResource(R.string.transaction_editor_change_time),
+                onClick = onTimeClick,
+            )
+        }
+    }
+}
+
+/** One tappable half of the date/time chip: its glyph, its value, its action. */
+@Composable
+private fun ChipHalf(
+    icon: ImageVector,
+    label: String,
+    clickLabel: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clickable(onClickLabel = clickLabel, onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.size(8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
