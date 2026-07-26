@@ -25,11 +25,8 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
@@ -38,9 +35,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.designsystem.component.HeroAmountField
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.Account
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 
 /** Quick actions for a tapped account. */
@@ -233,7 +233,13 @@ private fun AdjustBalanceDialog(
 ) {
     val currency = dialog.account.currency
     val delta = dialog.delta
-    val focusRequester = remember { FocusRequester() }
+    val amountTarget = AmountTarget(
+        value = dialog.input,
+        fractionDigits = MoneyMapper.fractionDigits(currency),
+        // A balance can be restated downwards: the adjustment carries the sign.
+        allowNegative = true,
+        onValueChange = onInputChanged,
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -250,14 +256,15 @@ private fun AdjustBalanceDialog(
                 )
                 Spacer(Modifier.height(16.dp))
                 HeroAmountField(
-                    input = dialog.input,
+                    target = amountTarget,
                     currencySymbol = currency.symbol,
                     isError = false,
-                    onValueChange = onInputChanged,
+                    // The dialog exists to type a balance: the keypad is always up.
+                    isActive = true,
+                    onActivate = {},
                     showSignToggle = true,
                     label = stringResource(R.string.accounts_adjust_real_balance),
                     compact = true,
-                    focusRequester = focusRequester,
                 )
                 Spacer(Modifier.height(8.dp))
                 when {
@@ -277,6 +284,10 @@ private fun AdjustBalanceDialog(
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
+                Spacer(Modifier.height(8.dp))
+                // Inside the dialog rather than docked: there is no bottom bar
+                // here, and the keypad is the only way in for these digits.
+                AmountKeypadHost(target = amountTarget, compact = true)
             }
         },
         confirmButton = {
@@ -293,8 +304,4 @@ private fun AdjustBalanceDialog(
             }
         },
     )
-
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-    }
 }

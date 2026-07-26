@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.accounts
 
 import com.callbackdev.saldo.core.designsystem.visuals.infoRes
 import com.callbackdev.saldo.core.designsystem.visuals.labelRes
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -14,12 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Exposure
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -28,7 +27,6 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -43,18 +41,22 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
+import com.callbackdev.saldo.core.designsystem.component.AmountTextField
 import com.callbackdev.saldo.core.designsystem.component.AnimatedSection
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
@@ -62,9 +64,9 @@ import com.callbackdev.saldo.core.designsystem.component.InfoBanner
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
-import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.navigation.AccountEditorRoute
 import java.util.Currency
 
@@ -104,6 +106,27 @@ fun AccountEditorScreen(
 
     DiscardChangesDialog(guard)
 
+    // The name comes first on this form, so the keypad waits to be asked for.
+    // One flag is enough for both amounts: the initial balance and the credit
+    // limit never coexist, exactly as their two sections cross-fade.
+    var keypadOpen by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = keypadOpen) { keypadOpen = false }
+    val fractionDigits = MoneyMapper.fractionDigits(uiState.currency)
+    val initialBalanceTarget = AmountTarget(
+        value = uiState.initialBalanceInput,
+        fractionDigits = fractionDigits,
+        // An account can legitimately start in the red (an overdraft).
+        allowNegative = true,
+        onValueChange = viewModel::onInitialBalanceChanged,
+    )
+    val creditLimitTarget = AmountTarget(
+        value = uiState.creditLimitInput,
+        fractionDigits = fractionDigits,
+        allowNegative = false,
+        onValueChange = viewModel::onCreditLimitChanged,
+    )
+    val amountTarget = if (uiState.isCreditCard) creditLimitTarget else initialBalanceTarget
+
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -135,6 +158,10 @@ fun AccountEditorScreen(
         bottomBar = {
             if (!uiState.isLoading) {
                 EditorBottomBar {
+                    AmountKeypadHost(
+                        target = amountTarget.takeIf { keypadOpen },
+                        onHide = { keypadOpen = false },
+                    )
                     EditorSaveButton(
                         text = stringResource(R.string.account_editor_save),
                         onClick = viewModel::save,
@@ -156,7 +183,10 @@ fun AccountEditorScreen(
                 onNameChanged = viewModel::onNameChanged,
                 onTypeChanged = viewModel::onTypeChanged,
                 onCurrencyChanged = viewModel::onCurrencyChanged,
-                onInitialBalanceChanged = viewModel::onInitialBalanceChanged,
+                initialBalanceTarget = initialBalanceTarget,
+                creditLimitTarget = creditLimitTarget,
+                onActivateAmount = { keypadOpen = true },
+                onCloseKeypad = { keypadOpen = false },
                 onColorSelected = viewModel::onColorSelected,
                 onIconSelected = viewModel::onIconSelected,
                 onIncludedInTotalChanged = viewModel::onIncludedInTotalChanged,
@@ -164,7 +194,6 @@ fun AccountEditorScreen(
                 onStatementClosingDayChanged = viewModel::onStatementClosingDayChanged,
                 onPaymentDueDayChanged = viewModel::onPaymentDueDayChanged,
                 onLinkedAccountChanged = viewModel::onLinkedAccountChanged,
-                onCreditLimitChanged = viewModel::onCreditLimitChanged,
                 onStatementAutoPostChanged = viewModel::onStatementAutoPostChanged,
                 modifier = Modifier
                     .fillMaxSize()
@@ -185,7 +214,10 @@ private fun EditorForm(
     onNameChanged: (String) -> Unit,
     onTypeChanged: (AccountType) -> Unit,
     onCurrencyChanged: (Currency) -> Unit,
-    onInitialBalanceChanged: (String) -> Unit,
+    initialBalanceTarget: AmountTarget,
+    creditLimitTarget: AmountTarget,
+    onActivateAmount: () -> Unit,
+    onCloseKeypad: () -> Unit,
     onColorSelected: (Int) -> Unit,
     onIconSelected: (String) -> Unit,
     onIncludedInTotalChanged: (Boolean) -> Unit,
@@ -193,7 +225,6 @@ private fun EditorForm(
     onStatementClosingDayChanged: (Int) -> Unit,
     onPaymentDueDayChanged: (Int) -> Unit,
     onLinkedAccountChanged: (Long?) -> Unit,
-    onCreditLimitChanged: (String) -> Unit,
     onStatementAutoPostChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -203,6 +234,8 @@ private fun EditorForm(
             name = uiState.name,
             showError = uiState.showValidation && !uiState.isNameValid,
             onNameChanged = onNameChanged,
+            // The name field brings the system IME up: the keypad steps aside.
+            modifier = Modifier.onFocusChanged { if (it.isFocused) onCloseKeypad() },
         )
         SectionLabel(stringResource(R.string.account_editor_section_type))
         TypeChips(selected = uiState.type, onTypeChanged = onTypeChanged)
@@ -223,10 +256,13 @@ private fun EditorForm(
         // guidance in the credit card section). The two sections cross-fade
         // when the type changes instead of snapping.
         AnimatedSection(visible = !uiState.isCreditCard) {
-            InitialBalanceField(
-                input = uiState.initialBalanceInput,
-                currency = uiState.currency,
-                onChanged = onInitialBalanceChanged,
+            AmountTextField(
+                target = initialBalanceTarget,
+                label = stringResource(R.string.account_editor_initial_balance),
+                onActivate = onActivateAmount,
+                suffix = uiState.currency.symbol,
+                supportingText = stringResource(R.string.account_editor_initial_balance_hint),
+                showSignToggle = true,
             )
         }
         AnimatedSection(visible = uiState.isCreditCard) {
@@ -236,7 +272,8 @@ private fun EditorForm(
                 onStatementClosingDayChanged = onStatementClosingDayChanged,
                 onPaymentDueDayChanged = onPaymentDueDayChanged,
                 onLinkedAccountChanged = onLinkedAccountChanged,
-                onCreditLimitChanged = onCreditLimitChanged,
+                creditLimitTarget = creditLimitTarget,
+                onActivateCreditLimit = onActivateAmount,
                 onStatementAutoPostChanged = onStatementAutoPostChanged,
             )
         }
@@ -382,40 +419,6 @@ private fun CurrencyField(
 
 private fun currencyLabel(currency: Currency): String =
     "${currency.currencyCode} - ${currency.displayName}"
-
-@Composable
-private fun InitialBalanceField(
-    input: String,
-    currency: Currency,
-    onChanged: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = input,
-        onValueChange = onChanged,
-        label = { Text(stringResource(R.string.account_editor_initial_balance)) },
-        placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
-        suffix = { Text(currency.symbol) },
-        singleLine = true,
-        textStyle = LocalTextStyle.current.tabularNumbers(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        supportingText = {
-            Text(stringResource(R.string.account_editor_initial_balance_hint))
-        },
-        trailingIcon = {
-            IconButton(onClick = { onChanged(toggleSign(input)) }) {
-                Icon(
-                    imageVector = Icons.Outlined.Exposure,
-                    contentDescription = stringResource(R.string.action_toggle_sign),
-                )
-            }
-        },
-        modifier = modifier.fillMaxWidth(),
-    )
-}
-
-private fun toggleSign(input: String): String =
-    if (input.startsWith("-")) input.removePrefix("-") else "-$input"
 
 /** A full-width toggle row (title + hint + trailing switch), the whole row tappable. */
 @Composable

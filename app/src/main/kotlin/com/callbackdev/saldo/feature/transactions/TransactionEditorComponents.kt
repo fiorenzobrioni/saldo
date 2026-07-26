@@ -10,8 +10,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,12 +34,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -57,7 +64,15 @@ fun TransactionType.labelRes(): Int = when (this) {
     TransactionType.ADJUSTMENT -> R.string.transaction_type_adjustment
 }
 
-/** Segmented selector between the types available for the current mode. */
+/**
+ * Segmented selector between the types available for the current mode.
+ *
+ * No check glyph and a tighter label style, both for width: three Italian
+ * labels have to fit a third of the screen each, and "Trasferimento" was
+ * running into the border of its segment (worse when selected, where the check
+ * ate another 26dp). The selected segment stays obvious from its filled
+ * container, and TalkBack reads the selection from the segment's own semantics.
+ */
 @Composable
 internal fun TypeSelector(
     selected: TransactionType,
@@ -71,7 +86,15 @@ internal fun TypeSelector(
                 selected = type == selected,
                 onClick = { onTypeChanged(type) },
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
-                label = { Text(stringResource(type.labelRes())) },
+                icon = {},
+                label = {
+                    Text(
+                        text = stringResource(type.labelRes()),
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
             )
         }
     }
@@ -178,6 +201,59 @@ internal fun AddNoteAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
 private const val NOTE_MIN_LINES = 2
 private const val NOTE_MAX_LINES = 6
 
+/**
+ * The form's category grid: every category, four per row, in a box two rows
+ * tall that scrolls on its own. Two rows read at a glance right under the
+ * chips, which is the point (picking a category is half of recording an
+ * expense), and the rest is one flick away instead of behind a sheet. The
+ * height follows the font scale, so a larger label grows the box instead of
+ * clipping inside it.
+ */
+@Composable
+internal fun ScrollingCategoryGrid(
+    categories: List<Category>,
+    selectedId: Long?,
+    onSelect: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val labelHeight = with(LocalDensity.current) {
+        MaterialTheme.typography.labelMedium.lineHeight.toDp()
+    }
+    val cellHeight = CategoryAvatarSize + CategoryCellChrome + labelHeight
+    val state = rememberLazyGridState()
+    // Opening an old movement must not hide the category it already carries.
+    LaunchedEffect(categories, selectedId) {
+        val index = categories.indexOfFirst { it.id == selectedId }
+        if (index >= CATEGORY_COLUMNS * VISIBLE_CATEGORY_ROWS) state.scrollToItem(index)
+    }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(CATEGORY_COLUMNS),
+        state = state,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(CategoryRowSpacing),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(cellHeight * VISIBLE_CATEGORY_ROWS + CategoryRowSpacing),
+    ) {
+        items(categories, key = { it.id }) { category ->
+            CategoryCell(
+                category = category,
+                isSelected = category.id == selectedId,
+                onSelect = { onSelect(category.id) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+private const val CATEGORY_COLUMNS = 4
+private const val VISIBLE_CATEGORY_ROWS = 2
+private val CategoryAvatarSize = 46.dp
+private val CategoryRowSpacing = 12.dp
+
+/** Cell padding plus the gap between the avatar and its label. */
+private val CategoryCellChrome = 16.dp
+
 /** Grid of selectable categories (4 per row), colored per category. */
 @Composable
 internal fun CategoryGrid(
@@ -229,7 +305,7 @@ private fun CategoryCell(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(46.dp)
+                .size(CategoryAvatarSize)
                 .clip(AvatarShape)
                 .background(if (isSelected) color else color.copy(alpha = 0.16f)),
         ) {

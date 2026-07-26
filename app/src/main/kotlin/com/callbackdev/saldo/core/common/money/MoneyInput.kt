@@ -70,6 +70,35 @@ object MoneyInput {
     }
 
     /**
+     * Groups the integer part of a partial amount with [groupingSeparator], for
+     * display only: `1234,5` reads `1.234,5` while the caller keeps the raw
+     * text. Whatever the user typed after the decimal separator is left
+     * untouched, trailing separator included, so the string never changes shape
+     * under the caret while typing.
+     */
+    fun grouped(text: String, groupingSeparator: Char): String {
+        val negative = text.startsWith("-")
+        val body = if (negative) text.drop(1) else text
+        val separatorIndex = body.indexOfFirst { it == '.' || it == ',' }
+        val integerPart = if (separatorIndex >= 0) body.substring(0, separatorIndex) else body
+        val decimalPart = if (separatorIndex >= 0) body.substring(separatorIndex) else ""
+        val builder = StringBuilder()
+        integerPart.forEachIndexed { index, char ->
+            if (index > 0 && (integerPart.length - index) % GROUP_SIZE == 0) {
+                builder.append(groupingSeparator)
+            }
+            builder.append(char)
+        }
+        return buildString {
+            if (negative) append('-')
+            append(builder)
+            append(decimalPart)
+        }
+    }
+
+    private const val GROUP_SIZE = 3
+
+    /**
      * Parses a sanitized amount into a [BigDecimal], or null when [text] does
      * not (yet) form a complete number (empty, `-`, `.` or `,`).
      */

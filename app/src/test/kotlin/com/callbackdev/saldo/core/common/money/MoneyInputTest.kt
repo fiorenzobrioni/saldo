@@ -49,6 +49,28 @@ class MoneyInputTest {
     }
 
     @Test
+    fun `grouped splits the integer part in threes`() {
+        assertEquals("1.234", MoneyInput.grouped("1234", groupingSeparator = '.'))
+        assertEquals("12.345.678", MoneyInput.grouped("12345678", groupingSeparator = '.'))
+        assertEquals("999", MoneyInput.grouped("999", groupingSeparator = '.'))
+        assertEquals("", MoneyInput.grouped("", groupingSeparator = '.'))
+    }
+
+    @Test
+    fun `grouped leaves the typed decimals alone`() {
+        assertEquals("1.234,5", MoneyInput.grouped("1234,5", groupingSeparator = '.'))
+        // A trailing separator must survive: the user is still typing.
+        assertEquals("1.234,", MoneyInput.grouped("1234,", groupingSeparator = '.'))
+        assertEquals("0,50", MoneyInput.grouped("0,50", groupingSeparator = '.'))
+    }
+
+    @Test
+    fun `grouped keeps the sign in front`() {
+        assertEquals("-1.234,56", MoneyInput.grouped("-1234,56", groupingSeparator = '.'))
+        assertEquals("-", MoneyInput.grouped("-", groupingSeparator = '.'))
+    }
+
+    @Test
     fun `parse understands both decimal separators`() {
         assertEquals(BigDecimal("12.34"), MoneyInput.parse("12,34"))
         assertEquals(BigDecimal("12.34"), MoneyInput.parse("12.34"))

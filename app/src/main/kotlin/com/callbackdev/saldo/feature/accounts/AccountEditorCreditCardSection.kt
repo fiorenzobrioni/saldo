@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Remove
@@ -20,7 +19,6 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
@@ -36,10 +34,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
+import com.callbackdev.saldo.core.designsystem.component.AmountTextField
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.Account
 
@@ -59,7 +58,8 @@ internal fun CreditCardSection(
     onStatementClosingDayChanged: (Int) -> Unit,
     onPaymentDueDayChanged: (Int) -> Unit,
     onLinkedAccountChanged: (Long?) -> Unit,
-    onCreditLimitChanged: (String) -> Unit,
+    creditLimitTarget: AmountTarget,
+    onActivateCreditLimit: () -> Unit,
     onStatementAutoPostChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -87,10 +87,12 @@ internal fun CreditCardSection(
             onSelect = onLinkedAccountChanged,
         )
         Spacer(Modifier.height(16.dp))
-        CreditLimitField(
-            input = uiState.creditLimitInput,
-            currencySymbol = uiState.currency.symbol,
-            onChanged = onCreditLimitChanged,
+        AmountTextField(
+            target = creditLimitTarget,
+            label = stringResource(R.string.account_cc_limit),
+            onActivate = onActivateCreditLimit,
+            suffix = uiState.currency.symbol,
+            supportingText = stringResource(R.string.account_cc_limit_hint),
         )
         Spacer(Modifier.height(16.dp))
         StatementModeSelector(
@@ -203,27 +205,6 @@ private fun LinkedAccountField(
             }
         }
     }
-}
-
-@Composable
-private fun CreditLimitField(
-    input: String,
-    currencySymbol: String,
-    onChanged: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedTextField(
-        value = input,
-        onValueChange = onChanged,
-        label = { Text(stringResource(R.string.account_cc_limit)) },
-        placeholder = { Text(stringResource(R.string.editor_amount_placeholder)) },
-        suffix = { Text(currencySymbol) },
-        singleLine = true,
-        textStyle = LocalTextStyle.current.tabularNumbers(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-        supportingText = { Text(stringResource(R.string.account_cc_limit_hint)) },
-        modifier = modifier.fillMaxWidth(),
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

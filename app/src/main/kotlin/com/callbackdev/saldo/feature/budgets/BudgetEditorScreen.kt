@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.budgets
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -29,7 +30,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.designsystem.component.DiscardChangesDialog
 import com.callbackdev.saldo.core.designsystem.component.EditorBottomBar
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
@@ -45,6 +51,7 @@ import com.callbackdev.saldo.core.designsystem.component.HeroAmountField
 import com.callbackdev.saldo.core.designsystem.component.InfoBanner
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.navigation.BudgetEditorRoute
 
 /**
@@ -83,6 +90,19 @@ fun BudgetEditorScreen(
     }
 
     DiscardChangesDialog(guard)
+
+    var keypadOpen by rememberSaveable { mutableStateOf(false) }
+    // The limit is what the user came to type: the keypad is up from the start.
+    LaunchedEffect(uiState.isLoading) {
+        if (!uiState.isLoading && uiState.isNew) keypadOpen = true
+    }
+    BackHandler(enabled = keypadOpen) { keypadOpen = false }
+    val amountTarget = AmountTarget(
+        value = uiState.amountInput,
+        fractionDigits = MoneyMapper.fractionDigits(uiState.currency),
+        allowNegative = false,
+        onValueChange = viewModel::onAmountChanged,
+    )
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
@@ -127,6 +147,10 @@ fun BudgetEditorScreen(
         bottomBar = {
             if (!uiState.isLoading) {
                 EditorBottomBar {
+                    AmountKeypadHost(
+                        target = amountTarget.takeIf { keypadOpen },
+                        onHide = { keypadOpen = false },
+                    )
                     EditorSaveButton(
                         text = stringResource(R.string.budgets_editor_save),
                         onClick = viewModel::save,
@@ -145,7 +169,9 @@ fun BudgetEditorScreen(
             EditorForm(
                 uiState = uiState,
                 onScopeSelected = viewModel::onScopeSelected,
-                onAmountChanged = viewModel::onAmountChanged,
+                amountTarget = amountTarget,
+                isKeypadOpen = keypadOpen,
+                onActivateAmount = { keypadOpen = true },
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
@@ -160,7 +186,9 @@ fun BudgetEditorScreen(
 private fun EditorForm(
     uiState: BudgetEditorUiState,
     onScopeSelected: (BudgetScope) -> Unit,
-    onAmountChanged: (String) -> Unit,
+    amountTarget: AmountTarget,
+    isKeypadOpen: Boolean,
+    onActivateAmount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -193,7 +221,9 @@ private fun EditorForm(
         Spacer(Modifier.height(24.dp))
         AmountField(
             uiState = uiState,
-            onAmountChanged = onAmountChanged,
+            amountTarget = amountTarget,
+            isKeypadOpen = isKeypadOpen,
+            onActivateAmount = onActivateAmount,
         )
         Spacer(Modifier.height(24.dp))
         // How the budget measures spending: the rules are not visible from
@@ -239,7 +269,9 @@ private fun ScopeChips(
 @Composable
 private fun AmountField(
     uiState: BudgetEditorUiState,
-    onAmountChanged: (String) -> Unit,
+    amountTarget: AmountTarget,
+    isKeypadOpen: Boolean,
+    onActivateAmount: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val showError = uiState.showValidation && !uiState.isAmountValid
@@ -248,10 +280,11 @@ private fun AmountField(
         modifier = modifier.fillMaxWidth(),
     ) {
         HeroAmountField(
-            input = uiState.amountInput,
+            target = amountTarget,
             currencySymbol = uiState.currency.symbol,
             isError = showError,
-            onValueChange = onAmountChanged,
+            isActive = isKeypadOpen,
+            onActivate = onActivateAmount,
             label = stringResource(R.string.budgets_editor_amount),
             errorText = stringResource(R.string.budgets_editor_amount_error),
         )

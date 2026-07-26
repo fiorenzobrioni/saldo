@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -23,7 +22,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,10 +31,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyInput
+import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
+import com.callbackdev.saldo.core.designsystem.component.AmountTextField
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
@@ -63,6 +63,19 @@ internal fun TransactionFilterSheet(
     var draft by remember { mutableStateOf(filters) }
     var minText by remember { mutableStateOf(filters.amountMin?.toPlainString().orEmpty()) }
     var maxText by remember { mutableStateOf(filters.amountMax?.toPlainString().orEmpty()) }
+    var activeBound by remember { mutableStateOf<AmountBound?>(null) }
+    val minTarget = AmountTarget(
+        value = minText,
+        fractionDigits = AMOUNT_FRACTION_DIGITS,
+        allowNegative = false,
+        onValueChange = { minText = it },
+    )
+    val maxTarget = AmountTarget(
+        value = maxText,
+        fractionDigits = AMOUNT_FRACTION_DIGITS,
+        allowNegative = false,
+        onValueChange = { maxText = it },
+    )
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -162,27 +175,29 @@ internal fun TransactionFilterSheet(
             )
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = minText,
-                    onValueChange = {
-                        minText = MoneyInput.sanitize(it, AMOUNT_FRACTION_DIGITS, allowNegative = false)
-                    },
-                    label = { Text(stringResource(R.string.filter_amount_min)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
+                AmountTextField(
+                    target = minTarget,
+                    label = stringResource(R.string.filter_amount_min),
+                    onActivate = { activeBound = AmountBound.MIN },
                     modifier = Modifier.weight(1f),
                 )
-                OutlinedTextField(
-                    value = maxText,
-                    onValueChange = {
-                        maxText = MoneyInput.sanitize(it, AMOUNT_FRACTION_DIGITS, allowNegative = false)
-                    },
-                    label = { Text(stringResource(R.string.filter_amount_max)) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true,
+                AmountTextField(
+                    target = maxTarget,
+                    label = stringResource(R.string.filter_amount_max),
+                    onActivate = { activeBound = AmountBound.MAX },
                     modifier = Modifier.weight(1f),
                 )
             }
+            // One keypad for both bounds: it follows whichever field was tapped.
+            AmountKeypadHost(
+                target = when (activeBound) {
+                    AmountBound.MIN -> minTarget
+                    AmountBound.MAX -> maxTarget
+                    null -> null
+                },
+                onHide = { activeBound = null },
+                compact = true,
+            )
 
             Spacer(Modifier.height(24.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -222,6 +237,9 @@ internal fun TransactionFilterSheet(
         }
     }
 }
+
+/** Which amount bound the in-app keypad is typing into, if any. */
+private enum class AmountBound { MIN, MAX }
 
 /** Digits accepted by the amount bounds; magnitudes span currencies, 2 is plenty. */
 private const val AMOUNT_FRACTION_DIGITS = 2

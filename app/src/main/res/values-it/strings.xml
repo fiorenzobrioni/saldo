@@ -16,6 +16,7 @@
     <string name="action_cancel">Annulla</string>
     <string name="action_undo">Annulla</string>
     <string name="action_toggle_sign">Cambia segno</string>
+    <string name="action_paste">Incolla</string>
 
     <!-- Dashboard (Fase 5) -->
     <string name="dashboard_balance_total">Saldo totale</string>
@@ -385,6 +386,10 @@
     <string name="transaction_editor_received_amount">In entrata (%1$s)</string>
     <string name="transaction_editor_swap_accounts">Inverti i conti</string>
     <string name="transaction_editor_time">Ora</string>
+    <string name="transaction_editor_leg_from">Da</string>
+    <string name="transaction_editor_leg_to">A</string>
+    <string name="transaction_editor_change_date">Cambia la data</string>
+    <string name="transaction_editor_change_time">Cambia l\'ora</string>
     <string name="transaction_editor_category">Categoria</string>
     <string name="transaction_editor_category_error">Scegli una categoria</string>
     <string name="transaction_editor_description">Descrizione</string>
@@ -401,6 +406,9 @@
     <string name="transaction_editor_recurring_banner_generic">Generato da un movimento ricorrente. Le modifiche valgono solo per questo movimento; la regola resta invariata.</string>
     <string name="transaction_editor_delete">Elimina</string>
     <string name="keypad_backspace">Cancella l\'ultima cifra</string>
+    <string name="keypad_clear">Azzera l\'importo</string>
+    <string name="keypad_decimal_separator">Separatore decimale</string>
+    <string name="keypad_hide">Nascondi il tastierino</string>
 
     <!-- Categorie (Fase 4) -->
     <string name="settings_categories">Categorie</string>

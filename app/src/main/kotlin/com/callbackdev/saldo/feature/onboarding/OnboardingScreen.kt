@@ -34,7 +34,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -49,7 +52,10 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
+import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
+import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.domain.backup.BackupSummary
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.usecase.ImportBackupUseCase
 import java.time.Instant
 import java.time.ZoneId
@@ -95,6 +101,22 @@ fun OnboardingScreen(
         viewModel.back()
     }
 
+    // The account name comes first, so the keypad waits to be asked for; it
+    // never survives leaving the account page.
+    var keypadOpen by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(uiState.page) {
+        if (uiState.page != OnboardingPage.ACCOUNT) keypadOpen = false
+    }
+    // Registered after the page-back handler, so it is the one that wins.
+    BackHandler(enabled = keypadOpen) { keypadOpen = false }
+    val balanceTarget = AmountTarget(
+        value = uiState.balanceInput,
+        fractionDigits = MoneyMapper.fractionDigits(uiState.selectedCurrency),
+        // The first account can start in the red, like any other.
+        allowNegative = true,
+        onValueChange = viewModel::onBalanceChanged,
+    )
+
     val resources = LocalResources.current
     LaunchedEffect(viewModel, resources) {
         viewModel.events.collect { event ->
@@ -130,11 +152,18 @@ fun OnboardingScreen(
                     OnboardingPage.ACCOUNT -> AccountPage(
                         uiState = uiState,
                         onNameChanged = viewModel::onAccountNameChanged,
-                        onBalanceChanged = viewModel::onBalanceChanged,
+                        balanceTarget = balanceTarget,
+                        onActivateBalance = { keypadOpen = true },
+                        onCloseKeypad = { keypadOpen = false },
                     )
                     OnboardingPage.NOTIFICATIONS -> NotificationsPage()
                 }
             }
+            AmountKeypadHost(
+                target = balanceTarget.takeIf { keypadOpen },
+                onHide = { keypadOpen = false },
+                modifier = Modifier.padding(horizontal = 12.dp),
+            )
             PageIndicator(current = uiState.page)
             OnboardingActions(
                 uiState = uiState,
