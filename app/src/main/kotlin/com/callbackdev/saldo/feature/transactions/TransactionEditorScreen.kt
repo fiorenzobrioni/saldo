@@ -67,7 +67,6 @@ import com.callbackdev.saldo.core.designsystem.component.SaldoDatePickerDialog
 import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
-import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
@@ -215,10 +214,11 @@ fun TransactionEditorScreen(
                 onDateChipClick = { showDatePicker = true },
                 onAddTagClick = { activeSheet = EditorSheet.TAGS },
                 onShowAllCategories = { activeSheet = EditorSheet.CATEGORY },
+                // No scroll here: the form pins its top half and scrolls only
+                // the optional fields below the categories.
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp),
             )
         }
@@ -347,16 +347,20 @@ private fun EditorForm(
     onShowAllCategories: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Two zones: what the typical expense needs (amount, account, date and the
+    // categories) is pinned above the keypad, and everything optional scrolls
+    // in whatever room is left. Nothing that decides a movement is ever below
+    // the fold.
     Column(modifier = modifier) {
         if (uiState.isRecurring) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
             InfoBanner(
                 text = uiState.recurringRuleName?.let {
                     stringResource(R.string.transaction_editor_recurring_banner, it)
                 } ?: stringResource(R.string.transaction_editor_recurring_banner_generic),
             )
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         val showTypeSelector = !uiState.isTypeLocked && !(uiState.isNew && uiState.isTypePreset)
         if (showTypeSelector) {
             TypeSelector(
@@ -372,7 +376,6 @@ private fun EditorForm(
                 },
                 onTypeChanged = viewModel::onTypeChanged,
             )
-            Spacer(Modifier.height(16.dp))
         }
         Spacer(Modifier.height(8.dp))
         HeroAmountField(
@@ -414,7 +417,7 @@ private fun EditorForm(
                 ImpliedRateLabel(uiState)
             }
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
         ContextChips(
             uiState = uiState,
             onAccountChipClick = onAccountChipClick,
@@ -422,48 +425,63 @@ private fun EditorForm(
             onDateChipClick = onDateChipClick,
             onSwapAccounts = viewModel::onSwapAccounts,
         )
-        AnimatedSection(visible = uiState.hasCategorySection) {
-            CategorySection(
-                uiState = uiState,
-                onSelect = viewModel::onCategorySelected,
-                onShowAll = onShowAllCategories,
-            )
-        }
-        Spacer(Modifier.height(20.dp))
-        // Any text field taking focus brings up the system IME, which has to
-        // replace the keypad rather than stack with it.
-        InlineDescriptionField(
-            value = uiState.description,
-            onValueChange = viewModel::onDescriptionChanged,
-            modifier = Modifier.onFocusChanged { if (it.isFocused) onCloseKeypad() },
-        )
-        NoteSection(
-            note = uiState.note,
-            onNoteChange = viewModel::onNoteChanged,
-            onNoteFocused = onCloseKeypad,
-        )
-        Spacer(Modifier.height(12.dp))
-        TagsRow(uiState = uiState, onToggle = viewModel::onTagToggled, onAddClick = onAddTagClick)
-        AnimatedSection(visible = uiState.hasCategorySection) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Spacer(Modifier.height(8.dp))
-                AnimatedSection(visible = uiState.type == TransactionType.INCOME) {
-                    EditorSwitchRow(
-                        title = stringResource(R.string.transaction_editor_refund),
-                        subtitle = stringResource(R.string.transaction_editor_refund_hint),
-                        checked = uiState.isRefund,
-                        onCheckedChange = viewModel::onRefundChanged,
-                    )
-                }
-                EditorSwitchRow(
-                    title = stringResource(R.string.transaction_editor_exclude_stats),
-                    subtitle = stringResource(R.string.transaction_editor_exclude_stats_hint),
-                    checked = uiState.isExcludedFromStats,
-                    onCheckedChange = viewModel::onExcludedFromStatsChanged,
+        // The categories open the scrolling zone, so on any normal screen two
+        // rows sit right under the chips with nothing to scroll first. On a
+        // short one (or a large font scale) the zone scrolls instead of
+        // clipping: the grid is the flexible part of the form, never a
+        // cropped one.
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            AnimatedSection(visible = uiState.hasCategorySection) {
+                CategorySection(
+                    uiState = uiState,
+                    onSelect = viewModel::onCategorySelected,
+                    onShowAll = onShowAllCategories,
                 )
             }
+            Spacer(Modifier.height(12.dp))
+            // Any text field taking focus brings up the system IME, which has to
+            // replace the keypad rather than stack with it.
+            InlineDescriptionField(
+                value = uiState.description,
+                onValueChange = viewModel::onDescriptionChanged,
+                modifier = Modifier.onFocusChanged { if (it.isFocused) onCloseKeypad() },
+            )
+            NoteSection(
+                note = uiState.note,
+                onNoteChange = viewModel::onNoteChanged,
+                onNoteFocused = onCloseKeypad,
+            )
+            Spacer(Modifier.height(12.dp))
+            TagsRow(
+                uiState = uiState,
+                onToggle = viewModel::onTagToggled,
+                onAddClick = onAddTagClick,
+            )
+            AnimatedSection(visible = uiState.hasCategorySection) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(Modifier.height(8.dp))
+                    AnimatedSection(visible = uiState.type == TransactionType.INCOME) {
+                        EditorSwitchRow(
+                            title = stringResource(R.string.transaction_editor_refund),
+                            subtitle = stringResource(R.string.transaction_editor_refund_hint),
+                            checked = uiState.isRefund,
+                            onCheckedChange = viewModel::onRefundChanged,
+                        )
+                    }
+                    EditorSwitchRow(
+                        title = stringResource(R.string.transaction_editor_exclude_stats),
+                        subtitle = stringResource(R.string.transaction_editor_exclude_stats_hint),
+                        checked = uiState.isExcludedFromStats,
+                        onCheckedChange = viewModel::onExcludedFromStatsChanged,
+                    )
+                }
+            }
+            Spacer(Modifier.height(24.dp))
         }
-        Spacer(Modifier.height(24.dp))
     }
 }
 
@@ -659,14 +677,11 @@ private fun CategorySection(
     modifier: Modifier = Modifier,
 ) {
     val hasError = uiState.showValidation && !uiState.isCategoryValid
-    val visible = remember(uiState.categories, uiState.categoryId) {
-        visibleCategories(uiState.categories, uiState.categoryId)
-    }
     Column(modifier = modifier) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 20.dp),
+                .padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -679,7 +694,9 @@ private fun CategorySection(
                 },
                 modifier = Modifier.weight(1f),
             )
-            if (uiState.categories.size > CATEGORY_GRID_CAP) {
+            // The grid holds them all now; "All" stays as the comfortable
+            // full-screen way in when two rows are not the whole story.
+            if (uiState.categories.size > VISIBLE_CATEGORIES) {
                 TextButton(
                     onClick = onShowAll,
                     contentPadding = PaddingValues(horizontal = 8.dp),
@@ -695,27 +712,12 @@ private fun CategorySection(
                 color = MaterialTheme.colorScheme.error,
             )
         }
-        Spacer(Modifier.height(12.dp))
-        CategoryGrid(
-            categories = visible,
+        Spacer(Modifier.height(8.dp))
+        ScrollingCategoryGrid(
+            categories = uiState.categories,
             selectedId = uiState.categoryId,
             onSelect = onSelect,
         )
-    }
-}
-
-/**
- * The categories shown inline: the first [CATEGORY_GRID_CAP] by order, always
- * keeping the selected one visible; "All" opens the full list in a sheet.
- */
-private fun visibleCategories(categories: List<Category>, selectedId: Long?): List<Category> {
-    if (categories.size <= CATEGORY_GRID_CAP) return categories
-    val head = categories.take(CATEGORY_GRID_CAP)
-    val selected = categories.firstOrNull { it.id == selectedId }
-    return if (selected == null || head.any { it.id == selected.id }) {
-        head
-    } else {
-        head.dropLast(1) + selected
     }
 }
 
@@ -759,4 +761,5 @@ private fun TagsRow(
     }
 }
 
-private const val CATEGORY_GRID_CAP = 8
+/** Categories the form's grid shows without scrolling: four per row, two rows. */
+private const val VISIBLE_CATEGORIES = 8
