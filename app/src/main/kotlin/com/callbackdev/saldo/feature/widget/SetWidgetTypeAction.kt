@@ -28,6 +28,9 @@ class SetWidgetTypeAction : ActionCallback {
     }
 
     companion object {
-        val TypeKey = ActionParameters.Key<String>("quick_add_type")
+        // Deliberately not the same name as QuickAddWidgetPrefs.Type: these are
+        // different namespaces (intent extras vs widget state) and sharing a
+        // string made them look like one key read two ways.
+        val TypeKey = ActionParameters.Key<String>("quick_add_requested_type")
     }
 }

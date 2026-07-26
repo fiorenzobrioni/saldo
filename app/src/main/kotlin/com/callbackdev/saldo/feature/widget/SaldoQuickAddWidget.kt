@@ -142,8 +142,10 @@ private data class WidgetLayout(
 private fun layoutFor(size: DpSize): WidgetLayout = when {
     size.width >= SaldoQuickAddWidget.Medium.width && size.height >= SaldoQuickAddWidget.Large.height ->
         WidgetLayout(columns = 4, rows = 2, showHeader = true, showLabels = true, tileSize = 40)
+    // One row only, and the header now costs 36dp: the tile gives back the 4dp
+    // rather than letting the label be clipped.
     size.width >= SaldoQuickAddWidget.Medium.width ->
-        WidgetLayout(columns = 4, rows = 1, showHeader = true, showLabels = true, tileSize = 40)
+        WidgetLayout(columns = 4, rows = 1, showHeader = true, showLabels = true, tileSize = 36)
     // A 2x2 is about 110dp square: a header plus labels would leave the tiles
     // unusable, so this size shows four icons and takes its type from the
     // widget's own configuration instead of a selector.
@@ -225,26 +227,42 @@ private fun Header(data: QuickAddWidgetData) {
     }
 }
 
+/**
+ * One segment of the type selector.
+ *
+ * The height is fixed and the whole pill is the tap target, not the text box:
+ * padding around a 12sp label came out around 20dp tall against the 48dp
+ * minimum, so the selector was genuinely hard to hit - and "Spesa", being the
+ * shorter word, was the harder of the two, which made the failure look like it
+ * only affected one direction. The horizontal padding is generous for the same
+ * reason: it is the only thing giving the shorter label a usable width.
+ */
 @Composable
 private fun TypePill(label: String, type: TransactionType, selected: Boolean) {
-    Text(
-        text = label,
+    Box(
         modifier = GlanceModifier
+            .height(PillHeight)
             .background(if (selected) GlanceTheme.colors.primary else GlanceTheme.colors.surfaceVariant)
             .cornerRadius(PillCornerRadius)
             .clickable(
                 actionRunCallback<SetWidgetTypeAction>(
                     actionParametersOf(SetWidgetTypeAction.TypeKey to type.name),
                 ),
-            )
-            .padding(horizontal = PillPaddingHorizontal, vertical = PillPaddingVertical),
-        style = TextStyle(
-            color = if (selected) GlanceTheme.colors.onPrimary else GlanceTheme.colors.onSurfaceVariant,
-            fontSize = LabelFontSize,
-            fontWeight = FontWeight.Medium,
-        ),
-        maxLines = 1,
-    )
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            modifier = GlanceModifier.padding(horizontal = PillPaddingHorizontal),
+            style = TextStyle(
+                color = if (selected) GlanceTheme.colors.onPrimary else GlanceTheme.colors.onSurfaceVariant,
+                fontSize = LabelFontSize,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+            ),
+            maxLines = 1,
+        )
+    }
 }
 
 @Composable
@@ -377,14 +395,24 @@ private fun Tile(
 private fun Context.pxOf(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
 
 private val WidgetCornerRadius = 24.dp
-private val WidgetPadding = 12.dp
-private val HeaderGap = 10.dp
+
+/**
+ * The vertical budget is tight and deliberate. At the medium bucket (250x120dp)
+ * the content box is 100dp: a 36dp header plus its gap leaves 56dp, and a 36dp
+ * tile with its label needs 54. The taller tap target for the type selector was
+ * paid for here, by trimming the padding and the header gap rather than by
+ * squeezing the tiles into something equally hard to hit.
+ */
+private val WidgetPadding = 10.dp
+private val HeaderGap = 8.dp
 private val RowGap = 8.dp
 private val LabelGap = 4.dp
 private val PillGap = 6.dp
-private val PillCornerRadius = 14.dp
-private val PillPaddingHorizontal = 10.dp
-private val PillPaddingVertical = 4.dp
+
+/** Not the 48dp of a full touch target, but close enough on a surface this dense. */
+private val PillHeight = 36.dp
+private val PillCornerRadius = 18.dp
+private val PillPaddingHorizontal = 14.dp
 private val LabelFontSize = 12.sp
 private val TileLabelFontSize = 11.sp
 

@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-26 - Il selettore del widget non era rotto, era piccolo
+
+**Fatto:** terzo giro sul widget dopo la prova su device. L'utente riferisce che ora passa a Entrata ma non torna a Spesa, e poco dopo che fa fatica anche nell'altro verso. Corretto il bersaglio del selettore di tipo: la pillola diventa un `Box` alto 36dp col testo centrato e tutta l'area cliccabile, invece di un `Text` con padding alto circa 20dp.
+
+**Decisioni:** l'asimmetria della segnalazione ("a Entrata si, a Spesa no") suggeriva un bug di stato e la prima ipotesi era una collisione di `PendingIntent`: due `actionRunCallback` sulla stessa classe, nella stessa composizione, che differiscono solo per i parametri, e gli extra non entrano in `filterEquals`. Verificata nel bytecode prima di scrivere qualsiasi cosa, e **scartata**: `ActionTrampolineKt.createUniqueUri` costruisce per ogni azione un URI `glance-action` con `appWidgetId`, `viewId` e `viewSize`, quindi due controlli distinti hanno intent distinti per costruzione. Con quella strada chiusa la spiegazione residua era la piu ovvia: 20dp di altezza contro i 48dp minimi di un target Android, e "Spesa" e la parola piu corta quindi anche la pillola piu stretta - da cui l'illusione che il difetto avesse una direzione. La seconda segnalazione dell'utente, arrivata mentre indagavo ("faccio fatica anche a passare a Entrata"), ha confermato che il verso non c'entrava. L'altezza si paga in un budget verticale che era gia stretto, e la si e pagata dove costava meno: padding del widget 12 -> 10dp, gap dell'intestazione 10 -> 8dp e, solo nel bucket 4x2 dove c'e una riga sola sotto un'intestazione da 36dp, tile 40 -> 36dp. Non toccando invece le tile del 4x3 e del 2x2, che restano il bersaglio principale del widget: pagare un target rendendone un altro difficile sarebbe stato uno scambio alla pari.
+
+**Problemi:** nessuno. Rinominata anche la chiave dei parametri dell'azione (`quick_add_type` -> `quick_add_requested_type`): coincideva con quella dello stato del widget e, pur essendo namespace diversi, faceva sembrare una sola chiave letta in due modi - esattamente il tipo di somiglianza che mi aveva portato fuori strada sull'ipotesi PendingIntent.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 626 test, 0 falliti. Nessun test nuovo: la correzione e di layout, e la logica dell'azione non e cambiata. versionCode 129 -> 130, versionName 0.9.90 -> 0.9.91.
+
+**Prossimo:** riprova su device del selettore nei due versi e a piu riprese, e controllo che le tile non siano state tagliate nel bucket 4x2 (widget largo ma basso, due celle di altezza).
+
+---
+
 ## 2026-07-26 - Il widget non ascoltava: la sessione Glance compone una volta sola
 
 **Fatto:** due segnalazioni dell'utente dopo la prima prova su device del widget. (1) Il selettore Spesa/Entrata non cambiava quasi mai: si vedeva la pillola lampeggiare al tocco ma il widget restava com'era. (2) In Entrata comparivano due tile "Altro", una che apriva l'inserimento rapido della categoria omonima del seed e una che portava nell'app. Correggendo la seconda e saltato fuori un terzo problema che nessuno aveva ancora notato: quella tile apriva **sempre** l'editor di una spesa, `ACTION_ADD_EXPENSE` cablata, anche dal widget Entrata.
