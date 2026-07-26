@@ -79,8 +79,6 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     onUseMostUsedChanged = viewModel::onUseMostUsedChanged,
                     onCategoryToggled = viewModel::onCategoryToggled,
                     onAppearanceSelected = viewModel::onAppearanceSelected,
-                    onBackgroundColorSelected = viewModel::onBackgroundColorSelected,
-                    onBackgroundOpacityChanged = viewModel::onBackgroundOpacityChanged,
                     onConfirm = ::confirm,
                     onCancel = ::finish,
                 )
@@ -93,10 +91,10 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
             runCatching {
                 val glanceId = GlanceAppWidgetManager(this@QuickAddWidgetConfigActivity)
                     .getGlanceIdBy(appWidgetId)
-                QuickAddWidgetPrefs.read(
-                    SaldoQuickAddWidget().getAppWidgetState(this@QuickAddWidgetConfigActivity, glanceId),
-                )
-            }.onSuccess(viewModel::initialize)
+                val stored: androidx.datastore.preferences.core.Preferences =
+                    SaldoQuickAddWidget().getAppWidgetState(this@QuickAddWidgetConfigActivity, glanceId)
+                QuickAddWidgetPrefs.read(stored) to QuickAddWidgetPrefs.isConfigured(stored)
+            }.onSuccess { (stored, isConfigured) -> viewModel.initialize(stored, isConfigured) }
         }
     }
 
@@ -113,8 +111,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                         QuickAddWidgetPrefs.encodePinned(config.pinnedCategoryIds)
                     prefs[QuickAddWidgetPrefs.ShowTodayTotal] = config.showTodayTotal
                     prefs[QuickAddWidgetPrefs.Appearance] = config.appearance.name
-                    prefs[QuickAddWidgetPrefs.BackgroundColor] = config.backgroundColor
-                    prefs[QuickAddWidgetPrefs.BackgroundOpacity] = config.backgroundOpacity
+                    prefs[QuickAddWidgetPrefs.Configured] = true
                 }
                 SaldoQuickAddWidget().update(this@QuickAddWidgetConfigActivity, glanceId)
             }

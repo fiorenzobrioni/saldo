@@ -2,7 +2,6 @@ package com.callbackdev.saldo.feature.widget
 
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -23,47 +22,20 @@ data class QuickAddWidgetConfig(
     val pinnedCategoryIds: List<Long> = emptyList(),
     val showTodayTotal: Boolean = true,
     val appearance: WidgetAppearance = WidgetAppearance.SYSTEM,
-    /** 0xRRGGBB, only meaningful when [appearance] is [WidgetAppearance.CUSTOM]. */
-    val backgroundColor: Int = WidgetPalette.default,
-    /** Background opacity in percent. The tiles keep their own tint regardless. */
-    val backgroundOpacity: Int = FULLY_OPAQUE,
 ) {
     val usesMostUsed: Boolean get() = pinnedCategoryIds.isEmpty()
-
-    companion object {
-        const val FULLY_OPAQUE = 100
-    }
 }
 
 /**
  * How a placed widget picks its background. A widget lives on the wallpaper,
  * not inside the app, so it can legitimately need a different answer from the
  * one Settings gives the app: light app, dark wallpaper.
+ *
+ * An arbitrary background color and an opacity slider were built and then
+ * removed on the user's call: the widget's job is to look like Saldo, and every
+ * extra degree of freedom was one more way for it not to.
  */
-enum class WidgetAppearance { SYSTEM, LIGHT, DARK, CUSTOM }
-
-/**
- * Backgrounds offered for [WidgetAppearance.CUSTOM]. Pure white and pure black
- * lead because they are the two a wallpaper most often calls for, and the rest
- * are neutrals rather than hues: the color on a quick-add widget belongs to the
- * category icons, and a tinted background would fight them.
- */
-object WidgetPalette {
-
-    @Suppress("MagicNumber")
-    val colors: List<Int> = listOf(
-        0xFFFFFF, // pure white
-        0x000000, // pure black
-        0xFAFDFC, // brand light background
-        0x191C1C, // brand dark background
-        0xECEFEE,
-        0x2E3132,
-        0x5A6162,
-        0x8E9899,
-    )
-
-    val default: Int get() = colors.first()
-}
+enum class WidgetAppearance { SYSTEM, LIGHT, DARK }
 
 object QuickAddWidgetPrefs {
 
@@ -81,8 +53,14 @@ object QuickAddWidgetPrefs {
     val Revision = longPreferencesKey("quick_add_revision")
 
     val Appearance = stringPreferencesKey("quick_add_appearance")
-    val BackgroundColor = intPreferencesKey("quick_add_background_color")
-    val BackgroundOpacity = intPreferencesKey("quick_add_background_opacity")
+
+    /**
+     * Written once the configuration screen is confirmed, so that screen knows
+     * whether it is placing a widget or editing one already on the home screen.
+     * Android gives no flag of its own: the same activity and the same intent
+     * serve both, and only the stored state can tell them apart.
+     */
+    val Configured = booleanPreferencesKey("quick_add_configured")
 
     /** Absent account id is stored as [NO_ACCOUNT] because DataStore has no nullable Long. */
     private const val NO_ACCOUNT = -1L
@@ -101,13 +79,9 @@ object QuickAddWidgetPrefs {
         appearance = preferences[Appearance]?.let { stored ->
             WidgetAppearance.entries.firstOrNull { it.name == stored }
         } ?: WidgetAppearance.SYSTEM,
-        backgroundColor = preferences[BackgroundColor] ?: WidgetPalette.default,
-        // Clamped on read as well as on write: a value out of range would
-        // otherwise render an invisible widget with no way back except the
-        // configuration screen the user cannot see to reach.
-        backgroundOpacity = (preferences[BackgroundOpacity] ?: QuickAddWidgetConfig.FULLY_OPAQUE)
-            .coerceIn(0, QuickAddWidgetConfig.FULLY_OPAQUE),
     )
+
+    fun isConfigured(preferences: Preferences): Boolean = preferences[Configured] == true
 
     fun encodeAccountId(accountId: Long?): Long = accountId ?: NO_ACCOUNT
 

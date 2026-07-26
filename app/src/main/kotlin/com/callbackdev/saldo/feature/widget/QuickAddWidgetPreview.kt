@@ -1,6 +1,5 @@
 package com.callbackdev.saldo.feature.widget
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,8 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
@@ -35,13 +32,12 @@ import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Category
 
 /**
- * A live preview of the widget above its own settings.
+ * A live preview of the widget above its own settings, so the light/dark choice
+ * is made by looking at it rather than by placing the widget and going back.
  *
- * Opacity is impossible to choose blind - the number means nothing until you
- * see it - so the preview sits over a checkerboard, the honest way to show
- * transparency without asking for the wallpaper permission that reading the
- * real one would cost. What it cannot promise is legibility over *your*
- * wallpaper: at low opacity that is between the widget and the photo behind it.
+ * It shows the widget's own palette, not the screen's: on a light phone with a
+ * dark widget the preview is dark, which is the whole point of the control it
+ * sits under.
  */
 @Composable
 fun QuickAddWidgetPreview(
@@ -55,9 +51,9 @@ fun QuickAddWidgetPreview(
             .fillMaxWidth()
             .height(PreviewHeight)
             .clip(RoundedCornerShape(PreviewCorner))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
             .semantics { contentDescription = description },
     ) {
-        Checkerboard(Modifier.fillMaxSize())
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -91,7 +87,7 @@ fun QuickAddWidgetPreview(
 private fun PreviewPill(label: String, theme: QuickAddWidgetTheme, selected: Boolean) {
     Box(
         modifier = Modifier
-            .height(28.dp)
+            .height(30.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(if (selected) theme.scheme.primary else theme.scheme.surfaceVariant)
             .padding(horizontal = 12.dp),
@@ -110,7 +106,7 @@ private fun PreviewPill(label: String, theme: QuickAddWidgetTheme, selected: Boo
 private fun PreviewTile(color: Color, icon: ImageVector) {
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(40.dp)
             .clip(AvatarShape)
             .background(color.copy(alpha = TileTintAlpha)),
         contentAlignment = Alignment.Center,
@@ -119,35 +115,13 @@ private fun PreviewTile(color: Color, icon: ImageVector) {
             imageVector = icon,
             contentDescription = null,
             tint = color,
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(25.dp),
         )
-    }
-}
-
-/** The conventional way to say "this part is see-through". */
-@Composable
-private fun Checkerboard(modifier: Modifier = Modifier) {
-    val light = MaterialTheme.colorScheme.surfaceVariant
-    val dark = MaterialTheme.colorScheme.surfaceContainerHighest
-    Canvas(modifier) {
-        val step = CheckerStepPx
-        val columns = (size.width / step).toInt() + 1
-        val rows = (size.height / step).toInt() + 1
-        for (row in 0 until rows) {
-            for (column in 0 until columns) {
-                drawRect(
-                    color = if ((row + column) % 2 == 0) light else dark,
-                    topLeft = Offset(column * step, row * step),
-                    size = Size(step, step),
-                )
-            }
-        }
     }
 }
 
 private const val PreviewTiles = 3
 private const val TileTintAlpha = 0.16f
-private const val CheckerStepPx = 24f
 private val PreviewHeight = 140.dp
 private val PreviewCorner = 16.dp
 private val PreviewInset = 12.dp

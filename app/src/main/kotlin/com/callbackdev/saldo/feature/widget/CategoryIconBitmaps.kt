@@ -38,8 +38,12 @@ object CategoryIconBitmaps {
     /** 30% of the side, matching `AvatarShape`. */
     private const val CORNER_PERCENT = 0.30f
 
-    /** The glyph occupies 55% of the tile, the same optical ratio as the in-app avatars. */
-    private const val GLYPH_RATIO = 0.55f
+    /**
+     * The glyph fills 62% of the tile. Raised from the app avatar's ratio on
+     * purpose: a widget is read at arm's length on a busy wallpaper, and the
+     * icon is the thing being aimed at.
+     */
+    private const val GLYPH_RATIO = 0.62f
 
     /** The 16% wash of `CategoryCell`, so a widget tile and an app tile are the same tile. */
     private const val TINT_ALPHA = 0.16f

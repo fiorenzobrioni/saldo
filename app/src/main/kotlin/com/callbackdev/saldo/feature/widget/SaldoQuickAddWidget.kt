@@ -148,15 +148,15 @@ private data class WidgetLayout(
 
 private fun layoutFor(size: DpSize): WidgetLayout = when {
     size.width >= SaldoQuickAddWidget.Medium.width && size.height >= SaldoQuickAddWidget.Large.height ->
-        WidgetLayout(columns = 4, rows = 2, showHeader = true, showLabels = true, tileSize = 40)
+        WidgetLayout(columns = 4, rows = 2, showHeader = true, showLabels = true, tileSize = 44)
     // One row only, and the header now costs 36dp: the tile gives back the 4dp
     // rather than letting the label be clipped.
     size.width >= SaldoQuickAddWidget.Medium.width ->
-        WidgetLayout(columns = 4, rows = 1, showHeader = true, showLabels = true, tileSize = 36)
+        WidgetLayout(columns = 4, rows = 1, showHeader = true, showLabels = true, tileSize = 40)
     // A 2x2 is about 110dp square: a header plus labels would leave the tiles
     // unusable, so this size shows four icons and takes its type from the
     // widget's own configuration instead of a selector.
-    else -> WidgetLayout(columns = 2, rows = 2, showHeader = false, showLabels = false, tileSize = 44)
+    else -> WidgetLayout(columns = 2, rows = 2, showHeader = false, showLabels = false, tileSize = 52)
 }
 
 @Composable
@@ -171,7 +171,7 @@ private fun WidgetBody(
             .fillMaxSize()
             .background(theme.background)
             .cornerRadius(WidgetCornerRadius)
-            .padding(WidgetPadding),
+            .padding(horizontal = WidgetPaddingHorizontal, vertical = WidgetPaddingVertical),
         verticalAlignment = Alignment.Vertical.CenterVertically,
         horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
     ) {
@@ -227,6 +227,7 @@ private fun Header(selectedType: TransactionType, data: QuickAddWidgetData) {
         if (data.todayTotal != null) {
             Text(
                 text = data.todayTotal,
+                modifier = GlanceModifier.padding(start = AmountGap, end = AmountEndPadding),
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurfaceVariant,
                     fontSize = LabelFontSize,
@@ -407,24 +408,30 @@ private fun Context.pxOf(dp: Int): Int = (dp * resources.displayMetrics.density)
 private val WidgetCornerRadius = 24.dp
 
 /**
- * The vertical budget is tight and deliberate. At the medium bucket (250x120dp)
- * the content box is 100dp: a 36dp header plus its gap leaves 56dp, and a 36dp
- * tile with its label needs 54. The taller tap target for the type selector was
- * paid for here, by trimming the padding and the header gap rather than by
- * squeezing the tiles into something equally hard to hit.
+ * The vertical budget is tight and deliberate. At the large bucket (250x190dp)
+ * the content box is 174dp: a 34dp selector and its gap leave 134, which is two
+ * rows of 64 - a 44dp tile, its gap and a 12sp label. Horizontal padding is
+ * larger than vertical because it has no budget to fight over, and because the
+ * amount on the right needs it.
  */
-private val WidgetPadding = 10.dp
-private val HeaderGap = 8.dp
-private val RowGap = 8.dp
-private val LabelGap = 4.dp
+private val WidgetPaddingHorizontal = 12.dp
+private val WidgetPaddingVertical = 8.dp
+private val HeaderGap = 6.dp
+private val RowGap = 6.dp
+private val LabelGap = 3.dp
 private val PillGap = 6.dp
 
-/** Not the 48dp of a full touch target, but close enough on a surface this dense. */
-private val PillHeight = 36.dp
-private val PillCornerRadius = 18.dp
+/** Still well clear of the 20dp the selector started at, and of a stray tap. */
+private val PillHeight = 34.dp
+private val PillCornerRadius = 17.dp
 private val PillPaddingHorizontal = 14.dp
-private val LabelFontSize = 12.sp
-private val TileLabelFontSize = 11.sp
+
+/** A text box hugs its glyphs tighter than a pill hugs its label. */
+private val AmountGap = 8.dp
+private val AmountEndPadding = 4.dp
+
+private val LabelFontSize = 13.sp
+private val TileLabelFontSize = 12.sp
 
 /** Reads as "more options" in any launcher, and is in no category icon set. */
 private val MoreIcon: ImageVector = Icons.Outlined.MoreHoriz

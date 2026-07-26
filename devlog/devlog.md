@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-26 - Il widget dimagrisce di opzioni e ingrassa di corpo
+
+**Fatto:** quarto giro sul widget dopo la prova su device. L'utente chiede di rimuovere il colore di sfondo personalizzato e lo slider di opacita, segnala che l'azione della schermata dovrebbe dire "Aggiorna" quando il widget esiste gia, e chiede icone e testi piu grandi piu un po' d'aria a destra dell'importo.
+
+**Decisioni:** le due opzioni rimosse erano state costruite bene e sono state tolte volentieri: il lavoro del widget e somigliare a Saldo, e ogni grado di liberta in piu era un modo in piu per non somigliargli. Con loro se ne va anche il clamp dell'opacita, la palette e la scacchiera dell'anteprima, che senza trasparenza non comunicava piu niente; l'anteprima invece resta, perche serve ancora a scegliere chiaro/scuro guardando invece che piazzando. Sul testo dell'azione: Android consegna la stessa activity e lo stesso intent al primo piazzamento e a una modifica successiva, non esiste un flag di sistema che li distingua, quindi l'unica fonte possibile e lo stato salvato - un marcatore `Configured` scritto alla conferma. Sulle dimensioni la leva piu efficace non era la tile ma il rapporto del glifo dentro la tile: dal 55% al 62%, che si vede subito e non costa un dp di altezza. Le tile crescono comunque (44 sul bucket grande, 52 sul 2x2) e i testi salgono di un punto, ripagati riducendo padding verticale e gap. Il padding orizzontale invece **sale** a 12dp: la larghezza non ha un budget da difendere, e la stessa mossa risolve l'importo troppo vicino al bordo, a cui sono stati aggiunti 4dp propri perche un testo abbraccia i suoi glifi molto piu stretto di quanto una pillola abbracci la propria etichetta - lo stesso padding letto ai due lati non appare uguale.
+
+**Problemi:** nessuno. La pillola del selettore scende da 36 a 34dp per far quadrare i conti verticali: resta ben lontana dai 20dp da cui era partita e la larghezza non cambia, quindi il bersaglio che era stato il problema regge.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 637 test, 0 falliti. Test aggiornati: `QuickAddWidgetPrefsTest` perde i casi su colore e opacita e guadagna quello sul marcatore `Configured`; `QuickAddWidgetThemeTest` passa dai casi sul colore personalizzato a quelli sull'override chiaro/scuro (inchiostro leggibile in entrambi i versi, sfondo sempre opaco). versionCode 132 -> 133, versionName 0.9.93 -> 0.9.94.
+
+**Prossimo:** prova su device delle nuove taglie, con attenzione al bucket 4x2 (largo e basso), che e quello dove il conto verticale e piu stretto: intestazione da 34dp piu una riga sola di tile da 40 con etichetta.
+
+---
+
 ## 2026-07-26 - Il widget prende l'aspetto dell'app, e poi lo si puo cambiare
 
 **Fatto:** tre richieste dell'utente dopo che il widget ha iniziato a funzionare. (1) Icone categoria nello stile dell'app. (2) Sfondo uguale a quello della Dashboard nei due temi. (3) In configurazione: forzatura del tema, colore di sfondo a scelta (bianco e nero puri inclusi) e slider di trasparenza. Aggiunta anche un'anteprima live in cima alla schermata.

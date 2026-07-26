@@ -68,24 +68,15 @@ class QuickAddWidgetPrefsTest {
     }
 
     @Test
-    fun `an unconfigured widget follows the system and is fully opaque`() {
+    fun `an unconfigured widget follows the system theme`() {
         val config = QuickAddWidgetPrefs.read(mutablePreferencesOf())
         assertEquals(WidgetAppearance.SYSTEM, config.appearance)
-        assertEquals(QuickAddWidgetConfig.FULLY_OPAQUE, config.backgroundOpacity)
-        assertEquals(WidgetPalette.default, config.backgroundColor)
     }
 
     @Test
-    fun `the appearance round-trips`() {
-        val preferences = mutablePreferencesOf(
-            QuickAddWidgetPrefs.Appearance to WidgetAppearance.CUSTOM.name,
-            QuickAddWidgetPrefs.BackgroundColor to 0x000000,
-            QuickAddWidgetPrefs.BackgroundOpacity to 40,
-        )
-        val config = QuickAddWidgetPrefs.read(preferences)
-        assertEquals(WidgetAppearance.CUSTOM, config.appearance)
-        assertEquals(0x000000, config.backgroundColor)
-        assertEquals(40, config.backgroundOpacity)
+    fun `a forced appearance round-trips`() {
+        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.Appearance to WidgetAppearance.DARK.name)
+        assertEquals(WidgetAppearance.DARK, QuickAddWidgetPrefs.read(preferences).appearance)
     }
 
     @Test
@@ -95,21 +86,14 @@ class QuickAddWidgetPrefsTest {
     }
 
     /**
-     * An opacity out of range would render a widget nobody can see, and the only
-     * way back is the settings screen you need to see the widget to reach.
+     * Android hands the same activity and the same intent to a first placement
+     * and to a later edit, so the stored marker is the only thing that can tell
+     * the settings screen whether its action reads "add" or "update".
      */
     @Test
-    fun `an out of range opacity is clamped on read, not trusted`() {
-        val tooHigh = mutablePreferencesOf(QuickAddWidgetPrefs.BackgroundOpacity to 900)
-        val negative = mutablePreferencesOf(QuickAddWidgetPrefs.BackgroundOpacity to -30)
-        assertEquals(QuickAddWidgetConfig.FULLY_OPAQUE, QuickAddWidgetPrefs.read(tooHigh).backgroundOpacity)
-        assertEquals(0, QuickAddWidgetPrefs.read(negative).backgroundOpacity)
-    }
-
-    @Test
-    fun `the palette offers pure white and pure black, which is what a wallpaper asks for`() {
-        assertTrue(WidgetPalette.colors.contains(0xFFFFFF))
-        assertTrue(WidgetPalette.colors.contains(0x000000))
+    fun `a widget is not configured until its settings are confirmed`() {
+        assertTrue(!QuickAddWidgetPrefs.isConfigured(mutablePreferencesOf()))
+        assertTrue(QuickAddWidgetPrefs.isConfigured(mutablePreferencesOf(QuickAddWidgetPrefs.Configured to true)))
     }
 
     /**
