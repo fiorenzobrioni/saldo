@@ -74,9 +74,9 @@ fun QuickAddWidgetPreview(
                 PreviewPill(stringResource(R.string.widget_quick_add_income), theme, selected = false)
                 if (showAppShortcut) {
                     Image(
-                        painter = painterResource(R.mipmap.ic_launcher),
+                        painter = painterResource(AppShortcutIcon),
                         contentDescription = null,
-                        modifier = Modifier.size(30.dp),
+                        modifier = Modifier.size(36.dp),
                     )
                 }
             }

@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-26 - L'icona che non si poteva dipingere
+
+**Fatto:** correzione del crash segnalato dall'utente: nelle impostazioni del widget, accendere "Icona dell'app" faceva saltare la schermata.
+
+**Decisioni:** la causa e nell'anteprima, non nel widget. Disegnava `painterResource(R.mipmap.ic_launcher)`, ma `ic_launcher` e un `<adaptive-icon>` e `painterResource` sa caricare solo vector drawable e raster: al primo tocco dell'interruttore l'anteprima ricomponeva con quell'`Image` dentro e l'eccezione arrivava subito. Il crash era quindi limitato alla configurazione, ma la stessa risorsa era usata anche dal widget, e la si e cambiata in entrambi i posti: ora e `ic_launcher_foreground`, il layer frontale dell'adaptive icon, che e un `<vector>` e quindi valido sia per `painterResource` sia per `ImageProvider`. Non e un ripiego: e anche piu fedele a quello che l'utente aveva chiesto, perche l'adaptive icon si porta dietro il proprio quadrato bianco di sfondo mentre il foreground su trasparente e esattamente il marchio che galleggia. In piu il foreground ha gia il margine di sicurezza dell'adaptive icon, che diventa la spaziatura di cui il bottone ha bisogno, quindi l'immagine riempie il bottone invece di stare a una dimensione fissa.
+
+**Problemi:** il difetto e istruttivo su un limite di questa sessione: senza device non lo si poteva vedere: compila, passa lint e detekt, e fallisce solo a runtime quando quella riga viene composta. La guardia possibile e una sola - verificare di che tipo sia il drawable dietro l'id - ed e quello che fa `AppShortcutIconTest` (e un vector, non e un adaptive icon, ed e quadrato). Strumentato, quindi da eseguire su device come gli altri.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 645 test JVM, 0 falliti. Strumentato nuovo `AppShortcutIconTest`. versionCode 135 -> 136, versionName 0.9.96 -> 0.9.97.
+
+**Prossimo:** riprova dell'interruttore nelle impostazioni e dell'icona sul widget a una riga.
+
+---
+
 ## 2026-07-26 - Cornice pari, icona dell'app opzionale, e sempre "Aggiorna"
 
 **Fatto:** tre rifiniture dopo lo screenshot del formato a riga. Margine uniforme e piu largo attorno ai due bottoni, icona dell'app opzionale alla loro destra per aprire Saldo, e l'azione della configurazione che dice sempre "Aggiorna il widget".

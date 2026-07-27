@@ -2,7 +2,6 @@ package com.callbackdev.saldo.feature.widget
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,6 +48,7 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
+import androidx.glance.layout.ContentScale
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
@@ -375,9 +375,13 @@ private fun RowScope.AppShortcutButton() {
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            provider = ImageProvider(Icon.createWithResource(context, R.mipmap.ic_launcher)),
+            provider = ImageProvider(AppShortcutIcon),
             contentDescription = context.getString(R.string.widget_quick_add_open_a11y),
-            modifier = GlanceModifier.size(AppShortcutIconSize),
+            // Fills the button rather than sitting at a fixed size: the mark
+            // already carries the adaptive icon's safe-zone margin, which reads
+            // as the padding it needs.
+            modifier = GlanceModifier.fillMaxSize(),
+            contentScale = ContentScale.Fit,
         )
     }
 }
@@ -590,7 +594,18 @@ private val ActionFontSize = 15.sp
 private const val ActionIconSize = 20
 private const val ActionTintAlpha = 0.16f
 private val AppShortcutWidth = 52.dp
-private val AppShortcutIconSize = 40.dp
+
+/**
+ * The app mark, taken from the adaptive icon's *foreground* layer rather than
+ * from `@mipmap/ic_launcher`.
+ *
+ * Two reasons, one of them a crash. `ic_launcher` is an `<adaptive-icon>`, and
+ * `painterResource` loads vectors and rasters only, so the settings preview blew
+ * up the moment the shortcut was switched on. And the adaptive icon carries its
+ * own white background square, which is the opposite of the transparent mark
+ * this button is meant to be.
+ */
+internal val AppShortcutIcon = R.drawable.ic_launcher_foreground
 
 /** The same pair the dashboard speed-dial uses, so the gesture reads the same everywhere. */
 private val ExpenseIcon: ImageVector = Icons.AutoMirrored.Outlined.TrendingDown
