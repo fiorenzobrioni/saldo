@@ -693,6 +693,7 @@
   - Quick entry testuale: parser offline di "12,50 pizza" → importo + categoria suggerita.
 - ~~Indicatore "generato da ricorrenza" nella lista Movimenti~~: implementato nella Fase 10.5 (luglio 2026). Icona `Repeat` sulla riga (registro, Dashboard e drill-down statistiche), banner nell'editor con il nome della regola, e filtro per origine (ricorrenti/manuali) nel registro.
 - ~~Widget quick-add, spunti dalla review di luglio 2026~~: implementati tutti nella Fase 10.19 (trasparente adattivo dal hint del wallpaper e rifiniture premium).
+- Review delle funzionalità finanziarie (luglio 2026, v0.9.106): mappa di come l'app tratta il denaro oggi, limiti e asimmetrie rilevate, e confronto con le app premium dello stesso tipo (prestiti e debiti, split, budget con riporto, rate, multi-divisa con cambi). Documento in [docs/review-funzionalita-finanziarie.md](./docs/review-funzionalita-finanziarie.md), con la tabella dei candidati in ordine di implementazione consigliata e l'elenco di ciò che si copre già con funzioni esistenti. Nessuna voce va promossa nella roadmap senza una decisione esplicita.
 
 # Bug conosciuti
 
