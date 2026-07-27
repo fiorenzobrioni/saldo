@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Quick-add bar: the single-row sibling of the grid widget, as its own
+    provider so the picker offers the two shapes side by side.
+
+    maxResizeHeight keeps it under the grid threshold (120dp in layoutFor), so
+    the bar is a bar by contract: it can stretch across columns but never grows
+    into a grid, and its Glance side only composes the single-row buckets.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigActivity"
+    android:description="@string/widget_quick_bar_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:maxResizeHeight="118dp"
+    android:previewLayout="@layout/quick_bar_widget_preview"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="4"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional" />

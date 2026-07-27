@@ -127,6 +127,22 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Adopts the order the drag settled on. The set must match what is pinned
+     * right now: the screen mirrors the list locally while dragging, and a
+     * stale drop (a category removed mid-drag by another hand) must not
+     * resurrect or lose entries.
+     */
+    fun onPinnedReordered(orderedIds: List<Long>) {
+        config.update { current ->
+            if (orderedIds.toSet() == current.pinnedCategoryIds.toSet()) {
+                current.copy(pinnedCategoryIds = orderedIds)
+            } else {
+                current
+            }
+        }
+    }
+
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
         const val MAX_PINNED = SaldoQuickAddWidget.MaxPinnedCategories

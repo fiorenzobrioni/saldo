@@ -3,6 +3,7 @@
 package com.callbackdev.saldo.feature.settings
 
 import android.Manifest
+import android.appwidget.AppWidgetManager
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,6 +32,8 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
+import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -50,6 +53,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -64,6 +69,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.BuildConfig
@@ -75,6 +81,9 @@ import com.callbackdev.saldo.core.designsystem.component.SaldoCard
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
+import com.callbackdev.saldo.feature.widget.SaldoQuickAddWidgetReceiver
+import com.callbackdev.saldo.feature.widget.SaldoQuickBarWidgetReceiver
+import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Currency
@@ -199,6 +208,49 @@ fun SettingsScreen(
                     checked = dashboardCards.showRecapTeaser,
                     onCheckedChange = viewModel::onShowRecapTeaserChanged,
                 )
+            }
+
+            // Nobody browses the launcher's widget picker looking for Saldo:
+            // the offer lives here, where the user already is, and the launcher
+            // shows its own add dialog. Hidden entirely on launchers that do
+            // not support pinning, where the entries could only fail.
+            val widgetContext = LocalContext.current
+            val canPinWidgets = remember(widgetContext) {
+                runCatching {
+                    AppWidgetManager.getInstance(widgetContext).isRequestPinAppWidgetSupported
+                }.getOrDefault(false)
+            }
+            if (canPinWidgets) {
+                val pinScope = rememberCoroutineScope()
+                SettingsSectionHeader(stringResource(R.string.settings_section_widgets))
+                SettingsGroup {
+                    SettingsEntry(
+                        title = stringResource(R.string.settings_widget_pin_grid),
+                        hint = stringResource(R.string.settings_widget_pin_grid_hint),
+                        icon = Icons.Outlined.Widgets,
+                        onClick = {
+                            pinScope.launch {
+                                runCatching {
+                                    GlanceAppWidgetManager(widgetContext)
+                                        .requestPinGlanceAppWidget(SaldoQuickAddWidgetReceiver::class.java)
+                                }
+                            }
+                        },
+                    )
+                    SettingsEntry(
+                        title = stringResource(R.string.settings_widget_pin_bar),
+                        hint = stringResource(R.string.settings_widget_pin_bar_hint),
+                        icon = Icons.Outlined.ViewAgenda,
+                        onClick = {
+                            pinScope.launch {
+                                runCatching {
+                                    GlanceAppWidgetManager(widgetContext)
+                                        .requestPinGlanceAppWidget(SaldoQuickBarWidgetReceiver::class.java)
+                                }
+                            }
+                        },
+                    )
+                }
             }
 
             SettingsSectionHeader(stringResource(R.string.settings_section_notifications))

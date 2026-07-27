@@ -55,6 +55,12 @@ class MainActivity : ComponentActivity() {
      */
     private val pendingQuickAction = MutableStateFlow<TransactionType?>(null)
 
+    /**
+     * The widget's today total was tapped: open the day it summarizes. Same
+     * consume-once discipline as [pendingQuickAction].
+     */
+    private val pendingOpenToday = MutableStateFlow(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -72,6 +78,7 @@ class MainActivity : ComponentActivity() {
             // overlapping with the periodic worker is harmless.
             applicationScope.launch { runCatching { processDueStatements() } }
             pendingQuickAction.value = quickActionFrom(intent)
+            pendingOpenToday.value = intent?.action == ACTION_VIEW_TODAY
         }
         setContent {
             val themePreferences by userPreferences.themePreferences
@@ -110,9 +117,12 @@ class MainActivity : ComponentActivity() {
                         )
                         LaunchGate.APP -> {
                             val quickAction by pendingQuickAction.collectAsStateWithLifecycle()
+                            val openToday by pendingOpenToday.collectAsStateWithLifecycle()
                             SaldoApp(
                                 quickAction = quickAction,
                                 onQuickActionHandled = { pendingQuickAction.value = null },
+                                openToday = openToday,
+                                onOpenTodayHandled = { pendingOpenToday.value = false },
                             )
                         }
                     }
@@ -125,6 +135,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         quickActionFrom(intent)?.let { pendingQuickAction.value = it }
+        if (intent.action == ACTION_VIEW_TODAY) pendingOpenToday.value = true
     }
 
     /** Maps a launcher shortcut intent to the movement type it opens, or null. */
@@ -139,5 +150,8 @@ class MainActivity : ComponentActivity() {
         const val ACTION_ADD_EXPENSE = "com.callbackdev.saldo.action.ADD_EXPENSE"
         const val ACTION_ADD_INCOME = "com.callbackdev.saldo.action.ADD_INCOME"
         const val ACTION_ADD_TRANSFER = "com.callbackdev.saldo.action.ADD_TRANSFER"
+
+        /** The widget's today total: opens the movements of the current day. */
+        const val ACTION_VIEW_TODAY = "com.callbackdev.saldo.action.VIEW_TODAY"
     }
 }

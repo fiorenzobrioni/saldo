@@ -45,6 +45,18 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
             AppWidgetManager.INVALID_APPWIDGET_ID,
         ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
 
+    /**
+     * Which of the two providers this instance belongs to: the same activity
+     * configures both, and the flavor decides which sections the screen shows
+     * (the bar has no grid to configure, the grid no buttons).
+     */
+    private val isBar: Boolean
+        get() = runCatching {
+            AppWidgetManager.getInstance(this)
+                .getAppWidgetInfo(appWidgetId)
+                ?.provider?.className == SaldoQuickBarWidgetReceiver::class.java.name
+        }.getOrDefault(false)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -68,6 +80,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                 val state by viewModel.uiState.collectAsStateWithLifecycle()
                 QuickAddWidgetConfigScreen(
                     state = state,
+                    isBar = isBar,
                     // Resolved here, from the same function the widget uses, so
                     // the preview cannot drift from what actually gets drawn.
                     theme = resolveWidgetTheme(
@@ -81,6 +94,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     onShowAppShortcutChanged = viewModel::onShowAppShortcutChanged,
                     onUseMostUsedChanged = viewModel::onUseMostUsedChanged,
                     onCategoryToggled = viewModel::onCategoryToggled,
+                    onPinnedReordered = viewModel::onPinnedReordered,
                     onAppearanceSelected = viewModel::onAppearanceSelected,
                     onOpacityChanged = viewModel::onOpacityChanged,
                     onButtonsSelected = viewModel::onButtonsSelected,
@@ -96,8 +110,9 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
             val stored = runCatching {
                 val glanceId = GlanceAppWidgetManager(this@QuickAddWidgetConfigActivity)
                     .getGlanceIdBy(appWidgetId)
+                val widget = if (isBar) SaldoQuickBarWidget() else SaldoQuickAddWidget()
                 QuickAddWidgetPrefs.read(
-                    SaldoQuickAddWidget().getAppWidgetState(this@QuickAddWidgetConfigActivity, glanceId),
+                    widget.getAppWidgetState(this@QuickAddWidgetConfigActivity, glanceId),
                 )
             }.getOrDefault(QuickAddWidgetConfig())
             // Always seeds, defaults included: the screen gates its content on
@@ -111,6 +126,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
         val config = viewModel.uiState.value.config
         lifecycleScope.launch {
             runCatching {
+                val bar = isBar
                 val manager = GlanceAppWidgetManager(this@QuickAddWidgetConfigActivity)
                 val glanceId = manager.getGlanceIdBy(appWidgetId)
                 updateAppWidgetState(this@QuickAddWidgetConfigActivity, glanceId) { prefs ->
@@ -135,7 +151,11 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     val revision = prefs[QuickAddWidgetPrefs.Revision] ?: 0L
                     prefs[QuickAddWidgetPrefs.Revision] = revision + 1
                 }
-                SaldoQuickAddWidget().update(this@QuickAddWidgetConfigActivity, glanceId)
+                if (bar) {
+                    SaldoQuickBarWidget().update(this@QuickAddWidgetConfigActivity, glanceId)
+                } else {
+                    SaldoQuickAddWidget().update(this@QuickAddWidgetConfigActivity, glanceId)
+                }
             }.onFailure {
                 // The one thing worse than a failed save is a silent one: the
                 // user just chose these settings and would find them undone.

@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.widget
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.account.DefaultAccountResolver
+import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
@@ -69,7 +70,10 @@ class QuickAddWidgetDataLoader @Inject constructor(
         val active = accounts.map { it.account }.filter { !it.isArchived }
         // An account configured on the widget and later archived or deleted must
         // not leave the widget dead: fall back to the app's own default chain.
-        val account = active.firstOrNull { it.id == config.accountId }
+        // A pinned account that survived is remembered apart from the fallback:
+        // it scopes the today total and earns the badge in the header.
+        val pinned = active.firstOrNull { it.id == config.accountId }
+        val account = pinned
             ?: DefaultAccountResolver.resolve(
                 accounts = active,
                 defaultAccountId = userPreferences.defaultAccountId.first(),
@@ -80,7 +84,7 @@ class QuickAddWidgetDataLoader @Inject constructor(
         val categories = pick(available, config, categoryLimit)
 
         val todayTotal = if (config.showTodayTotal) {
-            formatTodayTotal(accounts, config.effectiveType)
+            formatTodayTotal(accounts, pinned, config.effectiveType)
         } else {
             null
         }
@@ -91,6 +95,7 @@ class QuickAddWidgetDataLoader @Inject constructor(
             categories = categories,
             todayTotal = todayTotal,
             showTodayTotal = config.showTodayTotal,
+            pinnedAccountName = pinned?.name,
         )
     }
 
@@ -120,22 +125,39 @@ class QuickAddWidgetDataLoader @Inject constructor(
      * showing: spend on an expense widget, earnings on an income one. The old
      * behaviour showed spend on both, which put an unexplained outgoing total
      * on a widget whose every control said "income".
+     *
+     * A widget pinned to a live account totals that account alone, in its own
+     * currency: two widgets on two accounts used to show the same app-wide
+     * number, which read as one of them being wrong.
      */
     private suspend fun formatTodayTotal(
         accounts: List<AccountWithBalance>,
+        pinned: Account?,
         type: TransactionType,
     ): String? {
         if (accounts.isEmpty()) return null
-        val currency = primaryCurrency(accounts, userPreferences.primaryCurrencyOverride.first())
         val today = LocalDate.now(clock)
-        val totals = transactionRepository
-            .observeDashboardTotals(DashboardWindows.around(today, clock.zone), currency)
-            .first()
+        val (totals, currency) = if (pinned != null) {
+            val start = today.atStartOfDay(clock.zone).toInstant()
+            val end = today.plusDays(1).atStartOfDay(clock.zone).toInstant()
+            transactionRepository.getAccountPeriodTotals(
+                accountId = pinned.id,
+                start = start,
+                end = end,
+                currency = pinned.currency,
+            ) to pinned.currency
+        } else {
+            val primary = primaryCurrency(accounts, userPreferences.primaryCurrencyOverride.first())
+            transactionRepository
+                .observeDashboardTotals(DashboardWindows.around(today, clock.zone), primary)
+                .first()
+                .today to primary
+        }
         // Spend arrives as a negative magnitude (the effect on the account); the
         // widget shows what moved today, so both types read as a positive.
         val amount = when (type) {
-            TransactionType.INCOME -> totals.today.income
-            else -> totals.today.spend
+            TransactionType.INCOME -> totals.income
+            else -> totals.spend
         }
         return MoneyFormatter.format(amount.abs(), currency)
     }

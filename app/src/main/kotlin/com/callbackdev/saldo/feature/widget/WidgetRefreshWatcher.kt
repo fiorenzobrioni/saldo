@@ -116,9 +116,10 @@ class WidgetRefreshWatcher @Inject constructor(
 
     private fun readPlacement() {
         hasPlacedWidgets.value = runCatching {
-            AppWidgetManager.getInstance(context)
-                .getAppWidgetIds(ComponentName(context, SaldoQuickAddWidgetReceiver::class.java))
-                .isNotEmpty()
+            val manager = AppWidgetManager.getInstance(context)
+            widgetReceivers.any { receiver ->
+                manager.getAppWidgetIds(ComponentName(context, receiver)).isNotEmpty()
+            }
         }.getOrDefault(false)
     }
 
@@ -164,19 +165,27 @@ class WidgetRefreshWatcher @Inject constructor(
         // A failed redraw must not kill the watcher: the next change, or the
         // daily worker, picks it up.
         runCatching {
-            val widget = SaldoQuickAddWidget()
-            GlanceAppWidgetManager(context).getGlanceIds(SaldoQuickAddWidget::class.java)
-                .forEach { glanceId ->
+            val manager = GlanceAppWidgetManager(context)
+            // Both providers, grid and bar: they render the same data.
+            listOf(SaldoQuickAddWidget(), SaldoQuickBarWidget()).forEach { widget ->
+                manager.getGlanceIds(widget.javaClass).forEach { glanceId ->
                     updateAppWidgetState(context, glanceId) { preferences ->
                         val current = preferences[QuickAddWidgetPrefs.Revision] ?: 0L
                         preferences[QuickAddWidgetPrefs.Revision] = current + 1
                     }
                 }
-            widget.updateAll(context)
+                widget.updateAll(context)
+            }
         }
     }
 
     private companion object {
         const val DEBOUNCE_MILLIS = 500L
+
+        /** Every manifest receiver whose widgets this watcher keeps fresh. */
+        val widgetReceivers = listOf(
+            SaldoQuickAddWidgetReceiver::class.java,
+            SaldoQuickBarWidgetReceiver::class.java,
+        )
     }
 }

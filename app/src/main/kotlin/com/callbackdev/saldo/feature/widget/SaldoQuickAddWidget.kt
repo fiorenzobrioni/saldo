@@ -97,70 +97,14 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
      */
     override val sizeMode: SizeMode = SizeMode.Responsive(WidgetBuckets)
 
-    /**
-     * Two preview shapes: the default 4x3 grid, and the single-row layout for
-     * hosts that render a short preview (the pin dialog, some pickers). The
-     * standard picker shows the default size; the second bucket is there for
-     * whoever asks smaller.
-     */
-    override val previewSizeMode = SizeMode.Responsive(setOf(PreviewBucket, PreviewRowBucket))
+    /** The picker preview renders at the widget's default 4x3 shape. */
+    override val previewSizeMode = SizeMode.Responsive(setOf(PreviewBucket))
 
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val entryPoint = context.widgetEntryPoint()
-        val loader = entryPoint.quickAddWidgetDataLoader()
-        val preferences = entryPoint.userPreferences()
-        // Loaded once up front purely so the first frame is already right: the
-        // composition below owns every read from here on.
-        val initialInputs = WidgetInputs.from(getAppWidgetState(context, id))
-        val initialData = loader.loadShared(initialInputs.config, initialInputs.revision)
-        provideContent {
-            val inputs = WidgetInputs.from(currentState())
-            // Reloads on every change of the inputs. The content runs once per
-            // bucket of the Responsive set, so the load is the shared one:
-            // eleven compositions, one database pass.
-            val data by produceState(initialData, inputs) {
-                value = loader.loadShared(inputs.config, inputs.revision)
-            }
-            val themePreferences by preferences.themePreferences
-                .collectAsState(initial = ThemePreferences())
-            val theme = resolveWidgetTheme(LocalContext.current, themePreferences, inputs.config)
-            GlanceTheme(colors = theme.providers) {
-                // The selector follows the state, not the loaded data: the
-                // control the user just pressed has to answer immediately, and
-                // the grid catches up a frame later.
-                WidgetBody(inputs.config, data, theme)
-            }
-        }
-    }
+    override suspend fun provideGlance(context: Context, id: GlanceId) =
+        provideQuickAddContent(context, id)
 
-    /**
-     * The widget picker's generated preview (API 35+): the real layout in the
-     * user's real palette and categories, where the static `previewLayout` XML
-     * can only ever show a stand-in. Data reads are best-effort - before
-     * onboarding this simply shows the honest "open Saldo to get started".
-     */
-    override suspend fun providePreview(context: Context, widgetCategory: Int) {
-        val entryPoint = context.widgetEntryPoint()
-        val config = QuickAddWidgetConfig()
-        val data = runCatching { entryPoint.quickAddWidgetDataLoader().load(config) }
-            .getOrDefault(
-                QuickAddWidgetData(
-                    type = config.type,
-                    account = null,
-                    categories = emptyList(),
-                    todayTotal = null,
-                    showTodayTotal = config.showTodayTotal,
-                ),
-            )
-        val themePreferences = runCatching { entryPoint.userPreferences().themePreferences.first() }
-            .getOrDefault(ThemePreferences())
-        val theme = resolveWidgetTheme(context, themePreferences, config)
-        provideContent {
-            GlanceTheme(colors = theme.providers) {
-                WidgetBody(config, data, theme)
-            }
-        }
-    }
+    override suspend fun providePreview(context: Context, widgetCategory: Int) =
+        provideQuickAddPreview(context)
 
     companion object {
         /** Below this height there is no room for a category, so the widget becomes two buttons. */
@@ -183,17 +127,24 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
  * asserted against [layoutFor] in `WidgetLayoutTest` because a bucket that
  * drifted from the arithmetic would silently pin the wrong layout.
  */
-internal val WidgetBuckets: Set<DpSize> = setOf(
-    // One launcher row: the two-button layout. Four heights rather than one,
-    // not for the layout (any height under 120 is the same two buttons) but
-    // for the app-shortcut square: RemoteViews has no measure pass, so the
-    // bucket height is the only estimate of the button height there is, and
-    // one bucket at 40dp made the shortcut a fixed-width rectangle on every
-    // launcher whose row is taller.
+/**
+ * The single-row sizes: the whole bucket set of the bar widget, and the low
+ * end of the grid's (which still degrades to the two-button layout when
+ * squashed, for the widgets placed before the bar existed). Four heights
+ * rather than one, not for the layout (any height under 120 is the same two
+ * buttons) but for the app-shortcut square: RemoteViews has no measure pass,
+ * so the bucket height is the only estimate of the button height there is,
+ * and one bucket at 40dp made the shortcut a fixed-width rectangle on every
+ * launcher whose row is taller.
+ */
+internal val ActionBuckets: Set<DpSize> = setOf(
     DpSize(110.dp, 40.dp),
     DpSize(110.dp, 64.dp),
     DpSize(110.dp, 88.dp),
     DpSize(110.dp, 112.dp),
+)
+
+internal val GridBuckets: Set<DpSize> = setOf(
     // Narrow grid, two bare-icon columns, 1 to 5 rows.
     DpSize(110.dp, 120.dp),
     DpSize(110.dp, 126.dp),
@@ -208,11 +159,76 @@ internal val WidgetBuckets: Set<DpSize> = setOf(
     DpSize(250.dp, 400.dp),
 )
 
-/** The default 4x3 placement: what the picker's generated preview shows. */
+internal val WidgetBuckets: Set<DpSize> = ActionBuckets + GridBuckets
+
+/** The default 4x3 placement: what the grid's generated preview shows. */
 internal val PreviewBucket = DpSize(250.dp, 260.dp)
 
-/** The single-row preview, for hosts that render the widget short. */
+/** The single-row shape: the bar widget's generated preview. */
 internal val PreviewRowBucket = DpSize(250.dp, 88.dp)
+
+/**
+ * The live composition, shared by the grid and the bar: same state, same data,
+ * same body - the two widgets differ only in the bucket sets their providers
+ * declare, so one is a grid that can degrade to the row and the other is the
+ * row by contract.
+ */
+internal suspend fun GlanceAppWidget.provideQuickAddContent(context: Context, id: GlanceId) {
+    val entryPoint = context.widgetEntryPoint()
+    val loader = entryPoint.quickAddWidgetDataLoader()
+    val preferences = entryPoint.userPreferences()
+    // Loaded once up front purely so the first frame is already right: the
+    // composition below owns every read from here on.
+    val initialInputs = WidgetInputs.from(getAppWidgetState(context, id))
+    val initialData = loader.loadShared(initialInputs.config, initialInputs.revision)
+    provideContent {
+        val inputs = WidgetInputs.from(currentState())
+        // Reloads on every change of the inputs. The content runs once per
+        // bucket of the Responsive set, so the load is the shared one: many
+        // compositions, one database pass.
+        val data by produceState(initialData, inputs) {
+            value = loader.loadShared(inputs.config, inputs.revision)
+        }
+        val themePreferences by preferences.themePreferences
+            .collectAsState(initial = ThemePreferences())
+        val theme = resolveWidgetTheme(LocalContext.current, themePreferences, inputs.config)
+        GlanceTheme(colors = theme.providers) {
+            // The selector follows the state, not the loaded data: the
+            // control the user just pressed has to answer immediately, and
+            // the grid catches up a frame later.
+            WidgetBody(inputs.config, data, theme)
+        }
+    }
+}
+
+/**
+ * The widget picker's generated preview (API 35+): the real layout in the
+ * user's real palette and categories, where the static `previewLayout` XML
+ * can only ever show a stand-in. Data reads are best-effort - before
+ * onboarding this simply shows the honest "open Saldo to get started".
+ */
+internal suspend fun GlanceAppWidget.provideQuickAddPreview(context: Context) {
+    val entryPoint = context.widgetEntryPoint()
+    val config = QuickAddWidgetConfig()
+    val data = runCatching { entryPoint.quickAddWidgetDataLoader().load(config) }
+        .getOrDefault(
+            QuickAddWidgetData(
+                type = config.type,
+                account = null,
+                categories = emptyList(),
+                todayTotal = null,
+                showTodayTotal = config.showTodayTotal,
+            ),
+        )
+    val themePreferences = runCatching { entryPoint.userPreferences().themePreferences.first() }
+        .getOrDefault(ThemePreferences())
+    val theme = resolveWidgetTheme(context, themePreferences, config)
+    provideContent {
+        GlanceTheme(colors = theme.providers) {
+            WidgetBody(config, data, theme)
+        }
+    }
+}
 
 /**
  * Everything that makes the widget reload. The configuration is the user's
@@ -434,13 +450,37 @@ private fun Header(selectedType: TransactionType, data: QuickAddWidgetData) {
             type = TransactionType.INCOME,
             selected = selectedType == TransactionType.INCOME,
         )
-        Spacer(GlanceModifier.defaultWeight())
+        if (data.pinnedAccountName != null) {
+            // A widget pinned to one account says which: with two widgets on
+            // two accounts, an unlabelled pair is a wrong-account entry waiting
+            // to happen. Weighted so a long name gives way, never the amount.
+            Text(
+                text = data.pinnedAccountName,
+                modifier = GlanceModifier.defaultWeight().padding(start = AmountGap),
+                style = TextStyle(
+                    color = GlanceTheme.colors.onSurfaceVariant,
+                    fontSize = BadgeFontSize,
+                    textAlign = TextAlign.End,
+                ),
+                maxLines = 1,
+            )
+        } else {
+            Spacer(GlanceModifier.defaultWeight())
+        }
         if (data.todayTotal != null) {
             Text(
                 // Labelled, not a bare number: an amount floating in a corner
                 // reads as a balance, a budget, anything - "Today" pins it.
+                // Tapping it opens the day it is summarizing.
                 text = context.getString(R.string.widget_quick_add_today, data.todayTotal),
-                modifier = GlanceModifier.padding(start = AmountGap, end = AmountEndPadding),
+                modifier = GlanceModifier
+                    .padding(start = AmountGap, end = AmountEndPadding)
+                    .clickable(
+                        actionStartActivity(
+                            Intent(context, MainActivity::class.java)
+                                .setAction(MainActivity.ACTION_VIEW_TODAY),
+                        ),
+                    ),
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurfaceVariant,
                     fontSize = LabelFontSize,
@@ -820,6 +860,9 @@ private val AmountEndPadding = 4.dp
 
 private val LabelFontSize = 13.sp
 private val TileLabelFontSize = 12.sp
+
+/** The pinned-account badge: present, quieter than the total beside it. */
+private val BadgeFontSize = 11.sp
 
 private val ActionGap = 8.dp
 private val ActionCornerRadius = 18.dp

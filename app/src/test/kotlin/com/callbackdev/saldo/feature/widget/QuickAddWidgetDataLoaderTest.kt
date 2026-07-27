@@ -68,6 +68,8 @@ class QuickAddWidgetDataLoaderTest {
         lastUsedAccountId: Long? = null,
         todaySpend: BigDecimal = BigDecimal("-24.30"),
         todayIncome: BigDecimal = BigDecimal("80.50"),
+        accountSpend: BigDecimal = BigDecimal("-7.00"),
+        accountIncome: BigDecimal = BigDecimal("3.00"),
     ): QuickAddWidgetDataLoader {
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
@@ -75,6 +77,8 @@ class QuickAddWidgetDataLoaderTest {
         coEvery { transactionRepository.mostUsedCategoryIds(any(), any(), any()) } returns mostUsed
         every { transactionRepository.observeDashboardTotals(any(), any()) } returns
             flowOf(DashboardTotals(today = PeriodTotals(spend = todaySpend, income = todayIncome)))
+        coEvery { transactionRepository.getAccountPeriodTotals(any(), any(), any(), any()) } returns
+            PeriodTotals(spend = accountSpend, income = accountIncome)
         every { userPreferences.defaultAccountId } returns flowOf(defaultAccountId)
         every { userPreferences.lastUsedAccountId } returns flowOf(lastUsedAccountId)
         every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
@@ -150,6 +154,36 @@ class QuickAddWidgetDataLoaderTest {
         val data = loader().load(QuickAddWidgetConfig(type = TransactionType.INCOME), categoryLimit = 4)
         assertTrue(data.todayTotal.orEmpty().contains("80"))
         assertTrue(!data.todayTotal.orEmpty().contains("24"))
+    }
+
+    /**
+     * Two widgets pinned to two accounts used to show the same app-wide total,
+     * which read as one of them being wrong. Pinned means: that account's
+     * number, that account's name as a badge.
+     */
+    @Test
+    fun `a widget pinned to a live account totals that account alone and carries its name`() = runTest {
+        val data = loader().load(QuickAddWidgetConfig(accountId = cash.id), categoryLimit = 4)
+        assertEquals(cash.name, data.pinnedAccountName)
+        assertTrue(data.todayTotal.orEmpty().contains("7"))
+        assertTrue(!data.todayTotal.orEmpty().contains("24"))
+    }
+
+    @Test
+    fun `a widget following the default account keeps the app-wide total and no badge`() = runTest {
+        val data = loader().load(QuickAddWidgetConfig(), categoryLimit = 4)
+        assertNull(data.pinnedAccountName)
+        assertTrue(data.todayTotal.orEmpty().contains("24"))
+    }
+
+    @Test
+    fun `an archived pinned account loses the badge and the scope along with the pin`() = runTest {
+        val data = loader(
+            accounts = listOf(checking, account(2L, archived = true)),
+            defaultAccountId = checking.id,
+        ).load(QuickAddWidgetConfig(accountId = 2L), categoryLimit = 4)
+        assertNull(data.pinnedAccountName)
+        assertTrue(data.todayTotal.orEmpty().contains("24"))
     }
 
     @Test

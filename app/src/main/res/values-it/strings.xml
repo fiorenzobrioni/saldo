@@ -1087,8 +1087,18 @@
     <string name="widget_config_save_error">Impossibile salvare le impostazioni del widget</string>
     <string name="widget_config_preview_a11y">Anteprima del widget con le impostazioni correnti</string>
     <string name="widget_config_app_shortcut">Icona dell\'app</string>
-    <string name="widget_config_app_shortcut_caption">Aggiunge un pulsante che apre Saldo, accanto ai due della dimensione a una riga.</string>
+    <string name="widget_config_app_shortcut_caption">Un pulsante quadrato che apre Saldo, accanto a Spesa ed Entrata.</string>
     <string name="widget_config_buttons">Bottoni</string>
     <string name="widget_config_buttons_both">Spesa/Entrata</string>
-    <string name="widget_config_buttons_caption">Quali bottoni mostrare quando il widget è alto una riga.</string>
+    <string name="widget_config_pinned_caption">Trascina per riordinare; questo è l\'ordine sul widget.</string>
+    <string name="widget_config_pinned_add">Aggiungi categorie</string>
+    <string name="widget_config_pinned_remove_a11y">Rimuovi %1$s dal widget</string>
+    <string name="widget_config_pinned_reorder_a11y">Riordina</string>
+    <string name="widget_quick_bar_label">Barra rapida</string>
+    <string name="widget_quick_bar_description">Spesa ed entrata in una riga, senza aprire l\'app.</string>
+    <string name="settings_section_widgets">Widget</string>
+    <string name="settings_widget_pin_grid">Widget griglia sulla home</string>
+    <string name="settings_widget_pin_grid_hint">La griglia di categorie per l\'aggiunta rapida.</string>
+    <string name="settings_widget_pin_bar">Widget barra sulla home</string>
+    <string name="settings_widget_pin_bar_hint">Spesa ed Entrata in una sola riga.</string>
 </resources>

@@ -17,6 +17,13 @@ data class QuickAddWidgetData(
     /** Already localized: money becomes a String in the presentation layer, never below it. */
     val todayTotal: String?,
     val showTodayTotal: Boolean,
+    /**
+     * The account's name when the widget is pinned to one that is still
+     * active, null when it follows the app default. Shown as a badge: with two
+     * widgets on two accounts, an unlabelled pair is a wrong-account entry
+     * waiting to happen. When set, [todayTotal] is scoped to this account too.
+     */
+    val pinnedAccountName: String? = null,
 ) {
     /** False when there is nothing to add to yet: no account, or no category of this type. */
     val isReady: Boolean get() = account != null && categories.isNotEmpty()

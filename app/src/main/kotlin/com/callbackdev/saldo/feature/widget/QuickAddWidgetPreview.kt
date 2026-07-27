@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,13 +51,14 @@ fun QuickAddWidgetPreview(
     theme: QuickAddWidgetTheme,
     categories: List<Category>,
     showAppShortcut: Boolean,
+    bar: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val description = stringResource(R.string.widget_config_preview_a11y)
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(PreviewHeight)
+            .height(if (bar) PreviewBarHeight else PreviewHeight)
             .clip(RoundedCornerShape(PreviewCorner))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .semantics { contentDescription = description },
@@ -70,38 +73,90 @@ fun QuickAddWidgetPreview(
                 .padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                PreviewPill(stringResource(R.string.widget_quick_add_expense), theme, selected = true)
-                PreviewPill(stringResource(R.string.widget_quick_add_income), theme, selected = false)
-                if (showAppShortcut) {
-                    Box(
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(theme.previewScheme.onSurfaceVariant.copy(alpha = theme.washAlpha)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Image(
-                            painter = painterResource(AppShortcutIcon),
-                            contentDescription = null,
-                            modifier = Modifier.size(30.dp),
-                        )
+            if (bar) {
+                PreviewBarRow(theme, showAppShortcut)
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    PreviewPill(stringResource(R.string.widget_quick_add_expense), theme, selected = true)
+                    PreviewPill(stringResource(R.string.widget_quick_add_income), theme, selected = false)
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    categories.take(PreviewTiles).forEach { category ->
+                        PreviewTile(theme, CategoryVisuals.color(category.color), CategoryVisuals.icon(category.icon))
                     }
+                    PreviewTile(theme, theme.previewScheme.primary, Icons.Outlined.MoreHoriz)
                 }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                categories.take(PreviewTiles).forEach { category ->
-                    PreviewTile(theme, CategoryVisuals.color(category.color), CategoryVisuals.icon(category.icon))
-                }
-                PreviewTile(theme, theme.previewScheme.primary, Icons.Outlined.MoreHoriz)
             }
         }
+    }
+}
+
+/** The bar's shape: the two accent buttons and, when asked, the app square. */
+@Composable
+private fun PreviewBarRow(theme: QuickAddWidgetTheme, showAppShortcut: Boolean) {
+    val money = if (theme.previewDark) theme.darkMoney else theme.lightMoney
+    Row(
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PreviewActionButton(
+            label = stringResource(R.string.widget_quick_add_expense),
+            accent = theme.previewScheme.error,
+            washAlpha = theme.washAlpha,
+            modifier = Modifier.weight(1f),
+        )
+        PreviewActionButton(
+            label = stringResource(R.string.widget_quick_add_income),
+            accent = money.income,
+            washAlpha = theme.washAlpha,
+            modifier = Modifier.weight(1f),
+        )
+        if (showAppShortcut) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(theme.previewScheme.onSurfaceVariant.copy(alpha = theme.washAlpha)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(AppShortcutIcon),
+                    contentDescription = null,
+                    modifier = Modifier.size(34.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreviewActionButton(
+    label: String,
+    accent: Color,
+    washAlpha: Float,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(14.dp))
+            .background(accent.copy(alpha = washAlpha)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = accent,
+            maxLines = 1,
+        )
     }
 }
 
@@ -145,5 +200,8 @@ private fun PreviewTile(theme: QuickAddWidgetTheme, color: Color, icon: ImageVec
 
 private const val PreviewTiles = 3
 private val PreviewHeight = 140.dp
+
+/** The bar preview: one launcher row, not a shrunken grid. */
+private val PreviewBarHeight = 96.dp
 private val PreviewCorner = 16.dp
 private val PreviewInset = 12.dp

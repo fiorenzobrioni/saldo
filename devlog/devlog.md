@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-27 - Due widget invece di uno che si trasforma
+
+**Fatto:** il giro premium finale sul widget: la barra a una riga diventa un provider a sé (due card nel picker, due preview), sezione "Widget" nelle impostazioni per aggiungerli alla home con un tap, totale "oggi" scopato sul conto fissato con badge del nome, totale tappabile che apre i movimenti del giorno, e riordino trascinabile delle categorie fissate nella configurazione.
+
+**Decisioni:** la scissione in due provider e la risposta giusta a due domande insieme: "si possono vedere due preview nel picker?" (sì: il picker mostra una card per provider dichiarato, non per dimensione, ed e cosi che fanno Keep o Calendar) e "perché la config spiega a parole quali opzioni valgono a quale taglia?" (perché era un widget solo: ora l'opzione che non vale non c'è). La barra e vincolata dal contratto, `maxResizeHeight` sotto la soglia della griglia, quindi compone solo i quattro bucket a riga; la griglia mantiene il degrado a una riga per i widget gia piazzati, senza però piu offrirne le opzioni. Il contenuto resta uno (`provideQuickAddContent`): due provider, zero duplicazione. Sul totale per conto ho aggiunto una query one-shot dedicata (`getAccountPeriodTotals`) con le stesse regole cash della query dashboard invece di parametrizzare quella esistente: toccarla avrebbe messo in gioco le carte della dashboard per un caso che non la riguarda. Niente parametro valuta: i movimenti di un conto sono nella sua valuta per costruzione. Il riordino delle categorie usa il pattern gia in casa (`ReorderableListState`), ma con una differenza deliberata: le righe vivono in mezzo alle altre sezioni della config, quindi ogni mappatura passa dalle chiavi stabili delle righe e mai da offset posizionali, che si romperebbero in silenzio alla prima sezione aggiunta sopra. Il colore di sfondo custom, richiesto come "solo se premium", non lo e: gia costruito e rimosso in v0.9.94, combatte il dynamic color, e l'integrazione con la home e gia coperta da opacita + inchiostro adattivo. Scartato con motivazione, in PLANNING.
+
+**Problemi:** il pin da impostazioni dipende da `isRequestPinAppWidgetSupported`, quindi la sezione sparisce sui launcher che non lo supportano: e la degradazione giusta, ma su quei device la scoperta resta affidata al picker. La card della barra nel picker di OneUI e da verificare a occhio: e il caso d'uso che ha originato la richiesta.
+
+**Verificato:** verifica statica in locale; build, unit test, lint e detekt in CI sul PR. Test nuovi: i bucket della barra risolvono sempre il layout a due bottoni, il totale e il badge seguono il conto fissato e il fallback da conto archiviato torna app-wide. versionCode 141 -> 142, versionName 0.9.102 -> 0.9.103.
+
+**Prossimo:** prova su device: due card nel picker OneUI, pin dalle impostazioni, badge e totale per conto, tap sul totale, riordino delle categorie. Poi il PR e pronto per il merge.
+
+---
+
 ## 2026-07-27 - Il quadrato che RemoteViews non sa misurare
 
 **Fatto:** tre richieste sul formato a una riga: il bottone dell'icona dell'app quadrato invece che rettangolare (con il marchio piu grande), un secondo preview generato a una riga, e "Icona dell'app" attiva di default.

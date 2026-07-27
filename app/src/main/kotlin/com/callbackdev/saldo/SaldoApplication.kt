@@ -10,6 +10,7 @@ import com.callbackdev.saldo.budget.BudgetThresholdWatcher
 import com.callbackdev.saldo.core.common.di.ApplicationScope
 import com.callbackdev.saldo.creditcard.CreditCardNotifier
 import com.callbackdev.saldo.feature.widget.SaldoQuickAddWidgetReceiver
+import com.callbackdev.saldo.feature.widget.SaldoQuickBarWidgetReceiver
 import com.callbackdev.saldo.feature.widget.WidgetRefreshWatcher
 import com.callbackdev.saldo.recurring.RecurringNotifier
 import com.callbackdev.saldo.recurring.RecurringWorkScheduler
@@ -73,8 +74,9 @@ class SaldoApplication : Application(), Configuration.Provider {
             // check does not follow guards across lambda boundaries.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                 runCatching {
-                    GlanceAppWidgetManager(this@SaldoApplication)
-                        .setWidgetPreviews(SaldoQuickAddWidgetReceiver::class)
+                    val manager = GlanceAppWidgetManager(this@SaldoApplication)
+                    manager.setWidgetPreviews(SaldoQuickAddWidgetReceiver::class)
+                    manager.setWidgetPreviews(SaldoQuickBarWidgetReceiver::class)
                 }
             }
         }

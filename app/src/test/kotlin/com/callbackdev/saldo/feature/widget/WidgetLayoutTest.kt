@@ -155,6 +155,19 @@ class WidgetLayoutTest {
     }
 
     /**
+     * The bar provider composes only [ActionBuckets], and its provider info
+     * caps the resize below the grid threshold: every one of its buckets must
+     * therefore resolve to the two-button layout, or the bar would try to
+     * draw a grid it has no room for.
+     */
+    @Test
+    fun `every bar bucket is the two-button layout`() {
+        ActionBuckets.forEach { size ->
+            assertEquals(WidgetStyle.ACTIONS, layoutFor(size, plenty).style, "Style at $size")
+        }
+    }
+
+    /**
      * The app-shortcut square: its side is the bucket height minus the even
      * inset, which is also the button height, floored so the smallest bucket
      * keeps a usable target. This is what makes the shortcut read as a square

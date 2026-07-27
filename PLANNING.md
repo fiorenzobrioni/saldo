@@ -635,6 +635,20 @@
 - [x] Test: bucket->layout e fontScale in `WidgetLayoutTest`; legacy TRANSPARENT, round-trip e clamp dell'opacita in `QuickAddWidgetPrefsTest`; segnale tema in `WidgetRefreshWatcherTest`; entrate di oggi e `loadShared` in `QuickAddWidgetDataLoaderTest`; strumentati aggiornati (`QuickAddWidgetThemeTest` sulla coppia light/dark e sull'opacita, `CategoryIconBitmapsTest` sulla maschera bianca)
 - [ ] Verifica su device: resize istantaneo tra i bucket, flip del tema di sistema a widget fermo, slider a 0% su wallpaper chiaro e scuro, rollover del totale a mezzanotte, preview generata nel picker (API 35+)
 
+## Fase 10.20 - Widget: due provider, pin dalle impostazioni e totale per conto (luglio 2026)
+
+> Secondo giro premium sul widget, su richiesta utente (versionCode 141 -> 142, versionName 0.9.102 -> 0.9.103). Il colore di sfondo custom e stato valutato di nuovo e scartato di nuovo: gia costruito e rimosso in v0.9.94, combatte il dynamic color e il bisogno reale (integrarsi con la home) e coperto da opacita + inchiostro adattivo.
+
+- [x] **Due provider: griglia e barra** (`SaldoQuickBarWidgetReceiver`, target 4x1, `maxResizeHeight` 118dp sotto la soglia griglia). Nel picker del launcher compaiono due card con due preview (statiche pre-35, generate su 35+), e l'utente sceglie la forma al piazzamento invece di scoprirla ridimensionando; il contenuto Glance e condiviso (`provideQuickAddContent`), la barra compone solo gli `ActionBuckets`. La griglia mantiene il degrado a una riga per i widget gia piazzati
+- [x] Config screen in due sapori dalla stessa activity (il provider si legge da `getAppWidgetInfo`): la griglia mostra tipo di partenza, categorie e totale di oggi; la barra mostra bottoni e icona dell'app; aspetto, opacita e conto sono comuni. Sparisce la didascalia "vale solo a una riga": l'opzione che non vale non c'e
+- [x] Watcher, worker di mezzanotte e preview generate coprono entrambi i provider (placement e refresh iterano le due classi)
+- [x] **Pin dalle impostazioni**: sezione "Widget" con due voci che chiamano `requestPinGlanceAppWidget` (dialog di aggiunta del launcher), visibile solo dove `isRequestPinAppWidgetSupported`; nessuno esplora il picker in cerca di Saldo, l'offerta sta dove l'utente gia si trova
+- [x] **Totale "oggi" scopato sul conto fissato**: nuova query one-shot `getAccountPeriodTotals` (stesse regole cash della query dashboard, un solo conto, valuta del conto), usata dal loader quando il widget e fissato a un conto vivo; il fallback da conto archiviato torna al totale app-wide. Badge col nome del conto nell'header (pesato: un nome lungo cede, l'importo mai): due widget su due conti mostravano lo stesso numero
+- [x] **Totale "oggi" tappabile**: apre il drill-down dei movimenti del giorno (stessa `FilteredTransactionsRoute` della card Oggi della dashboard) via `ACTION_VIEW_TODAY` in MainActivity, consumata una volta come le quick action
+- [x] **Riordino delle categorie fissate**: righe trascinabili nella config della griglia (pattern `ReorderableListState` di categorie/conti), con mirror locale durante il drag e ordine adottato al rilascio; mappatura per chiave stabile, mai per offset posizionale, perche le righe vivono in mezzo alle altre sezioni. Rimozione con la X, aggiunta dai chip delle restanti
+- [x] Test: bucket della barra sempre ACTIONS (`WidgetLayoutTest`); totale e badge del conto fissato, fallback da archiviato (`QuickAddWidgetDataLoaderTest`)
+- [ ] Verifica su device: le due card nel picker (OneUI mostra i provider come card separate), pin dalle impostazioni, badge e totale per conto, tap sul totale, riordino delle categorie fissate
+
 # Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.
