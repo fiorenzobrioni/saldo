@@ -110,6 +110,9 @@ class WidgetLayoutTest {
     fun `every responsive bucket resolves to the layout it was designed for`() {
         val designed = mapOf(
             DpSize(110.dp, 40.dp) to (WidgetStyle.ACTIONS to 0),
+            DpSize(110.dp, 64.dp) to (WidgetStyle.ACTIONS to 0),
+            DpSize(110.dp, 88.dp) to (WidgetStyle.ACTIONS to 0),
+            DpSize(110.dp, 112.dp) to (WidgetStyle.ACTIONS to 0),
             DpSize(110.dp, 120.dp) to (WidgetStyle.GRID to 1),
             DpSize(110.dp, 126.dp) to (WidgetStyle.GRID to 2),
             DpSize(110.dp, 184.dp) to (WidgetStyle.GRID to 3),
@@ -149,5 +152,18 @@ class WidgetLayoutTest {
             layoutFor(DpSize(110.dp, 184.dp), plenty),
             layoutFor(DpSize(110.dp, 184.dp), plenty, fontScale = 2f),
         )
+    }
+
+    /**
+     * The app-shortcut square: its side is the bucket height minus the even
+     * inset, which is also the button height, floored so the smallest bucket
+     * keeps a usable target. This is what makes the shortcut read as a square
+     * instead of a fixed-width rectangle on launchers with taller rows.
+     */
+    @Test
+    fun `the single-row buckets size the shortcut square from their height`() {
+        assertEquals(60, layoutFor(DpSize(110.dp, 88.dp), plenty).shortcutSide)
+        assertEquals(84, layoutFor(DpSize(110.dp, 112.dp), plenty).shortcutSide)
+        assertEquals(40, layoutFor(DpSize(110.dp, 40.dp), plenty).shortcutSide, "Floored, never a sliver")
     }
 }

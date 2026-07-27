@@ -182,11 +182,12 @@ class QuickAddWidgetPrefsTest {
         assertEquals(1f, QuickAddWidgetPrefs.read(preferences).backgroundOpacity)
     }
 
+    /** On by default (user's call); an explicit off must survive the read. */
     @Test
-    fun `the app shortcut is off until it is asked for`() {
-        assertTrue(!QuickAddWidgetPrefs.read(mutablePreferencesOf()).showAppShortcut)
-        val enabled = mutablePreferencesOf(QuickAddWidgetPrefs.ShowAppShortcut to true)
-        assertTrue(QuickAddWidgetPrefs.read(enabled).showAppShortcut)
+    fun `the app shortcut is on by default and off stays off`() {
+        assertTrue(QuickAddWidgetPrefs.read(mutablePreferencesOf()).showAppShortcut)
+        val disabled = mutablePreferencesOf(QuickAddWidgetPrefs.ShowAppShortcut to false)
+        assertTrue(!QuickAddWidgetPrefs.read(disabled).showAppShortcut)
     }
 
     /**

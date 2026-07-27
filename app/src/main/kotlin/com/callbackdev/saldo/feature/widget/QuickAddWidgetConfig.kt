@@ -45,11 +45,13 @@ data class QuickAddWidgetConfig(
     val backgroundOpacity: Float = 1f,
     val buttons: WidgetActionButtons = WidgetActionButtons.BOTH,
     /**
-     * The app icon beside the two buttons of the single-row layout. Off by
-     * default: the taller layouts already carry an "open Saldo" tile, and the
-     * row is the size where every element has to earn its width.
+     * The app icon beside the two buttons of the single-row layout. On by
+     * default (the user's call, after living with it off): the single row has
+     * no other way into the app, where every taller layout carries an "open
+     * Saldo" tile. Still a switch, for whoever wants the row to be only the
+     * two buttons.
      */
-    val showAppShortcut: Boolean = false,
+    val showAppShortcut: Boolean = true,
 ) {
     val usesMostUsed: Boolean get() = pinnedCategoryIds.isEmpty()
 
@@ -133,7 +135,7 @@ object QuickAddWidgetPrefs {
             buttons = preferences[Buttons]?.let { stored ->
                 WidgetActionButtons.entries.firstOrNull { it.name == stored }
             } ?: WidgetActionButtons.BOTH,
-            showAppShortcut = preferences[ShowAppShortcut] ?: false,
+            showAppShortcut = preferences[ShowAppShortcut] ?: true,
         )
     }
 

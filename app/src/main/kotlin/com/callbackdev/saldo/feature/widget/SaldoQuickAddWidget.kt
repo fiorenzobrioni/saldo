@@ -97,8 +97,13 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
      */
     override val sizeMode: SizeMode = SizeMode.Responsive(WidgetBuckets)
 
-    /** The picker preview renders once, at the widget's default 4x3 shape. */
-    override val previewSizeMode = SizeMode.Responsive(setOf(PreviewBucket))
+    /**
+     * Two preview shapes: the default 4x3 grid, and the single-row layout for
+     * hosts that render a short preview (the pin dialog, some pickers). The
+     * standard picker shows the default size; the second bucket is there for
+     * whoever asks smaller.
+     */
+    override val previewSizeMode = SizeMode.Responsive(setOf(PreviewBucket, PreviewRowBucket))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val entryPoint = context.widgetEntryPoint()
@@ -179,8 +184,16 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
  * drifted from the arithmetic would silently pin the wrong layout.
  */
 internal val WidgetBuckets: Set<DpSize> = setOf(
-    // One launcher row: the two-button layout.
+    // One launcher row: the two-button layout. Four heights rather than one,
+    // not for the layout (any height under 120 is the same two buttons) but
+    // for the app-shortcut square: RemoteViews has no measure pass, so the
+    // bucket height is the only estimate of the button height there is, and
+    // one bucket at 40dp made the shortcut a fixed-width rectangle on every
+    // launcher whose row is taller.
     DpSize(110.dp, 40.dp),
+    DpSize(110.dp, 64.dp),
+    DpSize(110.dp, 88.dp),
+    DpSize(110.dp, 112.dp),
     // Narrow grid, two bare-icon columns, 1 to 5 rows.
     DpSize(110.dp, 120.dp),
     DpSize(110.dp, 126.dp),
@@ -197,6 +210,9 @@ internal val WidgetBuckets: Set<DpSize> = setOf(
 
 /** The default 4x3 placement: what the picker's generated preview shows. */
 internal val PreviewBucket = DpSize(250.dp, 260.dp)
+
+/** The single-row preview, for hosts that render the widget short. */
+internal val PreviewRowBucket = DpSize(250.dp, 88.dp)
 
 /**
  * Everything that makes the widget reload. The configuration is the user's
@@ -235,6 +251,13 @@ internal data class WidgetLayout(
      */
     val paddingHorizontal: Int = 12,
     val paddingVertical: Int = 8,
+    /**
+     * The side of the square app-shortcut button in the single-row layout,
+     * derived from the bucket height so width can match height. The real
+     * widget can run a little taller than its bucket, so "square" is a close
+     * approximation rather than a guarantee - as close as RemoteViews allows.
+     */
+    val shortcutSide: Int = 0,
 ) {
     /** One slot is always the "more" tile, the way out to the full editor. */
     val categorySlots: Int get() = columns * rows - 1
@@ -262,7 +285,16 @@ internal fun layoutFor(size: DpSize, availableCategories: Int, fontScale: Float 
     // Height first: a widget one row high can be any number of columns wide,
     // and none of those widths can hold a grid.
     if (size.height < SaldoQuickAddWidget.GridMinHeight) {
-        return WidgetLayout(style = WidgetStyle.ACTIONS, paddingHorizontal = 14, paddingVertical = 14)
+        return WidgetLayout(
+            style = WidgetStyle.ACTIONS,
+            paddingHorizontal = ActionsPadding,
+            paddingVertical = ActionsPadding,
+            // What is left of the bucket height once the inset is paid: the
+            // button height, which is also the width a square wants. Floored
+            // so the smallest bucket keeps a usable tap target.
+            shortcutSide = (size.height.value.toInt() - 2 * ActionsPadding)
+                .coerceAtLeast(MinShortcutSide),
+        )
     }
     val wide = size.width >= SaldoQuickAddWidget.WideMinWidth
     val columns = if (wide) WideColumns else NarrowColumns
@@ -332,7 +364,7 @@ private fun WidgetBody(
     ) {
         when {
             !data.isReady -> NotReady(compact = layout.style == WidgetStyle.ACTIONS)
-            layout.style == WidgetStyle.ACTIONS -> MoneyActions(config, data, theme)
+            layout.style == WidgetStyle.ACTIONS -> MoneyActions(config, data, theme, layout)
             else -> {
                 if (layout.showHeader) {
                     Header(config.effectiveType, data)
@@ -471,6 +503,7 @@ private fun ColumnScope.MoneyActions(
     config: QuickAddWidgetConfig,
     data: QuickAddWidgetData,
     theme: QuickAddWidgetTheme,
+    layout: WidgetLayout,
 ) {
     val context = LocalContext.current
     Row(
@@ -502,7 +535,7 @@ private fun ColumnScope.MoneyActions(
         }
         if (config.showAppShortcut) {
             Spacer(GlanceModifier.width(ActionGap))
-            AppShortcutButton(theme)
+            AppShortcutButton(theme, layout.shortcutSide)
         }
     }
 }
@@ -514,13 +547,19 @@ private fun ColumnScope.MoneyActions(
  * the same family as the two buttons - on a transparent widget a naked icon
  * just hovered on the wallpaper - while the neutral keeps it from competing
  * with the pair that matters.
+ *
+ * Squared, not fixed-width: the width follows [WidgetLayout.shortcutSide],
+ * the bucket's estimate of the button height, and the mark scales with it. A
+ * fixed 56dp width read as a tall rectangle on any launcher whose row runs
+ * taller than that.
  */
 @Composable
-private fun RowScope.AppShortcutButton(theme: QuickAddWidgetTheme) {
+private fun RowScope.AppShortcutButton(theme: QuickAddWidgetTheme, side: Int) {
     val context = LocalContext.current
+    val markSize = (side * AppShortcutMarkRatio).toInt()
     Box(
         modifier = GlanceModifier
-            .width(AppShortcutWidth)
+            .width(side.dp)
             .fillMaxHeight()
             .background(theme.neutralWash)
             .cornerRadius(ActionCornerRadius)
@@ -529,10 +568,10 @@ private fun RowScope.AppShortcutButton(theme: QuickAddWidgetTheme) {
     ) {
         Image(
             provider = ImageProvider(
-                CategoryIconBitmaps.appMark(context, AppShortcutIcon, context.pxOf(AppShortcutMarkSize)),
+                CategoryIconBitmaps.appMark(context, AppShortcutIcon, context.pxOf(markSize)),
             ),
             contentDescription = context.getString(R.string.widget_quick_add_open_a11y),
-            modifier = GlanceModifier.size(AppShortcutMarkSize.dp),
+            modifier = GlanceModifier.size(markSize.dp),
         )
     }
 }
@@ -787,10 +826,15 @@ private val ActionCornerRadius = 18.dp
 private val ActionIconGap = 6.dp
 private val ActionFontSize = 15.sp
 private const val ActionIconSize = 20
-private val AppShortcutWidth = 56.dp
 
-/** Sized to sit inside the shortcut's own wash with the margin a button implies. */
-private const val AppShortcutMarkSize = 40
+/** The single-row layout's even inset (see [WidgetLayout.paddingHorizontal]). */
+private const val ActionsPadding = 14
+
+/** The smallest square the shortcut is allowed to shrink to: still a target. */
+private const val MinShortcutSide = 40
+
+/** The mark against its square: most of it, with the margin a button implies. */
+private const val AppShortcutMarkRatio = 0.8f
 
 /** The mark above the "open Saldo to get started" text of the taller sizes. */
 private const val SetupMarkSize = 36

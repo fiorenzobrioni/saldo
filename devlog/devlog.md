@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-27 - Il quadrato che RemoteViews non sa misurare
+
+**Fatto:** tre richieste sul formato a una riga: il bottone dell'icona dell'app quadrato invece che rettangolare (con il marchio piu grande), un secondo preview generato a una riga, e "Icona dell'app" attiva di default.
+
+**Decisioni:** il quadrato e il pezzo interessante, perche RemoteViews non ha una misura: la larghezza va decisa alla composizione, ma l'altezza vera del bottone la conosce solo il launcher. La via d'uscita e nei bucket, che gia esistono: il formato a una riga ne aveva uno solo (110x40, il minimo consentito), quindi la composizione credeva sempre di avere 40dp di altezza e la larghezza fissa a 56dp diventava un rettangolo verticale su qualunque launcher con righe piu alte. Ora i bucket ACTIONS sono quattro (40/64/88/112) e il lato del bottone e `altezza bucket - inset`, con floor a 40dp: il launcher sceglie il bucket piu vicino da sotto, quindi il bottone puo restare un poco piu alto che largo, mai il contrario, e nel caso tipico (righe da 80-110dp) l'errore e di pochi dp. E un'approssimazione dichiarata, non un quadrato garantito: e il massimo che il modello RemoteViews permette. Il marchio scala all'80% del lato invece dei 40dp fissi, che e anche l'ingrandimento chiesto. Siamo a 14 bucket su un tetto di piattaforma di 16, e il tetto e il motivo per cui i bucket intermedi sono tre e non cinque. Il secondo preview e un bucket in `previewSizeMode` (250x88): il picker standard continua a mostrare la 4x3, ma gli host che disegnano un'anteprima bassa (il dialog di pin, alcuni picker) ricevono il formato a riga vero, icona inclusa - inclusa perche il default di `showAppShortcut` passa a on, su scelta dell'utente, e un off salvato in passato sopravvive perche la chiave scritta esplicitamente vince sul default di lettura.
+
+**Problemi:** nessuno di nuovo. Vale la nota gia in PLANNING: il quadrato per bucket e onesto ma non esatto, e la resa va giudicata su device.
+
+**Verificato:** verifica statica in locale; build, unit test, lint e detekt in CI sul PR. Test aggiornati: la mappa bucket->layout copre i 14 bucket, il lato del quadrato e asserito per i bucket a riga (60 a 88dp, 84 a 112dp, floor a 40), e il default dell'icona dell'app e ribaltato (on di default, off esplicito conservato). versionCode 140 -> 141, versionName 0.9.101 -> 0.9.102.
+
+**Prossimo:** prova su device del quadrato sulle righe reali del launcher e del preview a una riga dove l'host lo mostra.
+
+---
+
 ## 2026-07-27 - Il resize che rispondeva al launcher, e il tema che dormiva
 
 **Fatto:** i fix della review completa del widget, in un giro solo: ritorno a `SizeMode.Responsive` con i bucket enumerati, tema day/night risolto dal launcher, refresh a mezzanotte, gate di caricamento e toast d'errore nella configurazione, slider di opacità dello sfondo con inchiostro adattivo dal wallpaper, e le rifiniture premium (corner radius di sistema con `appWidgetBackground`, generated previews su API 35+, stato "per iniziare" cliccabile ovunque, totale del giorno etichettato e coerente col tipo, budget etichette sensibile al fontScale, icona dell'app dentro una velatura neutra).
