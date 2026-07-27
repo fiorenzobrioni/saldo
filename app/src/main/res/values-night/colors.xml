@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark side of the widget picker preview palette (see values/colors.xml):
+         the launcher resolves these against its own configuration, which is the
+         only mechanism that makes a previewLayout follow light/dark mode. -->
+    <color name="widget_preview_surface">#1B1B1F</color>
+    <color name="widget_preview_ink">#E4E1E6</color>
+    <color name="widget_preview_ink_muted">#C6C6D0</color>
+</resources>

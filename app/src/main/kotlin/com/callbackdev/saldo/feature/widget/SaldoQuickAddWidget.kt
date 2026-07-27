@@ -206,6 +206,9 @@ internal suspend fun GlanceAppWidget.provideQuickAddContent(context: Context, id
  * user's real palette and categories, where the static `previewLayout` XML
  * can only ever show a stand-in. Data reads are best-effort - before
  * onboarding this simply shows the honest "open Saldo to get started".
+ *
+ * Publishing it is [WidgetPreviews]' job, and not a one-shot: the system drops
+ * the preview on every in-place app update and on every reboot.
  */
 internal suspend fun GlanceAppWidget.provideQuickAddPreview(context: Context) {
     val entryPoint = context.widgetEntryPoint()

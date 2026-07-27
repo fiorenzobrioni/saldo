@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-27 - Le anteprime generate sparivano a ogni update in place
+
+**Fatto:** le due anteprime generate del picker (API 35+) tornano e restano. Nuovo `WidgetPreviews`: pubblica solo per i provider di cui il launcher non vede piu un preview, e se il sistema rifiuta la chiamata arma un one-shot WorkManager a 65 minuti invece di aspettare il prossimo avvio a freddo. Restano dal giro precedente i colori propri con variante `values-night` delle preview statiche e la card di sfondo col raggio widget di sistema, che valgono da fallback e sui device pre-35.
+
+**Decisioni:** un preview generato non e una risorsa dell'app, e stato di `system_server`, e due eventi ordinari lo cancellano. Il primo e l'**update in place**: `updateProvidersForPackageLocked` ri-parsa il manifest e passa a `Provider.setPartialInfoLocked` un `AppWidgetProviderInfo` nuovo, con `generatedPreviewCategories` a 0. Le `RemoteViews` memorizzate restano dove sono, ma il launcher si regola esattamente su quel campo (`DatabaseWidgetPreviewLoader` chiede il preview solo se il bit home-screen e acceso), quindi da fuori l'anteprima e sparita. Il secondo e il **riavvio**: i preview stanno in una `SparseArray` sul provider e non finiscono mai nel file di stato. Sul device di test sono tutti e due routine, ed e li che scattava la seconda meta della trappola: `setWidgetPreview` concede circa due chiamate l'ora **per provider**, e ripubblicare a ogni `Application.onCreate` spendeva quel budget per anteprime che il launcher vedeva gia. Il risultato e che la chiamata che contava, il primo avvio dopo un update, era proprio quella che il sistema rifiutava. E il rifiuto non si vedeva: il valore `@CheckResult` che distingue "pubblicato" da "rate-limited" veniva scartato insieme alle eccezioni.
+
+Da qui le due regole. Il gate legge `generatedPreviewCategories` e non `getWidgetPreview`, che sarebbe la scelta ovvia e la scelta sbagliata: dopo un update in place `getWidgetPreview` risponde ancora "ce n'e uno", perche le `RemoteViews` non sono state toccate, proprio nel momento in cui il launcher non riesce piu a raggiungerle. Il retry e un `CoroutineWorker` semplice e non `@HiltWorker` perche non ha dipendenze oltre al context, e la factory Hilt ripiega da sola su quella di default; 65 minuti perche la finestra di sistema e un'ora su `elapsedRealtime` e conviene arrivare appena dopo.
+
+**Problemi:** primo giro sbagliato, e vale la pena scriverlo. Avevo letto la sparizione come "il preview generato oscura il `previewLayout`" (vero: in `generatePreviewInfoBg` le tre sorgenti non sono alternative pari, si legge prima il generato) e avevo concluso che il preview generato fosse vuoto, rimuovendo la feature invece di ripararla. Era sbagliato: le due anteprime reali c'erano e funzionavano, il problema e che non sopravvivevano all'update. La conferma e arrivata dalla descrizione di cosa restava a schermo, che era esattamente il `previewLayout` statico della barra.
+
+**Verificato:** `./gradlew assembleDebug testDebugUnitTest lint` in locale, e **prova su device riuscita**: dopo l'update in place le due card del picker tornano renderizzate. I due `Log` che avevo messo sul ramo del rifiuto sono stati poi tolti (scelta dell'utente): il progetto non logga da nessun'altra parte, e la diagnosi non dipende dal messaggio ma dal valore di ritorno, che ora pilota il retry. versionCode 143 -> 145, versionName 0.9.104 -> 0.9.106.
+
+**Prossimo:** resta da verificare il caso riavvio, l'altro evento che cancella i preview.
+
+---
+
 ## 2026-07-27 - Due widget invece di uno che si trasforma
 
 **Fatto:** il giro premium finale sul widget: la barra a una riga diventa un provider a sé (due card nel picker, due preview), sezione "Widget" nelle impostazioni per aggiungerli alla home con un tap, totale "oggi" scopato sul conto fissato con badge del nome, totale tappabile che apre i movimenti del giorno, e riordino trascinabile delle categorie fissate nella configurazione.
