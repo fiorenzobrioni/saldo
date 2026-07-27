@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
+import com.callbackdev.saldo.core.database.relation.AccountPeriodTotalsRow
 import com.callbackdev.saldo.core.database.relation.AccountTotalRow
 import com.callbackdev.saldo.core.database.relation.CategoryTotalRow
 import com.callbackdev.saldo.core.database.relation.DailyNetRow
@@ -532,6 +533,27 @@ interface TransactionDao {
         previousToDateEnd: Long,
         currency: String,
     ): Flow<DashboardTotalsRow>
+
+    /**
+     * Cash expense/income sums of a single account in `[start, end)`: the same
+     * cash rules as [observeDashboardTotals] (pending never counts, transfers
+     * and adjustments out via the type filter, excluded-from-stats still in),
+     * scoped to one account instead of the active set. No currency parameter:
+     * an account's movements are all in its own currency by construction.
+     * One-shot because its caller (the quick-add widget) renders snapshots.
+     */
+    @Query(
+        """
+        SELECT
+            SUM(CASE WHEN t.type = 'EXPENSE' THEN t.amountMinor ELSE 0 END) AS spendMinor,
+            SUM(CASE WHEN t.type = 'INCOME' THEN t.amountMinor ELSE 0 END) AS incomeMinor
+        FROM transactions t
+        WHERE t.isPending = 0 AND t.accountId = :accountId
+            AND t.type IN ('EXPENSE', 'INCOME')
+            AND t.timestampEpochMilli >= :start AND t.timestampEpochMilli < :end
+        """,
+    )
+    suspend fun getAccountPeriodTotals(accountId: Long, start: Long, end: Long): AccountPeriodTotalsRow
 
     /**
      * One-shot statistics totals of `[startMillis, endMillis)` in a single

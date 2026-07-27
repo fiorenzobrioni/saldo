@@ -11,6 +11,7 @@ import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
+import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -224,6 +225,23 @@ class RoomTransactionRepository @Inject constructor(
             previousToDateEnd = windows.previousToDateEnd.toEpochMilli(),
             currency = currency.currencyCode,
         ).map { row -> row.toDomain(currency) }
+
+    override suspend fun getAccountPeriodTotals(
+        accountId: Long,
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): PeriodTotals {
+        val row = transactionDao.getAccountPeriodTotals(
+            accountId = accountId,
+            start = start.toEpochMilli(),
+            end = end.toEpochMilli(),
+        )
+        return PeriodTotals(
+            spend = MoneyMapper.toAmount(row.spendMinor ?: 0L, currency),
+            income = MoneyMapper.toAmount(row.incomeMinor ?: 0L, currency),
+        )
+    }
 
     override suspend fun mostUsedCategoryIds(
         type: TransactionType,

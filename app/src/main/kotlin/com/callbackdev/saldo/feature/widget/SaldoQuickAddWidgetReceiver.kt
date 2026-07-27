@@ -2,7 +2,6 @@ package com.callbackdev.saldo.feature.widget
 
 import android.appwidget.AppWidgetManager
 import android.content.Context
-import android.os.Bundle
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 
@@ -26,23 +25,10 @@ class SaldoQuickAddWidgetReceiver : GlanceAppWidgetReceiver() {
         context.widgetEntryPoint().widgetRefreshWatcher().onWidgetsChanged()
     }
 
-    /**
-     * The size a widget was resized to arrives here, and with `SizeMode.Exact`
-     * it is what the layout is worked out from. The base class already reacts;
-     * the explicit redraw is belt and braces for launchers that deliver the
-     * options change late or coalesce it away, where the widget would otherwise
-     * keep drawing the layout of its previous size.
-     */
-    override fun onAppWidgetOptionsChanged(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetId: Int,
-        newOptions: Bundle,
-    ) {
-        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
-        context.widgetEntryPoint().widgetRefreshWatcher().requestRedraw()
-    }
-
+    // No onAppWidgetOptionsChanged override: with SizeMode.Responsive every
+    // update already ships the launcher one layout per bucket, so a resize is
+    // settled there, without waking this process at all. The Exact-era version
+    // redrew everything from here on each resize and still arrived late.
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,

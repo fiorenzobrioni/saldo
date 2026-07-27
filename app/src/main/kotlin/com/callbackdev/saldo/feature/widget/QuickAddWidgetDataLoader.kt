@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.widget
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.account.DefaultAccountResolver
+import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
@@ -13,6 +14,8 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
@@ -32,6 +35,32 @@ class QuickAddWidgetDataLoader @Inject constructor(
     private val clock: Clock,
 ) {
 
+    private val sharedLock = Mutex()
+    private var sharedKey: Pair<QuickAddWidgetConfig, Long>? = null
+    private var sharedData: QuickAddWidgetData? = null
+
+    /**
+     * [load] deduplicated across the sizes of one render. A Responsive widget
+     * composes its content once per bucket, all with the same config and
+     * revision, and every one of those compositions asks for the same snapshot:
+     * this hands them a single database pass instead of eleven.
+     *
+     * The cache holds exactly one entry and the revision is part of the key,
+     * which is what keeps it honest: any data change reaches the widget only as
+     * a revision bump (see `WidgetRefreshWatcher`), so a hit can never serve a
+     * stale snapshot - equal key, equal data, by construction. [load] itself
+     * stays stateless for everyone else.
+     */
+    suspend fun loadShared(config: QuickAddWidgetConfig, revision: Long): QuickAddWidgetData =
+        sharedLock.withLock {
+            val key = config to revision
+            sharedData?.takeIf { sharedKey == key }
+                ?: load(config).also {
+                    sharedKey = key
+                    sharedData = it
+                }
+        }
+
     /**
      * [categoryLimit] exists for tests and for nothing else: the widget takes
      * every category, ordered, and its layout decides how many rows of them fit.
@@ -41,7 +70,10 @@ class QuickAddWidgetDataLoader @Inject constructor(
         val active = accounts.map { it.account }.filter { !it.isArchived }
         // An account configured on the widget and later archived or deleted must
         // not leave the widget dead: fall back to the app's own default chain.
-        val account = active.firstOrNull { it.id == config.accountId }
+        // A pinned account that survived is remembered apart from the fallback:
+        // it scopes the today total and earns the badge in the header.
+        val pinned = active.firstOrNull { it.id == config.accountId }
+        val account = pinned
             ?: DefaultAccountResolver.resolve(
                 accounts = active,
                 defaultAccountId = userPreferences.defaultAccountId.first(),
@@ -51,7 +83,11 @@ class QuickAddWidgetDataLoader @Inject constructor(
         val available = categoryRepository.observeCategories(config.effectiveType.categoryType()).first()
         val categories = pick(available, config, categoryLimit)
 
-        val todayTotal = if (config.showTodayTotal) formatTodaySpend(accounts) else null
+        val todayTotal = if (config.showTodayTotal) {
+            formatTodayTotal(accounts, pinned, config.effectiveType)
+        } else {
+            null
+        }
 
         return QuickAddWidgetData(
             type = config.effectiveType,
@@ -59,6 +95,7 @@ class QuickAddWidgetDataLoader @Inject constructor(
             categories = categories,
             todayTotal = todayTotal,
             showTodayTotal = config.showTodayTotal,
+            pinnedAccountName = pinned?.name,
         )
     }
 
@@ -83,16 +120,46 @@ class QuickAddWidgetDataLoader @Inject constructor(
         return (mostUsed + available).distinctBy { it.id }.take(limit)
     }
 
-    private suspend fun formatTodaySpend(accounts: List<AccountWithBalance>): String? {
+    /**
+     * Today's number next to the selector, matching the type the widget is
+     * showing: spend on an expense widget, earnings on an income one. The old
+     * behaviour showed spend on both, which put an unexplained outgoing total
+     * on a widget whose every control said "income".
+     *
+     * A widget pinned to a live account totals that account alone, in its own
+     * currency: two widgets on two accounts used to show the same app-wide
+     * number, which read as one of them being wrong.
+     */
+    private suspend fun formatTodayTotal(
+        accounts: List<AccountWithBalance>,
+        pinned: Account?,
+        type: TransactionType,
+    ): String? {
         if (accounts.isEmpty()) return null
-        val currency = primaryCurrency(accounts, userPreferences.primaryCurrencyOverride.first())
         val today = LocalDate.now(clock)
-        val totals = transactionRepository
-            .observeDashboardTotals(DashboardWindows.around(today, clock.zone), currency)
-            .first()
+        val (totals, currency) = if (pinned != null) {
+            val start = today.atStartOfDay(clock.zone).toInstant()
+            val end = today.plusDays(1).atStartOfDay(clock.zone).toInstant()
+            transactionRepository.getAccountPeriodTotals(
+                accountId = pinned.id,
+                start = start,
+                end = end,
+                currency = pinned.currency,
+            ) to pinned.currency
+        } else {
+            val primary = primaryCurrency(accounts, userPreferences.primaryCurrencyOverride.first())
+            transactionRepository
+                .observeDashboardTotals(DashboardWindows.around(today, clock.zone), primary)
+                .first()
+                .today to primary
+        }
         // Spend arrives as a negative magnitude (the effect on the account); the
-        // widget shows what left the wallet today, so it reads as a positive.
-        return MoneyFormatter.format(totals.today.spend.abs(), currency)
+        // widget shows what moved today, so both types read as a positive.
+        val amount = when (type) {
+            TransactionType.INCOME -> totals.income
+            else -> totals.spend
+        }
+        return MoneyFormatter.format(amount.abs(), currency)
     }
 
     private fun TransactionType.categoryType(): CategoryType = when (this) {

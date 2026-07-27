@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.widget
 
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -35,13 +36,22 @@ data class QuickAddWidgetConfig(
     val pinnedCategoryIds: List<Long> = emptyList(),
     val showTodayTotal: Boolean = true,
     val appearance: WidgetAppearance = WidgetAppearance.SYSTEM,
+    /**
+     * The background alpha, 0..1, from the slider in the settings. 1 is the
+     * app's own opaque surface; 0 sits straight on the wallpaper. Below half,
+     * `resolveWidgetTheme` stops trusting the background to carry contrast and
+     * takes the ink side from the wallpaper's own hint instead.
+     */
+    val backgroundOpacity: Float = 1f,
     val buttons: WidgetActionButtons = WidgetActionButtons.BOTH,
     /**
-     * The app icon beside the two buttons of the single-row layout. Off by
-     * default: the taller layouts already carry an "open Saldo" tile, and the
-     * row is the size where every element has to earn its width.
+     * The app icon beside the two buttons of the single-row layout. On by
+     * default (the user's call, after living with it off): the single row has
+     * no other way into the app, where every taller layout carries an "open
+     * Saldo" tile. Still a switch, for whoever wants the row to be only the
+     * two buttons.
      */
-    val showAppShortcut: Boolean = false,
+    val showAppShortcut: Boolean = true,
 ) {
     val usesMostUsed: Boolean get() = pinnedCategoryIds.isEmpty()
 
@@ -60,13 +70,15 @@ data class QuickAddWidgetConfig(
 enum class WidgetActionButtons { BOTH, EXPENSE_ONLY, INCOME_ONLY }
 
 /**
- * How a placed widget picks its background. A widget lives on the wallpaper,
+ * How a placed widget picks its palette. A widget lives on the wallpaper,
  * not inside the app, so it can legitimately need a different answer from the
  * one Settings gives the app: light app, dark wallpaper.
  *
- * An arbitrary background color and an opacity slider were built and then
- * removed on the user's call: the widget's job is to look like Saldo, and every
- * extra degree of freedom was one more way for it not to.
+ * [TRANSPARENT] is a legacy stored value only: it was the fourth selector
+ * option before the opacity slider existed, and widgets configured back then
+ * still carry it. [QuickAddWidgetPrefs.read] normalizes it to [SYSTEM] at zero
+ * opacity; nothing writes it anymore and the settings screen no longer offers
+ * it.
  */
 enum class WidgetAppearance { SYSTEM, LIGHT, DARK, TRANSPARENT }
 
@@ -86,6 +98,7 @@ object QuickAddWidgetPrefs {
     val Revision = longPreferencesKey("quick_add_revision")
 
     val Appearance = stringPreferencesKey("quick_add_appearance")
+    val BackgroundOpacity = floatPreferencesKey("quick_add_background_opacity")
     val Buttons = stringPreferencesKey("quick_add_buttons")
     val ShowAppShortcut = booleanPreferencesKey("quick_add_show_app_shortcut")
 
@@ -96,23 +109,35 @@ object QuickAddWidgetPrefs {
     private const val NO_ACCOUNT = -1L
     private const val SEPARATOR = ","
 
-    fun read(preferences: Preferences): QuickAddWidgetConfig = QuickAddWidgetConfig(
-        accountId = preferences[AccountId]?.takeIf { it != NO_ACCOUNT },
-        type = preferences[Type]?.movementType() ?: TransactionType.EXPENSE,
-        currentType = preferences[CurrentType]?.movementType(),
-        pinnedCategoryIds = preferences[PinnedCategoryIds]
-            ?.split(SEPARATOR)
-            ?.mapNotNull(String::toLongOrNull)
-            .orEmpty(),
-        showTodayTotal = preferences[ShowTodayTotal] ?: true,
-        appearance = preferences[Appearance]?.let { stored ->
+    fun read(preferences: Preferences): QuickAddWidgetConfig {
+        val storedAppearance = preferences[Appearance]?.let { stored ->
             WidgetAppearance.entries.firstOrNull { it.name == stored }
-        } ?: WidgetAppearance.SYSTEM,
-        buttons = preferences[Buttons]?.let { stored ->
-            WidgetActionButtons.entries.firstOrNull { it.name == stored }
-        } ?: WidgetActionButtons.BOTH,
-        showAppShortcut = preferences[ShowAppShortcut] ?: false,
-    )
+        } ?: WidgetAppearance.SYSTEM
+        return QuickAddWidgetConfig(
+            accountId = preferences[AccountId]?.takeIf { it != NO_ACCOUNT },
+            type = preferences[Type]?.movementType() ?: TransactionType.EXPENSE,
+            currentType = preferences[CurrentType]?.movementType(),
+            pinnedCategoryIds = preferences[PinnedCategoryIds]
+                ?.split(SEPARATOR)
+                ?.mapNotNull(String::toLongOrNull)
+                .orEmpty(),
+            showTodayTotal = preferences[ShowTodayTotal] ?: true,
+            // The pre-slider TRANSPARENT value reads back as "system ink over
+            // no background", which is exactly what it used to mean.
+            appearance = when (storedAppearance) {
+                WidgetAppearance.TRANSPARENT -> WidgetAppearance.SYSTEM
+                else -> storedAppearance
+            },
+            backgroundOpacity = (
+                preferences[BackgroundOpacity]
+                    ?: if (storedAppearance == WidgetAppearance.TRANSPARENT) 0f else 1f
+                ).coerceIn(0f, 1f),
+            buttons = preferences[Buttons]?.let { stored ->
+                WidgetActionButtons.entries.firstOrNull { it.name == stored }
+            } ?: WidgetActionButtons.BOTH,
+            showAppShortcut = preferences[ShowAppShortcut] ?: true,
+        )
+    }
 
     private fun String.movementType(): TransactionType? =
         TransactionType.entries.firstOrNull { it.name == this }

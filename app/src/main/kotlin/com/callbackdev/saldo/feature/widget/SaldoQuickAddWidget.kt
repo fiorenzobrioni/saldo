@@ -10,12 +10,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -30,6 +30,7 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
@@ -53,13 +54,14 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import androidx.glance.color.ColorProvider
+import androidx.glance.unit.ColorProvider as GlanceColorProvider
 import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import kotlin.math.ceil
 import kotlinx.coroutines.flow.first
 
 /**
@@ -82,42 +84,27 @@ import kotlinx.coroutines.flow.first
 class SaldoQuickAddWidget : GlanceAppWidget() {
 
     /**
-     * Exact rather than Responsive, and that is the whole reason the grid can
-     * grow. In Responsive mode `LocalSize.current` reports the *bucket* that
-     * matched, not the widget: however tall the user dragged it, the layout kept
-     * reading 250x190 and kept drawing two rows. Exact hands over the real size,
-     * so the number of rows can be worked out from the room there actually is.
+     * Responsive over Exact, and the difference is who answers a resize. Every
+     * update pre-renders each bucket in [WidgetBuckets] and hands the launcher
+     * the whole set, so a resize is settled inside the launcher, instantly.
+     * Exact was tried first: it reports the truly fluid size, but each resize
+     * then needs a full round trip into the app process (options-changed
+     * broadcast, a WorkManager-backed Glance session, recomposition), which on
+     * a device with a cold process or an eager battery policy lands seconds or
+     * minutes late. The layout is a step function of the size anyway
+     * ([layoutFor]), so enumerating its steps as buckets loses nothing the
+     * user can see.
      */
-    override val sizeMode = SizeMode.Exact
+    override val sizeMode: SizeMode = SizeMode.Responsive(WidgetBuckets)
 
-    override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val entryPoint = context.widgetEntryPoint()
-        val loader = entryPoint.quickAddWidgetDataLoader()
-        val preferences = entryPoint.userPreferences()
-        // Loaded once up front purely so the first frame is already right: the
-        // composition below owns every read from here on.
-        val initialInputs = WidgetInputs.from(getAppWidgetState(context, id))
-        val initialData = loader.load(initialInputs.config)
-        provideContent {
-            val inputs = WidgetInputs.from(currentState())
-            // Reloads on every change of the inputs, with no "but we already
-            // have this" shortcut: the state the session starts on is also a
-            // state the user comes back to, and skipping the load there left
-            // the widget showing the type it had just moved away from.
-            val data by produceState(initialData, inputs) {
-                value = loader.load(inputs.config)
-            }
-            val themePreferences by preferences.themePreferences
-                .collectAsState(initial = ThemePreferences())
-            val theme = resolveWidgetTheme(LocalContext.current, themePreferences, inputs.config)
-            GlanceTheme(colors = theme.providers) {
-                // The selector follows the state, not the loaded data: the
-                // control the user just pressed has to answer immediately, and
-                // the grid catches up a frame later.
-                WidgetBody(inputs.config, data, theme)
-            }
-        }
-    }
+    /** The picker preview renders at the widget's default 4x3 shape. */
+    override val previewSizeMode = SizeMode.Responsive(setOf(PreviewBucket))
+
+    override suspend fun provideGlance(context: Context, id: GlanceId) =
+        provideQuickAddContent(context, id)
+
+    override suspend fun providePreview(context: Context, widgetCategory: Int) =
+        provideQuickAddPreview(context)
 
     companion object {
         /** Below this height there is no room for a category, so the widget becomes two buttons. */
@@ -128,6 +115,118 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
 
         /** How many categories the settings screen lets a user pin by hand. */
         const val MaxPinnedCategories = 12
+    }
+}
+
+/**
+ * Every size [layoutFor] distinguishes, one bucket per step. The heights solve
+ * the row arithmetic exactly: a narrow row costs 52dp plus a 6dp gap over a
+ * 16dp vertical inset, a wide one 64dp plus the gap under a 40dp header, so
+ * each bucket is the smallest height at which its row count fits. The launcher
+ * receives all of them pre-rendered and switches on its own during a resize;
+ * asserted against [layoutFor] in `WidgetLayoutTest` because a bucket that
+ * drifted from the arithmetic would silently pin the wrong layout.
+ */
+/**
+ * The single-row sizes: the whole bucket set of the bar widget, and the low
+ * end of the grid's (which still degrades to the two-button layout when
+ * squashed, for the widgets placed before the bar existed). Four heights
+ * rather than one, not for the layout (any height under 120 is the same two
+ * buttons) but for the app-shortcut square: RemoteViews has no measure pass,
+ * so the bucket height is the only estimate of the button height there is,
+ * and one bucket at 40dp made the shortcut a fixed-width rectangle on every
+ * launcher whose row is taller.
+ */
+internal val ActionBuckets: Set<DpSize> = setOf(
+    DpSize(110.dp, 40.dp),
+    DpSize(110.dp, 64.dp),
+    DpSize(110.dp, 88.dp),
+    DpSize(110.dp, 112.dp),
+)
+
+internal val GridBuckets: Set<DpSize> = setOf(
+    // Narrow grid, two bare-icon columns, 1 to 5 rows.
+    DpSize(110.dp, 120.dp),
+    DpSize(110.dp, 126.dp),
+    DpSize(110.dp, 184.dp),
+    DpSize(110.dp, 242.dp),
+    DpSize(110.dp, 300.dp),
+    // Wide grid, four labelled columns under the selector, 1 to 5 rows.
+    DpSize(250.dp, 120.dp),
+    DpSize(250.dp, 190.dp),
+    DpSize(250.dp, 260.dp),
+    DpSize(250.dp, 330.dp),
+    DpSize(250.dp, 400.dp),
+)
+
+internal val WidgetBuckets: Set<DpSize> = ActionBuckets + GridBuckets
+
+/** The default 4x3 placement: what the grid's generated preview shows. */
+internal val PreviewBucket = DpSize(250.dp, 260.dp)
+
+/** The single-row shape: the bar widget's generated preview. */
+internal val PreviewRowBucket = DpSize(250.dp, 88.dp)
+
+/**
+ * The live composition, shared by the grid and the bar: same state, same data,
+ * same body - the two widgets differ only in the bucket sets their providers
+ * declare, so one is a grid that can degrade to the row and the other is the
+ * row by contract.
+ */
+internal suspend fun GlanceAppWidget.provideQuickAddContent(context: Context, id: GlanceId) {
+    val entryPoint = context.widgetEntryPoint()
+    val loader = entryPoint.quickAddWidgetDataLoader()
+    val preferences = entryPoint.userPreferences()
+    // Loaded once up front purely so the first frame is already right: the
+    // composition below owns every read from here on.
+    val initialInputs = WidgetInputs.from(getAppWidgetState(context, id))
+    val initialData = loader.loadShared(initialInputs.config, initialInputs.revision)
+    provideContent {
+        val inputs = WidgetInputs.from(currentState())
+        // Reloads on every change of the inputs. The content runs once per
+        // bucket of the Responsive set, so the load is the shared one: many
+        // compositions, one database pass.
+        val data by produceState(initialData, inputs) {
+            value = loader.loadShared(inputs.config, inputs.revision)
+        }
+        val themePreferences by preferences.themePreferences
+            .collectAsState(initial = ThemePreferences())
+        val theme = resolveWidgetTheme(LocalContext.current, themePreferences, inputs.config)
+        GlanceTheme(colors = theme.providers) {
+            // The selector follows the state, not the loaded data: the
+            // control the user just pressed has to answer immediately, and
+            // the grid catches up a frame later.
+            WidgetBody(inputs.config, data, theme)
+        }
+    }
+}
+
+/**
+ * The widget picker's generated preview (API 35+): the real layout in the
+ * user's real palette and categories, where the static `previewLayout` XML
+ * can only ever show a stand-in. Data reads are best-effort - before
+ * onboarding this simply shows the honest "open Saldo to get started".
+ */
+internal suspend fun GlanceAppWidget.provideQuickAddPreview(context: Context) {
+    val entryPoint = context.widgetEntryPoint()
+    val config = QuickAddWidgetConfig()
+    val data = runCatching { entryPoint.quickAddWidgetDataLoader().load(config) }
+        .getOrDefault(
+            QuickAddWidgetData(
+                type = config.type,
+                account = null,
+                categories = emptyList(),
+                todayTotal = null,
+                showTodayTotal = config.showTodayTotal,
+            ),
+        )
+    val themePreferences = runCatching { entryPoint.userPreferences().themePreferences.first() }
+        .getOrDefault(ThemePreferences())
+    val theme = resolveWidgetTheme(context, themePreferences, config)
+    provideContent {
+        GlanceTheme(colors = theme.providers) {
+            WidgetBody(config, data, theme)
+        }
     }
 }
 
@@ -168,6 +267,13 @@ internal data class WidgetLayout(
      */
     val paddingHorizontal: Int = 12,
     val paddingVertical: Int = 8,
+    /**
+     * The side of the square app-shortcut button in the single-row layout,
+     * derived from the bucket height so width can match height. The real
+     * widget can run a little taller than its bucket, so "square" is a close
+     * approximation rather than a guarantee - as close as RemoteViews allows.
+     */
+    val shortcutSide: Int = 0,
 ) {
     /** One slot is always the "more" tile, the way out to the full editor. */
     val categorySlots: Int get() = columns * rows - 1
@@ -186,19 +292,33 @@ internal enum class WidgetStyle { GRID, ACTIONS }
  *
  * [availableCategories] caps the rows from the other side: a widget dragged
  * taller than the categories it has to show would otherwise grow empty rows.
+ *
+ * [fontScale] keeps the height budget honest for large system fonts: a label
+ * line that costs 17dp at scale 1 costs 26dp at 1.5, and a budget that ignored
+ * that clipped every label on the grid.
  */
-internal fun layoutFor(size: DpSize, availableCategories: Int): WidgetLayout {
+internal fun layoutFor(size: DpSize, availableCategories: Int, fontScale: Float = 1f): WidgetLayout {
     // Height first: a widget one row high can be any number of columns wide,
     // and none of those widths can hold a grid.
     if (size.height < SaldoQuickAddWidget.GridMinHeight) {
-        return WidgetLayout(style = WidgetStyle.ACTIONS, paddingHorizontal = 14, paddingVertical = 14)
+        return WidgetLayout(
+            style = WidgetStyle.ACTIONS,
+            paddingHorizontal = ActionsPadding,
+            paddingVertical = ActionsPadding,
+            // What is left of the bucket height once the inset is paid: the
+            // button height, which is also the width a square wants. Floored
+            // so the smallest bucket keeps a usable tap target.
+            shortcutSide = (size.height.value.toInt() - 2 * ActionsPadding)
+                .coerceAtLeast(MinShortcutSide),
+        )
     }
     val wide = size.width >= SaldoQuickAddWidget.WideMinWidth
     val columns = if (wide) WideColumns else NarrowColumns
     // A narrow widget has no room for a type selector or for labels, so it takes
     // its type from its own configuration and shows bigger, bare icons.
     val tileSize = if (wide) WideTileSize else NarrowTileSize
-    val rowHeight = tileSize + if (wide) LabelGapDp + LabelLineDp else 0
+    val labelLine = if (wide) ceil(LabelLineDp * fontScale).toInt() else 0
+    val rowHeight = tileSize + if (wide) LabelGapDp + labelLine else 0
 
     val header = if (wide) PillHeightDp + HeaderGapDp else 0
     val content = size.height.value.toInt() - 2 * GridPaddingVertical - header
@@ -232,12 +352,21 @@ private fun WidgetBody(
     data: QuickAddWidgetData,
     theme: QuickAddWidgetTheme,
 ) {
-    val layout = layoutFor(LocalSize.current, data.categories.size)
+    val layout = layoutFor(
+        size = LocalSize.current,
+        availableCategories = data.categories.size,
+        fontScale = LocalContext.current.resources.configuration.fontScale,
+    )
     Column(
+        // appWidgetBackground marks this as the widget's face for the launcher,
+        // which is what the placement and resize animations attach to; the
+        // corner radius is the system's own, so the widget wears the same
+        // rounding as every other widget on the device instead of a private 24dp.
         modifier = GlanceModifier
             .fillMaxSize()
+            .appWidgetBackground()
             .background(theme.background)
-            .cornerRadius(WidgetCornerRadius)
+            .cornerRadius(android.R.dimen.system_app_widget_background_radius)
             .padding(
                 horizontal = layout.paddingHorizontal.dp,
                 vertical = layout.paddingVertical.dp,
@@ -250,8 +379,8 @@ private fun WidgetBody(
         horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
     ) {
         when {
-            !data.isReady -> NotReady()
-            layout.style == WidgetStyle.ACTIONS -> MoneyActions(config, data, theme)
+            !data.isReady -> NotReady(compact = layout.style == WidgetStyle.ACTIONS)
+            layout.style == WidgetStyle.ACTIONS -> MoneyActions(config, data, theme, layout)
             else -> {
                 if (layout.showHeader) {
                     Header(config.effectiveType, data)
@@ -263,22 +392,44 @@ private fun WidgetBody(
     }
 }
 
-/** No account or no category of this type yet: the tile stays a door into the app. */
+/**
+ * No account or no category of this type yet: the whole widget is a door into
+ * the app, not just the line of text - a target the size of the widget for the
+ * one moment the user has nothing else to tap.
+ */
 @Composable
-private fun NotReady() {
+private fun NotReady(compact: Boolean) {
     val context = LocalContext.current
-    Text(
-        text = context.getString(R.string.widget_quick_add_setup),
+    Box(
         modifier = GlanceModifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
-        style = TextStyle(
-            color = GlanceTheme.colors.onSurfaceVariant,
-            fontSize = LabelFontSize,
-            textAlign = TextAlign.Center,
-        ),
-        maxLines = 3,
-    )
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.Horizontal.CenterHorizontally) {
+            // At one launcher row the mark would crowd out the words that
+            // explain the tap, so only the taller sizes carry it.
+            if (!compact) {
+                Image(
+                    provider = ImageProvider(
+                        CategoryIconBitmaps.appMark(context, AppShortcutIcon, context.pxOf(SetupMarkSize)),
+                    ),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(SetupMarkSize.dp),
+                )
+                Spacer(GlanceModifier.height(SetupGap))
+            }
+            Text(
+                text = context.getString(R.string.widget_quick_add_setup),
+                style = TextStyle(
+                    color = GlanceTheme.colors.onSurfaceVariant,
+                    fontSize = LabelFontSize,
+                    textAlign = TextAlign.Center,
+                ),
+                maxLines = 3,
+            )
+        }
+    }
 }
 
 @Composable
@@ -299,11 +450,37 @@ private fun Header(selectedType: TransactionType, data: QuickAddWidgetData) {
             type = TransactionType.INCOME,
             selected = selectedType == TransactionType.INCOME,
         )
-        Spacer(GlanceModifier.defaultWeight())
+        if (data.pinnedAccountName != null) {
+            // A widget pinned to one account says which: with two widgets on
+            // two accounts, an unlabelled pair is a wrong-account entry waiting
+            // to happen. Weighted so a long name gives way, never the amount.
+            Text(
+                text = data.pinnedAccountName,
+                modifier = GlanceModifier.defaultWeight().padding(start = AmountGap),
+                style = TextStyle(
+                    color = GlanceTheme.colors.onSurfaceVariant,
+                    fontSize = BadgeFontSize,
+                    textAlign = TextAlign.End,
+                ),
+                maxLines = 1,
+            )
+        } else {
+            Spacer(GlanceModifier.defaultWeight())
+        }
         if (data.todayTotal != null) {
             Text(
-                text = data.todayTotal,
-                modifier = GlanceModifier.padding(start = AmountGap, end = AmountEndPadding),
+                // Labelled, not a bare number: an amount floating in a corner
+                // reads as a balance, a budget, anything - "Today" pins it.
+                // Tapping it opens the day it is summarizing.
+                text = context.getString(R.string.widget_quick_add_today, data.todayTotal),
+                modifier = GlanceModifier
+                    .padding(start = AmountGap, end = AmountEndPadding)
+                    .clickable(
+                        actionStartActivity(
+                            Intent(context, MainActivity::class.java)
+                                .setAction(MainActivity.ACTION_VIEW_TODAY),
+                        ),
+                    ),
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurfaceVariant,
                     fontSize = LabelFontSize,
@@ -366,6 +543,7 @@ private fun ColumnScope.MoneyActions(
     config: QuickAddWidgetConfig,
     data: QuickAddWidgetData,
     theme: QuickAddWidgetTheme,
+    layout: WidgetLayout,
 ) {
     val context = LocalContext.current
     Row(
@@ -378,7 +556,8 @@ private fun ColumnScope.MoneyActions(
             MoneyActionButton(
                 label = context.getString(R.string.widget_quick_add_expense),
                 icon = ExpenseIcon,
-                accent = theme.expenseAccent,
+                ink = theme.expenseAccent,
+                wash = theme.expenseWash,
                 accountId = data.account?.id,
                 type = TransactionType.EXPENSE,
             )
@@ -388,44 +567,51 @@ private fun ColumnScope.MoneyActions(
             MoneyActionButton(
                 label = context.getString(R.string.widget_quick_add_income),
                 icon = IncomeIcon,
-                accent = theme.incomeAccent,
+                ink = theme.incomeAccent,
+                wash = theme.incomeWash,
                 accountId = data.account?.id,
                 type = TransactionType.INCOME,
             )
         }
         if (config.showAppShortcut) {
             Spacer(GlanceModifier.width(ActionGap))
-            AppShortcutButton()
+            AppShortcutButton(theme, layout.shortcutSide)
         }
     }
 }
 
 /**
  * The way into the app from the single-row layout, which has no room for the
- * "open Saldo" tile the taller ones carry. No background of its own: the app
- * icon is already a shape and a colour, and a third tinted button beside the two
- * that matter would compete with them.
+ * "open Saldo" tile the taller ones carry. A quiet neutral wash rather than a
+ * bare floating mark or a third accent: the wash makes it read as a control in
+ * the same family as the two buttons - on a transparent widget a naked icon
+ * just hovered on the wallpaper - while the neutral keeps it from competing
+ * with the pair that matters.
  *
- * It matches the buttons' height by filling it. The width is fixed rather than
- * squared off it, because `SizeMode.Responsive` reports the matched bucket and
- * not the real widget, so the exact button height is not knowable here.
+ * Squared, not fixed-width: the width follows [WidgetLayout.shortcutSide],
+ * the bucket's estimate of the button height, and the mark scales with it. A
+ * fixed 56dp width read as a tall rectangle on any launcher whose row runs
+ * taller than that.
  */
 @Composable
-private fun RowScope.AppShortcutButton() {
+private fun RowScope.AppShortcutButton(theme: QuickAddWidgetTheme, side: Int) {
     val context = LocalContext.current
+    val markSize = (side * AppShortcutMarkRatio).toInt()
     Box(
         modifier = GlanceModifier
-            .width(AppShortcutWidth)
+            .width(side.dp)
             .fillMaxHeight()
+            .background(theme.neutralWash)
+            .cornerRadius(ActionCornerRadius)
             .clickable(actionStartActivity(Intent(context, MainActivity::class.java))),
         contentAlignment = Alignment.Center,
     ) {
         Image(
             provider = ImageProvider(
-                CategoryIconBitmaps.appMark(context, AppShortcutIcon, context.pxOf(AppShortcutMarkSize)),
+                CategoryIconBitmaps.appMark(context, AppShortcutIcon, context.pxOf(markSize)),
             ),
             contentDescription = context.getString(R.string.widget_quick_add_open_a11y),
-            modifier = GlanceModifier.size(AppShortcutMarkSize.dp),
+            modifier = GlanceModifier.size(markSize.dp),
         )
     }
 }
@@ -434,7 +620,8 @@ private fun RowScope.AppShortcutButton() {
 private fun RowScope.MoneyActionButton(
     label: String,
     icon: ImageVector,
-    accent: Color,
+    ink: GlanceColorProvider,
+    wash: GlanceColorProvider,
     accountId: Long?,
     type: TransactionType,
 ) {
@@ -443,7 +630,7 @@ private fun RowScope.MoneyActionButton(
         modifier = GlanceModifier
             .defaultWeight()
             .fillMaxHeight()
-            .background(accent.copy(alpha = ActionTintAlpha))
+            .background(wash)
             .cornerRadius(ActionCornerRadius)
             .clickable(
                 actionStartActivity(
@@ -460,21 +647,22 @@ private fun RowScope.MoneyActionButton(
     ) {
         Row(verticalAlignment = Alignment.Vertical.CenterVertically) {
             // The icon is not decoration: the project requires expense and
-            // income to be told apart by more than colour.
+            // income to be told apart by more than colour. Tinted here rather
+            // than baked into the bitmap, so the launcher can flip the shade
+            // with the system theme on its own.
             Image(
                 provider = ImageProvider(
-                    CategoryIconBitmaps.glyph(icon, accent, context.pxOf(ActionIconSize)),
+                    CategoryIconBitmaps.glyph(icon, context.pxOf(ActionIconSize)),
                 ),
                 contentDescription = label,
+                colorFilter = ColorFilter.tint(ink),
                 modifier = GlanceModifier.size(ActionIconSize.dp),
             )
             Spacer(GlanceModifier.width(ActionIconGap))
             Text(
                 text = label,
                 style = TextStyle(
-                    // The accent is already resolved for the widget's own theme,
-                    // so the same colour serves both branches.
-                    color = ColorProvider(day = accent, night = accent),
+                    color = ink,
                     fontSize = ActionFontSize,
                     fontWeight = FontWeight.Medium,
                 ),
@@ -507,7 +695,7 @@ private fun ColumnScope.CategoryGrid(
                     if (category == null) {
                         MoreTile(data, theme, layout)
                     } else {
-                        CategoryTile(category, data, layout)
+                        CategoryTile(category, data, theme, layout)
                     }
                 }
             }
@@ -521,10 +709,19 @@ private fun ColumnScope.CategoryGrid(
 }
 
 @Composable
-private fun CategoryTile(category: Category, data: QuickAddWidgetData, layout: WidgetLayout) {
+private fun CategoryTile(
+    category: Category,
+    data: QuickAddWidgetData,
+    theme: QuickAddWidgetTheme,
+    layout: WidgetLayout,
+) {
     val context = LocalContext.current
+    // A category's colour is its own in both themes; the day/night pair is
+    // still what carries it, so every tile takes the same launcher-side path.
+    val accent = CategoryVisuals.color(category.color)
     Tile(
-        accent = CategoryVisuals.color(category.color),
+        ink = theme.ink(accent, accent),
+        wash = theme.wash(accent, accent),
         icon = CategoryVisuals.icon(category.icon),
         label = category.name.takeIf { layout.showLabels },
         contentDescription = context.getString(R.string.widget_quick_add_category_a11y, category.name),
@@ -551,7 +748,8 @@ private fun CategoryTile(category: Category, data: QuickAddWidgetData, layout: W
 private fun MoreTile(data: QuickAddWidgetData, theme: QuickAddWidgetTheme, layout: WidgetLayout) {
     val context = LocalContext.current
     Tile(
-        accent = theme.scheme.primary,
+        ink = theme.ink(theme.lightScheme.primary, theme.darkScheme.primary),
+        wash = theme.wash(theme.lightScheme.primary, theme.darkScheme.primary),
         icon = MoreIcon,
         label = context.getString(R.string.widget_quick_add_open).takeIf { layout.showLabels },
         contentDescription = context.getString(R.string.widget_quick_add_open_a11y),
@@ -571,7 +769,7 @@ internal fun quickActionFor(type: TransactionType): String = when (type) {
 }
 
 /**
- * One tile of the grid: the app's unselected category cell, a 16% wash of the
+ * One tile of the grid: the app's unselected category cell, a wash of the
  * colour with the glyph in it at full strength.
  *
  * The wash is a Glance background and only the glyph is a bitmap, which is not
@@ -579,11 +777,13 @@ internal fun quickActionFor(type: TransactionType): String = when (type) {
  * Binder transaction with a hard size ceiling, and a full tile bitmap is around
  * three times the pixels of the glyph inside it: with four rows of four the
  * whole-tile version was heading for that ceiling, and an update over it fails
- * silently.
+ * silently. The glyph itself is a white mask tinted through [ColorFilter], so
+ * one bitmap serves both themes and the launcher flips the shade on its own.
  */
 @Composable
 private fun Tile(
-    accent: Color,
+    ink: GlanceColorProvider,
+    wash: GlanceColorProvider,
     icon: ImageVector,
     label: String?,
     contentDescription: String,
@@ -600,15 +800,16 @@ private fun Tile(
         Box(
             modifier = GlanceModifier
                 .size(tileSize.dp)
-                .background(accent.copy(alpha = TileTintAlpha))
+                .background(wash)
                 .cornerRadius((tileSize * TileCornerRatio).dp),
             contentAlignment = Alignment.Center,
         ) {
             Image(
                 provider = ImageProvider(
-                    CategoryIconBitmaps.glyph(icon, accent, context.pxOf(glyphSize)),
+                    CategoryIconBitmaps.glyph(icon, context.pxOf(glyphSize)),
                 ),
                 contentDescription = contentDescription,
+                colorFilter = ColorFilter.tint(ink),
                 modifier = GlanceModifier.size(glyphSize.dp),
             )
         }
@@ -629,8 +830,6 @@ private fun Tile(
 
 private fun Context.pxOf(dp: Int): Int = (dp * resources.displayMetrics.density).toInt()
 
-private val WidgetCornerRadius = 24.dp
-
 private const val WideColumns = 4
 private const val NarrowColumns = 2
 private const val WideTileSize = 44
@@ -641,7 +840,7 @@ private const val HeaderGapDp = 6
 private const val RowGapDp = 6
 private const val LabelGapDp = 3
 
-/** A 12sp label with its line spacing, near enough for a height budget. */
+/** A 12sp label with its line spacing at font scale 1, the base of the height budget. */
 private const val LabelLineDp = 17
 private const val PillHeightDp = 34
 
@@ -662,19 +861,29 @@ private val AmountEndPadding = 4.dp
 private val LabelFontSize = 13.sp
 private val TileLabelFontSize = 12.sp
 
+/** The pinned-account badge: present, quieter than the total beside it. */
+private val BadgeFontSize = 11.sp
+
 private val ActionGap = 8.dp
 private val ActionCornerRadius = 18.dp
 private val ActionIconGap = 6.dp
 private val ActionFontSize = 15.sp
 private const val ActionIconSize = 20
-private const val ActionTintAlpha = 0.16f
-private val AppShortcutWidth = 56.dp
 
-/** Rendered past the icon's safe zone, so the mark matches the buttons beside it. */
-private const val AppShortcutMarkSize = 48
+/** The single-row layout's even inset (see [WidgetLayout.paddingHorizontal]). */
+private const val ActionsPadding = 14
 
-/** Matches `CategoryCell`: a 16% wash of the colour with the glyph on top. */
-private const val TileTintAlpha = 0.16f
+/** The smallest square the shortcut is allowed to shrink to: still a target. */
+private const val MinShortcutSide = 40
+
+/** The mark against its square: most of it, with the margin a button implies. */
+private const val AppShortcutMarkRatio = 0.8f
+
+/** The mark above the "open Saldo to get started" text of the taller sizes. */
+private const val SetupMarkSize = 36
+private val SetupGap = 6.dp
+
+/** Matches `CategoryCell`: a wash of the colour with the glyph on top. */
 private const val TileCornerRatio = 0.30f
 private const val GlyphRatio = 0.62f
 

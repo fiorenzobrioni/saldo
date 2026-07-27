@@ -1048,6 +1048,7 @@
     <string name="widget_quick_add_open_a11y">Open Saldo for the full editor</string>
     <string name="widget_quick_add_category_a11y">Add to %1$s</string>
     <string name="widget_quick_add_setup">Open Saldo to get started</string>
+    <string name="widget_quick_add_today">Today · %1$s</string>
     <string name="widget_quick_entry_saved">Saved</string>
     <string name="widget_quick_entry_change_category">Change category</string>
     <string name="widget_quick_entry_change_account">Change account</string>
@@ -1065,11 +1066,23 @@
     <string name="widget_config_appearance_system">System</string>
     <string name="widget_config_appearance_light">Light</string>
     <string name="widget_config_appearance_dark">Dark</string>
+    <string name="widget_config_opacity">Background opacity</string>
+    <string name="widget_config_opacity_caption">When mostly transparent, the text picks light or dark from the wallpaper.</string>
+    <string name="widget_config_save_error">The widget settings could not be saved</string>
     <string name="widget_config_preview_a11y">Preview of the widget with the current settings</string>
     <string name="widget_config_app_shortcut">App icon</string>
-    <string name="widget_config_app_shortcut_caption">Adds a button that opens Saldo, next to the two on the single-row size.</string>
-    <string name="widget_config_appearance_transparent">Transparent</string>
+    <string name="widget_config_app_shortcut_caption">A square button that opens Saldo, next to Expense and Income.</string>
     <string name="widget_config_buttons">Buttons</string>
     <string name="widget_config_buttons_both">Both</string>
-    <string name="widget_config_buttons_caption">Which buttons show when the widget is one row high.</string>
+    <string name="widget_config_pinned_caption">Drag to reorder; this is the order on the widget.</string>
+    <string name="widget_config_pinned_add">Add categories</string>
+    <string name="widget_config_pinned_remove_a11y">Remove %1$s from the widget</string>
+    <string name="widget_config_pinned_reorder_a11y">Reorder</string>
+    <string name="widget_quick_bar_label">Quick bar</string>
+    <string name="widget_quick_bar_description">Expense and income in one row, without opening the app.</string>
+    <string name="settings_section_widgets">Widgets</string>
+    <string name="settings_widget_pin_grid">Grid widget on the home screen</string>
+    <string name="settings_widget_pin_grid_hint">The quick-add category grid.</string>
+    <string name="settings_widget_pin_bar">Bar widget on the home screen</string>
+    <string name="settings_widget_pin_bar_hint">Expense and Income in a single row.</string>
 </resources>
