@@ -114,7 +114,7 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
                 // The selector follows the state, not the loaded data: the
                 // control the user just pressed has to answer immediately, and
                 // the grid catches up a frame later.
-                WidgetBody(inputs.config.type, data, theme, inputs.config.showAppShortcut)
+                WidgetBody(inputs.config, data, theme)
             }
         }
     }
@@ -228,10 +228,9 @@ private const val MaxGridRows = 5
 
 @Composable
 private fun WidgetBody(
-    selectedType: TransactionType,
+    config: QuickAddWidgetConfig,
     data: QuickAddWidgetData,
     theme: QuickAddWidgetTheme,
-    showAppShortcut: Boolean,
 ) {
     val layout = layoutFor(LocalSize.current, data.categories.size)
     Column(
@@ -252,10 +251,10 @@ private fun WidgetBody(
     ) {
         when {
             !data.isReady -> NotReady()
-            layout.style == WidgetStyle.ACTIONS -> MoneyActions(data, theme, showAppShortcut)
+            layout.style == WidgetStyle.ACTIONS -> MoneyActions(config, data, theme)
             else -> {
                 if (layout.showHeader) {
-                    Header(selectedType, data)
+                    Header(config.effectiveType, data)
                     Spacer(GlanceModifier.height(HeaderGap))
                 }
                 CategoryGrid(data, theme, layout)
@@ -364,31 +363,37 @@ private fun TypePill(label: String, type: TransactionType, selected: Boolean) {
  */
 @Composable
 private fun ColumnScope.MoneyActions(
+    config: QuickAddWidgetConfig,
     data: QuickAddWidgetData,
     theme: QuickAddWidgetTheme,
-    showAppShortcut: Boolean,
 ) {
     val context = LocalContext.current
     Row(
         modifier = GlanceModifier.fillMaxSize(),
         verticalAlignment = Alignment.Vertical.CenterVertically,
     ) {
-        MoneyActionButton(
-            label = context.getString(R.string.widget_quick_add_expense),
-            icon = ExpenseIcon,
-            accent = theme.expenseAccent,
-            accountId = data.account?.id,
-            type = TransactionType.EXPENSE,
-        )
-        Spacer(GlanceModifier.width(ActionGap))
-        MoneyActionButton(
-            label = context.getString(R.string.widget_quick_add_income),
-            icon = IncomeIcon,
-            accent = theme.incomeAccent,
-            accountId = data.account?.id,
-            type = TransactionType.INCOME,
-        )
-        if (showAppShortcut) {
+        val expense = config.showsButton(TransactionType.EXPENSE)
+        val income = config.showsButton(TransactionType.INCOME)
+        if (expense) {
+            MoneyActionButton(
+                label = context.getString(R.string.widget_quick_add_expense),
+                icon = ExpenseIcon,
+                accent = theme.expenseAccent,
+                accountId = data.account?.id,
+                type = TransactionType.EXPENSE,
+            )
+        }
+        if (expense && income) Spacer(GlanceModifier.width(ActionGap))
+        if (income) {
+            MoneyActionButton(
+                label = context.getString(R.string.widget_quick_add_income),
+                icon = IncomeIcon,
+                accent = theme.incomeAccent,
+                accountId = data.account?.id,
+                type = TransactionType.INCOME,
+            )
+        }
+        if (config.showAppShortcut) {
             Spacer(GlanceModifier.width(ActionGap))
             AppShortcutButton()
         }

@@ -85,6 +85,68 @@ class QuickAddWidgetPrefsTest {
         assertEquals(WidgetAppearance.SYSTEM, QuickAddWidgetPrefs.read(preferences).appearance)
     }
 
+    /**
+     * The selector on the home screen and "starts on" in the settings used to
+     * share a key, so toggling the widget to income quietly rewrote the
+     * configured value and the settings screen showed a choice nobody had made
+     * there. They are different things and they live in different keys.
+     */
+    @Test
+    fun `the runtime type never touches the configured one`() {
+        val preferences = mutablePreferencesOf(
+            QuickAddWidgetPrefs.Type to TransactionType.EXPENSE.name,
+            QuickAddWidgetPrefs.CurrentType to TransactionType.INCOME.name,
+        )
+        val config = QuickAddWidgetPrefs.read(preferences)
+        assertEquals(TransactionType.EXPENSE, config.type, "The configured start must not move")
+        assertEquals(TransactionType.INCOME, config.effectiveType, "The widget draws where it is now")
+    }
+
+    @Test
+    fun `a widget left alone draws the type it was configured to start on`() {
+        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.Type to TransactionType.INCOME.name)
+        val config = QuickAddWidgetPrefs.read(preferences)
+        assertNull(config.currentType)
+        assertEquals(TransactionType.INCOME, config.effectiveType)
+    }
+
+    @Test
+    fun `both buttons show until told otherwise`() {
+        val config = QuickAddWidgetPrefs.read(mutablePreferencesOf())
+        assertEquals(WidgetActionButtons.BOTH, config.buttons)
+        assertTrue(config.showsButton(TransactionType.EXPENSE))
+        assertTrue(config.showsButton(TransactionType.INCOME))
+    }
+
+    @Test
+    fun `a single-button widget shows only the one it was set to`() {
+        val expenseOnly = QuickAddWidgetPrefs.read(
+            mutablePreferencesOf(QuickAddWidgetPrefs.Buttons to WidgetActionButtons.EXPENSE_ONLY.name),
+        )
+        assertTrue(expenseOnly.showsButton(TransactionType.EXPENSE))
+        assertTrue(!expenseOnly.showsButton(TransactionType.INCOME))
+
+        val incomeOnly = QuickAddWidgetPrefs.read(
+            mutablePreferencesOf(QuickAddWidgetPrefs.Buttons to WidgetActionButtons.INCOME_ONLY.name),
+        )
+        assertTrue(!incomeOnly.showsButton(TransactionType.EXPENSE))
+        assertTrue(incomeOnly.showsButton(TransactionType.INCOME))
+    }
+
+    @Test
+    fun `an unknown button setting falls back to showing both`() {
+        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.Buttons to "SOMETHING_ELSE")
+        assertEquals(WidgetActionButtons.BOTH, QuickAddWidgetPrefs.read(preferences).buttons)
+    }
+
+    @Test
+    fun `the transparent appearance round-trips`() {
+        val preferences = mutablePreferencesOf(
+            QuickAddWidgetPrefs.Appearance to WidgetAppearance.TRANSPARENT.name,
+        )
+        assertEquals(WidgetAppearance.TRANSPARENT, QuickAddWidgetPrefs.read(preferences).appearance)
+    }
+
     @Test
     fun `the app shortcut is off until it is asked for`() {
         assertTrue(!QuickAddWidgetPrefs.read(mutablePreferencesOf()).showAppShortcut)

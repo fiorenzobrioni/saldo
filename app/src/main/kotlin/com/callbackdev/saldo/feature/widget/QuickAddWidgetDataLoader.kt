@@ -48,13 +48,13 @@ class QuickAddWidgetDataLoader @Inject constructor(
                 lastUsedAccountId = userPreferences.lastUsedAccountId.first(),
             )
 
-        val available = categoryRepository.observeCategories(config.type.categoryType()).first()
+        val available = categoryRepository.observeCategories(config.effectiveType.categoryType()).first()
         val categories = pick(available, config, categoryLimit)
 
         val todayTotal = if (config.showTodayTotal) formatTodaySpend(accounts) else null
 
         return QuickAddWidgetData(
-            type = config.type,
+            type = config.effectiveType,
             account = account,
             categories = categories,
             todayTotal = todayTotal,
@@ -78,7 +78,7 @@ class QuickAddWidgetDataLoader @Inject constructor(
         }
         val since = LocalDate.now(clock).minusDays(MOST_USED_WINDOW_DAYS).atStartOfDay(clock.zone).toInstant()
         val mostUsed = transactionRepository
-            .mostUsedCategoryIds(config.type, since, available.size.coerceAtLeast(1))
+            .mostUsedCategoryIds(config.effectiveType, since, available.size.coerceAtLeast(1))
             .mapNotNull(byId::get)
         return (mostUsed + available).distinctBy { it.id }.take(limit)
     }

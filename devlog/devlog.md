@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-27 - Due tipi che sembravano uno solo
+
+**Fatto:** quattro modifiche alla schermata di configurazione del widget: "Parte da" che si spostava da sola, l'aggiunta di uno sfondo trasparente, "Icona dell'app" in fondo, e una nuova impostazione per i bottoni del formato a una riga.
+
+**Decisioni:** la prima e l'unica che era un difetto, e vale piu delle altre tre. Il selettore Spesa/Entrata sulla home e l'impostazione "Parte da" scrivevano la stessa chiave di preferenze. Sembrava economia e invece era una fusione di due concetti: lo stato di runtime ("dove sono adesso") e la configurazione ("dove voglio ripartire"). La conseguenza e esattamente quella descritta dall'utente: si tocca il widget, si apre la configurazione, e li dentro c'e una scelta che nessuno ha fatto in quella schermata, che al primo salvataggio diventa definitiva senza che nessuno se ne accorga. Ora `Type` e la configurazione e nient'altro, `CurrentType` e il runtime, e il widget disegna `effectiveType = currentType ?: type`. Un dettaglio che ho scelto di proposito: confermare le impostazioni riallinea il runtime al valore configurato. Sarebbe stato piu "puro" lasciare il widget dov'era, ma vuol dire scegliere "Parte da: Entrata", premere Aggiorna e vedere il widget restare su Spesa - cioe l'impostazione senza effetto visibile, che e il difetto appena corretto sotto un'altra forma. Il trasparente e stato un caso di riuso e non di codice nuovo: l'inchiostro si risolve come in Sistema e cambia solo lo sfondo, e le tile hanno gia la loro velatura al 16%, quindi restano leggibili sul wallpaper senza aggiungere nulla. Sui bottoni, chi usa il widget per un solo verso finora aveva due mezzi bottoni di cui uno inutile: ora ne ha uno a tutta larghezza. La didascalia dice che l'opzione vale solo al formato a una riga, perche altrimenti si sceglie alla cieca guardando un widget su cui non succede niente; per la stessa ragione l'opzione sta accanto a "Icona dell'app", che e l'altra impostazione di quel formato, ed entrambe scendono in fondo lasciando in alto quelle della griglia.
+
+**Problemi:** nessuno di runtime, ma la separazione delle due chiavi e retrocompatibile in un solo verso e vale la pena dirlo: un widget gia piazzato ha solo `Type`, quindi `currentType` e null e il widget riparte dal suo valore configurato. Se quel valore era stato spostato dal selettore prima di questo cambio, resta dov'era finito. E la lettura giusta - e cio che l'utente vedeva sullo schermo - ma vuol dire che il difetto ha lasciato una traccia nei widget esistenti, che si azzera alla prima conferma delle impostazioni.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt assembleDebugAndroidTest` verde. Sei test nuovi in `QuickAddWidgetPrefsTest` (il tipo di runtime non tocca quello configurato, un widget lasciato in pace disegna il suo valore di partenza, i bottoni di default sono entrambi, i widget a bottone singolo, un valore sconosciuto ricade su entrambi, il trasparente round-trip) e uno in `QuickAddWidgetThemeTest` (il trasparente tiene il proprio inchiostro e lascia cadere solo lo sfondo). versionCode 138 -> 139, versionName 0.9.99 -> 0.9.100.
+
+**Prossimo:** prova su device delle quattro voci, e in particolare che "Parte da" resti dove e stato messo dopo aver mosso il selettore sulla home.
+
+---
+
 ## 2026-07-27 - Il task che tornava avanti, e il peso di un RemoteViews
 
 **Fatto:** tre segnalazioni. Il widget che a volte apre l'app invece della sheet, aggiornamenti che non arrivano, e il contenuto centrato che balla quando si passa da Spesa a Entrata.

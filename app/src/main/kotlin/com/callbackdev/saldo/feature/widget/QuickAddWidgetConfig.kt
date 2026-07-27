@@ -17,11 +17,25 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 data class QuickAddWidgetConfig(
     /** Null means "resolve the app default account at render time". */
     val accountId: Long? = null,
+    /**
+     * The type the widget starts on, set in its settings and changed nowhere
+     * else.
+     */
     val type: TransactionType = TransactionType.EXPENSE,
+    /**
+     * The type the widget is showing right now, moved by the selector on the
+     * home screen. Deliberately a separate key from [type]: they shared one
+     * until a user pointed out that toggling the widget to income silently
+     * rewrote "starts on", so the settings screen showed a value nobody had
+     * chosen there. Runtime state and configuration are different things and
+     * now live apart. Null means the widget is on its configured start.
+     */
+    val currentType: TransactionType? = null,
     /** Empty means "the most used categories", the adaptive default. */
     val pinnedCategoryIds: List<Long> = emptyList(),
     val showTodayTotal: Boolean = true,
     val appearance: WidgetAppearance = WidgetAppearance.SYSTEM,
+    val buttons: WidgetActionButtons = WidgetActionButtons.BOTH,
     /**
      * The app icon beside the two buttons of the single-row layout. Off by
      * default: the taller layouts already carry an "open Saldo" tile, and the
@@ -30,7 +44,20 @@ data class QuickAddWidgetConfig(
     val showAppShortcut: Boolean = false,
 ) {
     val usesMostUsed: Boolean get() = pinnedCategoryIds.isEmpty()
+
+    /** What the widget actually draws: the runtime choice if there is one. */
+    val effectiveType: TransactionType get() = currentType ?: type
+
+    /** True when the single-row layout should draw this type's button. */
+    fun showsButton(candidate: TransactionType): Boolean = when (buttons) {
+        WidgetActionButtons.BOTH -> true
+        WidgetActionButtons.EXPENSE_ONLY -> candidate == TransactionType.EXPENSE
+        WidgetActionButtons.INCOME_ONLY -> candidate == TransactionType.INCOME
+    }
 }
+
+/** Which buttons the single-row layout offers. */
+enum class WidgetActionButtons { BOTH, EXPENSE_ONLY, INCOME_ONLY }
 
 /**
  * How a placed widget picks its background. A widget lives on the wallpaper,
@@ -41,7 +68,7 @@ data class QuickAddWidgetConfig(
  * removed on the user's call: the widget's job is to look like Saldo, and every
  * extra degree of freedom was one more way for it not to.
  */
-enum class WidgetAppearance { SYSTEM, LIGHT, DARK }
+enum class WidgetAppearance { SYSTEM, LIGHT, DARK, TRANSPARENT }
 
 object QuickAddWidgetPrefs {
 
@@ -59,7 +86,11 @@ object QuickAddWidgetPrefs {
     val Revision = longPreferencesKey("quick_add_revision")
 
     val Appearance = stringPreferencesKey("quick_add_appearance")
+    val Buttons = stringPreferencesKey("quick_add_buttons")
     val ShowAppShortcut = booleanPreferencesKey("quick_add_show_app_shortcut")
+
+    /** The selector's runtime choice, kept apart from the configured [Type]. */
+    val CurrentType = stringPreferencesKey("quick_add_current_type")
 
     /** Absent account id is stored as [NO_ACCOUNT] because DataStore has no nullable Long. */
     private const val NO_ACCOUNT = -1L
@@ -67,9 +98,8 @@ object QuickAddWidgetPrefs {
 
     fun read(preferences: Preferences): QuickAddWidgetConfig = QuickAddWidgetConfig(
         accountId = preferences[AccountId]?.takeIf { it != NO_ACCOUNT },
-        type = preferences[Type]?.let { stored ->
-            TransactionType.entries.firstOrNull { it.name == stored }
-        } ?: TransactionType.EXPENSE,
+        type = preferences[Type]?.movementType() ?: TransactionType.EXPENSE,
+        currentType = preferences[CurrentType]?.movementType(),
         pinnedCategoryIds = preferences[PinnedCategoryIds]
             ?.split(SEPARATOR)
             ?.mapNotNull(String::toLongOrNull)
@@ -78,8 +108,14 @@ object QuickAddWidgetPrefs {
         appearance = preferences[Appearance]?.let { stored ->
             WidgetAppearance.entries.firstOrNull { it.name == stored }
         } ?: WidgetAppearance.SYSTEM,
+        buttons = preferences[Buttons]?.let { stored ->
+            WidgetActionButtons.entries.firstOrNull { it.name == stored }
+        } ?: WidgetActionButtons.BOTH,
         showAppShortcut = preferences[ShowAppShortcut] ?: false,
     )
+
+    private fun String.movementType(): TransactionType? =
+        TransactionType.entries.firstOrNull { it.name == this }
 
     fun encodeAccountId(accountId: Long?): Long = accountId ?: NO_ACCOUNT
 

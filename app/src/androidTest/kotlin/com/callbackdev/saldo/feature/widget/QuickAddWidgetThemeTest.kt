@@ -64,6 +64,20 @@ class QuickAddWidgetThemeTest {
         )
     }
 
+    /**
+     * Transparent has no background to take a side from, so the ink follows the
+     * app the way SYSTEM does. What it sits on is the wallpaper, and nothing
+     * here can know how light that is.
+     */
+    @Test
+    fun theTransparentAppearanceKeepsItsInkAndDropsOnlyTheBackground() {
+        val config = QuickAddWidgetConfig(appearance = WidgetAppearance.TRANSPARENT)
+        val theme = resolveWidgetTheme(context, brandPreferences, config)
+        assertEquals(0f, theme.background.alpha, 0.001f)
+        assertEquals(1f, theme.scheme.onSurfaceVariant.alpha, 0.001f)
+        assertEquals(BrandLightColorScheme.onSurfaceVariant, theme.scheme.onSurfaceVariant)
+    }
+
     @Test
     fun theBackgroundIsOpaqueSoTheWidgetNeverDisappears() {
         val theme = resolveWidgetTheme(context, brandPreferences, QuickAddWidgetConfig())

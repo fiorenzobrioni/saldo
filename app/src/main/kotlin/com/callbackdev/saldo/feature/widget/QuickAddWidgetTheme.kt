@@ -51,7 +51,10 @@ fun resolveWidgetTheme(
     val dark = when (config.appearance) {
         WidgetAppearance.LIGHT -> false
         WidgetAppearance.DARK -> true
-        WidgetAppearance.SYSTEM -> when (preferences.mode) {
+        // Transparent has no background of its own to take a side from, so its
+        // ink follows the app the way SYSTEM does. What it sits on is the
+        // wallpaper, and no code here can know how light that is.
+        WidgetAppearance.SYSTEM, WidgetAppearance.TRANSPARENT -> when (preferences.mode) {
             ThemeMode.SYSTEM -> context.isSystemInDarkMode()
             ThemeMode.LIGHT -> false
             ThemeMode.DARK -> true
@@ -68,7 +71,11 @@ fun resolveWidgetTheme(
         providers = GlanceColorProviders(scheme, scheme),
         // The app's Dashboard sits on colorScheme.background, so a widget meant
         // to look like the app sits on it too.
-        background = scheme.background,
+        background = if (config.appearance == WidgetAppearance.TRANSPARENT) {
+            Color.Transparent
+        } else {
+            scheme.background
+        },
         expenseAccent = scheme.error,
         incomeAccent = moneyColors(scheme, dark).income,
     )

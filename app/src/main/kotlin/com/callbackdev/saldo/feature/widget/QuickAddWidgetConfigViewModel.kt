@@ -93,6 +93,10 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
         }
     }
 
+    fun onButtonsSelected(buttons: WidgetActionButtons) {
+        config.update { it.copy(buttons = buttons) }
+    }
+
     fun onAppearanceSelected(appearance: WidgetAppearance) {
         config.update { it.copy(appearance = appearance) }
     }

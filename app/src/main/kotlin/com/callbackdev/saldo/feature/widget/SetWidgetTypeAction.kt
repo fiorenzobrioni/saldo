@@ -9,7 +9,8 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 
 /**
  * Switches a placed widget between expense and income. The choice is per widget
- * instance and survives reboots, so a widget set to income stays that way.
+ * instance and survives reboots, so a widget left on income stays there - but it
+ * is runtime state, and the settings screen's "starts on" is untouched by it.
  */
 class SetWidgetTypeAction : ActionCallback {
 
@@ -22,7 +23,10 @@ class SetWidgetTypeAction : ActionCallback {
             ?.let { name -> TransactionType.entries.firstOrNull { it.name == name } }
             ?: return
         updateAppWidgetState(context, glanceId) { prefs ->
-            prefs[QuickAddWidgetPrefs.Type] = requested.name
+            // CurrentType, not Type: this is where the widget is now, not where
+            // it starts. Writing the configured value from here made "starts on"
+            // change by itself every time the selector was touched.
+            prefs[QuickAddWidgetPrefs.CurrentType] = requested.name
         }
         SaldoQuickAddWidget().update(context, glanceId)
     }

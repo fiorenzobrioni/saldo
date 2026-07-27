@@ -49,6 +49,7 @@ fun QuickAddWidgetConfigScreen(
     onTypeSelected: (TransactionType) -> Unit,
     onShowTodayTotalChanged: (Boolean) -> Unit,
     onShowAppShortcutChanged: (Boolean) -> Unit,
+    onButtonsSelected: (WidgetActionButtons) -> Unit,
     onUseMostUsedChanged: (Boolean) -> Unit,
     onCategoryToggled: (Long) -> Unit,
     onAppearanceSelected: (WidgetAppearance) -> Unit,
@@ -132,18 +133,30 @@ fun QuickAddWidgetConfigScreen(
             }
             item {
                 SwitchRow(
-                    title = stringResource(R.string.widget_config_app_shortcut),
-                    subtitle = stringResource(R.string.widget_config_app_shortcut_caption),
-                    checked = state.config.showAppShortcut,
-                    onCheckedChange = onShowAppShortcutChanged,
-                )
-            }
-            item {
-                SwitchRow(
                     title = stringResource(R.string.widget_config_today_total),
                     subtitle = stringResource(R.string.widget_config_today_total_caption),
                     checked = state.config.showTodayTotal,
                     onCheckedChange = onShowTodayTotalChanged,
+                )
+            }
+            // The last two belong to the single-row size, so they sit together
+            // at the bottom rather than among the settings for the grid.
+            item {
+                Section(stringResource(R.string.widget_config_buttons)) {
+                    ButtonsSelector(state.config.buttons, onButtonsSelected)
+                    Text(
+                        text = stringResource(R.string.widget_config_buttons_caption),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            item {
+                SwitchRow(
+                    title = stringResource(R.string.widget_config_app_shortcut),
+                    subtitle = stringResource(R.string.widget_config_app_shortcut_caption),
+                    checked = state.config.showAppShortcut,
+                    onCheckedChange = onShowAppShortcutChanged,
                 )
             }
         }
@@ -170,6 +183,33 @@ private fun TypeSelector(selected: TransactionType, onSelect: (TransactionType) 
             SegmentedButton(
                 selected = type == selected,
                 onClick = { onSelect(type) },
+                shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                icon = {},
+            ) {
+                Text(text = label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+            }
+        }
+    }
+}
+
+/**
+ * Only the single-row size draws these, which is why the caption says so: an
+ * option whose effect is invisible at the size you are looking at needs to
+ * explain itself.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ButtonsSelector(selected: WidgetActionButtons, onSelect: (WidgetActionButtons) -> Unit) {
+    val options = listOf(
+        WidgetActionButtons.BOTH to stringResource(R.string.widget_config_buttons_both),
+        WidgetActionButtons.EXPENSE_ONLY to stringResource(R.string.widget_quick_add_expense),
+        WidgetActionButtons.INCOME_ONLY to stringResource(R.string.widget_quick_add_income),
+    )
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        options.forEachIndexed { index, (buttons, label) ->
+            SegmentedButton(
+                selected = buttons == selected,
+                onClick = { onSelect(buttons) },
                 shape = SegmentedButtonDefaults.itemShape(index, options.size),
                 icon = {},
             ) {
@@ -260,6 +300,7 @@ private fun AppearanceSelector(selected: WidgetAppearance, onSelect: (WidgetAppe
         WidgetAppearance.SYSTEM to stringResource(R.string.widget_config_appearance_system),
         WidgetAppearance.LIGHT to stringResource(R.string.widget_config_appearance_light),
         WidgetAppearance.DARK to stringResource(R.string.widget_config_appearance_dark),
+        WidgetAppearance.TRANSPARENT to stringResource(R.string.widget_config_appearance_transparent),
     )
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         options.forEachIndexed { index, (appearance, label) ->

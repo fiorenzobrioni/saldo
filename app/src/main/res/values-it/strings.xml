@@ -1084,4 +1084,8 @@
     <string name="widget_config_preview_a11y">Anteprima del widget con le impostazioni correnti</string>
     <string name="widget_config_app_shortcut">Icona dell\'app</string>
     <string name="widget_config_app_shortcut_caption">Aggiunge un pulsante che apre Saldo, accanto ai due della dimensione a una riga.</string>
+    <string name="widget_config_appearance_transparent">Trasparente</string>
+    <string name="widget_config_buttons">Bottoni</string>
+    <string name="widget_config_buttons_both">Spesa/Entrata</string>
+    <string name="widget_config_buttons_caption">Quali bottoni mostrare quando il widget è alto una riga.</string>
 </resources>

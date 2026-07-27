@@ -1068,4 +1068,8 @@
     <string name="widget_config_preview_a11y">Preview of the widget with the current settings</string>
     <string name="widget_config_app_shortcut">App icon</string>
     <string name="widget_config_app_shortcut_caption">Adds a button that opens Saldo, next to the two on the single-row size.</string>
+    <string name="widget_config_appearance_transparent">Transparent</string>
+    <string name="widget_config_buttons">Buttons</string>
+    <string name="widget_config_buttons_both">Both</string>
+    <string name="widget_config_buttons_caption">Which buttons show when the widget is one row high.</string>
 </resources>

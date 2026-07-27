@@ -80,6 +80,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     onUseMostUsedChanged = viewModel::onUseMostUsedChanged,
                     onCategoryToggled = viewModel::onCategoryToggled,
                     onAppearanceSelected = viewModel::onAppearanceSelected,
+                    onButtonsSelected = viewModel::onButtonsSelected,
                     onConfirm = ::confirm,
                     onCancel = ::finish,
                 )
@@ -112,6 +113,11 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                         QuickAddWidgetPrefs.encodePinned(config.pinnedCategoryIds)
                     prefs[QuickAddWidgetPrefs.ShowTodayTotal] = config.showTodayTotal
                     prefs[QuickAddWidgetPrefs.Appearance] = config.appearance.name
+                    prefs[QuickAddWidgetPrefs.Buttons] = config.buttons.name
+                    // Confirming settings puts the widget back on its configured
+                    // start: leaving the runtime choice behind would mean the
+                    // widget ignored the value just chosen.
+                    prefs[QuickAddWidgetPrefs.CurrentType] = config.type.name
                     prefs[QuickAddWidgetPrefs.ShowAppShortcut] = config.showAppShortcut
                     // Bumped here as well as by the refresh watcher. The
                     // composition reloads on any change of its inputs, and the
