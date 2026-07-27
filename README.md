@@ -51,7 +51,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 
 ### Roadmap futura (v1.5 / v2.0)
 
-PIN e biometria, export Google Sheets/Excel/PDF, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
+Prestiti e finanziamenti come conto (con debito residuo e rate mancanti), crediti e debiti verso persone, movimenti futuri con promemoria, foto dello scontrino allegate ai movimenti, PIN e biometria, export Google Sheets/Excel/PDF, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
 
 ## Principi
 

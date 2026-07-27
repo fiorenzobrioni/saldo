@@ -38,6 +38,8 @@ Quando scrivi, modifichi o generi testo per i file di documentazione del reposit
 - `TRANSFER` e `ADJUSTMENT` sono **sempre esclusi** dalle statistiche, a livello di query.
 - Un trasferimento è **un singolo record** con `fromAccountId`/`toAccountId`, mai due movimenti.
 - Il saldo di un account è **calcolato** (`initialBalance + Σ movimenti`), mai denormalizzato/salvato.
+- I debiti sono conti a saldo negativo che si riducono (carta di credito, prestito): il rimborso è un **trasferimento**, mai una spesa, altrimenti il denaro viene contato due volte (ADR 20 e 33). L'app non calcola interessi né piani di ammortamento.
+- Prestare denaro non è una spesa e riaverlo non è un'entrata: il movimento con controparte è sempre escluso dalle statistiche, ma incide sul saldo del conto come ogni altro (ADR 34).
 - Offline-first: nessuna funzione core deve richiedere rete o account. Rete solo per backup/export opzionali.
 
 ## Stack e vincoli tecnici

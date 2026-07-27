@@ -82,31 +82,36 @@ Nessuno di questi è un bug: sono confini del modello attuale, elencati perché 
 
 ## 4. Funzionalità mancanti rispetto alle app premium
 
-Ordine consigliato di implementazione. Il criterio è: prima ciò che chiude un'asimmetria del modello già esistente (costo basso, rischio basso), poi ciò che sblocca più superfici insieme, infine le estensioni che aggiungono un dominio nuovo.
+Ordine consigliato di implementazione. Il criterio è: prima ciò che aggiunge risposte senza aggiungere meccaniche di denaro (costo basso, rischio basso sui saldi), poi ciò che chiude un'asimmetria del modello esistente, poi ciò che sblocca più superfici insieme, infine le estensioni che aprono un dominio nuovo.
 
-Legenda della colonna "In Saldo": **Sì** già presente, **Parziale** le primitive esistono ma manca la funzionalità come tale, **No** assente, **Fuori perimetro** esclusa da VISION per scelta.
+Le prime quattro righe sono state **approvate a luglio 2026** e sono pianificate in dettaglio come Fasi 11-14 di PLANNING (ADR 33, 34, 35, 36). Due di esse rivedono decisioni precedenti, e la revisione è parte della decisione: i prestiti erano stati chiusi come "sola categoria" nella Fase 9.13, e gli allegati erano esclusi da VISION per l'assenza di una libreria di image loading, cioè per una premessa tecnica.
+
+Legenda della colonna "In Saldo": **Sì** già presente, **Parziale** le primitive esistono ma manca la funzionalità come tale, **No** assente.
 
 | # | Funzionalità | Descrizione | In Saldo | Funzione esistente da usare (e quindi non implementare) |
 |---|---|---|---|---|
-| 1 | Rimborsi collegati alla spesa originale | Il rimborso punta alla spesa che compensa, invece di limitarsi a scegliere la stessa categoria: la spesa risulta ridotta nel proprio mese e nella propria categoria | Parziale (flag rimborso) | Nel frattempo: entrata con flag "rimborso" e stessa categoria della spesa. Da implementare, il flag non copre il caso a cavallo di due mesi |
-| 2 | Gestione tag dedicata | Schermata per rinominare, unire ed eliminare i tag, che oggi si creano solo inline | No | Nessuna, i tag si amministrano solo cancellandoli dai singoli movimenti |
-| 3 | Prestiti e debiti verso persone (IOU) | Registro di quanto hai prestato e quanto devi, con saldo per persona e rientro parziale | Parziale | Le primitive ci sono: spesa con "escludi dalle statistiche" per l'uscita, entrata con flag "rimborso" per il rientro, tag con il nome della persona per raggruppare, filtro per tag per la lista. Manca solo l'aggregato "quanto mi devono": da implementare come vista sui movimenti esistenti, non come nuova meccanica di denaro |
-| 4 | Multi-divisa con gestione dei cambi | Tassi aggiornati con cache offline, controvalore nella valuta principale in saldo totale, statistiche e budget, sempre marcato come stimato | No (multi-valuta solo a livello di dato) | Oggi si usa la valuta per conto e per movimento, il tasso implicito mostrato nei trasferimenti cross-currency e la riga informativa delle statistiche. Da implementare: è il gap strutturale che sblocca più schermate insieme |
-| 5 | Commissioni sui trasferimenti | La fee di un prelievo o di un bonifico registrata dentro l'operazione che la genera | No | Oggi: spesa separata subito dopo il trasferimento. Funziona ma richiede due inserimenti |
-| 6 | Budget con periodo personalizzato e riporto | Periodo diverso dal mese di calendario (tipico "dal giorno dello stipendio") e residuo che si somma al mese dopo | No | Nessuna. Il budget è il mese di calendario, e il residuo si perde alla fine del mese |
-| 7 | Acquisti a rate e numero di ripetizioni | Regola ricorrente che si spegne dopo N occorrenze, con "rata 3 di 12" leggibile nell'hub | Parziale (solo data di fine) | Oggi: regola ricorrente con data di fine calcolata a mano. Copre l'addebito, non il conteggio delle rate |
-| 8 | Spesa divisa su più categorie (split) | Uno scontrino unico ripartito su due o più categorie, mantenendo il totale dell'operazione | No | Oggi: due movimenti separati con la stessa data e descrizione. Il totale dello scontrino non esiste da nessuna parte |
-| 9 | Rilevamento automatico delle ricorrenze | Euristica on-device che nota spese simili a cadenza regolare e propone la regola | No (già in roadmap v2.0) | Oggi: creazione manuale della regola dall'hub Ricorrenze |
-| 10 | Pagamento parziale dell'estratto carta | Saldo parziale o minimo di un ciclo, con il residuo che resta a debito | No | Oggi: trasferimento manuale verso la carta. La CTA "Paga estratto" continua però a proporre l'estratto pieno |
-| 11 | Beneficiario o esercente (payee) | Entità separata dalla descrizione, con storico e suggerimenti per beneficiario | No | Coperto in buona parte da descrizione più ricerca full-text e dai tag. Non implementare come nuova entità senza una richiesta reale: raddoppierebbe i selettori dell'editor |
-| 12 | Sottocategorie | Un secondo livello sotto la categoria | No (rinviato per scelta in VISION) | Coperto dai tag, che assolvono lo stesso bisogno senza un secondo livello nei picker e nei grafici. Non implementare senza rivedere la decisione |
-| 13 | Analisi avanzate (anno su anno, pattern) | Confronto tra periodi omologhi e ricorrenze di spesa individuate nello storico | No (già in roadmap v2.0) | Oggi: statistiche con periodo personalizzato più recap mensile |
-| 14 | Arrotondamento spiccioli verso un obiettivo | Ogni spesa arrotondata all'euro superiore, la differenza trasferita al conto di risparmio | No | Nessuna. Si costruisce interamente sui trasferimenti esistenti e sugli obiettivi di risparmio, nessun modello nuovo |
-| 15 | Export PDF, Excel, Google Sheets | Report formattati oltre al CSV | No (già in roadmap v1.5 e v2.0) | Oggi: export CSV filtrato, che si apre in Excel e in Sheets |
-| 16 | Report periodico ricorrente | Riepilogo settimanale o mensile recapitato come notifica | Parziale | Coperto dal recap mensile "Saldo Wrapped" più le notifiche di soglia budget. Una notifica settimanale sarebbe una preferenza in più, non una funzionalità nuova |
-| 17 | PIN, biometria, oscuramento in recenti | Blocco dell'app all'apertura e contenuto nascosto nelle app recenti | No (già in roadmap v1.5) | Nessuna. È la funzionalità premium più attesa che non tocca il modello finanziario |
-| 18 | Backup automatico su cloud | Copia periodica fuori dal dispositivo, senza azione manuale | No (fase cloud da valutare) | Oggi: backup manuale su file via picker di sistema, salvabile su qualunque provider (Drive incluso) |
-| 19 | Cifratura del backup | File di backup protetto da passphrase | No (già in roadmap v2.0) | Nessuna. Il file JSON è in chiaro e la UI lo dichiara |
+| 1 | **Prestiti e finanziamenti come tipo di conto** (approvata, Fase 11) | Prestito, finanziamento o mutuo come conto a saldo negativo che si riduce: residuo, quota rimborsata, rate mancanti stimate, rata come trasferimento ricorrente | No | La copertura attuale (ricorrenza più categoria "Prestiti & Finanziamenti") registra il flusso di cassa ma non sa dire quanto manca, pur avendo in memoria ogni rata. Resta valida per chi vuole la rata dentro le statistiche e non traccia il prestito: le due modalità non si mescolano |
+| 2 | **Crediti e debiti verso persone** (approvata, Fase 12) | Quanto hai prestato e quanto devi, con saldo per persona e rientri parziali | Parziale | Le primitive ci sono (spesa esclusa dalle statistiche, rientro come rimborso, tag con il nome), ma richiedono una convenzione che l'utente deve inventarsi e mantenere. Manca solo l'aggregato: si implementa come vista sui movimenti esistenti, non come registro parallelo |
+| 3 | **Movimenti futuri e scadenze una tantum** (approvata, Fase 13) | Elenco "In arrivo", promemoria su un movimento datato nel futuro, e stima di fine mese che conta ciò che è già certo | Parziale | Il movimento futuro si registra già oggi e compare nella riga "ad oggi", ma nessuna schermata lo elenca e la coda di previsione lo ignora. La scadenza annuale si può ancora modellare come regola ricorrente, che resta la via giusta quando la scadenza si ripete davvero |
+| 4 | **Allegati fotografici** (approvata, Fase 14) | Foto dello scontrino o della garanzia sul movimento, senza permessi e senza OCR | No | Nessuna. Include la decisione sul backup, che diventa uno zip quando ci sono allegati: un backup che perde le foto non sarebbe un backup |
+| 5 | Rimborsi collegati alla spesa originale | Il rimborso punta alla spesa che compensa, invece di limitarsi a scegliere la stessa categoria: la spesa risulta ridotta nel proprio mese e nella propria categoria | Parziale (flag rimborso) | Nel frattempo: entrata con flag "rimborso" e stessa categoria della spesa. Il flag non copre il caso a cavallo di due mesi |
+| 6 | Gestione tag dedicata | Schermata per rinominare, unire ed eliminare i tag, che oggi si creano solo inline | No | Nessuna, i tag si amministrano solo cancellandoli dai singoli movimenti |
+| 7 | Multi-divisa con gestione dei cambi | Tassi aggiornati con cache offline, controvalore nella valuta principale in saldo totale, statistiche e budget, sempre marcato come stimato | No (multi-valuta solo a livello di dato) | Oggi si usa la valuta per conto e per movimento, il tasso implicito mostrato nei trasferimenti cross-currency e la riga informativa delle statistiche. È il gap strutturale che sblocca più schermate insieme |
+| 8 | Commissioni sui trasferimenti | La fee di un prelievo o di un bonifico registrata dentro l'operazione che la genera | No | Oggi: spesa separata subito dopo il trasferimento. Funziona ma richiede due inserimenti |
+| 9 | Budget con periodo personalizzato e riporto | Periodo diverso dal mese di calendario (tipico "dal giorno dello stipendio") e residuo che si somma al mese dopo | No | Nessuna. Il budget è il mese di calendario, e il residuo si perde alla fine del mese |
+| 10 | Acquisti a rate e numero di ripetizioni | Regola ricorrente che si spegne dopo N occorrenze, con "rata 3 di 12" leggibile nell'hub | Parziale (solo data di fine) | Oggi: regola ricorrente con data di fine calcolata a mano. Con la Fase 11 il conteggio delle rate esiste come stima sul conto prestito, ma resta derivato e non esatto |
+| 11 | Spesa divisa su più categorie (split) | Uno scontrino unico ripartito su due o più categorie, mantenendo il totale dell'operazione | No | Oggi: due movimenti separati con la stessa data e descrizione. Il totale dello scontrino non esiste da nessuna parte |
+| 12 | Rilevamento automatico delle ricorrenze | Euristica on-device che nota spese simili a cadenza regolare e propone la regola | No (già in roadmap v2.0) | Oggi: creazione manuale della regola dall'hub Ricorrenze |
+| 13 | Pagamento parziale dell'estratto carta | Saldo parziale o minimo di un ciclo, con il residuo che resta a debito | No | Oggi: trasferimento manuale verso la carta. La CTA "Paga estratto" continua però a proporre l'estratto pieno |
+| 14 | Beneficiario o esercente (payee) | Entità separata dalla descrizione, con storico e suggerimenti per beneficiario | No | Coperto in buona parte da descrizione più ricerca full-text e dai tag. Non implementare come nuova entità senza una richiesta reale: raddoppierebbe i selettori dell'editor |
+| 15 | Sottocategorie | Un secondo livello sotto la categoria | No (rinviato per scelta in VISION) | Coperto dai tag, che assolvono lo stesso bisogno senza un secondo livello nei picker e nei grafici. Non implementare senza rivedere la decisione |
+| 16 | Analisi avanzate (anno su anno, pattern) | Confronto tra periodi omologhi e ricorrenze di spesa individuate nello storico | No (già in roadmap v2.0) | Oggi: statistiche con periodo personalizzato più recap mensile |
+| 17 | Arrotondamento spiccioli verso un obiettivo | Ogni spesa arrotondata all'euro superiore, la differenza trasferita al conto di risparmio | No | Nessuna. Si costruisce interamente sui trasferimenti esistenti e sugli obiettivi di risparmio, nessun modello nuovo |
+| 18 | Export PDF, Excel, Google Sheets | Report formattati oltre al CSV | No (già in roadmap v1.5 e v2.0) | Oggi: export CSV filtrato, che si apre in Excel e in Sheets |
+| 19 | Report periodico ricorrente | Riepilogo settimanale o mensile recapitato come notifica | Parziale | Coperto dal recap mensile "Saldo Wrapped" più le notifiche di soglia budget. Una notifica settimanale sarebbe una preferenza in più, non una funzionalità nuova |
+| 20 | PIN, biometria, oscuramento in recenti | Blocco dell'app all'apertura e contenuto nascosto nelle app recenti | No (già in roadmap v1.5) | Nessuna. È la funzionalità premium più attesa che non tocca il modello finanziario |
+| 21 | Backup automatico su cloud | Copia periodica fuori dal dispositivo, senza azione manuale | No (fase cloud da valutare) | Oggi: backup manuale su file via picker di sistema, salvabile su qualunque provider (Drive incluso) |
+| 22 | Cifratura del backup | File di backup protetto da passphrase | No (già in roadmap v2.0) | Nessuna. Il file JSON è in chiaro e la UI lo dichiara |
 
 ### Funzionalità premium già coperte, da non implementare
 
@@ -114,26 +119,37 @@ Sono elencate perché nel confronto con le app concorrenti risultano "mancanti" 
 
 | Funzionalità nelle app concorrenti | Come si fa in Saldo |
 |---|---|
-| Promemoria bollette e scadenze | Regola ricorrente più notifica di pre-rinnovo, con anticipo configurabile |
-| Rate di prestiti, finanziamenti e mutuo | Regola ricorrente in uscita più la categoria "Prestiti & Finanziamenti" (o "Affitto/Mutuo" per la rata del mutuo). Decisione già presa: niente feature dedicata, VISION esclude prestiti e ammortamenti |
+| Promemoria bollette e scadenze | Regola ricorrente più notifica di pre-rinnovo, con anticipo configurabile. La scadenza una tantum (bollo, IMU) passa alla Fase 13 |
+| Rate di prestiti, finanziamenti e mutuo | Copertura rivista: la rata resta una ricorrenza, ma il prestito diventa un conto con il proprio residuo (Fase 11). La categoria "Prestiti & Finanziamenti" resta la via per chi non traccia il prestito e vuole la rata nelle statistiche |
 | Carte di debito e bancomat come strumento separato | Si registrano sul conto corrente, che è da dove il denaro esce davvero. Il tipo dedicato è stato ritirato di proposito |
 | Prelievo al bancomat | Trasferimento da conto corrente a contanti |
 | Conto "salvadanaio" o envelope | Conto di risparmio, che di default resta fuori dal budget |
 | Saldo previsto a fine mese | Coda tratteggiata della sparkline nella card Saldo totale |
 | Quanto posso spendere oggi | Card Spendibile oggi, con il dettaglio del calcolo espandibile |
-| Spese condivise o anticipate per altri | Flag "escludi dalle statistiche" sul movimento più flag rimborso sul rientro (vedi anche la riga 3 della tabella sopra) |
+| Spese condivise o anticipate per altri | Flag "escludi dalle statistiche" sul movimento più flag rimborso sul rientro; l'aggregato per persona arriva con la Fase 12 |
 | Riconciliazione con il saldo della banca | Rettifica saldo: si inserisce il saldo reale, l'app genera la differenza |
 | Widget e inserimento rapido | Widget in due forme più scorciatoie dal launcher |
 
 ### Fuori perimetro per VISION
 
-Elencate per chiudere il confronto: sono assenze deliberate, non gap.
+Elencate per chiudere il confronto: sono assenze deliberate, non gap. VISION è stata aggiornata a luglio 2026 perché due voci di questo elenco poggiavano su premesse che non reggevano il confronto con il bisogno reale.
 
 | Funzionalità | Motivo dell'esclusione |
 |---|---|
-| Collegamento automatico ai conti bancari (open banking) | Nessuna credenziale bancaria a terze parti, nessun backend |
-| Investimenti, titoli, crypto | Nessuna quotazione, nessuna rete: la liquidità si traccia con un conto di risparmio |
-| Patrimonio netto, immobili, asset | Saldo non è un gestore patrimoniale |
-| Piani di ammortamento e calcolo interessi | Prestiti e ammortamenti esclusi esplicitamente |
-| Spese condivise multi-utente in stile Splitwise | Nessuna funzione social o multi-utente, valutabile molto in là |
-| Foto dello scontrino e OCR | Nessuna libreria di image loading in nessuna versione, l'app non gestisce immagini reali |
+| Collegamento automatico ai conti bancari (open banking) | Nessuna credenziale bancaria a terze parti, nessun backend. Il motivo non è solo di principio: aggregare conti richiede una licenza da aggregatore o un provider a pagamento. Il bisogno sottostante è coperto dall'import CSV dell'estratto |
+| Investimenti, titoli, crypto | Nessuna quotazione e nessun prezzo di mercato: sarebbe un'app diversa, con la rete nel percorso critico. La liquidità destinata a investimenti si traccia come importo su un conto |
+| Beni non monetari (immobili, veicoli, portafogli valorizzati a mano) | L'app tiene contenitori di denaro reale. Il saldo totale è però già la lettura del patrimonio netto della parte liquida, debiti tracciati inclusi: non serve un modulo per averla |
+| Piani di ammortamento e calcolo degli interessi | Confine spostato: il **debito residuo si traccia** (Fase 11, è un conto a saldo negativo), la matematica del piano no. Il residuo lo dichiara l'utente, come già fa con la rettifica saldo |
+| Spese condivise multi-utente in stile Splitwise | Nessuna funzione social o multi-utente. La parte utile per un'app a utente singolo è l'aggregato dei crediti verso persone (Fase 12), che non richiede alcuna macchina di condivisione |
+| OCR e lettura automatica dello scontrino | La foto dell'allegato entra (Fase 14), la lettura automatica dell'importo no: sarebbe un'altra app. L'allegato è una prova da ritrovare, non una fonte di dati |
+
+## 5. Decisioni prese su questa review (luglio 2026)
+
+**Approvate**: prestiti e finanziamenti come tipo di conto, crediti e debiti verso persone, movimenti futuri con promemoria e stime allineate, allegati fotografici. Sono le Fasi 11-14 di PLANNING, con i rispettivi ADR 33, 34, 35 e 36.
+
+**Valutate e scartate nella stessa sessione**, per non lasciarle come domande aperte:
+
+- **Riconciliazione con flag "spuntato" per movimento**: è più utile della rettifica per chi tiene l'app per anni, perché dice *perché* i saldi divergono e non solo *che* divergono. Costa però una colonna, una modalità dedicata e un'abitudine che l'utente tipo non ha. La rettifica saldo continua a coprire il riallineamento.
+- **Conti "bene" non transazionali** (casa, auto, portafoglio valorizzato a mano): poco codice, ma rompono la semantica di Account ("il luogo dove si trovano i soldi") e si infilerebbero in ogni picker di conto degli editor. Se un giorno rientrassero, dovrebbero essere un tipo esplicitamente escluso dai selettori dei movimenti.
+
+**Vincoli rimossi dai documenti**, perché bloccavano decisioni implementative senza una ragione di prodotto: la nota di VISION contro qualsiasi libreria di image loading (riscritta: le icone restano vettori locali, gli allegati si decodificano con le API di piattaforma, e ogni dipendenza nuova resta una decisione esplicita) e l'esclusione secca di "prestiti e ammortamenti" (ora separa il residuo, che si traccia, dal piano di ammortamento, che resta fuori).

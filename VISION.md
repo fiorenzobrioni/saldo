@@ -47,11 +47,11 @@ L'app è un **Expense Tracker evoluto**, non un sistema bancario.
 
 **Non include (per scelta, non per limite):**
 
-- collegamento automatico ai conti bancari (open banking)
-- investimenti, trading, crypto
-- gestione patrimoniale complessa (net worth, asset, immobili)
-- prestiti e ammortamenti
-- funzioni social o condivisione multi-utente (valutabile molto in là)
+- collegamento automatico ai conti bancari (open banking): niente credenziali bancarie a terze parti. Chi vuole evitare di digitare tutto usa l'import CSV dell'estratto
+- investimenti, trading, crypto: nessuna quotazione, nessun prezzo di mercato. La liquidità destinata a investimenti si traccia come importo su un conto, il suo valore no
+- gestione di beni non monetari (immobili, veicoli, portafogli valorizzati a mano): l'app tiene solo contenitori di denaro reale. Il saldo totale resta la somma di quel denaro, debiti tracciati inclusi, e in questo senso è già una lettura di patrimonio netto della parte liquida: non serve un modulo per averla
+- **piani di ammortamento e calcolo degli interessi**: il debito residuo di un prestito si traccia (è un conto a saldo negativo che si riduce), la matematica del piano no. Il residuo lo dichiara l'utente, come fa già con la rettifica saldo
+- funzioni social o condivisione multi-utente (valutabile molto in là): le spese anticipate per altri si tracciano come crediti verso una persona, che è la parte utile senza la macchina della condivisione
 
 **Principi non negoziabili:**
 
@@ -103,6 +103,8 @@ Campi:
 - **flag "escludi dalle statistiche"**: per casi particolari (es. anticipo per amici che verrà rimborsato)
 - **riferimento alla ricorrenza**: se il movimento è stato generato da una regola ricorrente
 - **note**: campo lungo opzionale
+- **controparte**: nome della persona, quando il movimento è denaro prestato o restituito (vedi Crediti e debiti verso persone)
+- **allegati**: zero o più foto (scontrino, garanzia, ricevuta), opzionali
 
 ### Rimborsi
 
@@ -129,7 +131,7 @@ Esempi: Conto Corrente Intesa, Conto Fineco, Carta Visa, Carta Mastercard, PayPa
 Campi:
 
 - nome
-- tipo (conto corrente, conto di risparmio, carta prepagata, carta di credito, contanti, wallet digitale, altro) - a fini di icona/raggruppamento, con una descrizione d'uso mostrata nell'editor; la sola carta di credito ha comportamento proprio (ciclo di addebito differito con estratto sul conto collegato). Le carte di debito non sono un tipo: spendono dal conto corrente e i loro movimenti si registrano lì
+- tipo (conto corrente, conto di risparmio, carta prepagata, carta di credito, prestito o finanziamento, contanti, wallet digitale, altro) - a fini di icona/raggruppamento, con una descrizione d'uso mostrata nell'editor. Due tipi hanno comportamento proprio: la carta di credito (ciclo di addebito differito con estratto sul conto collegato) e il prestito (saldo negativo che si riduce a ogni rata). Le carte di debito non sono un tipo: spendono dal conto corrente e i loro movimenti si registrano lì
 - valuta principale dell'account
 - **saldo iniziale** (impostato alla creazione: il saldo corrente è sempre `saldo iniziale + Σ movimenti`)
 - colore e icona
@@ -147,6 +149,18 @@ e l'app crea automaticamente un movimento di tipo **Rettifica** con la differenz
 ### Account archiviati
 
 Un account chiuso (es. vecchia carta prepagata) non si elimina: si **archivia**. I movimenti storici restano visibili nelle statistiche, ma l'account sparisce dai selettori e dal saldo totale.
+
+### Prestiti e finanziamenti
+
+Un prestito personale, un finanziamento o un mutuo si tracciano come **account a saldo negativo che si riduce**, non come una semplice categoria di spesa. È lo stesso modello della carta di credito con il verso opposto, e risponde alla domanda che la categoria non poteva soddisfare: quanto manca.
+
+- il **saldo iniziale è il debito residuo di oggi**, quello dichiarato dalla banca (interessi del piano compresi), non il capitale erogato. L'app non calcola interessi e non costruisce piani di ammortamento
+- la **rata è un trasferimento** (tipicamente ricorrente) dal conto di pagamento al conto prestito: non è consumo, quindi non compare nelle statistiche, e porta il residuo esattamente a zero all'ultima rata
+- il **residuo** è il saldo calcolato dell'account, come per ogni altro conto. Le rate mancanti sono una stima derivata (residuo diviso importo della rata)
+- di default il conto **resta fuori dal saldo totale e dal budget**: la Dashboard risponde a "quanto ho", e un mutuo a sei cifre coprirebbe quella risposta. Includerlo è una scelta esplicita dell'utente e trasforma il saldo totale nella lettura patrimoniale
+- il riallineamento annuale con l'estratto della banca si fa con la **rettifica saldo**, che esiste già
+
+Chi preferisce vedere la rata dentro le statistiche di spesa continua a non tracciare il prestito come account e usa la categoria "Prestiti & Finanziamenti". Le due modalità non si mescolano: insieme conterebbero due volte lo stesso denaro.
 
 ### Trasferimenti tra Account
 
@@ -370,6 +384,39 @@ Con data obiettivo opzionale e suggerimento del risparmio mensile necessario ("t
 
 ---
 
+# Crediti e debiti verso persone
+
+Il denaro prestato a un amico, la cena anticipata per il gruppo, i soldi ricevuti in prestito da un parente. Non è una funzione di spese condivise multi-utente (resta fuori): è la risposta a "quanto mi devono, e chi".
+
+```text
+Marco      ti devono   65,00 €   (3 movimenti)
+Giulia     ti devono   20,00 €   (1 movimento)
+Papà       devi       200,00 €   (1 movimento)
+```
+
+Modellazione, senza inventare un registro parallelo:
+
+- il movimento resta quello che è, una spesa o un'entrata sul conto da cui il denaro esce o entra davvero: il saldo del conto lo registra come qualunque altro movimento
+- prestare denaro non è spesa e riaverlo non è entrata, quindi il movimento marcato come prestito o restituzione è **sempre escluso dalle statistiche**
+- il legame è il nome della **controparte**; il saldo per persona è la somma dei suoi movimenti, quindi i rientri parziali funzionano da soli
+- i crediti **non** si sommano al saldo totale: quel denaro ha già lasciato il conto, contarlo altrove lo conterebbe due volte
+
+Un prestito ricevuto da una persona si traccia qui e non come account prestito: non ha un piano, spesso non ha nemmeno una rata.
+
+---
+
+# Allegati
+
+Un movimento può portare con sé una o più foto: lo scontrino, la ricevuta, il cartellino della garanzia.
+
+- acquisizione dalla galleria o dalla fotocamera, **senza alcun permesso** (photo picker di sistema e intent della fotocamera)
+- le immagini vivono nello spazio privato dell'app, non nella galleria del telefono, e non lasciano il dispositivo se non tramite una condivisione esplicita
+- ridimensionamento e ricompressione automatici alla scrittura: uno scontrino non ha bisogno della risoluzione piena della fotocamera
+- **niente OCR e niente lettura automatica dell'importo**: sarebbe un'altra app. L'allegato è una prova da ritrovare, non una fonte di dati
+- il backup completo comprende gli allegati (vedi Backup): un backup che perde le foto non sarebbe un backup
+
+---
+
 # Multi-valuta
 
 Supporto completo dal MVP a livello di **dato**: ogni movimento conserva importo e valuta originali, ogni account ha la sua valuta.
@@ -429,6 +476,7 @@ In parallelo al backup automatico su Drive, l'utente può esportare in qualsiasi
 - **stesso formato JSON versionato** del backup Drive: un solo code path, e il restore funziona indistintamente da entrambe le fonti
 - salvataggio tramite **Storage Access Framework** (`ACTION_CREATE_DOCUMENT`): l'utente sceglie la destinazione dal picker di sistema (memoria locale, Drive, qualunque provider di documenti) e l'app **non richiede permessi di storage**
 - nome file con data: `saldo-backup-2026-07-05.json`
+- quando esistono **allegati** il backup diventa un archivio `saldo-backup-2026-07-05.zip` con dentro lo stesso JSON più i file: il formato JSON e il suo numero di versione non cambiano, e il ripristino accetta indistintamente l'archivio o il JSON nudo. Chi non usa allegati continua a esportare un file di testo leggibile
 - avvertenza in UI: il file non è cifrato fino alla v2.0 (cifratura backup), quindi va custodito con attenzione
 
 Questa opzione rafforza i principi del progetto: backup completo possibile **senza account Google** e piena portabilità dei dati - il file può essere copiato a mano su Google Drive, NAS, Syncthing o qualsiasi altro servizio.
@@ -465,7 +513,7 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 - **sblocco biometrico** via `BiometricPrompt` (v1.5)
 - oscuramento del contenuto nelle app recenti (`FLAG_SECURE`, opzionale) - v1.5
 - **cifratura backup** (v2.0)
-- permessi Android richiesti: praticamente nessuno (niente contatti, niente posizione, niente SMS)
+- permessi Android richiesti: praticamente nessuno (niente contatti, niente posizione, niente SMS). Anche gli allegati fotografici restano a zero permessi: il photo picker di sistema non ne richiede e la fotocamera si usa via intent, senza dichiarare `CAMERA` nel manifest
 
 ---
 
@@ -533,7 +581,7 @@ Linee guida:
 - Google Drive REST API + Credential Manager (solo feature backup)
 - Test: JUnit5 per gli unit test JVM, JUnit4 per test strumentati e Compose UI Test (requisito delle rule Compose), Turbine (Flow), MockK, Room in-memory
 
-Nota: nessuna libreria di image loading, in nessuna versione - scelta deliberata: l'app non gestisce immagini vere, le icone sono risorse vettoriali locali renderizzate nativamente da Compose. Da rivalutare solo se una feature futura introducesse immagini reali (es. allegati fotografici alle spese, come la foto dello scontrino).
+Nota sulle immagini: le icone dell'app sono e restano risorse vettoriali locali, renderizzate nativamente da Compose, mai caricate da una libreria. Gli allegati fotografici ai movimenti si acquisiscono con il photo picker e la fotocamera di sistema e si decodificano con le API della piattaforma (`ImageDecoder`, decodifica con sample size per le miniature): per qualche foto locale per movimento non serve una libreria di image loading, e la scelta resta confinata in un componente condiviso, così un domani è rivedibile in un punto solo. Come ogni altra dipendenza, l'eventuale aggiunta passa da una decisione esplicita, non da una comodità.
 
 ---
 
@@ -565,6 +613,10 @@ Nota: nessuna libreria di image loading, in nessuna versione - scelta deliberata
 ## v2.0
 
 - Obiettivi di risparmio
+- Prestiti e finanziamenti come tipo di account (residuo, rate mancanti)
+- Crediti e debiti verso persone
+- Movimenti futuri e scadenze una tantum (elenco "in arrivo", promemoria, stima a fine mese che li conta)
+- Allegati fotografici ai movimenti (backup incluso)
 - Conversione valuta automatica
 - Export PDF avanzato con grafici
 - Cifratura backup
