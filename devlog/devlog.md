@@ -24,9 +24,9 @@ Da qui le due regole. Il gate legge `generatedPreviewCategories` e non `getWidge
 
 **Problemi:** primo giro sbagliato, e vale la pena scriverlo. Avevo letto la sparizione come "il preview generato oscura il `previewLayout`" (vero: in `generatePreviewInfoBg` le tre sorgenti non sono alternative pari, si legge prima il generato) e avevo concluso che il preview generato fosse vuoto, rimuovendo la feature invece di ripararla. Era sbagliato: le due anteprime reali c'erano e funzionavano, il problema e che non sopravvivevano all'update. La conferma e arrivata dalla descrizione di cosa restava a schermo, che era esattamente il `previewLayout` statico della barra.
 
-**Verificato:** `./gradlew assembleDebug testDebugUnitTest lint` in locale. versionCode 143 -> 144, versionName 0.9.104 -> 0.9.105.
+**Verificato:** `./gradlew assembleDebug testDebugUnitTest lint` in locale, e **prova su device riuscita**: dopo l'update in place le due card del picker tornano renderizzate. I due `Log` che avevo messo sul ramo del rifiuto sono stati poi tolti (scelta dell'utente): il progetto non logga da nessun'altra parte, e la diagnosi non dipende dal messaggio ma dal valore di ritorno, che ora pilota il retry. versionCode 143 -> 145, versionName 0.9.104 -> 0.9.106.
 
-**Prossimo:** prova su device: installare in place, riaprire l'app e controllare che le due card del picker tornino renderizzate; poi un riavvio e stessa verifica.
+**Prossimo:** resta da verificare il caso riavvio, l'altro evento che cancella i preview.
 
 ---
 

@@ -5,7 +5,6 @@ import android.appwidget.AppWidgetProviderInfo
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -40,16 +39,15 @@ import kotlin.reflect.KClass
  * (`DEFAULT_GENERATED_PREVIEW_MAX_CALLS_PER_INTERVAL`). Republishing on every
  * cold start spent that budget on previews the launcher could already see, so
  * the call that mattered - the first launch after an update - was the one the
- * system refused. The refusal was invisible too: the result was discarded, and
- * a rate-limited publish looks exactly like a successful one.
+ * system refused. And the refusal went nowhere: the `@CheckResult` return that
+ * tells a published preview from a rate-limited one was thrown away with it.
  *
  * Hence the two rules here: publish only for a provider the launcher currently
- * has no preview for, and when the system does refuse, come back for it instead
- * of waiting for the next cold start.
+ * has no preview for, and read that return value, so a refusal arms a retry
+ * instead of waiting for the next cold start.
  */
 object WidgetPreviews {
 
-    private const val TAG = "WidgetPreviews"
     private const val WORK_NAME = "widget-preview-publish"
 
     /** Just past the system's own hourly window, so the retry finds a fresh budget. */
@@ -104,11 +102,11 @@ object WidgetPreviews {
             receivers.forEach { receiver ->
                 val component = ComponentName(context, receiver.java)
                 if (!manager.needsPreview(context, component)) return@forEach
-                val result = runCatching { glanceManager.setWidgetPreviews(receiver) }
-                    .onFailure { error -> Log.w(TAG, "preview for $component failed", error) }
-                    .getOrNull()
+                // A publish that throws is left to the next pass rather than
+                // retried: the retry exists for the hourly budget, and an
+                // exception here is not a budget problem.
+                val result = runCatching { glanceManager.setWidgetPreviews(receiver) }.getOrNull()
                 if (result == GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_RATE_LIMITED) {
-                    Log.i(TAG, "preview for $component rate limited, retrying in $RetryDelay")
                     refused = true
                 }
             }
