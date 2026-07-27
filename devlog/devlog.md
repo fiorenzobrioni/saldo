@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-27 - Review finanziaria: quattro funzionalità approvate e due paletti tolti da VISION
+
+**Fatto:** review completa delle funzionalità finanziarie (dominio, DAO, use case, editor) su v0.9.106, raccolta in `docs/review-funzionalita-finanziarie.md`: mappa di come l'app tratta il denaro, undici limiti e asimmetrie del modello attuale, e confronto con le app di tracciamento spese a pagamento. Dal confronto sono uscite quattro funzionalità approvate, ora Fasi 11-14 in PLANNING con ADR 33, 34, 35 e 36: prestiti e finanziamenti come tipo di conto, crediti e debiti verso persone, movimenti futuri con promemoria e stime allineate, allegati fotografici. Aggiornate VISION, il CLAUDE.md di root e il README; rimossi da PLANNING i bug già risolti (54 righe di storia che il devlog e i commit tengono già).
+
+**Decisioni:** due delle quattro rivedono decisioni precedenti, e la revisione è il punto. I **prestiti** erano stati chiusi nella Fase 9.13 come "sola categoria di spesa": quella copertura registra il flusso di cassa e butta via l'unico dato che l'utente cerca, quanto manca, pur avendo in memoria ogni singola rata. Il modello era già in casa, un prestito è la carta di credito dell'ADR 20 col verso opposto, e il residuo non richiede matematica degli interessi perché lo dichiara l'utente come già fa con la rettifica saldo. Deviazione dichiarata dall'ADR 20: il conto prestito nasce fuori dal saldo totale, perché un mutuo a sei cifre coprirebbe la risposta a "quanto ho", che è la domanda della Dashboard. Gli **allegati** erano esclusi da VISION per l'assenza di una libreria di image loading, cioè per una premessa tecnica e non di prodotto: per qualche foto locale bastano photo picker, intent della fotocamera e `ImageDecoder`, a zero permessi. Il costo vero era un altro, ed è entrato nell'ADR invece di essere rimandato: senza uno zip il backup smetterebbe di essere completo, e un ripristino restituirebbe movimenti con allegati morti. **Crediti e debiti** restano una vista sui movimenti esistenti, un campo `counterparty` più il flag di esclusione già presente: le primitive c'erano e VISION le citava, ma chiedevano all'utente di inventarsi una convenzione con i tag e di mantenerla per mesi. I **movimenti futuri** chiudono un'asimmetria trovata dalla review: lo Spendibile oggi conta le pending, la coda della sparkline no, quindi due stime dello stesso mese partono da insiemi di impegni diversi.
+
+Scartate con motivazione, per non lasciarle come domande aperte: la riconciliazione con flag "spuntato" per movimento (costa una colonna, una modalità e un'abitudine che l'utente tipo non ha) e i conti "bene" non transazionali (rompono la semantica di Account e si infilerebbero in ogni picker degli editor).
+
+**Problemi:** nessuno tecnico, è un giro di sola documentazione. Il punto delicato resta di prodotto: quattro funzionalità approvate insieme sono anche quattro superfici in più da tenere coerenti fra le due semantiche del denaro, cassa e statistica, ed è il costo che le review continuano a far pagare in silenzio. L'ordine delle fasi è scelto per questo, con gli allegati per ultimi perché sono gli unici a toccare il formato di backup.
+
+**Verificato:** nessuna modifica al codice, quindi nessun bump di versione (resta versionCode 145, versionName 0.9.106). Rilettura incrociata di VISION, PLANNING, CLAUDE.md e README per la coerenza delle decisioni riviste.
+
+**Prossimo:** implementazione della Fase 11 quando si decide di aprirla; la Fase 10.20 ha ancora la verifica su device in sospeso.
+
+---
+
 ## 2026-07-27 - Le anteprime generate sparivano a ogni update in place
 
 **Fatto:** le due anteprime generate del picker (API 35+) tornano e restano. Nuovo `WidgetPreviews`: pubblica solo per i provider di cui il launcher non vede piu un preview, e se il sistema rifiuta la chiamata arma un one-shot WorkManager a 65 minuti invece di aspettare il prossimo avvio a freddo. Restano dal giro precedente i colori propri con variante `values-night` delle preview statiche e la card di sfondo col raggio widget di sistema, che valgono da fallback e sui device pre-35.
