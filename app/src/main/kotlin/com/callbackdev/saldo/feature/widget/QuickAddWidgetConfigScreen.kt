@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -20,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -27,7 +29,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
@@ -53,6 +57,7 @@ fun QuickAddWidgetConfigScreen(
     onUseMostUsedChanged: (Boolean) -> Unit,
     onCategoryToggled: (Long) -> Unit,
     onAppearanceSelected: (WidgetAppearance) -> Unit,
+    onOpacityChanged: (Float) -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -104,6 +109,16 @@ fun QuickAddWidgetConfigScreen(
             item {
                 Section(stringResource(R.string.widget_config_appearance)) {
                     AppearanceSelector(state.config.appearance, onAppearanceSelected)
+                }
+            }
+            item {
+                Section(stringResource(R.string.widget_config_opacity)) {
+                    OpacitySlider(state.config.backgroundOpacity, onOpacityChanged)
+                    Text(
+                        text = stringResource(R.string.widget_config_opacity_caption),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             item {
@@ -293,6 +308,11 @@ private fun SwitchRow(
     }
 }
 
+/**
+ * Three options, not four: "transparent" stopped being an appearance the day
+ * the opacity slider arrived - it is the slider's zero. Legacy widgets that
+ * still store it read back as exactly that (see [QuickAddWidgetPrefs.read]).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AppearanceSelector(selected: WidgetAppearance, onSelect: (WidgetAppearance) -> Unit) {
@@ -300,7 +320,6 @@ private fun AppearanceSelector(selected: WidgetAppearance, onSelect: (WidgetAppe
         WidgetAppearance.SYSTEM to stringResource(R.string.widget_config_appearance_system),
         WidgetAppearance.LIGHT to stringResource(R.string.widget_config_appearance_light),
         WidgetAppearance.DARK to stringResource(R.string.widget_config_appearance_dark),
-        WidgetAppearance.TRANSPARENT to stringResource(R.string.widget_config_appearance_transparent),
     )
     SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
         options.forEachIndexed { index, (appearance, label) ->
@@ -313,6 +332,28 @@ private fun AppearanceSelector(selected: WidgetAppearance, onSelect: (WidgetAppe
                 Text(text = label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
             }
         }
+    }
+}
+
+@Composable
+private fun OpacitySlider(value: Float, onChange: (Float) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Slider(
+            value = value,
+            onValueChange = onChange,
+            modifier = Modifier.weight(1f),
+        )
+        // A fixed slot so the row does not breathe while the thumb drags.
+        Text(
+            text = "${(value * 100).roundToInt()}%",
+            style = MaterialTheme.typography.labelMedium,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(40.dp),
+        )
     }
 }
 

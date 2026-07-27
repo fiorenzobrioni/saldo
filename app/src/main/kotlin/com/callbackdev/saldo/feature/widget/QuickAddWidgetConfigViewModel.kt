@@ -9,13 +9,13 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
-import javax.inject.Inject
 
 data class QuickAddWidgetConfigUiState(
     val isLoading: Boolean = true,
@@ -40,14 +40,24 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
 
     private val config = MutableStateFlow(QuickAddWidgetConfig())
 
+    /**
+     * True once [initialize] has seeded the form from the stored state. The
+     * screen stays on its loading state until then: showing the defaults while
+     * the stored configuration is still in flight flashed wrong values at the
+     * user, and a toggle tapped in that window was silently overwritten by the
+     * seed landing after it.
+     */
+    private val seeded = MutableStateFlow(false)
+
     val uiState: StateFlow<QuickAddWidgetConfigUiState> = combine(
         config,
+        seeded,
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
-    ) { current, accounts, categories ->
+    ) { current, ready, accounts, categories ->
         val type = if (current.type == TransactionType.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
         QuickAddWidgetConfigUiState(
-            isLoading = false,
+            isLoading = !ready,
             config = current,
             accounts = accounts.map { it.account }.filter { !it.isArchived },
             categories = categories.filter { it.type == type || it.type == CategoryType.BOTH },
@@ -61,6 +71,7 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
     /** Seeds the form from the stored state when reconfiguring an existing widget. */
     fun initialize(stored: QuickAddWidgetConfig) {
         config.value = stored
+        seeded.value = true
     }
 
     fun onAccountSelected(accountId: Long?) {
@@ -99,6 +110,10 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
 
     fun onAppearanceSelected(appearance: WidgetAppearance) {
         config.update { it.copy(appearance = appearance) }
+    }
+
+    fun onOpacityChanged(opacity: Float) {
+        config.update { it.copy(backgroundOpacity = opacity.coerceIn(0f, 1f)) }
     }
 
     fun onCategoryToggled(categoryId: Long) {

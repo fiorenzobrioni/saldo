@@ -2,6 +2,9 @@ package com.callbackdev.saldo.feature.widget
 
 import android.content.Context
 import app.cash.turbine.test
+import com.callbackdev.saldo.core.common.prefs.ThemeMode
+import com.callbackdev.saldo.core.common.prefs.ThemePreferences
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
@@ -17,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.Clock
 import java.util.Currency
 
 /**
@@ -31,6 +35,7 @@ class WidgetRefreshWatcherTest {
     private val transactions = MutableStateFlow(emptyList<Transaction>())
     private val categories = MutableStateFlow(emptyList<Category>())
     private val accounts = MutableStateFlow(emptyList<AccountWithBalance>())
+    private val theme = MutableStateFlow(ThemePreferences())
 
     private val transactionRepository = mockk<TransactionRepository> {
         every { observeRecentTransactions(any()) } returns transactions
@@ -41,12 +46,17 @@ class WidgetRefreshWatcherTest {
     private val accountRepository = mockk<AccountRepository> {
         every { observeAccountsWithBalance() } returns accounts
     }
+    private val userPreferences = mockk<UserPreferencesRepository> {
+        every { themePreferences } returns theme
+    }
 
     private val watcher = WidgetRefreshWatcher(
         context = mockk<Context>(relaxed = true),
         transactionRepository = transactionRepository,
         categoryRepository = categoryRepository,
         accountRepository = accountRepository,
+        userPreferences = userPreferences,
+        clock = Clock.systemUTC(),
     )
 
     private val account = AccountWithBalance(
@@ -90,6 +100,20 @@ class WidgetRefreshWatcherTest {
     fun `a recorded movement signals a redraw`() = runTest {
         watcher.refreshSignals().test {
             transactions.value = listOf(mockk(relaxed = true))
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /**
+     * The theme is part of what a widget draws. Without this signal, switching
+     * the app's theme mode or dynamic color left placed widgets in the old
+     * palette until the next movement happened to redraw them.
+     */
+    @Test
+    fun `a theme change signals a redraw`() = runTest {
+        watcher.refreshSignals().test {
+            theme.value = ThemePreferences(mode = ThemeMode.DARK)
             awaitItem()
             cancelAndIgnoreRemainingEvents()
         }

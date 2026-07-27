@@ -10,9 +10,10 @@ import org.junit.jupiter.api.Test
  * Which layout a size gets is a silent decision: pick wrong and the widget is
  * not broken, only bad, which no build and no crash will ever report.
  *
- * The row arithmetic is the part worth pinning. It used to be a constant two,
- * because `SizeMode.Responsive` reports the matched bucket rather than the real
- * widget, so a widget dragged taller kept being told it was 190dp high.
+ * The row arithmetic is the part worth pinning, and since the widget went
+ * `SizeMode.Responsive` it is pinned twice: once as arithmetic, and once as
+ * the bucket set the launcher receives - a bucket that drifted from the
+ * arithmetic would silently pin the wrong layout at that size.
  */
 class WidgetLayoutTest {
 
@@ -98,5 +99,55 @@ class WidgetLayoutTest {
         val used = layout.rows * layout.rowHeight + (layout.rows - 1) * 6
         val available = 120 - 2 * layout.paddingVertical - 34 - 6
         assertTrue(used <= available, "Rows take ${used}dp of ${available}dp")
+    }
+
+    /**
+     * The Responsive contract: the launcher only ever shows one of these
+     * pre-rendered buckets, so each must land exactly on the layout step it was
+     * computed for - and the set must cover every step there is.
+     */
+    @Test
+    fun `every responsive bucket resolves to the layout it was designed for`() {
+        val designed = mapOf(
+            DpSize(110.dp, 40.dp) to (WidgetStyle.ACTIONS to 0),
+            DpSize(110.dp, 120.dp) to (WidgetStyle.GRID to 1),
+            DpSize(110.dp, 126.dp) to (WidgetStyle.GRID to 2),
+            DpSize(110.dp, 184.dp) to (WidgetStyle.GRID to 3),
+            DpSize(110.dp, 242.dp) to (WidgetStyle.GRID to 4),
+            DpSize(110.dp, 300.dp) to (WidgetStyle.GRID to 5),
+            DpSize(250.dp, 120.dp) to (WidgetStyle.GRID to 1),
+            DpSize(250.dp, 190.dp) to (WidgetStyle.GRID to 2),
+            DpSize(250.dp, 260.dp) to (WidgetStyle.GRID to 3),
+            DpSize(250.dp, 330.dp) to (WidgetStyle.GRID to 4),
+            DpSize(250.dp, 400.dp) to (WidgetStyle.GRID to 5),
+        )
+        assertEquals(designed.keys, WidgetBuckets, "The bucket set must match the designed steps")
+        designed.forEach { (size, spec) ->
+            val (style, rows) = spec
+            val layout = layoutFor(size, plenty)
+            assertEquals(style, layout.style, "Style at $size")
+            if (style == WidgetStyle.GRID) {
+                assertEquals(rows, layout.rows, "Rows at $size")
+            }
+        }
+    }
+
+    @Test
+    fun `a larger system font costs rows rather than clipping labels`() {
+        val base = layoutFor(DpSize(250.dp, 260.dp), plenty)
+        val scaled = layoutFor(DpSize(250.dp, 260.dp), plenty, fontScale = 1.5f)
+        assertTrue(scaled.rowHeight > base.rowHeight, "The label line must grow with the font")
+        assertTrue(scaled.rows <= base.rows, "Taller rows cannot keep the same count")
+        val used = scaled.rows * scaled.rowHeight + (scaled.rows - 1) * 6
+        val available = 260 - 2 * scaled.paddingVertical - 34 - 6
+        assertTrue(used <= available, "Rows take ${used}dp of ${available}dp at font scale 1.5")
+    }
+
+    @Test
+    fun `the bare-icon narrow grid ignores the font scale`() {
+        assertEquals(
+            layoutFor(DpSize(110.dp, 184.dp), plenty),
+            layoutFor(DpSize(110.dp, 184.dp), plenty, fontScale = 2f),
+        )
     }
 }

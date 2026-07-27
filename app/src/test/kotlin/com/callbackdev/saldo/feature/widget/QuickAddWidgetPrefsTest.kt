@@ -139,12 +139,47 @@ class QuickAddWidgetPrefsTest {
         assertEquals(WidgetActionButtons.BOTH, QuickAddWidgetPrefs.read(preferences).buttons)
     }
 
+    /**
+     * TRANSPARENT was the fourth selector option before the opacity slider; a
+     * widget configured back then must read as what its user meant - system
+     * ink over no background - not as an enum value the UI no longer offers.
+     */
     @Test
-    fun `the transparent appearance round-trips`() {
+    fun `a legacy transparent appearance reads as system ink over no background`() {
         val preferences = mutablePreferencesOf(
             QuickAddWidgetPrefs.Appearance to WidgetAppearance.TRANSPARENT.name,
         )
-        assertEquals(WidgetAppearance.TRANSPARENT, QuickAddWidgetPrefs.read(preferences).appearance)
+        val config = QuickAddWidgetPrefs.read(preferences)
+        assertEquals(WidgetAppearance.SYSTEM, config.appearance)
+        assertEquals(0f, config.backgroundOpacity)
+    }
+
+    @Test
+    fun `a legacy transparent widget that later saved an opacity keeps the saved one`() {
+        val preferences = mutablePreferencesOf(
+            QuickAddWidgetPrefs.Appearance to WidgetAppearance.TRANSPARENT.name,
+            QuickAddWidgetPrefs.BackgroundOpacity to 0.8f,
+        )
+        val config = QuickAddWidgetPrefs.read(preferences)
+        assertEquals(WidgetAppearance.SYSTEM, config.appearance)
+        assertEquals(0.8f, config.backgroundOpacity)
+    }
+
+    @Test
+    fun `the background opacity round-trips`() {
+        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.BackgroundOpacity to 0.4f)
+        assertEquals(0.4f, QuickAddWidgetPrefs.read(preferences).backgroundOpacity)
+    }
+
+    @Test
+    fun `an unconfigured widget is fully opaque`() {
+        assertEquals(1f, QuickAddWidgetPrefs.read(mutablePreferencesOf()).backgroundOpacity)
+    }
+
+    @Test
+    fun `an out-of-range stored opacity is clamped rather than trusted`() {
+        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.BackgroundOpacity to 3f)
+        assertEquals(1f, QuickAddWidgetPrefs.read(preferences).backgroundOpacity)
     }
 
     @Test

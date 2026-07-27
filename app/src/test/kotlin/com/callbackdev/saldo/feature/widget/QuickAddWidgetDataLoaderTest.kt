@@ -15,6 +15,7 @@ import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -66,13 +67,14 @@ class QuickAddWidgetDataLoaderTest {
         defaultAccountId: Long? = null,
         lastUsedAccountId: Long? = null,
         todaySpend: BigDecimal = BigDecimal("-24.30"),
+        todayIncome: BigDecimal = BigDecimal("80.50"),
     ): QuickAddWidgetDataLoader {
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
         every { categoryRepository.observeCategories(any<CategoryType>()) } returns flowOf(available)
         coEvery { transactionRepository.mostUsedCategoryIds(any(), any(), any()) } returns mostUsed
         every { transactionRepository.observeDashboardTotals(any(), any()) } returns
-            flowOf(DashboardTotals(today = PeriodTotals(spend = todaySpend)))
+            flowOf(DashboardTotals(today = PeriodTotals(spend = todaySpend, income = todayIncome)))
         every { userPreferences.defaultAccountId } returns flowOf(defaultAccountId)
         every { userPreferences.lastUsedAccountId } returns flowOf(lastUsedAccountId)
         every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
@@ -138,6 +140,18 @@ class QuickAddWidgetDataLoaderTest {
         assertNull(data.todayTotal)
     }
 
+    /**
+     * The number matches the type the widget is showing: spend on an expense
+     * widget, earnings on an income one. Showing spend on both put an
+     * unexplained outgoing total on a widget whose every control said "income".
+     */
+    @Test
+    fun `an income widget totals today's income, not today's spend`() = runTest {
+        val data = loader().load(QuickAddWidgetConfig(type = TransactionType.INCOME), categoryLimit = 4)
+        assertTrue(data.todayTotal.orEmpty().contains("80"))
+        assertTrue(!data.todayTotal.orEmpty().contains("24"))
+    }
+
     @Test
     fun `no account and no category means the widget is not ready`() = runTest {
         val data = loader(accounts = emptyList(), available = emptyList())
@@ -154,9 +168,11 @@ class QuickAddWidgetDataLoaderTest {
     /**
      * The widget's composition reloads on every change of its inputs, with no
      * "we already had this one" shortcut, because the state a session starts on
-     * is also a state the user comes back to. That only holds if the loader is
+     * is also a state the user comes back to. That only holds if `load` is
      * stateless: the day someone adds a cache in here, switching type and
      * switching back would leave the widget showing the type it just left.
+     * (`loadShared` below is allowed its cache precisely because the revision
+     * in its key changes with the data.)
      */
     @Test
     fun `switching type and back reloads both times`() = runTest {
@@ -172,5 +188,42 @@ class QuickAddWidgetDataLoaderTest {
         assertEquals(TransactionType.INCOME, second.type)
         assertEquals(TransactionType.EXPENSE, back.type)
         assertEquals(first.categories.map { it.id }, back.categories.map { it.id })
+    }
+
+    /**
+     * A Responsive widget composes once per size bucket, every one asking for
+     * the same snapshot: the shared load must collapse those into one pass.
+     */
+    @Test
+    fun `the shared load reads the database once per config and revision`() = runTest {
+        val subject = loader()
+        val config = QuickAddWidgetConfig()
+
+        val first = subject.loadShared(config, revision = 1L)
+        val second = subject.loadShared(config, revision = 1L)
+
+        assertEquals(first, second)
+        verify(exactly = 1) { accountRepository.observeAccountsWithBalance() }
+    }
+
+    @Test
+    fun `a revision bump makes the shared load read again`() = runTest {
+        val subject = loader()
+        val config = QuickAddWidgetConfig()
+
+        subject.loadShared(config, revision = 1L)
+        subject.loadShared(config, revision = 2L)
+
+        verify(exactly = 2) { accountRepository.observeAccountsWithBalance() }
+    }
+
+    @Test
+    fun `a config change makes the shared load read again`() = runTest {
+        val subject = loader()
+
+        subject.loadShared(QuickAddWidgetConfig(), revision = 1L)
+        subject.loadShared(QuickAddWidgetConfig(type = TransactionType.INCOME), revision = 1L)
+
+        verify(exactly = 2) { accountRepository.observeAccountsWithBalance() }
     }
 }

@@ -5,21 +5,18 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.graphics.RectF
 import android.util.LruCache
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.asAndroidPath
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.VectorGroup
 import androidx.compose.ui.graphics.vector.VectorNode
 import androidx.compose.ui.graphics.vector.VectorPath
 import androidx.compose.ui.graphics.vector.toPath
-import androidx.compose.ui.graphics.Color as ComposeColor
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 
 /**
- * Draws the app's category avatar as a bitmap, because Glance renders through
+ * Draws the app's category glyphs as bitmaps, because Glance renders through
  * `RemoteViews` and cannot take a Compose `ImageVector`.
  *
  * Rather than shipping a second, hand-maintained set of vector drawables (which
@@ -29,25 +26,17 @@ import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
  * the vector tree and filling each path is enough; group transforms are honored
  * anyway so an icon that grows one keeps rendering.
  *
- * The tile is the squircle of `AvatarShape` (30% corner radius) filled with the
- * category color, with the glyph in the readable ink [contentColorOn] picks.
- * If a vector ever fails to rasterize the tile still comes back as the plain
- * colored squircle: a widget must never crash or show a hole.
+ * Every glyph is rasterized as a *white mask* and colored at the `RemoteViews`
+ * level with a day/night tint, never baked. That is what lets a widget flip
+ * with the system theme without waking the app: the launcher re-resolves the
+ * tint on its own, while a baked color would stay whatever theme the bitmap was
+ * drawn under. It also collapses the cache to one bitmap per icon and size,
+ * whatever palette is in fashion.
+ *
+ * If a vector ever fails to rasterize the image comes back as an empty mask: a
+ * widget must never crash or show a hole.
  */
 object CategoryIconBitmaps {
-
-    /** 30% of the side, matching `AvatarShape`. */
-    private const val CORNER_PERCENT = 0.30f
-
-    /**
-     * The glyph fills 62% of the tile. Raised from the app avatar's ratio on
-     * purpose: a widget is read at arm's length on a busy wallpaper, and the
-     * icon is the thing being aimed at.
-     */
-    private const val GLYPH_RATIO = 0.62f
-
-    /** The 16% wash of `CategoryCell`, so a widget tile and an app tile are the same tile. */
-    private const val TINT_ALPHA = 0.16f
 
     /** 108/72: the adaptive icon canvas over its safe zone. */
     private const val SAFE_ZONE_SCALE = 1.5f
@@ -57,47 +46,22 @@ object CategoryIconBitmaps {
     private val cache = LruCache<String, Bitmap>(CACHE_ENTRIES)
 
     /**
-     * A category tile, drawn exactly as the app draws an unselected category
-     * cell: the squircle tinted with the category color at [TINT_ALPHA] and the
-     * glyph in that same color at full strength. The widget used to fill the
-     * squircle and put a white glyph on it, which is how the app draws the
-     * *selected* cell - so every tile looked selected and none of them looked
-     * like the app.
-     *
-     * The tint keeps its alpha in the bitmap rather than being flattened onto a
-     * background color, so a translucent widget composites correctly over the
-     * wallpaper.
+     * The glyph as a white mask, meant to be tinted by the `Image` that shows
+     * it. The squircle behind it is not here on purpose: the wash is a Glance
+     * background, so only the glyph pixels ride the Binder transaction, around
+     * a third of a full tile bitmap - with four columns of tiles per row that
+     * margin is what keeps the update payload comfortably under the ceiling.
      */
-    fun categoryTile(iconKey: String?, colorRgb: Int?, sizePx: Int): Bitmap {
-        val color = CategoryVisuals.color(colorRgb)
-        return cached("category|$iconKey|${color.toArgb()}|$sizePx") {
-            draw(vector = CategoryVisuals.icon(iconKey), color = color, sizePx = sizePx)
-        }
-    }
-
-    /**
-     * An action tile in the same language as the categories, for the "open the
-     * app" entry. It reads as its own thing through the brand color, the glyph
-     * and its label rather than through a different shape.
-     */
-    fun actionTile(vector: ImageVector, color: ComposeColor, sizePx: Int): Bitmap =
-        cached("action|${vector.name}|${color.toArgb()}|$sizePx") {
-            draw(vector = vector, color = color, sizePx = sizePx)
-        }
-
-    /**
-     * The glyph on its own, with no squircle behind it: the single-row layout's
-     * buttons carry their own tinted background, so a second one inside would
-     * read as a tile within a tile.
-     */
-    fun glyph(vector: ImageVector, color: ComposeColor, sizePx: Int): Bitmap =
-        cached("glyph|${vector.name}|${color.toArgb()}|$sizePx") {
+    fun glyph(vector: ImageVector, sizePx: Int): Bitmap =
+        cached("glyph|${vector.name}|$sizePx") {
             val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                this.color = color.toArgb()
+                color = android.graphics.Color.WHITE
                 style = Paint.Style.FILL
             }
+            // A malformed vector must not take the widget down with it: the
+            // image degrades to nothing and the tile stays its tinted wash.
             runCatching {
                 canvas.scale(sizePx / vector.viewportWidth, sizePx / vector.viewportHeight)
                 drawNode(canvas, paint, vector.root)
@@ -116,7 +80,8 @@ object CategoryIconBitmaps {
      *
      * Drawn through the platform's own drawable rather than through the vector
      * walker above, which flattens everything to one colour: this artwork has
-     * gradients and is meant to keep them.
+     * gradients and is meant to keep them - which is also why it is the one
+     * bitmap here that is not a tintable mask.
      */
     fun appMark(context: Context, resId: Int, sizePx: Int): Bitmap =
         cached("appmark|$resId|$sizePx") {
@@ -133,31 +98,6 @@ object CategoryIconBitmaps {
 
     private fun cached(key: String, build: () -> Bitmap): Bitmap =
         cache.get(key) ?: build().also { cache.put(key, it) }
-
-    private fun draw(vector: ImageVector, color: ComposeColor, sizePx: Int): Bitmap {
-        val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        val radius = sizePx * CORNER_PERCENT
-        paint.color = color.copy(alpha = TINT_ALPHA).toArgb()
-        paint.style = Paint.Style.FILL
-        canvas.drawRoundRect(RectF(0f, 0f, sizePx.toFloat(), sizePx.toFloat()), radius, radius, paint)
-
-        val glyphSize = sizePx * GLYPH_RATIO
-        val inset = (sizePx - glyphSize) / 2f
-        canvas.save()
-        canvas.translate(inset, inset)
-        paint.color = color.toArgb()
-        // A malformed vector must not take the widget down with it: the tile
-        // degrades to the bare tinted squircle instead.
-        runCatching {
-            val scale = glyphSize / vector.viewportWidth
-            canvas.scale(scale, scale)
-            drawNode(canvas, paint, vector.root)
-        }
-        canvas.restore()
-        return bitmap
-    }
 
     private fun drawNode(canvas: Canvas, paint: Paint, node: VectorNode) {
         when (node) {
@@ -191,5 +131,4 @@ object CategoryIconBitmaps {
         postRotate(rotation)
         postTranslate(pivotX + translationX, pivotY + translationY)
     }
-
 }

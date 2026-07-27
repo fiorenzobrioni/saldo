@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.widget
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,6 +15,7 @@ import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
@@ -80,6 +82,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     onUseMostUsedChanged = viewModel::onUseMostUsedChanged,
                     onCategoryToggled = viewModel::onCategoryToggled,
                     onAppearanceSelected = viewModel::onAppearanceSelected,
+                    onOpacityChanged = viewModel::onOpacityChanged,
                     onButtonsSelected = viewModel::onButtonsSelected,
                     onConfirm = ::confirm,
                     onCancel = ::finish,
@@ -90,13 +93,17 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
 
     private fun loadStoredConfig() {
         lifecycleScope.launch {
-            runCatching {
+            val stored = runCatching {
                 val glanceId = GlanceAppWidgetManager(this@QuickAddWidgetConfigActivity)
                     .getGlanceIdBy(appWidgetId)
                 QuickAddWidgetPrefs.read(
                     SaldoQuickAddWidget().getAppWidgetState(this@QuickAddWidgetConfigActivity, glanceId),
                 )
-            }.onSuccess(viewModel::initialize)
+            }.getOrDefault(QuickAddWidgetConfig())
+            // Always seeds, defaults included: the screen gates its content on
+            // this, and a read that failed must degrade to an editable form
+            // rather than to a spinner that never ends.
+            viewModel.initialize(stored)
         }
     }
 
@@ -113,6 +120,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                         QuickAddWidgetPrefs.encodePinned(config.pinnedCategoryIds)
                     prefs[QuickAddWidgetPrefs.ShowTodayTotal] = config.showTodayTotal
                     prefs[QuickAddWidgetPrefs.Appearance] = config.appearance.name
+                    prefs[QuickAddWidgetPrefs.BackgroundOpacity] = config.backgroundOpacity
                     prefs[QuickAddWidgetPrefs.Buttons] = config.buttons.name
                     // Confirming settings puts the widget back on its configured
                     // start: leaving the runtime choice behind would mean the
@@ -128,6 +136,14 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     prefs[QuickAddWidgetPrefs.Revision] = revision + 1
                 }
                 SaldoQuickAddWidget().update(this@QuickAddWidgetConfigActivity, glanceId)
+            }.onFailure {
+                // The one thing worse than a failed save is a silent one: the
+                // user just chose these settings and would find them undone.
+                Toast.makeText(
+                    this@QuickAddWidgetConfigActivity,
+                    R.string.widget_config_save_error,
+                    Toast.LENGTH_LONG,
+                ).show()
             }
             // Even a failed write leaves a usable widget on the defaults, so the
             // placement is confirmed either way rather than silently discarded.
