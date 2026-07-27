@@ -29,6 +29,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - 💸 **Movimenti** - spese, entrate e trasferimenti tra conti, registrabili in 2-3 tap: importo, categoria e conto stanno tutti sulla prima schermata, senza scorrere. Data e ora stanno in un unico chip diviso in due: tocchi la data per il calendario, l'ora per l'orologio; oltre alla descrizione puoi allegare una nota lunga (nascosta dietro "Aggiungi una nota" finché non serve, e ritrovabile con la ricerca); l'eliminazione dall'editor si annulla con un tap (undo), senza dialog di conferma
 - 🔢 **Tastierino importi dell'app** - gli importi si digitano su un tastierino integrato, non sulla tastiera del telefono: tasti grandi, virgola della tua lingua, migliaia raggruppate mentre scrivi e si chiude quando non serve, così le categorie restano in vista. Funziona con TalkBack, con una tastiera fisica e il long-press sull'importo incolla
 - ⚡ **Scorciatoie dal launcher** - pressione prolungata sull'icona dell'app per una nuova spesa, una nuova entrata o un trasferimento, senza passare dalla Dashboard
+- 🏠 **Widget di aggiunta rapida** - registri una spesa senza aprire l'app: tocchi la categoria sul widget e si apre una piccola schermata sopra la home, col tastierino già pronto, importo e Salva. Le categorie sul widget sono quelle che usi di più (e cambiano insieme alle tue abitudini) oppure quelle che scegli tu; il widget si ridimensiona da una riga sola a 4x3: ridotto a una riga diventa due bottoni Spesa ed Entrata che si dividono la larghezza (tocchi e inserisci l'importo), con l'icona dell'app accanto se la vuoi, ingrandendolo le righe di categorie crescono con lo spazio, fino a mostrarle tutte, il selettore Spesa/Entrata e quanto hai speso oggi, e ogni widget può registrare su un conto diverso. L'aspetto si configura per singolo widget: segue il tema dell'app, oppure lo forzi chiaro o scuro, oppure lo lasci trasparente sullo sfondo, con un'anteprima dal vivo mentre decidi; e sul formato a una riga scegli se vuoi entrambi i bottoni o solo Spesa o solo Entrata
 - 🏦 **Conti multipli** - con tipi espliciti (conto corrente, conto di risparmio, carta prepagata, carta di credito, contanti, wallet digitale) e una descrizione d'uso per ciascuno direttamente nell'editor; alla creazione icona, colore e valuta vengono preimpostati (icona e colore in base al tipo, la valuta è quella principale dell'app), finché non li scegli a mano; saldo iniziale, rettifica saldo, archiviazione e due interruttori indipendenti di inclusione: nel saldo totale e nel calcolo del budget. L'elenco è raggruppato per tipo conto (conto corrente per primo), ogni sezione ha un'intestazione con il sottototale del gruppo (e il saldo "ad oggi" quando differisce) e i conti si possono riordinare a mano trascinandoli all'interno del proprio tipo (l'ordine scelto vale anche nel dettaglio della card Saldo totale in Dashboard). Per i conti con movimenti datati nel futuro, sotto il saldo compare una riga "ad oggi" con il saldo effettivamente disponibile oggi
 - 🐖 **Conto di risparmio** - il recinto dei soldi messi da parte: si alimenta con trasferimenti, conta nel patrimonio ma di default resta fuori dal budget, così attingere ai risparmi non consuma il budget del mese
 - 💳 **Carte di credito a saldo** - un tipo di conto dedicato per le carte ad addebito differito: le spese si accumulano come saldo negativo nel ciclo e vengono addebitate in un'unica soluzione sul conto collegato. Ciclo con giorno di chiusura e giorno di addebito configurabili, addebito automatico o con conferma alla scadenza, barra di utilizzo opzionale rispetto al fido, e scheda in Dashboard/Conti per pagare l'estratto con un tap. Il saldo parte sempre da zero: il debito già maturato si inserisce con la rettifica saldo e viene addebitato col prossimo estratto
@@ -50,7 +51,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 
 ### Roadmap futura (v1.5 / v2.0)
 
-PIN e biometria, widget, export Google Sheets/Excel/PDF, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
+PIN e biometria, export Google Sheets/Excel/PDF, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
 
 ## Principi
 
@@ -67,7 +68,7 @@ PIN e biometria, widget, export Google Sheets/Excel/PDF, conversione valuta, cif
 - **Navigation 3** (`androidx.navigation3`)
 - **Room** (persistenza), **DataStore** (impostazioni), **Coroutines + Flow**
 - **MVVM + Use Cases + Repository**, **Hilt** (DI), **KSP**
-- **WorkManager** (ricorrenze, backup), **Vico** (grafici)
+- **WorkManager** (ricorrenze, backup), **Vico** (grafici), **Glance** (widget home)
 - minSdk **33** (Android 13), target SDK 36
 - Test: JUnit 5 (unit test JVM), JUnit 4 + Compose UI Test (strumentati), MockK, Turbine
 
@@ -123,7 +124,8 @@ app/src/main/kotlin/com/callbackdev/saldo/
 │   ├── savings/             # obiettivi di risparmio
 │   ├── settings/            # impostazioni
 │   ├── stats/               # statistiche: grafici Vico, periodo, drill-down
-│   └── transactions/        # movimenti: lista per giorno, ricerca e filtri, editor
+│   ├── transactions/        # movimenti: lista per giorno, ricerca e filtri, editor
+│   └── widget/              # widget home: Glance, sheet importo, configurazione
 └── navigation/              # route NavKey, scaffold, bottom bar
 ```
 

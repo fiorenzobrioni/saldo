@@ -225,6 +225,14 @@ class RoomTransactionRepository @Inject constructor(
             currency = currency.currencyCode,
         ).map { row -> row.toDomain(currency) }
 
+    override suspend fun mostUsedCategoryIds(
+        type: TransactionType,
+        since: Instant,
+        limit: Int,
+    ): List<Long> =
+        transactionDao.mostUsedCategories(type.name, since.toEpochMilli(), limit)
+            .mapNotNull { it.categoryId }
+
     override suspend fun getTransaction(id: Long): Transaction? =
         transactionDao.getById(id)?.toDomain()
 

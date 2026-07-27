@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Quick-add widget. targetCellWidth/Height are the API 31+ way of asking for a
+    size in launcher cells; minWidth/minHeight stay as the pre-31 fallback the
+    framework still validates against.
+
+    widgetFeatures marks the configuration as optional and re-openable: the
+    widget works the moment it is dropped (app default account, most used
+    categories) and can be configured later, instead of gating the first use
+    behind a setup screen.
+
+    minResizeHeight goes down to one launcher row: at that height the widget
+    stops being a grid and becomes two buttons (see WidgetStyle.ACTIONS), so the
+    small size is a design rather than a squeeze.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigActivity"
+    android:description="@string/widget_quick_add_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:previewLayout="@layout/quick_add_widget_preview"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="4"
+    android:targetCellHeight="3"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional" />
