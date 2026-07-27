@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.widget
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
@@ -47,6 +48,9 @@ object CategoryIconBitmaps {
 
     /** The 16% wash of `CategoryCell`, so a widget tile and an app tile are the same tile. */
     private const val TINT_ALPHA = 0.16f
+
+    /** 108/72: the adaptive icon canvas over its safe zone. */
+    private const val SAFE_ZONE_SCALE = 1.5f
 
     private const val CACHE_ENTRIES = 64
 
@@ -97,6 +101,32 @@ object CategoryIconBitmaps {
             runCatching {
                 canvas.scale(sizePx / vector.viewportWidth, sizePx / vector.viewportHeight)
                 drawNode(canvas, paint, vector.root)
+            }
+            bitmap
+        }
+
+    /**
+     * The app mark for the shortcut button, drawn past its own safe zone.
+     *
+     * An adaptive icon's foreground keeps its artwork inside the inner 72 of a
+     * 108 canvas, so drawn at face value it lands at two thirds of the button
+     * and reads as a stray small thing beside two large ones. Rendering it at
+     * [SAFE_ZONE_SCALE] and letting the margin fall outside the bitmap gives
+     * back the mark at the size the button is actually offering.
+     *
+     * Drawn through the platform's own drawable rather than through the vector
+     * walker above, which flattens everything to one colour: this artwork has
+     * gradients and is meant to keep them.
+     */
+    fun appMark(context: Context, resId: Int, sizePx: Int): Bitmap =
+        cached("appmark|$resId|$sizePx") {
+            val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            context.getDrawable(resId)?.let { drawable ->
+                val side = (sizePx * SAFE_ZONE_SCALE).toInt()
+                val offset = (sizePx - side) / 2
+                drawable.setBounds(offset, offset, offset + side, offset + side)
+                drawable.draw(canvas)
             }
             bitmap
         }

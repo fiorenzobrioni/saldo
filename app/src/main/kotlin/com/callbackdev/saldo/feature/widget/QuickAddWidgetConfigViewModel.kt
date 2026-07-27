@@ -110,6 +110,6 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
-        const val MAX_PINNED = SaldoQuickAddWidget.MaxCategorySlots
+        const val MAX_PINNED = SaldoQuickAddWidget.MaxPinnedCategories
     }
 }

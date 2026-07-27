@@ -32,7 +32,11 @@ class QuickAddWidgetDataLoader @Inject constructor(
     private val clock: Clock,
 ) {
 
-    suspend fun load(config: QuickAddWidgetConfig, categoryLimit: Int): QuickAddWidgetData {
+    /**
+     * [categoryLimit] exists for tests and for nothing else: the widget takes
+     * every category, ordered, and its layout decides how many rows of them fit.
+     */
+    suspend fun load(config: QuickAddWidgetConfig, categoryLimit: Int = Int.MAX_VALUE): QuickAddWidgetData {
         val accounts = accountRepository.observeAccountsWithBalance().first()
         val active = accounts.map { it.account }.filter { !it.isArchived }
         // An account configured on the widget and later archived or deleted must
@@ -74,7 +78,7 @@ class QuickAddWidgetDataLoader @Inject constructor(
         }
         val since = LocalDate.now(clock).minusDays(MOST_USED_WINDOW_DAYS).atStartOfDay(clock.zone).toInstant()
         val mostUsed = transactionRepository
-            .mostUsedCategoryIds(config.type, since, limit)
+            .mostUsedCategoryIds(config.type, since, available.size.coerceAtLeast(1))
             .mapNotNull(byId::get)
         return (mostUsed + available).distinctBy { it.id }.take(limit)
     }

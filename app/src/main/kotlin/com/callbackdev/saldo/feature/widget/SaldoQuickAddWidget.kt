@@ -48,7 +48,6 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
-import androidx.glance.layout.ContentScale
 import androidx.glance.layout.width
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
@@ -81,7 +80,14 @@ import kotlinx.coroutines.flow.first
  */
 class SaldoQuickAddWidget : GlanceAppWidget() {
 
-    override val sizeMode = SizeMode.Responsive(setOf(Bar, Small, Medium, Large))
+    /**
+     * Exact rather than Responsive, and that is the whole reason the grid can
+     * grow. In Responsive mode `LocalSize.current` reports the *bucket* that
+     * matched, not the widget: however tall the user dragged it, the layout kept
+     * reading 250x190 and kept drawing two rows. Exact hands over the real size,
+     * so the number of rows can be worked out from the room there actually is.
+     */
+    override val sizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val entryPoint = context.widgetEntryPoint()
@@ -90,7 +96,7 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
         // Loaded once up front purely so the first frame is already right: the
         // composition below owns every read from here on.
         val initialInputs = WidgetInputs.from(getAppWidgetState(context, id))
-        val initialData = loader.load(initialInputs.config, MaxCategorySlots)
+        val initialData = loader.load(initialInputs.config)
         provideContent {
             val inputs = WidgetInputs.from(currentState())
             // Reloads on every change of the inputs, with no "but we already
@@ -98,7 +104,7 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
             // state the user comes back to, and skipping the load there left
             // the widget showing the type it had just moved away from.
             val data by produceState(initialData, inputs) {
-                value = loader.load(inputs.config, MaxCategorySlots)
+                value = loader.load(inputs.config)
             }
             val themePreferences by preferences.themePreferences
                 .collectAsState(initial = ThemePreferences())
@@ -113,14 +119,14 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
     }
 
     companion object {
-        /** One launcher row: no room for a grid, so it becomes two buttons. */
-        val Bar = DpSize(120.dp, 50.dp)
-        val Small = DpSize(120.dp, 120.dp)
-        val Medium = DpSize(250.dp, 120.dp)
-        val Large = DpSize(250.dp, 190.dp)
+        /** Below this height there is no room for a category, so the widget becomes two buttons. */
+        val GridMinHeight = 120.dp
 
-        /** The largest bucket shows 4x2 tiles, one of which is always "more". */
-        const val MaxCategorySlots = 7
+        /** Below this width the grid drops to two icon-only columns. */
+        val WideMinWidth = 250.dp
+
+        /** How many categories the settings screen lets a user pin by hand. */
+        const val MaxPinnedCategories = 12
     }
 }
 
@@ -151,6 +157,8 @@ internal data class WidgetLayout(
     val showHeader: Boolean = false,
     val showLabels: Boolean = false,
     val tileSize: Int = 0,
+    /** Tile plus its label: what one row of the grid costs in height. */
+    val rowHeight: Int = 0,
     /**
      * The inset between the widget edge and its content. The grid is short of
      * vertical room and spends less of it there; the single row has none of that
@@ -171,23 +179,46 @@ internal data class WidgetLayout(
  */
 internal enum class WidgetStyle { GRID, ACTIONS }
 
-/** Internal so the size-to-layout decision, which is silent when wrong, can be asserted. */
-internal fun layoutFor(size: DpSize): WidgetLayout = when {
+/**
+ * Internal so the size-to-layout decision, which is silent when wrong, can be
+ * asserted.
+ *
+ * [availableCategories] caps the rows from the other side: a widget dragged
+ * taller than the categories it has to show would otherwise grow empty rows.
+ */
+internal fun layoutFor(size: DpSize, availableCategories: Int): WidgetLayout {
     // Height first: a widget one row high can be any number of columns wide,
     // and none of those widths can hold a grid.
-    size.height < SaldoQuickAddWidget.Small.height ->
-        WidgetLayout(style = WidgetStyle.ACTIONS, paddingHorizontal = 14, paddingVertical = 14)
-    size.width >= SaldoQuickAddWidget.Medium.width && size.height >= SaldoQuickAddWidget.Large.height ->
-        WidgetLayout(WidgetStyle.GRID, columns = 4, rows = 2, showHeader = true, showLabels = true, tileSize = 44)
-    // One row only, and the header costs 34dp: the tile gives back 4dp rather
-    // than letting the label be clipped.
-    size.width >= SaldoQuickAddWidget.Medium.width ->
-        WidgetLayout(WidgetStyle.GRID, columns = 4, rows = 1, showHeader = true, showLabels = true, tileSize = 40)
-    // A 2x2 is about 110dp square: a header plus labels would leave the tiles
-    // unusable, so this size shows four icons and takes its type from the
-    // widget's own configuration instead of a selector.
-    else -> WidgetLayout(WidgetStyle.GRID, columns = 2, rows = 2, tileSize = 52)
+    if (size.height < SaldoQuickAddWidget.GridMinHeight) {
+        return WidgetLayout(style = WidgetStyle.ACTIONS, paddingHorizontal = 14, paddingVertical = 14)
+    }
+    val wide = size.width >= SaldoQuickAddWidget.WideMinWidth
+    val columns = if (wide) WideColumns else NarrowColumns
+    // A narrow widget has no room for a type selector or for labels, so it takes
+    // its type from its own configuration and shows bigger, bare icons.
+    val tileSize = if (wide) WideTileSize else NarrowTileSize
+    val rowHeight = tileSize + if (wide) LabelGapDp + LabelLineDp else 0
+
+    val header = if (wide) PillHeightDp + HeaderGapDp else 0
+    val content = size.height.value.toInt() - 2 * GridPaddingVertical - header
+    val fits = ((content + RowGapDp) / (rowHeight + RowGapDp)).coerceAtLeast(1)
+    // One slot always belongs to the "open Saldo" tile.
+    val needed = ceilDiv(availableCategories + 1, columns)
+
+    return WidgetLayout(
+        style = WidgetStyle.GRID,
+        columns = columns,
+        rows = minOf(fits, needed).coerceAtLeast(1),
+        showHeader = wide,
+        showLabels = wide,
+        tileSize = tileSize,
+        rowHeight = rowHeight,
+        paddingHorizontal = GridPaddingHorizontal,
+        paddingVertical = GridPaddingVertical,
+    )
 }
+
+private fun ceilDiv(value: Int, by: Int): Int = (value + by - 1) / by
 
 @Composable
 private fun WidgetBody(
@@ -196,7 +227,7 @@ private fun WidgetBody(
     theme: QuickAddWidgetTheme,
     showAppShortcut: Boolean,
 ) {
-    val layout = layoutFor(LocalSize.current)
+    val layout = layoutFor(LocalSize.current, data.categories.size)
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -375,13 +406,11 @@ private fun RowScope.AppShortcutButton() {
         contentAlignment = Alignment.Center,
     ) {
         Image(
-            provider = ImageProvider(AppShortcutIcon),
+            provider = ImageProvider(
+                CategoryIconBitmaps.appMark(context, AppShortcutIcon, context.pxOf(AppShortcutMarkSize)),
+            ),
             contentDescription = context.getString(R.string.widget_quick_add_open_a11y),
-            // Fills the button rather than sitting at a fixed size: the mark
-            // already carries the adaptive icon's safe-zone margin, which reads
-            // as the padding it needs.
-            modifier = GlanceModifier.fillMaxSize(),
-            contentScale = ContentScale.Fit,
+            modifier = GlanceModifier.size(AppShortcutMarkSize.dp),
         )
     }
 }
@@ -452,7 +481,10 @@ private fun ColumnScope.CategoryGrid(
     slots.chunked(layout.columns).forEachIndexed { index, row ->
         if (index > 0) Spacer(GlanceModifier.height(RowGap))
         Row(
-            modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+            // A fixed height, not a weight: a widget taller than its categories
+            // would otherwise stretch the rows apart instead of leaving the
+            // block centred with room around it.
+            modifier = GlanceModifier.fillMaxWidth().height(layout.rowHeight.dp),
             verticalAlignment = Alignment.Vertical.CenterVertically,
         ) {
             row.forEach { category ->
@@ -570,13 +602,27 @@ private fun Context.pxOf(dp: Int): Int = (dp * resources.displayMetrics.density)
 
 private val WidgetCornerRadius = 24.dp
 
-private val HeaderGap = 6.dp
-private val RowGap = 6.dp
-private val LabelGap = 3.dp
+private const val WideColumns = 4
+private const val NarrowColumns = 2
+private const val WideTileSize = 44
+private const val NarrowTileSize = 52
+private const val GridPaddingHorizontal = 12
+private const val GridPaddingVertical = 8
+private const val HeaderGapDp = 6
+private const val RowGapDp = 6
+private const val LabelGapDp = 3
+
+/** A 12sp label with its line spacing, near enough for a height budget. */
+private const val LabelLineDp = 17
+private const val PillHeightDp = 34
+
+private val HeaderGap = HeaderGapDp.dp
+private val RowGap = RowGapDp.dp
+private val LabelGap = LabelGapDp.dp
 private val PillGap = 6.dp
 
 /** Still well clear of the 20dp the selector started at, and of a stray tap. */
-private val PillHeight = 34.dp
+private val PillHeight = PillHeightDp.dp
 private val PillCornerRadius = 17.dp
 private val PillPaddingHorizontal = 14.dp
 
@@ -593,7 +639,10 @@ private val ActionIconGap = 6.dp
 private val ActionFontSize = 15.sp
 private const val ActionIconSize = 20
 private const val ActionTintAlpha = 0.16f
-private val AppShortcutWidth = 52.dp
+private val AppShortcutWidth = 56.dp
+
+/** Rendered past the icon's safe zone, so the mark matches the buttons beside it. */
+private const val AppShortcutMarkSize = 48
 
 /**
  * The app mark, taken from the adaptive icon's *foreground* layer rather than

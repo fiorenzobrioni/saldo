@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-26 - Le righe che non crescevano, e il marchio dentro la sua safe zone
+
+**Fatto:** due segnalazioni dallo screenshot. Il widget alto piu di due righe mostrava sempre e solo due righe di categorie, e l'icona dell'app sul formato a riga era piccola rispetto ai due bottoni.
+
+**Decisioni:** la prima causa non era nel calcolo delle righe ma nel dato su cui il calcolo si basava. Con `SizeMode.Responsive` Glance riporta in `LocalSize.current` il **bucket** che ha fatto match, non la dimensione del widget: per quanto l'utente lo allungasse, il layout continuava a leggere 250x190 e a decidere due righe. Nessuna aritmetica avrebbe potuto rimediare, quindi si passa a `SizeMode.Exact`, dove la dimensione e quella vera. E il compromesso onesto: Exact fa ricomporre a ogni ridimensionamento invece di riusare una manciata di layout precotti, ma e l'unica modalita in cui "in base allo spazio disponibile" ha un significato. Le vecchie costanti dei bucket sopravvivono come soglie (`GridMinHeight`, `WideMinWidth`), che e cio che in pratica erano gia. Il secondo vincolo e arrivato ragionando sul caso opposto: un widget molto alto con poche categorie avrebbe fatto crescere righe vuote, quindi le righe sono il minimo fra quelle che ci stanno e quelle che servono. Per la stessa ragione le righe perdono `defaultWeight()` e prendono un'altezza propria: con il peso, due righe in un widget alto si sarebbero allontanate invece di restare un blocco centrato. Sull'icona il problema era geometrico e non di dp: il foreground di un adaptive icon tiene il disegno dentro il 72 di una tela da 108, quindi disegnarlo a valore nominale lo consegna a due terzi del bottone qualunque dimensione gli si dia. `appMark` lo rasterizza a 1.5x - esattamente 108/72 - lasciando cadere il margine fuori dal bitmap. Passa dal drawable di piattaforma e non dal walker vettoriale usato per le categorie, perche quello appiattisce tutto a un colore solo e questo marchio ha gradienti.
+
+**Problemi:** nessuno. Va annotato che `SizeMode.Exact` e un cambio di comportamento e non solo di numero: da verificare su device che il ridisegno durante il trascinamento resti fluido, che e esattamente il motivo per cui Responsive esiste.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 656 test, 0 falliti. `WidgetLayoutTest` riscritto sulla nuova firma e allargato: le righe crescono con l'altezza e non diminuiscono mai, si fermano alle categorie disponibili invece di crescere vuote, un widget alto arriva a contenerle tutte, e uno basso non dichiara piu righe di quante ne possa disegnare. versionCode 136 -> 137, versionName 0.9.97 -> 0.9.98.
+
+**Prossimo:** prova su device del trascinamento in altezza con il conteggio righe che segue, e dell'icona dell'app alla nuova scala.
+
+---
+
 ## 2026-07-26 - L'icona che non si poteva dipingere
 
 **Fatto:** correzione del crash segnalato dall'utente: nelle impostazioni del widget, accendere "Icona dell'app" faceva saltare la schermata.
