@@ -62,7 +62,6 @@ import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import kotlin.math.ceil
-import kotlinx.coroutines.flow.first
 
 /**
  * Home screen quick-add widget: pick the category on the launcher, type the
@@ -97,14 +96,10 @@ class SaldoQuickAddWidget : GlanceAppWidget() {
      */
     override val sizeMode: SizeMode = SizeMode.Responsive(WidgetBuckets)
 
-    /** The picker preview renders at the widget's default 4x3 shape. */
-    override val previewSizeMode = SizeMode.Responsive(setOf(PreviewBucket))
-
+    // No providePreview/previewSizeMode: the picker card comes from the static
+    // `previewLayout` on every Android version (see SaldoApplication).
     override suspend fun provideGlance(context: Context, id: GlanceId) =
         provideQuickAddContent(context, id)
-
-    override suspend fun providePreview(context: Context, widgetCategory: Int) =
-        provideQuickAddPreview(context)
 
     companion object {
         /** Below this height there is no room for a category, so the widget becomes two buttons. */
@@ -161,12 +156,6 @@ internal val GridBuckets: Set<DpSize> = setOf(
 
 internal val WidgetBuckets: Set<DpSize> = ActionBuckets + GridBuckets
 
-/** The default 4x3 placement: what the grid's generated preview shows. */
-internal val PreviewBucket = DpSize(250.dp, 260.dp)
-
-/** The single-row shape: the bar widget's generated preview. */
-internal val PreviewRowBucket = DpSize(250.dp, 88.dp)
-
 /**
  * The live composition, shared by the grid and the bar: same state, same data,
  * same body - the two widgets differ only in the bucket sets their providers
@@ -197,35 +186,6 @@ internal suspend fun GlanceAppWidget.provideQuickAddContent(context: Context, id
             // control the user just pressed has to answer immediately, and
             // the grid catches up a frame later.
             WidgetBody(inputs.config, data, theme)
-        }
-    }
-}
-
-/**
- * The widget picker's generated preview (API 35+): the real layout in the
- * user's real palette and categories, where the static `previewLayout` XML
- * can only ever show a stand-in. Data reads are best-effort - before
- * onboarding this simply shows the honest "open Saldo to get started".
- */
-internal suspend fun GlanceAppWidget.provideQuickAddPreview(context: Context) {
-    val entryPoint = context.widgetEntryPoint()
-    val config = QuickAddWidgetConfig()
-    val data = runCatching { entryPoint.quickAddWidgetDataLoader().load(config) }
-        .getOrDefault(
-            QuickAddWidgetData(
-                type = config.type,
-                account = null,
-                categories = emptyList(),
-                todayTotal = null,
-                showTodayTotal = config.showTodayTotal,
-            ),
-        )
-    val themePreferences = runCatching { entryPoint.userPreferences().themePreferences.first() }
-        .getOrDefault(ThemePreferences())
-    val theme = resolveWidgetTheme(context, themePreferences, config)
-    provideContent {
-        GlanceTheme(colors = theme.providers) {
-            WidgetBody(config, data, theme)
         }
     }
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The card behind the static picker previews. The radius is the system's own
+    widget background radius, so the preview wears the same rounding the launcher
+    gives the placed widget instead of a private value.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_preview_surface" />
+    <corners android:radius="@android:dimen/system_app_widget_background_radius" />
+</shape>

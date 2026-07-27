@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Static preview for the widget picker: the real widget cannot be composed
-    there (no data, no GlanceId), so this stands in for it. Colors come from
-    theme attributes so the picker preview follows the launcher's light/dark
-    mode instead of being hardcoded.
+    there (no data, no GlanceId), so this stands in for it. It is the preview on
+    every Android version - the generated one (API 35+) was removed because it
+    shadowed this layout and left the picker blank (see SaldoApplication).
+
+    Colors come from res/values(-night)/colors.xml, not from ?android:attr:
+    a previewLayout is inflated with a plain application context, whose theme
+    falls back to Theme.DeviceDefault.Light, so theme attributes gave near-black
+    ink on a dark picker sheet. Resource qualifiers are resolved against the
+    launcher's configuration and do follow its light/dark mode.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/widget_preview_background"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="12dp">
@@ -24,7 +31,7 @@
         android:layout_marginTop="8dp"
         android:maxLines="1"
         android:text="@string/widget_quick_add_label"
-        android:textColor="?android:attr/textColorPrimary"
+        android:textColor="@color/widget_preview_ink"
         android:textSize="13sp"
         android:textStyle="bold" />
 
@@ -35,6 +42,6 @@
         android:gravity="center"
         android:maxLines="2"
         android:text="@string/widget_quick_add_description"
-        android:textColor="?android:attr/textColorSecondary"
+        android:textColor="@color/widget_preview_ink_muted"
         android:textSize="11sp" />
 </LinearLayout>

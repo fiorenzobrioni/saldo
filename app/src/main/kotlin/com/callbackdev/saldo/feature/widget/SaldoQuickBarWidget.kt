@@ -26,14 +26,9 @@ class SaldoQuickBarWidget : GlanceAppWidget() {
 
     override val sizeMode: SizeMode = SizeMode.Responsive(ActionBuckets)
 
-    /** The picker preview renders at the bar's one-row shape. */
-    override val previewSizeMode = SizeMode.Responsive(setOf(PreviewRowBucket))
-
+    // As for the grid, the picker card is the static `previewLayout`.
     override suspend fun provideGlance(context: Context, id: GlanceId) =
         provideQuickAddContent(context, id)
-
-    override suspend fun providePreview(context: Context, widgetCategory: Int) =
-        provideQuickAddPreview(context)
 }
 
 /** The manifest-declared side of the bar; same watcher gating as the grid's. */

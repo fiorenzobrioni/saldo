@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Static preview of the bar widget for the picker (pre-API 35 fallback; on 35+
-    the generated preview replaces it). Two labelled buttons side by side, the
-    same shape the real widget draws. Colors come from theme attributes so the
-    preview follows the launcher's light/dark mode.
+    Static preview of the bar widget for the picker. Two labelled buttons side by
+    side, the same shape the real widget draws. Same colour rules as
+    quick_add_widget_preview.xml: own resources with a values-night variant,
+    never ?android:attr, which a previewLayout resolves against the light
+    DeviceDefault theme whatever the launcher is wearing.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/widget_preview_background"
     android:gravity="center"
     android:orientation="horizontal"
     android:padding="14dp">
@@ -31,7 +33,7 @@
             android:layout_marginStart="6dp"
             android:maxLines="1"
             android:text="@string/widget_quick_add_expense"
-            android:textColor="?android:attr/textColorPrimary"
+            android:textColor="@color/widget_preview_ink"
             android:textSize="14sp" />
     </LinearLayout>
 
@@ -54,7 +56,7 @@
             android:layout_marginStart="6dp"
             android:maxLines="1"
             android:text="@string/widget_quick_add_income"
-            android:textColor="?android:attr/textColorPrimary"
+            android:textColor="@color/widget_preview_ink"
             android:textSize="14sp" />
     </LinearLayout>
 </LinearLayout>

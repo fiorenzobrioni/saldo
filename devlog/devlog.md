@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-27 - Il picker senza anteprime: le generated previews oscuravano il previewLayout
+
+**Fatto:** rimosse le generated previews (API 35+) dai due widget e ripristinato il `previewLayout` statico come unica sorgente dell'anteprima nel picker del launcher, su ogni versione di Android. Via `providePreview`, `previewSizeMode`, `provideQuickAddPreview`, `PreviewBucket`/`PreviewRowBucket` e la pubblicazione con `setWidgetPreviews`; al loro posto una `removeWidgetPreview` all'avvio per i due provider. Le due preview statiche prendono colori propri con variante `values-night` e una card di sfondo col raggio widget di sistema.
+
+**Decisioni:** la ricostruzione parte dai sorgenti, non dalla memoria. In `DatabaseWidgetPreviewLoader.generatePreviewInfoBg` (Launcher3) le tre sorgenti dell'anteprima non sono alternative pari: si legge prima `getWidgetPreview`, e solo se non torna nulla si guarda il `previewLayout`, e solo dopo si genera il bitmap da `previewImage`. Il preview generato quindi non e "il migliore dei tre", e un interruttore che spegne gli altri due, che sono gli unici a disegnare sempre qualcosa. Sommato al resto (rate limit di circa due chiamate l'ora, storage solo in RAM di `system_server` quindi niente anteprima dopo un riavvio finche l'app non viene riaperta, e lato launcher un flag che decide se leggerlo affatto) il risultato e un picker che dipende dal device invece che dal codice. In piu era pubblicato dentro un `runCatching` che buttava via sia le eccezioni sia il valore `@CheckResult` che distingue "pubblicato" da "rate-limited": nessun segnale, in nessuna direzione. Togliere solo la pubblicazione non bastava, perche un device che aveva gia memorizzato un preview avrebbe continuato a mostrarlo: da qui la `removeWidgetPreview`, idempotente, che e il motivo per cui una chiamata alle preview sopravvive alla feature che annulla.
+
+Secondo intervento, indipendente ma nello stesso punto: le due preview statiche usavano `?android:attr/textColorPrimary` con il commento "cosi seguono il tema del launcher". Non e vero. `AppWidgetHostView.getDefaultView` inflaziona il `previewLayout` con il contesto di `createApplicationContext(applicationInfo, CONTEXT_RESTRICTED)`, che non porta con se il tema del manifest: senza theme resource il framework ripiega su `Theme.DeviceDefault.Light`, quindi l'inchiostro e quasi nero anche su un picker scuro. Le risorse invece sono risolte con la configurazione del launcher, ed e per quello che la variante `values-night` funziona dove l'attributo di tema no.
+
+**Problemi:** la causa esatta lato device non e riproducibile qui (niente launcher, niente emulatore): la diagnosi e ricostruita dai sorgenti di Glance 1.2.0-rc01, di `AppWidgetServiceImpl` e di Launcher3, e la finestra di regressione coincide con v0.9.101, la versione che ha introdotto `setWidgetPreviews`. La scelta e stata di togliere il livello non verificabile invece di scommettere su una causa: il `previewLayout` e quello che funzionava prima e funziona ovunque. L'anteprima "viva" con palette e categorie reali si puo rimettere, ma solo con una prova su device davanti.
+
+**Verificato:** `./gradlew assembleDebug testDebugUnitTest lint` in locale. Nessun test toccato: le costanti rimosse non erano coperte. versionCode 142 -> 143, versionName 0.9.103 -> 0.9.104.
+
+**Prossimo:** prova su device delle due card nel picker, in tema chiaro e scuro, dopo un riavvio.
+
+---
+
 ## 2026-07-27 - Due widget invece di uno che si trasforma
 
 **Fatto:** il giro premium finale sul widget: la barra a una riga diventa un provider a sé (due card nel picker, due preview), sezione "Widget" nelle impostazioni per aggiungerli alla home con un tap, totale "oggi" scopato sul conto fissato con badge del nome, totale tappabile che apre i movimenti del giorno, e riordino trascinabile delle categorie fissate nella configurazione.

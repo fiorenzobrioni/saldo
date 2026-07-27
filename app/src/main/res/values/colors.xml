@@ -7,4 +7,21 @@
     <color name="shortcut_expense_background">#BA1A1A</color>
     <color name="shortcut_income_background">#3E6837</color>
     <color name="shortcut_transfer_background">#00696D</color>
+
+    <!--
+        Ink and surface of the static widget previews shown in the launcher's
+        widget picker (res/layout/quick_*_widget_preview.xml).
+
+        Own colors rather than ?android:attr/textColorPrimary, because a
+        previewLayout is not inflated with our theme: AppWidgetHostView builds a
+        plain application context (createApplicationContext with
+        CONTEXT_RESTRICTED), which has no theme resource, so the framework falls
+        back to Theme.DeviceDefault.Light for anything read with ?android:attr -
+        near-black ink, invisible on a dark picker sheet. Resources *are*
+        resolved against the launcher's configuration, so a values-night variant
+        is what actually follows the launcher's light/dark mode.
+    -->
+    <color name="widget_preview_surface">#FFFBFF</color>
+    <color name="widget_preview_ink">#1B1B1F</color>
+    <color name="widget_preview_ink_muted">#45464F</color>
 </resources>
