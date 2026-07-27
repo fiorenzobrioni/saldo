@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-27 - Il task che tornava avanti, e il peso di un RemoteViews
+
+**Fatto:** tre segnalazioni. Il widget che a volte apre l'app invece della sheet, aggiornamenti che non arrivano, e il contenuto centrato che balla quando si passa da Spesa a Entrata.
+
+**Decisioni:** la prima e stata risolta dall'utente prima che da me: ha isolato il caso esatto - con Back funziona, con swipe verso l'alto o dal task manager no - e a quel punto la causa era una sola cosa possibile. `QuickEntryActivity` ereditava la `taskAffinity` dell'app, quindi con il task principale ancora vivo in background lanciarla lo portava in primo piano e la sheet atterrava sopra la Dashboard; il suo screenshot lo mostra letteralmente. Con Back il task e finito e non c'e nulla da riportare avanti. `taskAffinity=""` piu `FLAG_ACTIVITY_NEW_TASK` le danno un task proprio. Da notare che il trampolino di Glance (`ActionTrampolineActivity`) non dichiara affinity, quindi nemmeno lui puo aiutare: la difesa deve stare sull'activity di destinazione. Sull'ancoraggio in alto la richiesta e anche la spiegazione: Spesa ed Entrata hanno un numero diverso di categorie, e un blocco centrato sposta selettore e importo a ogni cambio di tipo. `Top`, e lo spazio libero tutto in fondo dove nessuno guarda. Il terzo punto e l'unico dove non ho una diagnosi ma un'ipotesi, ed e detta come tale: un `RemoteViews` porta i propri bitmap al launcher dentro una transazione Binder con un tetto di dimensione, e finche le tile erano bitmap intere il conto cresceva con le righe - a quattro righe di quattro, a densita 2.75, si arriva intorno al mega. Un update oltre il tetto fallisce senza dire niente, il che assomiglia molto a "a volte non si aggiorna". La velatura diventa quindi uno sfondo Glance e solo il glifo resta bitmap, circa un terzo dei pixel, e la griglia prende un tetto di cinque righe. E comunque la scelta giusta a prescindere dall'ipotesi.
+
+**Problemi:** l'ipotesi sul payload resta da confermare con un logcat, e l'ho detto all'utente invece di spacciarla per causa accertata. Nel frattempo ho aggiunto due rinforzi che non dipendono da quella diagnosi: la configurazione bumpa la revisione (l'unico input garantito diverso, quindi anche un'impostazione che torni allo stesso valore forza il ridisegno) e il receiver forza un redraw su `onAppWidgetOptionsChanged`, per i launcher che consegnano tardi il cambio di dimensione.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` verde, 656 test, 0 falliti. `CategoryIconBitmapsTest` riscritto sulle nuove primitive (il glifo si disegna, non porta sfondo proprio, la cache lo riusa, il marchio dell'app riempie oltre la safe zone). versionCode 137 -> 138, versionName 0.9.98 -> 0.9.99.
+
+**Prossimo:** prova su device dei tre punti, e in particolare se gli aggiornamenti mancati spariscono. Se restano, la strada successiva e sostituire i bitmap dei glifi con vector drawable veri (un `RemoteViews` con un id di risorsa pesa quattro byte invece di ventimila), al prezzo della seconda mappa di icone che si era scelto di non avere.
+
+---
+
 ## 2026-07-26 - Le righe che non crescevano, e il marchio dentro la sua safe zone
 
 **Fatto:** due segnalazioni dallo screenshot. Il widget alto piu di due righe mostrava sempre e solo due righe di categorie, e l'icona dell'app sul formato a riga era piccola rispetto ai due bottoni.

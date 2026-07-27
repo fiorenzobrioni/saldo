@@ -77,7 +77,10 @@ class QuickEntryActivity : ComponentActivity() {
             categoryId: Long?,
             accountId: Long?,
         ): Intent = QuickEntryRoute.putExtras(
-            intent = Intent(context, QuickEntryActivity::class.java),
+            intent = Intent(context, QuickEntryActivity::class.java)
+                // Paired with the empty taskAffinity in the manifest: its own
+                // task, so the app's is never dragged in front of the launcher.
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             type = type,
             categoryId = categoryId,
             accountId = accountId,

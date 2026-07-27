@@ -47,13 +47,23 @@
                 android:resource="@xml/quick_add_widget_info" />
         </receiver>
 
-        <!-- The amount step: a translucent sheet over the launcher, not the app. -->
+        <!--
+            The amount step: a translucent sheet over the launcher, not the app.
+
+            The empty taskAffinity is what makes that true. Without it the sheet
+            inherits the app's affinity, so when the main task is still alive in
+            the background - closed with a swipe up or from recents rather than
+            with Back - starting the sheet brings that whole task forward and the
+            sheet lands on top of the Dashboard. Its own task keeps the launcher
+            where it was.
+        -->
         <activity
             android:name=".feature.widget.QuickEntryActivity"
             android:excludeFromRecents="true"
             android:exported="false"
             android:launchMode="singleTop"
             android:noHistory="true"
+            android:taskAffinity=""
             android:theme="@style/Theme.Saldo.Transparent" />
 
         <activity

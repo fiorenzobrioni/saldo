@@ -84,6 +84,11 @@ class WidgetRefreshWatcher @Inject constructor(
         // The first emission is the state already on screen.
         .drop(1)
 
+    /** Fire-and-forget redraw for callers outside a coroutine (the receiver's broadcasts). */
+    fun requestRedraw() {
+        scope?.launch { refresh() }
+    }
+
     /** Called when a widget is added or removed, and on every framework update broadcast. */
     fun onWidgetsChanged() {
         scope?.launch { readPlacement() } ?: readPlacement()

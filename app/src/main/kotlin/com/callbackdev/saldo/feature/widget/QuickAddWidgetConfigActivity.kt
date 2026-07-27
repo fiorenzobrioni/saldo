@@ -113,6 +113,13 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     prefs[QuickAddWidgetPrefs.ShowTodayTotal] = config.showTodayTotal
                     prefs[QuickAddWidgetPrefs.Appearance] = config.appearance.name
                     prefs[QuickAddWidgetPrefs.ShowAppShortcut] = config.showAppShortcut
+                    // Bumped here as well as by the refresh watcher. The
+                    // composition reloads on any change of its inputs, and the
+                    // revision is the one input guaranteed to differ, so a
+                    // setting that happens to round-trip to the same value still
+                    // forces the redraw.
+                    val revision = prefs[QuickAddWidgetPrefs.Revision] ?: 0L
+                    prefs[QuickAddWidgetPrefs.Revision] = revision + 1
                 }
                 SaldoQuickAddWidget().update(this@QuickAddWidgetConfigActivity, glanceId)
             }

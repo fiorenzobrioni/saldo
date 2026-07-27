@@ -28,75 +28,69 @@ class CategoryIconBitmapsTest {
     private val green = 0x66BB6A
 
     @Test
-    fun everyMappedIconDrawsAGlyph() {
+    fun everyMappedIconRendersItsGlyph() {
         CategoryVisuals.iconKeys.forEach { key ->
-            val bitmap = CategoryIconBitmaps.categoryTile(iconKey = key, colorRgb = green, sizePx = size)
+            val bitmap = CategoryIconBitmaps.glyph(
+                vector = CategoryVisuals.icon(key),
+                color = CategoryVisuals.color(green),
+                sizePx = size,
+            )
             assertEquals(size, bitmap.width)
             assertEquals(size, bitmap.height)
             assertTrue(
-                "Icon '$key' rendered as a bare tile: no glyph pixels",
+                "Icon '$key' rendered as nothing at all",
                 bitmap.hasGlyph(tint = CategoryVisuals.color(green).toArgbInt()),
             )
         }
     }
 
+    /**
+     * The wash behind a glyph is a Glance background now, not part of the
+     * bitmap. That is a payload decision, not a cosmetic one: `RemoteViews`
+     * carry their bitmaps to the launcher through a size-capped transaction, and
+     * a whole-tile bitmap is roughly three times the pixels of the glyph in it.
+     */
     @Test
-    fun theTileIsRoundedRatherThanSquare() {
-        val bitmap = CategoryIconBitmaps.categoryTile(iconKey = "shopping_cart", colorRgb = green, sizePx = size)
-        // The squircle leaves the very corner transparent; a square fill would not.
-        assertEquals(Color.TRANSPARENT, bitmap.getPixel(0, 0))
-        assertTrue(Color.alpha(bitmap.getPixel(size / 2, size / 2)) > 0)
-    }
-
-    @Test
-    fun anUnknownIconStillProducesATile() {
-        val bitmap = CategoryIconBitmaps.categoryTile(iconKey = "no-such-icon", colorRgb = green, sizePx = size)
-        assertEquals(size, bitmap.width)
-        assertTrue(Color.alpha(bitmap.getPixel(size / 2, size / 2)) > 0)
-    }
-
-    @Test
-    fun aNullIconFallsBackWithoutCrashing() {
-        val bitmap = CategoryIconBitmaps.categoryTile(iconKey = null, colorRgb = null, sizePx = size)
-        assertEquals(size, bitmap.width)
-    }
-
-    @Test
-    fun theSameTileIsServedFromCacheRatherThanRedrawn() {
-        val first = CategoryIconBitmaps.categoryTile(iconKey = "restaurant", colorRgb = green, sizePx = size)
-        val second = CategoryIconBitmaps.categoryTile(iconKey = "restaurant", colorRgb = green, sizePx = size)
-        assertTrue("The tile cache handed back a different bitmap", first === second)
-    }
-
-    @Test
-    fun aCategoryTileIsTintedRatherThanFilled() {
-        val bitmap = CategoryIconBitmaps.categoryTile(iconKey = "shopping_cart", colorRgb = green, sizePx = size)
-        // The app draws an unselected category as a 16% wash of its colour, not
-        // as a solid block: an opaque pixel here would mean the widget went back
-        // to drawing every category as if it were the selected one.
-        val wash = bitmap.getPixel(size / 2, size / 6)
-        assertTrue("The tile background should be translucent", Color.alpha(wash) in 1..128)
-    }
-
-    @Test
-    fun aCategoryGlyphIsDrawnInTheCategoryColourAtFullStrength() {
-        val bitmap = CategoryIconBitmaps.categoryTile(iconKey = "shopping_cart", colorRgb = green, sizePx = size)
-        val opaque = (0 until size).any { y -> Color.alpha(bitmap.getPixel(size / 2, y)) > 200 }
-        assertTrue("The glyph should be the solid category colour", opaque)
-    }
-
-    @Test
-    fun theActionTileUsesTheSameLanguageAsTheCategories() {
-        val action = CategoryIconBitmaps.actionTile(
-            vector = Icons.Outlined.MoreHoriz,
-            color = ComposeColor(0xFF00696D),
+    fun theGlyphCarriesNoBackgroundOfItsOwn() {
+        val bitmap = CategoryIconBitmaps.glyph(
+            vector = CategoryVisuals.icon("shopping_cart"),
+            color = CategoryVisuals.color(green),
             sizePx = size,
         )
-        assertEquals(size, action.width)
-        // Same tinted squircle, and the glyph in the middle: the "open Saldo"
-        // entry is told apart by its colour, glyph and label, not by its shape.
-        assertTrue(Color.alpha(action.getPixel(size / 2, size / 6)) in 1..128)
-        assertTrue(Color.alpha(action.getPixel(size / 2, size / 2)) > 200)
+        assertEquals("A corner must stay transparent", Color.TRANSPARENT, bitmap.getPixel(0, 0))
+    }
+
+    @Test
+    fun anUnknownIconStillRendersTheFallback() {
+        val bitmap = CategoryIconBitmaps.glyph(
+            vector = CategoryVisuals.icon("no-such-icon"),
+            color = CategoryVisuals.color(green),
+            sizePx = size,
+        )
+        assertEquals(size, bitmap.width)
+        assertTrue(bitmap.hasGlyph(tint = CategoryVisuals.color(green).toArgbInt()))
+    }
+
+    @Test
+    fun theSameGlyphIsServedFromCacheRatherThanRedrawn() {
+        val vector = CategoryVisuals.icon("restaurant")
+        val colour = CategoryVisuals.color(green)
+        val first = CategoryIconBitmaps.glyph(vector, colour, size)
+        val second = CategoryIconBitmaps.glyph(vector, colour, size)
+        assertTrue("The glyph cache handed back a different bitmap", first === second)
+    }
+
+    /** The app mark is drawn past its safe zone, so it must reach the edges. */
+    @Test
+    fun theAppMarkFillsMoreThanItsSafeZone() {
+        val context = androidx.test.core.app.ApplicationProvider
+            .getApplicationContext<android.content.Context>()
+        val mark = CategoryIconBitmaps.appMark(context, AppShortcutIcon, size)
+        assertEquals(size, mark.width)
+        assertTrue(
+            "The mark should be drawn, not blank",
+            (0 until size).any { Color.alpha(mark.getPixel(size / 2, it)) > 0 },
+        )
     }
 
     /** True when the tile holds pixels of the solid tint, i.e. a glyph was drawn. */

@@ -57,6 +57,7 @@ import androidx.glance.color.ColorProvider
 import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
+import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import kotlinx.coroutines.flow.first
@@ -201,7 +202,10 @@ internal fun layoutFor(size: DpSize, availableCategories: Int): WidgetLayout {
 
     val header = if (wide) PillHeightDp + HeaderGapDp else 0
     val content = size.height.value.toInt() - 2 * GridPaddingVertical - header
-    val fits = ((content + RowGapDp) / (rowHeight + RowGapDp)).coerceAtLeast(1)
+    // Capped as well as computed: every tile carries a bitmap to the launcher,
+    // and an unbounded grid would keep growing that payload towards the size
+    // ceiling of the transaction that delivers it.
+    val fits = ((content + RowGapDp) / (rowHeight + RowGapDp)).coerceIn(1, MaxGridRows)
     // One slot always belongs to the "open Saldo" tile.
     val needed = ceilDiv(availableCategories + 1, columns)
 
@@ -220,6 +224,8 @@ internal fun layoutFor(size: DpSize, availableCategories: Int): WidgetLayout {
 
 private fun ceilDiv(value: Int, by: Int): Int = (value + by - 1) / by
 
+private const val MaxGridRows = 5
+
 @Composable
 private fun WidgetBody(
     selectedType: TransactionType,
@@ -237,7 +243,11 @@ private fun WidgetBody(
                 horizontal = layout.paddingHorizontal.dp,
                 vertical = layout.paddingVertical.dp,
             ),
-        verticalAlignment = Alignment.Vertical.CenterVertically,
+        // Anchored to the top, never centred. Expense and income hold a
+        // different number of categories, so a centred block would move the
+        // selector and the amount every time the type changed; the leftover
+        // room belongs at the bottom, where nothing is looking.
+        verticalAlignment = Alignment.Vertical.Top,
         horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
     ) {
         when {
@@ -509,13 +519,8 @@ private fun ColumnScope.CategoryGrid(
 private fun CategoryTile(category: Category, data: QuickAddWidgetData, layout: WidgetLayout) {
     val context = LocalContext.current
     Tile(
-        provider = ImageProvider(
-            CategoryIconBitmaps.categoryTile(
-                iconKey = category.icon,
-                colorRgb = category.color,
-                sizePx = context.pxOf(layout.tileSize),
-            ),
-        ),
+        accent = CategoryVisuals.color(category.color),
+        icon = CategoryVisuals.icon(category.icon),
         label = category.name.takeIf { layout.showLabels },
         contentDescription = context.getString(R.string.widget_quick_add_category_a11y, category.name),
         tileSize = layout.tileSize,
@@ -541,13 +546,8 @@ private fun CategoryTile(category: Category, data: QuickAddWidgetData, layout: W
 private fun MoreTile(data: QuickAddWidgetData, theme: QuickAddWidgetTheme, layout: WidgetLayout) {
     val context = LocalContext.current
     Tile(
-        provider = ImageProvider(
-            CategoryIconBitmaps.actionTile(
-                vector = MoreIcon,
-                color = theme.scheme.primary,
-                sizePx = context.pxOf(layout.tileSize),
-            ),
-        ),
+        accent = theme.scheme.primary,
+        icon = MoreIcon,
         label = context.getString(R.string.widget_quick_add_open).takeIf { layout.showLabels },
         contentDescription = context.getString(R.string.widget_quick_add_open_a11y),
         tileSize = layout.tileSize,
@@ -565,24 +565,48 @@ internal fun quickActionFor(type: TransactionType): String = when (type) {
     else -> MainActivity.ACTION_ADD_EXPENSE
 }
 
+/**
+ * One tile of the grid: the app's unselected category cell, a 16% wash of the
+ * colour with the glyph in it at full strength.
+ *
+ * The wash is a Glance background and only the glyph is a bitmap, which is not
+ * a detail. A `RemoteViews` carries its bitmaps to the launcher through a
+ * Binder transaction with a hard size ceiling, and a full tile bitmap is around
+ * three times the pixels of the glyph inside it: with four rows of four the
+ * whole-tile version was heading for that ceiling, and an update over it fails
+ * silently.
+ */
 @Composable
 private fun Tile(
-    provider: ImageProvider,
+    accent: Color,
+    icon: ImageVector,
     label: String?,
     contentDescription: String,
     tileSize: Int,
     action: Action,
 ) {
+    val context = LocalContext.current
+    val glyphSize = (tileSize * GlyphRatio).toInt()
     Column(
         modifier = GlanceModifier.fillMaxWidth().clickable(action),
         horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
         verticalAlignment = Alignment.Vertical.CenterVertically,
     ) {
-        Image(
-            provider = provider,
-            contentDescription = contentDescription,
-            modifier = GlanceModifier.size(tileSize.dp),
-        )
+        Box(
+            modifier = GlanceModifier
+                .size(tileSize.dp)
+                .background(accent.copy(alpha = TileTintAlpha))
+                .cornerRadius((tileSize * TileCornerRatio).dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                provider = ImageProvider(
+                    CategoryIconBitmaps.glyph(icon, accent, context.pxOf(glyphSize)),
+                ),
+                contentDescription = contentDescription,
+                modifier = GlanceModifier.size(glyphSize.dp),
+            )
+        }
         if (label != null) {
             Spacer(GlanceModifier.height(LabelGap))
             Text(
@@ -643,6 +667,11 @@ private val AppShortcutWidth = 56.dp
 
 /** Rendered past the icon's safe zone, so the mark matches the buttons beside it. */
 private const val AppShortcutMarkSize = 48
+
+/** Matches `CategoryCell`: a 16% wash of the colour with the glyph on top. */
+private const val TileTintAlpha = 0.16f
+private const val TileCornerRatio = 0.30f
+private const val GlyphRatio = 0.62f
 
 /**
  * The app mark, taken from the adaptive icon's *foreground* layer rather than
