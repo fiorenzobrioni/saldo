@@ -538,11 +538,10 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 - undo ovunque sia possibile invece di dialog di conferma
 - empty state curati (prima apertura, nessun movimento, ecc.) con call-to-action
 
-# Widget (v1.5)
+# Widget
 
-- widget saldo totale
-- widget spese del giorno
-- widget "aggiunta rapida" (apre direttamente l'inserimento spesa)
+- widget "aggiunta rapida" in due forme, griglia e barra (implementati, anticipati rispetto alla v1.5)
+- i widget sono punti di ingresso statici, non superfici di visualizzazione: niente saldi, totali o contenuti derivati dai movimenti (decisione di luglio 2026, Fase 10.21). I widget di sola lettura (saldo totale, spese del giorno) sono fuori scope per questo motivo: costerebbero un refresh a ogni movimento
 
 ---
 

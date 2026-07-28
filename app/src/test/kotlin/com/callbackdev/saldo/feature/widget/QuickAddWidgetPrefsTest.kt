@@ -20,8 +20,7 @@ class QuickAddWidgetPrefsTest {
         assertNull(config.accountId)
         assertEquals(TransactionType.EXPENSE, config.type)
         assertTrue(config.pinnedCategoryIds.isEmpty())
-        assertTrue(config.usesMostUsed)
-        assertTrue(config.showTodayTotal)
+        assertTrue(!config.usesCustomCategories)
     }
 
     @Test
@@ -30,14 +29,12 @@ class QuickAddWidgetPrefsTest {
             QuickAddWidgetPrefs.AccountId to QuickAddWidgetPrefs.encodeAccountId(7L),
             QuickAddWidgetPrefs.Type to TransactionType.INCOME.name,
             QuickAddWidgetPrefs.PinnedCategoryIds to QuickAddWidgetPrefs.encodePinned(listOf(3L, 1L, 9L)),
-            QuickAddWidgetPrefs.ShowTodayTotal to false,
         )
         val config = QuickAddWidgetPrefs.read(preferences)
         assertEquals(7L, config.accountId)
         assertEquals(TransactionType.INCOME, config.type)
         assertEquals(listOf(3L, 1L, 9L), config.pinnedCategoryIds)
-        assertTrue(!config.usesMostUsed)
-        assertTrue(!config.showTodayTotal)
+        assertTrue(config.usesCustomCategories)
     }
 
     @Test
@@ -55,16 +52,16 @@ class QuickAddWidgetPrefsTest {
     }
 
     @Test
-    fun `a malformed pinned list degrades to the adaptive grid`() {
+    fun `a malformed pinned list keeps what parses rather than throwing`() {
         val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.PinnedCategoryIds to "3,not-a-number,")
         val config = QuickAddWidgetPrefs.read(preferences)
         assertEquals(listOf(3L), config.pinnedCategoryIds)
     }
 
     @Test
-    fun `an empty pinned string is the adaptive grid, not a widget with no categories`() {
+    fun `an empty pinned string is the full grid, not a widget with no categories`() {
         val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.PinnedCategoryIds to "")
-        assertTrue(QuickAddWidgetPrefs.read(preferences).usesMostUsed)
+        assertTrue(!QuickAddWidgetPrefs.read(preferences).usesCustomCategories)
     }
 
     @Test
@@ -140,46 +137,16 @@ class QuickAddWidgetPrefsTest {
     }
 
     /**
-     * TRANSPARENT was the fourth selector option before the opacity slider; a
-     * widget configured back then must read as what its user meant - system
-     * ink over no background - not as an enum value the UI no longer offers.
+     * TRANSPARENT was a selector option before the widget went solid-only; a
+     * widget configured back then must read as a value the UI still offers,
+     * never as one it no longer does.
      */
     @Test
-    fun `a legacy transparent appearance reads as system ink over no background`() {
+    fun `a legacy transparent appearance reads as following the system`() {
         val preferences = mutablePreferencesOf(
             QuickAddWidgetPrefs.Appearance to WidgetAppearance.TRANSPARENT.name,
         )
-        val config = QuickAddWidgetPrefs.read(preferences)
-        assertEquals(WidgetAppearance.SYSTEM, config.appearance)
-        assertEquals(0f, config.backgroundOpacity)
-    }
-
-    @Test
-    fun `a legacy transparent widget that later saved an opacity keeps the saved one`() {
-        val preferences = mutablePreferencesOf(
-            QuickAddWidgetPrefs.Appearance to WidgetAppearance.TRANSPARENT.name,
-            QuickAddWidgetPrefs.BackgroundOpacity to 0.8f,
-        )
-        val config = QuickAddWidgetPrefs.read(preferences)
-        assertEquals(WidgetAppearance.SYSTEM, config.appearance)
-        assertEquals(0.8f, config.backgroundOpacity)
-    }
-
-    @Test
-    fun `the background opacity round-trips`() {
-        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.BackgroundOpacity to 0.4f)
-        assertEquals(0.4f, QuickAddWidgetPrefs.read(preferences).backgroundOpacity)
-    }
-
-    @Test
-    fun `an unconfigured widget is fully opaque`() {
-        assertEquals(1f, QuickAddWidgetPrefs.read(mutablePreferencesOf()).backgroundOpacity)
-    }
-
-    @Test
-    fun `an out-of-range stored opacity is clamped rather than trusted`() {
-        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.BackgroundOpacity to 3f)
-        assertEquals(1f, QuickAddWidgetPrefs.read(preferences).backgroundOpacity)
+        assertEquals(WidgetAppearance.SYSTEM, QuickAddWidgetPrefs.read(preferences).appearance)
     }
 
     /** On by default (user's call); an explicit off must survive the read. */

@@ -1,20 +1,15 @@
 package com.callbackdev.saldo.feature.widget
 
-import android.app.WallpaperManager
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
-import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.time.Clock
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -33,29 +28,30 @@ import kotlinx.coroutines.launch
 /**
  * Keeps placed widgets in step with the data. A widget renders a snapshot (see
  * [SaldoQuickAddWidget]), so something has to ask for the redraw: this watches
- * everything a widget shows - the movements behind today's total, the category
- * list, the accounts, the theme settings - and refreshes on change, debounced
- * so a restore or a bulk delete costs one redraw instead of hundreds.
+ * the little a widget still shows - the category list, the account list, the
+ * theme settings - and refreshes on change, debounced so a restore or a bulk
+ * edit costs one redraw instead of hundreds.
+ *
+ * Deliberately *not* watched: the transactions table. The widget shows no
+ * totals and no usage-derived ordering, so recording a movement changes
+ * nothing it draws - a widget on a busy day redraws exactly as often as one on
+ * a quiet day, which is to say almost never.
  *
  * The observers only run while at least one widget is placed, which is why the
  * receiver reports placement changes through [onWidgetsChanged] rather than
  * this collecting unconditionally: a user who never adds a widget pays nothing
- * for the feature. The same gate turns the midnight refresh and the wallpaper
- * listener on and off.
+ * for the feature.
  */
 @Singleton
 class WidgetRefreshWatcher @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
     private val userPreferences: UserPreferencesRepository,
-    private val clock: Clock,
 ) {
 
     private val hasPlacedWidgets = MutableStateFlow(false)
     private var scope: CoroutineScope? = null
-    private var wallpaperListener: WallpaperManager.OnColorsChangedListener? = null
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
     fun start(scope: CoroutineScope) {
@@ -69,11 +65,6 @@ class WidgetRefreshWatcher @Inject constructor(
                 .debounce(DEBOUNCE_MILLIS)
                 .collect { refresh() }
         }
-        scope.launch {
-            hasPlacedWidgets.collect { placed ->
-                if (placed) onWidgetsPresent() else onNoWidgetsLeft()
-            }
-        }
         // Off the main thread: this is a binder call, and it runs during
         // Application.onCreate on every cold start.
         scope.launch { readPlacement() }
@@ -85,29 +76,25 @@ class WidgetRefreshWatcher @Inject constructor(
      * shows up only as a widget that quietly stops keeping up.
      */
     internal fun refreshSignals(): Flow<Unit> = combine(
-        // One row is signal enough: any insert, edit or delete moves it, and
-        // the redraw re-reads everything anyway.
-        transactionRepository.observeRecentTransactions(1),
+        // The grid follows the categories screen: adding, renaming, recoloring
+        // or reordering there must reach the launcher.
         categoryRepository.observeCategories(),
-        // The accounts are not optional. A widget placed before onboarding has
-        // no account, so it renders as the "open Saldo to get started" tile and
-        // every tap opens the app; creating the first account is exactly what
-        // makes it usable, and without this signal that moment went unnoticed
-        // and the widget stayed a dead tile.
-        accountRepository.observeAccountsWithBalance(),
+        // The plain rows, never the balances: the widget shows no balance, and
+        // the balance query re-runs on every transaction write. This one is
+        // invalidated only by writes to the accounts table itself. It matters
+        // twice over: a widget placed before onboarding renders as the "open
+        // Saldo to get started" tile, and creating the first account is exactly
+        // what makes it usable; and a pinned account renamed or archived must
+        // update its badge.
+        accountRepository.observeAccounts().distinctUntilChanged(),
         // The theme is part of what a widget draws: switching the app's theme
-        // mode or dynamic color used to leave placed widgets in the old palette
-        // until the next movement happened to redraw them. Distinct because the
-        // DataStore emits on every write of any preference, not just these.
+        // mode or dynamic color used to leave placed widgets in the old palette.
+        // Distinct because the DataStore emits on every write of any preference,
+        // not just these.
         userPreferences.themePreferences.distinctUntilChanged(),
-    ) { _, _, _, _ -> }
+    ) { _, _, _ -> }
         // The first emission is the state already on screen.
         .drop(1)
-
-    /** Fire-and-forget redraw for callers outside a coroutine (the wallpaper listener). */
-    fun requestRedraw() {
-        scope?.launch { refresh() }
-    }
 
     /** Called when a widget is added or removed, and on every framework update broadcast. */
     fun onWidgetsChanged() {
@@ -124,46 +111,15 @@ class WidgetRefreshWatcher @Inject constructor(
     }
 
     /**
-     * What a placed widget needs beyond the data observers: the redraw at local
-     * midnight that rolls "today's" total over with the day, and the wallpaper
-     * listener that re-inks a mostly transparent widget when the picture under
-     * it changes (see `resolveWidgetTheme`, which reads the wallpaper's own
-     * dark-text hint). Re-arming the schedule on every placement pass is cheap
-     * and re-anchors it after timezone moves.
-     */
-    private fun onWidgetsPresent() {
-        WidgetMidnightRefresh.schedule(context, clock)
-        if (wallpaperListener == null) {
-            val listener = WallpaperManager.OnColorsChangedListener { _, which ->
-                if (which and WallpaperManager.FLAG_SYSTEM != 0) requestRedraw()
-            }
-            runCatching {
-                WallpaperManager.getInstance(context)
-                    .addOnColorsChangedListener(listener, Handler(Looper.getMainLooper()))
-            }.onSuccess { wallpaperListener = listener }
-        }
-    }
-
-    private fun onNoWidgetsLeft() {
-        WidgetMidnightRefresh.cancel(context)
-        wallpaperListener?.let { listener ->
-            runCatching { WallpaperManager.getInstance(context).removeOnColorsChangedListener(listener) }
-        }
-        wallpaperListener = null
-    }
-
-    /**
-     * One-shot redraw for callers that already know something changed (the
-     * daily worker, the midnight worker).
+     * One-shot redraw for the debounced signal collector.
      *
      * The revision bump is not ceremony. A Glance session composes once and
      * only reacts to its own widget state, so `updateAll` on its own would
      * re-render the identical snapshot; moving the revision is what makes the
      * composition re-read the database.
      */
-    suspend fun refresh() {
-        // A failed redraw must not kill the watcher: the next change, or the
-        // daily worker, picks it up.
+    private suspend fun refresh() {
+        // A failed redraw must not kill the watcher: the next change picks it up.
         runCatching {
             val manager = GlanceAppWidgetManager(context)
             // Both providers, grid and bar: they render the same data.

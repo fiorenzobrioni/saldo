@@ -1078,7 +1078,6 @@
     <string name="widget_quick_add_open_a11y">Apri Saldo per l\'editor completo</string>
     <string name="widget_quick_add_category_a11y">Aggiungi a %1$s</string>
     <string name="widget_quick_add_setup">Apri Saldo per iniziare</string>
-    <string name="widget_quick_add_today">Oggi · %1$s</string>
     <string name="widget_quick_entry_saved">Salvato</string>
     <string name="widget_quick_entry_change_category">Cambia categoria</string>
     <string name="widget_quick_entry_change_account">Cambia conto</string>
@@ -1087,17 +1086,13 @@
     <string name="widget_config_type">Parte da</string>
     <string name="widget_config_account">Registra su</string>
     <string name="widget_config_account_default">Conto predefinito</string>
-    <string name="widget_config_most_used">Categorie adattive</string>
-    <string name="widget_config_most_used_caption">Mostra quelle che usi di più, e cambiano insieme alle tue abitudini.</string>
+    <string name="widget_config_custom_categories">Scegli le categorie</string>
+    <string name="widget_config_custom_categories_caption">Selezionale e ordinale a mano. Se disattivato, il widget segue l\'ordine della schermata Categorie.</string>
     <string name="widget_config_pinned">Categorie sul widget</string>
-    <string name="widget_config_today_total">Mostra le spese di oggi</string>
-    <string name="widget_config_today_total_caption">Quanto hai speso oggi, accanto al selettore del tipo.</string>
     <string name="widget_config_appearance">Sfondo</string>
     <string name="widget_config_appearance_system">Sistema</string>
     <string name="widget_config_appearance_light">Chiaro</string>
     <string name="widget_config_appearance_dark">Scuro</string>
-    <string name="widget_config_opacity">Opacità dello sfondo</string>
-    <string name="widget_config_opacity_caption">Quando è quasi trasparente, il testo sceglie chiaro o scuro in base allo sfondo.</string>
     <string name="widget_config_save_error">Impossibile salvare le impostazioni del widget</string>
     <string name="widget_config_preview_a11y">Anteprima del widget con le impostazioni correnti</string>
     <string name="widget_config_app_shortcut">Icona dell\'app</string>

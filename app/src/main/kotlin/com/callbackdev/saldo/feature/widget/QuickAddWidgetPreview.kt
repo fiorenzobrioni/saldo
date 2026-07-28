@@ -37,14 +37,13 @@ import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Category
 
 /**
- * A live preview of the widget above its own settings, so the light/dark choice
- * and the opacity are judged by looking rather than by placing the widget and
- * going back.
+ * A live preview of the widget above its own settings, so the light/dark
+ * choice is judged by looking rather than by placing the widget and going
+ * back.
  *
  * It shows the widget's own palette, not the screen's: on a light phone with a
  * dark widget the preview is dark, which is the whole point of the control it
- * sits under. The card behind it stands in for the wallpaper, which is what a
- * translucent background lets through.
+ * sits under. The card behind it stands in for the wallpaper around the widget.
  */
 @Composable
 fun QuickAddWidgetPreview(
@@ -88,9 +87,9 @@ fun QuickAddWidgetPreview(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     categories.take(PreviewTiles).forEach { category ->
-                        PreviewTile(theme, CategoryVisuals.color(category.color), CategoryVisuals.icon(category.icon))
+                        PreviewTile(CategoryVisuals.color(category.color), CategoryVisuals.icon(category.icon))
                     }
-                    PreviewTile(theme, theme.previewScheme.primary, Icons.Outlined.MoreHoriz)
+                    PreviewTile(theme.previewScheme.primary, Icons.Outlined.MoreHoriz)
                 }
             }
         }
@@ -109,13 +108,11 @@ private fun PreviewBarRow(theme: QuickAddWidgetTheme, showAppShortcut: Boolean) 
         PreviewActionButton(
             label = stringResource(R.string.widget_quick_add_expense),
             accent = theme.previewScheme.error,
-            washAlpha = theme.washAlpha,
             modifier = Modifier.weight(1f),
         )
         PreviewActionButton(
             label = stringResource(R.string.widget_quick_add_income),
             accent = money.income,
-            washAlpha = theme.washAlpha,
             modifier = Modifier.weight(1f),
         )
         if (showAppShortcut) {
@@ -124,7 +121,7 @@ private fun PreviewBarRow(theme: QuickAddWidgetTheme, showAppShortcut: Boolean) 
                     .fillMaxHeight()
                     .aspectRatio(1f)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(theme.previewScheme.onSurfaceVariant.copy(alpha = theme.washAlpha)),
+                    .background(theme.previewScheme.onSurfaceVariant.copy(alpha = WashAlpha)),
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
@@ -141,14 +138,13 @@ private fun PreviewBarRow(theme: QuickAddWidgetTheme, showAppShortcut: Boolean) 
 private fun PreviewActionButton(
     label: String,
     accent: Color,
-    washAlpha: Float,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .fillMaxHeight()
             .clip(RoundedCornerShape(14.dp))
-            .background(accent.copy(alpha = washAlpha)),
+            .background(accent.copy(alpha = WashAlpha)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -180,13 +176,13 @@ private fun PreviewPill(label: String, theme: QuickAddWidgetTheme, selected: Boo
 }
 
 @Composable
-private fun PreviewTile(theme: QuickAddWidgetTheme, color: Color, icon: ImageVector) {
+private fun PreviewTile(color: Color, icon: ImageVector) {
     Box(
         modifier = Modifier
             .size(40.dp)
             .clip(AvatarShape)
-            // The same wash the widget wears, densifying as the opacity drops.
-            .background(color.copy(alpha = theme.washAlpha)),
+            // The same wash the widget wears.
+            .background(color.copy(alpha = WashAlpha)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

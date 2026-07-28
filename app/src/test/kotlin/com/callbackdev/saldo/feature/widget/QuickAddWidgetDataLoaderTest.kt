@@ -1,18 +1,16 @@
 package com.callbackdev.saldo.feature.widget
 
+import android.content.Context
+import com.callbackdev.saldo.core.common.prefs.ThemeMode
+import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
-import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
-import com.callbackdev.saldo.core.domain.model.DashboardTotals
-import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
-import com.callbackdev.saldo.core.domain.repository.TransactionRepository
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -23,19 +21,15 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneId
 import java.util.Currency
 
 class QuickAddWidgetDataLoaderTest {
 
     private val eur = Currency.getInstance("EUR")
-    private val clock = Clock.fixed(Instant.parse("2026-07-08T10:15:00Z"), ZoneId.of("Europe/Rome"))
 
+    private val context = mockk<Context>(relaxed = true)
     private val accountRepository = mockk<AccountRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
-    private val transactionRepository = mockk<TransactionRepository>()
     private val userPreferences = mockk<UserPreferencesRepository>()
 
     private fun account(id: Long, archived: Boolean = false) = Account(
@@ -63,132 +57,85 @@ class QuickAddWidgetDataLoaderTest {
     private fun loader(
         accounts: List<Account> = listOf(checking, cash),
         available: List<Category> = categories,
-        mostUsed: List<Long> = emptyList(),
-        defaultAccountId: Long? = null,
-        lastUsedAccountId: Long? = null,
-        todaySpend: BigDecimal = BigDecimal("-24.30"),
-        todayIncome: BigDecimal = BigDecimal("80.50"),
-        accountSpend: BigDecimal = BigDecimal("-7.00"),
-        accountIncome: BigDecimal = BigDecimal("3.00"),
     ): QuickAddWidgetDataLoader {
-        every { accountRepository.observeAccountsWithBalance() } returns
-            flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
+        every { accountRepository.observeAccounts() } returns flowOf(accounts)
         every { categoryRepository.observeCategories(any<CategoryType>()) } returns flowOf(available)
-        coEvery { transactionRepository.mostUsedCategoryIds(any(), any(), any()) } returns mostUsed
-        every { transactionRepository.observeDashboardTotals(any(), any()) } returns
-            flowOf(DashboardTotals(today = PeriodTotals(spend = todaySpend, income = todayIncome)))
-        coEvery { transactionRepository.getAccountPeriodTotals(any(), any(), any(), any()) } returns
-            PeriodTotals(spend = accountSpend, income = accountIncome)
-        every { userPreferences.defaultAccountId } returns flowOf(defaultAccountId)
-        every { userPreferences.lastUsedAccountId } returns flowOf(lastUsedAccountId)
-        every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
+        // Brand palette, forced light: theme resolution never touches the
+        // (mocked) context, so the JVM can run what is otherwise device code.
+        every { userPreferences.themePreferences } returns
+            flowOf(ThemePreferences(mode = ThemeMode.LIGHT, useDynamicColor = false))
         return QuickAddWidgetDataLoader(
+            context = context,
             accountRepository = accountRepository,
             categoryRepository = categoryRepository,
-            transactionRepository = transactionRepository,
             userPreferences = userPreferences,
-            clock = clock,
         )
     }
 
+    /**
+     * No usage-derived reordering: the widget shows the categories exactly as
+     * the app's categories screen orders them, so the grid the user learned
+     * yesterday is the grid they find today - and recording a movement never
+     * has to redraw a widget.
+     */
     @Test
-    fun `the most used categories lead and the user's own order fills the rest`() = runTest {
-        val data = loader(mostUsed = listOf(5L, 3L)).load(QuickAddWidgetConfig(), categoryLimit = 4)
-        assertEquals(listOf(5L, 3L, 1L, 2L), data.categories.map { it.id })
-    }
-
-    @Test
-    fun `with no history at all the grid is simply the user's own order`() = runTest {
-        val data = loader(mostUsed = emptyList()).load(QuickAddWidgetConfig(), categoryLimit = 4)
+    fun `the grid is the user's own category order`() = runTest {
+        val data = loader().load(QuickAddWidgetConfig(), categoryLimit = 4)
         assertEquals(listOf(1L, 2L, 3L, 4L), data.categories.map { it.id })
-    }
-
-    @Test
-    fun `a most used category that no longer exists is skipped, not left as a hole`() = runTest {
-        val data = loader(mostUsed = listOf(99L, 4L)).load(QuickAddWidgetConfig(), categoryLimit = 3)
-        assertEquals(listOf(4L, 1L, 2L), data.categories.map { it.id })
     }
 
     @Test
     fun `pinned categories keep the order the user pinned them in`() = runTest {
         val config = QuickAddWidgetConfig(pinnedCategoryIds = listOf(6L, 2L, 4L))
-        val data = loader(mostUsed = listOf(1L)).load(config, categoryLimit = 4)
+        val data = loader().load(config, categoryLimit = 4)
         assertEquals(listOf(6L, 2L, 4L), data.categories.map { it.id })
     }
 
     @Test
-    fun `the configured account is used when it is still active`() = runTest {
-        val data = loader().load(QuickAddWidgetConfig(accountId = cash.id), categoryLimit = 4)
-        assertEquals(cash.id, data.account?.id)
-    }
-
-    @Test
-    fun `an archived configured account falls back to the app default instead of dying`() = runTest {
-        val data = loader(
-            accounts = listOf(checking, account(2L, archived = true)),
-            defaultAccountId = checking.id,
-        ).load(QuickAddWidgetConfig(accountId = 2L), categoryLimit = 4)
-        assertEquals(checking.id, data.account?.id)
-    }
-
-    @Test
-    fun `today's spend is shown as a positive amount, since it reads as what left the wallet`() = runTest {
-        val data = loader().load(QuickAddWidgetConfig(), categoryLimit = 4)
-        assertTrue(data.todayTotal.orEmpty().contains("24"))
-        assertTrue(!data.todayTotal.orEmpty().contains("-"))
-    }
-
-    @Test
-    fun `the total is not computed at all when the widget does not show it`() = runTest {
-        val data = loader().load(QuickAddWidgetConfig(showTodayTotal = false), categoryLimit = 4)
-        assertNull(data.todayTotal)
+    fun `a pinned category that no longer exists is skipped, not left as a hole`() = runTest {
+        val config = QuickAddWidgetConfig(pinnedCategoryIds = listOf(99L, 4L, 1L))
+        val data = loader().load(config, categoryLimit = 3)
+        assertEquals(listOf(4L, 1L), data.categories.map { it.id })
     }
 
     /**
-     * The number matches the type the widget is showing: spend on an expense
-     * widget, earnings on an income one. Showing spend on both put an
-     * unexplained outgoing total on a widget whose every control said "income".
+     * The widget hands the quick-entry sheet the pinned account when it is
+     * still alive, and nothing otherwise: the app default is resolved by the
+     * sheet at open time, so the widget never redraws to track it.
      */
     @Test
-    fun `an income widget totals today's income, not today's spend`() = runTest {
-        val data = loader().load(QuickAddWidgetConfig(type = TransactionType.INCOME), categoryLimit = 4)
-        assertTrue(data.todayTotal.orEmpty().contains("80"))
-        assertTrue(!data.todayTotal.orEmpty().contains("24"))
-    }
-
-    /**
-     * Two widgets pinned to two accounts used to show the same app-wide total,
-     * which read as one of them being wrong. Pinned means: that account's
-     * number, that account's name as a badge.
-     */
-    @Test
-    fun `a widget pinned to a live account totals that account alone and carries its name`() = runTest {
+    fun `a widget pinned to a live account carries its id and its name`() = runTest {
         val data = loader().load(QuickAddWidgetConfig(accountId = cash.id), categoryLimit = 4)
+        assertEquals(cash.id, data.pinnedAccountId)
         assertEquals(cash.name, data.pinnedAccountName)
-        assertTrue(data.todayTotal.orEmpty().contains("7"))
-        assertTrue(!data.todayTotal.orEmpty().contains("24"))
     }
 
     @Test
-    fun `a widget following the default account keeps the app-wide total and no badge`() = runTest {
+    fun `a widget following the default account pins nothing`() = runTest {
         val data = loader().load(QuickAddWidgetConfig(), categoryLimit = 4)
+        assertNull(data.pinnedAccountId)
         assertNull(data.pinnedAccountName)
-        assertTrue(data.todayTotal.orEmpty().contains("24"))
     }
 
     @Test
-    fun `an archived pinned account loses the badge and the scope along with the pin`() = runTest {
-        val data = loader(
-            accounts = listOf(checking, account(2L, archived = true)),
-            defaultAccountId = checking.id,
-        ).load(QuickAddWidgetConfig(accountId = 2L), categoryLimit = 4)
+    fun `an archived pinned account loses the pin and the badge, not the widget`() = runTest {
+        val data = loader(accounts = listOf(checking, account(2L, archived = true)))
+            .load(QuickAddWidgetConfig(accountId = 2L), categoryLimit = 4)
+        assertNull(data.pinnedAccountId)
         assertNull(data.pinnedAccountName)
-        assertTrue(data.todayTotal.orEmpty().contains("24"))
+        assertTrue(data.isReady, "The widget must fall back to the app default, not die")
     }
 
     @Test
     fun `no account and no category means the widget is not ready`() = runTest {
         val data = loader(accounts = emptyList(), available = emptyList())
+            .load(QuickAddWidgetConfig(), categoryLimit = 4)
+        assertTrue(!data.isReady)
+    }
+
+    @Test
+    fun `an account whose every row is archived is no account at all`() = runTest {
+        val data = loader(accounts = listOf(account(1L, archived = true)))
             .load(QuickAddWidgetConfig(), categoryLimit = 4)
         assertTrue(!data.isReady)
     }
@@ -226,7 +173,8 @@ class QuickAddWidgetDataLoaderTest {
 
     /**
      * A Responsive widget composes once per size bucket, every one asking for
-     * the same snapshot: the shared load must collapse those into one pass.
+     * the same snapshot: the shared load must collapse those into one database
+     * pass and one theme resolution.
      */
     @Test
     fun `the shared load reads the database once per config and revision`() = runTest {
@@ -237,7 +185,15 @@ class QuickAddWidgetDataLoaderTest {
         val second = subject.loadShared(config, revision = 1L)
 
         assertEquals(first, second)
-        verify(exactly = 1) { accountRepository.observeAccountsWithBalance() }
+        verify(exactly = 1) { accountRepository.observeAccounts() }
+    }
+
+    @Test
+    fun `the shared snapshot carries the resolved theme with the data`() = runTest {
+        val snapshot = loader().loadShared(QuickAddWidgetConfig(), revision = 1L)
+        // Forced light: both branches must be the same scheme, or the launcher
+        // could flip a widget its user pinned to one side.
+        assertEquals(snapshot.theme.lightScheme, snapshot.theme.darkScheme)
     }
 
     @Test
@@ -248,7 +204,7 @@ class QuickAddWidgetDataLoaderTest {
         subject.loadShared(config, revision = 1L)
         subject.loadShared(config, revision = 2L)
 
-        verify(exactly = 2) { accountRepository.observeAccountsWithBalance() }
+        verify(exactly = 2) { accountRepository.observeAccounts() }
     }
 
     @Test
@@ -258,6 +214,25 @@ class QuickAddWidgetDataLoaderTest {
         subject.loadShared(QuickAddWidgetConfig(), revision = 1L)
         subject.loadShared(QuickAddWidgetConfig(type = TransactionType.INCOME), revision = 1L)
 
-        verify(exactly = 2) { accountRepository.observeAccountsWithBalance() }
+        verify(exactly = 2) { accountRepository.observeAccounts() }
+    }
+
+    /**
+     * Two widgets with different configurations render with the same revision,
+     * and their per-bucket compositions interleave: the cache must hold both,
+     * or the alternation would evict on every call and reload once per bucket.
+     */
+    @Test
+    fun `two widgets with different configs do not evict each other`() = runTest {
+        val subject = loader()
+        val grid = QuickAddWidgetConfig()
+        val bar = QuickAddWidgetConfig(accountId = cash.id)
+
+        subject.loadShared(grid, revision = 1L)
+        subject.loadShared(bar, revision = 1L)
+        subject.loadShared(grid, revision = 1L)
+        subject.loadShared(bar, revision = 1L)
+
+        verify(exactly = 2) { accountRepository.observeAccounts() }
     }
 }

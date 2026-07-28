@@ -52,14 +52,15 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
     val uiState: StateFlow<QuickAddWidgetConfigUiState> = combine(
         config,
         seeded,
-        accountRepository.observeAccountsWithBalance(),
+        // Plain rows: this screen shows no balances either.
+        accountRepository.observeAccounts(),
         categoryRepository.observeCategories(),
     ) { current, ready, accounts, categories ->
         val type = if (current.type == TransactionType.INCOME) CategoryType.INCOME else CategoryType.EXPENSE
         QuickAddWidgetConfigUiState(
             isLoading = !ready,
             config = current,
-            accounts = accounts.map { it.account }.filter { !it.isArchived },
+            accounts = accounts.filter { !it.isArchived },
             categories = categories.filter { it.type == type || it.type == CategoryType.BOTH },
         )
     }.stateIn(
@@ -84,22 +85,20 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
         config.update { it.copy(type = type, pinnedCategoryIds = emptyList()) }
     }
 
-    fun onShowTodayTotalChanged(show: Boolean) {
-        config.update { it.copy(showTodayTotal = show) }
-    }
-
     fun onShowAppShortcutChanged(show: Boolean) {
         config.update { it.copy(showAppShortcut = show) }
     }
 
-    fun onUseMostUsedChanged(useMostUsed: Boolean) {
+    /**
+     * On: a hand-picked subset, seeded with the categories currently on screen
+     * so the widget never empties. Off: back to the app's own category order.
+     */
+    fun onCustomCategoriesChanged(custom: Boolean) {
         config.update {
-            if (useMostUsed) {
-                it.copy(pinnedCategoryIds = emptyList())
-            } else {
-                // Seeding with the categories currently on screen means turning
-                // the switch off never empties the widget.
+            if (custom) {
                 it.copy(pinnedCategoryIds = uiState.value.categories.take(MAX_PINNED).map(Category::id))
+            } else {
+                it.copy(pinnedCategoryIds = emptyList())
             }
         }
     }
@@ -110,10 +109,6 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
 
     fun onAppearanceSelected(appearance: WidgetAppearance) {
         config.update { it.copy(appearance = appearance) }
-    }
-
-    fun onOpacityChanged(opacity: Float) {
-        config.update { it.copy(backgroundOpacity = opacity.coerceIn(0f, 1f)) }
     }
 
     fun onCategoryToggled(categoryId: Long) {

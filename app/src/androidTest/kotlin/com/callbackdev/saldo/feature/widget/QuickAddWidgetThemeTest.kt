@@ -98,42 +98,15 @@ class QuickAddWidgetThemeTest {
         assertNotEquals(theme.lightScheme.background, theme.darkScheme.background)
     }
 
-    @Test
-    fun theOpacityCarriesIntoTheBackgroundAndOnlyTheBackground() {
-        val config = QuickAddWidgetConfig(backgroundOpacity = 0f)
-        val theme = resolveWidgetTheme(context, brandPreferences, config)
-        assertEquals(0f, theme.previewBackground.alpha, 0.001f)
-        assertEquals(1f, theme.previewScheme.onSurfaceVariant.alpha, 0.001f)
-    }
-
-    @Test
-    fun aHalfOpacityBackgroundIsHalfOpaque() {
-        val config = QuickAddWidgetConfig(backgroundOpacity = 0.6f)
-        val theme = resolveWidgetTheme(context, brandPreferences, config)
-        assertEquals(0.6f, theme.previewBackground.alpha, 0.001f)
-    }
-
     /**
-     * As the background fades, the tile washes densify: they become the only
-     * local contrast the glyphs and labels get over an arbitrary wallpaper.
+     * The widget always sits on a solid app surface: the opacity slider and
+     * the wallpaper-hint ink are gone, so a translucent background would mean
+     * a regression, not a setting.
      */
     @Test
-    fun theWashDensifiesAsTheBackgroundFades() {
-        val opaque = resolveWidgetTheme(context, brandPreferences, QuickAddWidgetConfig())
-        val transparent = resolveWidgetTheme(
-            context,
-            brandPreferences,
-            QuickAddWidgetConfig(backgroundOpacity = 0f),
-        )
-        assertTrue(
-            "Wash at opacity 0 (${transparent.washAlpha}) must be denser than at 1 (${opaque.washAlpha})",
-            transparent.washAlpha > opaque.washAlpha,
-        )
-    }
-
-    @Test
-    fun theBackgroundIsOpaqueByDefaultSoTheWidgetNeverDisappears() {
+    fun theBackgroundIsAlwaysOpaqueSoTheWidgetNeverDisappears() {
         val theme = resolveWidgetTheme(context, brandPreferences, QuickAddWidgetConfig())
         assertEquals(1f, theme.previewBackground.alpha, 0.001f)
+        assertEquals(1f, theme.previewScheme.onSurfaceVariant.alpha, 0.001f)
     }
 }

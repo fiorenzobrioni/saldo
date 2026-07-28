@@ -240,7 +240,12 @@ class QuickEntryViewModel @AssistedInject constructor(
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
 
-        /** The same window the widget's own grid uses, so both agree on "most used". */
+        /**
+         * Two months of history: long enough to be stable, short enough to
+         * follow a change of habits. Used only here, at sheet-open time - the
+         * widget itself never computes usage, so this costs one query per tap,
+         * not one per refresh.
+         */
         const val MOST_USED_WINDOW_DAYS = 60L
     }
 }

@@ -7,44 +7,43 @@ import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
-import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
-import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
-import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
-import java.time.Clock
 import java.util.Currency
 
 /**
  * The widget redraws on a signal, so anything missing from that signal is a
  * widget that silently stops keeping up. The account flow in particular was
- * missing: a widget placed before onboarding shows the "open Saldo to get
+ * missing once: a widget placed before onboarding shows the "open Saldo to get
  * started" tile, and creating the first account - the very thing that makes it
  * usable - produced no signal, so it stayed a dead tile that only opened the app.
+ *
+ * Equally deliberate is what is *not* here: no transactions flow. The widget
+ * shows no totals and no usage-derived ordering, so a recorded movement must
+ * not redraw it - that absence is the whole point of it being a static entry
+ * point, and adding the flow back would reintroduce a full refresh (state
+ * write, database pass, one composition per size bucket, a RemoteViews
+ * payload) on every single movement.
  */
 class WidgetRefreshWatcherTest {
 
-    private val transactions = MutableStateFlow(emptyList<Transaction>())
     private val categories = MutableStateFlow(emptyList<Category>())
-    private val accounts = MutableStateFlow(emptyList<AccountWithBalance>())
+    private val accounts = MutableStateFlow(emptyList<Account>())
     private val theme = MutableStateFlow(ThemePreferences())
 
-    private val transactionRepository = mockk<TransactionRepository> {
-        every { observeRecentTransactions(any()) } returns transactions
-    }
     private val categoryRepository = mockk<CategoryRepository> {
         every { observeCategories() } returns categories
     }
     private val accountRepository = mockk<AccountRepository> {
-        every { observeAccountsWithBalance() } returns accounts
+        every { observeAccounts() } returns accounts
     }
     private val userPreferences = mockk<UserPreferencesRepository> {
         every { themePreferences } returns theme
@@ -52,22 +51,17 @@ class WidgetRefreshWatcherTest {
 
     private val watcher = WidgetRefreshWatcher(
         context = mockk<Context>(relaxed = true),
-        transactionRepository = transactionRepository,
         categoryRepository = categoryRepository,
         accountRepository = accountRepository,
         userPreferences = userPreferences,
-        clock = Clock.systemUTC(),
     )
 
-    private val account = AccountWithBalance(
-        Account(
-            id = 1L,
-            name = "Checking",
-            type = AccountType.CHECKING,
-            currency = Currency.getInstance("EUR"),
-            initialBalance = BigDecimal.ZERO,
-        ),
-        BigDecimal.ZERO,
+    private val account = Account(
+        id = 1L,
+        name = "Checking",
+        type = AccountType.CHECKING,
+        currency = Currency.getInstance("EUR"),
+        initialBalance = BigDecimal.ZERO,
     )
 
     private val category = Category(
@@ -96,10 +90,12 @@ class WidgetRefreshWatcherTest {
         }
     }
 
+    /** A pinned account's badge is its name: renaming it must reach the launcher. */
     @Test
-    fun `a recorded movement signals a redraw`() = runTest {
+    fun `an account rename signals a redraw`() = runTest {
+        accounts.value = listOf(account)
         watcher.refreshSignals().test {
-            transactions.value = listOf(mockk(relaxed = true))
+            accounts.value = listOf(account.copy(name = "Renamed"))
             awaitItem()
             cancelAndIgnoreRemainingEvents()
         }
@@ -108,7 +104,7 @@ class WidgetRefreshWatcherTest {
     /**
      * The theme is part of what a widget draws. Without this signal, switching
      * the app's theme mode or dynamic color left placed widgets in the old
-     * palette until the next movement happened to redraw them.
+     * palette until the next change happened to redraw them.
      */
     @Test
     fun `a theme change signals a redraw`() = runTest {

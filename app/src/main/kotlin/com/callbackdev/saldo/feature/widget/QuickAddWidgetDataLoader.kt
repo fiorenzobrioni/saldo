@@ -1,64 +1,87 @@
 package com.callbackdev.saldo.feature.widget
 
-import com.callbackdev.saldo.core.common.money.MoneyFormatter
+import android.content.Context
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
-import com.callbackdev.saldo.core.domain.account.DefaultAccountResolver
-import com.callbackdev.saldo.core.domain.model.Account
-import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
-import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.TransactionType
-import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
-import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.time.Clock
-import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/**
+ * Everything one widget render needs, produced in a single pass: the data
+ * snapshot and the resolved palette. Bundled because they go stale together -
+ * any change that affects either reaches the widget as a revision bump - and
+ * because resolving them once here is what spares the per-bucket compositions
+ * from doing it a dozen times each (see [QuickAddWidgetDataLoader.loadShared]).
+ */
+data class QuickAddWidgetSnapshot(
+    val data: QuickAddWidgetData,
+    val theme: QuickAddWidgetTheme,
+)
 
 /**
  * Reads everything a quick-add widget needs in one pass. Kept out of the
  * widget class because a `GlanceAppWidget` is instantiated by the framework and
  * cannot be injected; the widget reaches this through `WidgetEntryPoint`.
+ *
+ * The reads are deliberately cheap: plain account rows (never the computed
+ * balances - the widget shows none, and the balance query is the most
+ * expensive one in the project) and the categories of one type in the order
+ * of the app's own categories screen. No transaction table reads at all.
  */
 @Singleton
 class QuickAddWidgetDataLoader @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
-    private val transactionRepository: TransactionRepository,
     private val userPreferences: UserPreferencesRepository,
-    private val clock: Clock,
 ) {
 
     private val sharedLock = Mutex()
-    private var sharedKey: Pair<QuickAddWidgetConfig, Long>? = null
-    private var sharedData: QuickAddWidgetData? = null
 
     /**
-     * [load] deduplicated across the sizes of one render. A Responsive widget
-     * composes its content once per bucket, all with the same config and
-     * revision, and every one of those compositions asks for the same snapshot:
-     * this hands them a single database pass instead of eleven.
+     * A handful of entries rather than one: two widgets with different
+     * configurations refresh with the same revision, and a single-entry cache
+     * would evict on every alternation between them, turning "one database
+     * pass per render" back into one per bucket.
+     */
+    private val shared = object : LinkedHashMap<Pair<QuickAddWidgetConfig, Long>, QuickAddWidgetSnapshot>(
+        SHARED_CACHE_CAPACITY,
+        LOAD_FACTOR,
+        true,
+    ) {
+        override fun removeEldestEntry(
+            eldest: MutableMap.MutableEntry<Pair<QuickAddWidgetConfig, Long>, QuickAddWidgetSnapshot>,
+        ): Boolean = size > SHARED_CACHE_CAPACITY
+    }
+
+    /**
+     * [load] plus the resolved theme, deduplicated across the sizes of one
+     * render. A Responsive widget composes its content once per bucket, all
+     * with the same config and revision, and every one of those compositions
+     * asks for the same snapshot: this hands them a single database pass and a
+     * single theme resolution instead of one each.
      *
-     * The cache holds exactly one entry and the revision is part of the key,
-     * which is what keeps it honest: any data change reaches the widget only as
-     * a revision bump (see `WidgetRefreshWatcher`), so a hit can never serve a
-     * stale snapshot - equal key, equal data, by construction. [load] itself
+     * The revision is part of the key, which is what keeps the cache honest:
+     * any data or theme-settings change reaches the widget only as a revision
+     * bump (see `WidgetRefreshWatcher`), so a hit can never serve a stale
+     * snapshot - equal key, equal snapshot, by construction. [load] itself
      * stays stateless for everyone else.
      */
-    suspend fun loadShared(config: QuickAddWidgetConfig, revision: Long): QuickAddWidgetData =
+    suspend fun loadShared(config: QuickAddWidgetConfig, revision: Long): QuickAddWidgetSnapshot =
         sharedLock.withLock {
             val key = config to revision
-            sharedData?.takeIf { sharedKey == key }
-                ?: load(config).also {
-                    sharedKey = key
-                    sharedData = it
-                }
+            shared[key] ?: QuickAddWidgetSnapshot(
+                data = load(config),
+                theme = resolveWidgetTheme(context, userPreferences.themePreferences.first(), config),
+            ).also { shared[key] = it }
         }
 
     /**
@@ -66,100 +89,38 @@ class QuickAddWidgetDataLoader @Inject constructor(
      * every category, ordered, and its layout decides how many rows of them fit.
      */
     suspend fun load(config: QuickAddWidgetConfig, categoryLimit: Int = Int.MAX_VALUE): QuickAddWidgetData {
-        val accounts = accountRepository.observeAccountsWithBalance().first()
-        val active = accounts.map { it.account }.filter { !it.isArchived }
-        // An account configured on the widget and later archived or deleted must
-        // not leave the widget dead: fall back to the app's own default chain.
-        // A pinned account that survived is remembered apart from the fallback:
-        // it scopes the today total and earns the badge in the header.
+        val active = accountRepository.observeAccounts().first().filter { !it.isArchived }
+        // An account configured on the widget and later archived or deleted
+        // must not leave the widget dead: it degrades to following the app
+        // default, which the quick-entry sheet resolves at open time.
         val pinned = active.firstOrNull { it.id == config.accountId }
-        val account = pinned
-            ?: DefaultAccountResolver.resolve(
-                accounts = active,
-                defaultAccountId = userPreferences.defaultAccountId.first(),
-                lastUsedAccountId = userPreferences.lastUsedAccountId.first(),
-            )
 
         val available = categoryRepository.observeCategories(config.effectiveType.categoryType()).first()
         val categories = pick(available, config, categoryLimit)
 
-        val todayTotal = if (config.showTodayTotal) {
-            formatTodayTotal(accounts, pinned, config.effectiveType)
-        } else {
-            null
-        }
-
         return QuickAddWidgetData(
             type = config.effectiveType,
-            account = account,
             categories = categories,
-            todayTotal = todayTotal,
-            showTodayTotal = config.showTodayTotal,
+            hasAccounts = active.isNotEmpty(),
+            pinnedAccountId = pinned?.id,
             pinnedAccountName = pinned?.name,
         )
     }
 
     /**
-     * Pinned categories keep the order the user chose; otherwise the most used
-     * ones lead and the user's own order fills the remaining slots, so the grid
-     * is never short even on a fresh install with no history.
+     * Pinned categories keep the order the user chose; otherwise the grid is
+     * simply the app's own category order, the one arranged in the categories
+     * screen. No usage-derived reordering: the grid the user learned yesterday
+     * is the grid they find today.
      */
-    private suspend fun pick(
+    private fun pick(
         available: List<Category>,
         config: QuickAddWidgetConfig,
         limit: Int,
     ): List<Category> {
+        if (!config.usesCustomCategories) return available.take(limit)
         val byId = available.associateBy { it.id }
-        if (!config.usesMostUsed) {
-            return config.pinnedCategoryIds.mapNotNull(byId::get).take(limit)
-        }
-        val since = LocalDate.now(clock).minusDays(MOST_USED_WINDOW_DAYS).atStartOfDay(clock.zone).toInstant()
-        val mostUsed = transactionRepository
-            .mostUsedCategoryIds(config.effectiveType, since, available.size.coerceAtLeast(1))
-            .mapNotNull(byId::get)
-        return (mostUsed + available).distinctBy { it.id }.take(limit)
-    }
-
-    /**
-     * Today's number next to the selector, matching the type the widget is
-     * showing: spend on an expense widget, earnings on an income one. The old
-     * behaviour showed spend on both, which put an unexplained outgoing total
-     * on a widget whose every control said "income".
-     *
-     * A widget pinned to a live account totals that account alone, in its own
-     * currency: two widgets on two accounts used to show the same app-wide
-     * number, which read as one of them being wrong.
-     */
-    private suspend fun formatTodayTotal(
-        accounts: List<AccountWithBalance>,
-        pinned: Account?,
-        type: TransactionType,
-    ): String? {
-        if (accounts.isEmpty()) return null
-        val today = LocalDate.now(clock)
-        val (totals, currency) = if (pinned != null) {
-            val start = today.atStartOfDay(clock.zone).toInstant()
-            val end = today.plusDays(1).atStartOfDay(clock.zone).toInstant()
-            transactionRepository.getAccountPeriodTotals(
-                accountId = pinned.id,
-                start = start,
-                end = end,
-                currency = pinned.currency,
-            ) to pinned.currency
-        } else {
-            val primary = primaryCurrency(accounts, userPreferences.primaryCurrencyOverride.first())
-            transactionRepository
-                .observeDashboardTotals(DashboardWindows.around(today, clock.zone), primary)
-                .first()
-                .today to primary
-        }
-        // Spend arrives as a negative magnitude (the effect on the account); the
-        // widget shows what moved today, so both types read as a positive.
-        val amount = when (type) {
-            TransactionType.INCOME -> totals.income
-            else -> totals.spend
-        }
-        return MoneyFormatter.format(amount.abs(), currency)
+        return config.pinnedCategoryIds.mapNotNull(byId::get).take(limit)
     }
 
     private fun TransactionType.categoryType(): CategoryType = when (this) {
@@ -168,7 +129,8 @@ class QuickAddWidgetDataLoader @Inject constructor(
     }
 
     private companion object {
-        /** Two months of history: long enough to be stable, short enough to follow a change of habits. */
-        const val MOST_USED_WINDOW_DAYS = 60L
+        /** Comfortably above the number of differently-configured widgets on one home screen. */
+        const val SHARED_CACHE_CAPACITY = 8
+        const val LOAD_FACTOR = 0.75f
     }
 }

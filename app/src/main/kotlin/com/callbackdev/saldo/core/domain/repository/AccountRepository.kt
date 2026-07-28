@@ -15,6 +15,15 @@ interface AccountRepository {
     fun observeAccountsWithBalance(): Flow<List<AccountWithBalance>>
 
     /**
+     * All accounts (archived included) without balances, ordered for display.
+     * Much cheaper than [observeAccountsWithBalance]: the balance query is
+     * re-run on every transaction write, this one only on writes to the
+     * accounts table itself. For consumers that show no balance (the home
+     * screen widget).
+     */
+    fun observeAccounts(): Flow<List<Account>>
+
+    /**
      * Like [observeAccountsWithBalance] but each account also carries its
      * balance as of today ([AccountWithBalance.balanceAsOfToday], non-null only
      * when it diverges from the total). [todayEpochDayExclusive] is today's

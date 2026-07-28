@@ -26,12 +26,12 @@ import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
  * the vector tree and filling each path is enough; group transforms are honored
  * anyway so an icon that grows one keeps rendering.
  *
- * Every glyph is rasterized as a *white mask* and colored at the `RemoteViews`
- * level with a day/night tint, never baked. That is what lets a widget flip
- * with the system theme without waking the app: the launcher re-resolves the
- * tint on its own, while a baked color would stay whatever theme the bitmap was
- * drawn under. It also collapses the cache to one bitmap per icon and size,
- * whatever palette is in fashion.
+ * Every glyph is rasterized as an *alpha mask* and colored at the
+ * `RemoteViews` level with a day/night tint, never baked. That is what lets a
+ * widget flip with the system theme without waking the app: the launcher
+ * re-resolves the tint on its own, while a baked color would stay whatever
+ * theme the bitmap was drawn under. It also collapses the cache to one bitmap
+ * per icon and size, whatever palette is in fashion.
  *
  * If a vector ever fails to rasterize the image comes back as an empty mask: a
  * widget must never crash or show a hole.
@@ -41,20 +41,30 @@ object CategoryIconBitmaps {
     /** 108/72: the adaptive icon canvas over its safe zone. */
     private const val SAFE_ZONE_SCALE = 1.5f
 
-    private const val CACHE_ENTRIES = 64
+    /**
+     * Sized in bytes rather than entries: an entry-counted cache holds 64
+     * bitmaps whether they are 32px masks or 300px marks, so its real memory
+     * was whatever the biggest mix happened to be.
+     */
+    private const val CACHE_BYTES = 512 * 1024
 
-    private val cache = LruCache<String, Bitmap>(CACHE_ENTRIES)
+    private val cache = object : LruCache<String, Bitmap>(CACHE_BYTES) {
+        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
+    }
 
     /**
-     * The glyph as a white mask, meant to be tinted by the `Image` that shows
-     * it. The squircle behind it is not here on purpose: the wash is a Glance
-     * background, so only the glyph pixels ride the Binder transaction, around
-     * a third of a full tile bitmap - with four columns of tiles per row that
-     * margin is what keeps the update payload comfortably under the ceiling.
+     * The glyph as an alpha-only mask ([Bitmap.Config.ALPHA_8], a quarter of
+     * the bytes of ARGB), meant to be tinted by the `Image` that shows it: the
+     * tint's `SRC_IN` uses only the destination alpha, so the mask needs no
+     * color channels of its own. The squircle behind it is not here on
+     * purpose: the wash is a Glance background, so only the glyph pixels ride
+     * the Binder transaction, around a third of a full tile bitmap - with four
+     * columns of tiles per row that margin is what keeps the update payload
+     * comfortably under the ceiling.
      */
     fun glyph(vector: ImageVector, sizePx: Int): Bitmap =
         cached("glyph|${vector.name}|$sizePx") {
-            val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+            val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ALPHA_8)
             val canvas = Canvas(bitmap)
             val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = android.graphics.Color.WHITE
