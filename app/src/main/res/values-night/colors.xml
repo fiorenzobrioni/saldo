@@ -8,4 +8,10 @@
     <color name="widget_preview_ink_muted">@android:color/system_neutral2_200</color>
     <color name="widget_preview_expense">#FFB4AB</color>
     <color name="widget_preview_income">#A4D397</color>
+    <color name="widget_preview_tile_1">@android:color/system_accent1_700</color>
+    <color name="widget_preview_tile_2">@android:color/system_accent2_700</color>
+    <color name="widget_preview_tile_3">@android:color/system_accent3_700</color>
+    <color name="widget_preview_tile_4">@android:color/system_accent1_600</color>
+    <color name="widget_preview_pill">@android:color/system_accent1_200</color>
+    <color name="widget_preview_pill_ink">@android:color/system_accent1_900</color>
 </resources>

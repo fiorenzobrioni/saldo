@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One category tile of the static grid preview. White on purpose: every tile
+    is the same shape tinted by the ImageView that draws it, so the mock costs
+    one drawable instead of one per colour.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFFFFFFF" />
+    <corners android:radius="10dp" />
+</shape>

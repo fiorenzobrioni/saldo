@@ -1,8 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Static preview for the widget picker: the fallback for devices below API 35
-    and for the window where the generated preview (published by WidgetPreviews)
-    has been dropped by an update or a reboot and not yet republished.
+    The widget picker's preview of the grid widget. Static and complete: the
+    picker never asks the app for anything, so a placed widget, an app update
+    and a reboot leave it exactly as it is (ADR 37).
+
+    A mock rather than the real thing. It draws the shape of the widget - the
+    expense/income selector over a grid of category tiles - with plain shapes:
+    no icons, no category names, no colours read from the database. The picker
+    is shown before a user's categories are known (and to users who have none),
+    so a stand-in is the honest thing to show, and it is the only kind of
+    preview that costs nothing to keep correct.
 
     Colors come from res/values(-night)/colors.xml, not from ?android:attr:
     a previewLayout is inflated with a plain application context, whose theme
@@ -10,10 +17,10 @@
     ink on a dark picker sheet. Resource qualifiers are resolved against the
     launcher's configuration and do follow its light/dark mode.
 
-    The mark is the launcher foreground vector, not the adaptive shortcut icon:
-    AppWidgetHostView renders AdaptiveIconDrawable unreliably in a previewLayout.
-    The foreground keeps its artwork inside the adaptive safe zone, hence the
-    56dp box for a ~40dp visible mark.
+    Only views RemoteViews accepts (LinearLayout, TextView, ImageView) and plain
+    shape drawables: the host inflates this the same way it inflates a widget,
+    and anything richer has already proved unreliable here once (adaptive icons
+    rendered as a full squircle on one button and as nothing on the other).
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -23,29 +30,123 @@
     android:orientation="vertical"
     android:padding="12dp">
 
-    <ImageView
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:contentDescription="@null"
-        android:src="@drawable/ic_launcher_foreground" />
-
-    <TextView
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:maxLines="1"
-        android:text="@string/widget_quick_add_label"
-        android:textColor="@color/widget_preview_ink"
-        android:textSize="13sp"
-        android:textStyle="bold" />
+        android:layout_marginBottom="10dp"
+        android:orientation="horizontal">
 
-    <TextView
-        android:layout_width="wrap_content"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_preview_pill"
+            android:maxLines="1"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="4dp"
+            android:text="@string/widget_quick_add_expense"
+            android:textColor="@color/widget_preview_pill_ink"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:maxLines="1"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="4dp"
+            android:text="@string/widget_quick_add_income"
+            android:textColor="@color/widget_preview_ink_muted"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:gravity="center"
-        android:maxLines="2"
-        android:text="@string/widget_quick_add_description"
-        android:textColor="@color/widget_preview_ink_muted"
-        android:textSize="11sp" />
+        android:layout_marginBottom="8dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_preview_tile"
+            android:tint="@color/widget_preview_tile_1" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_preview_tile"
+            android:tint="@color/widget_preview_tile_2" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_preview_tile"
+            android:tint="@color/widget_preview_tile_3" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_weight="1"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_preview_tile"
+            android:tint="@color/widget_preview_tile_4" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_preview_tile"
+            android:tint="@color/widget_preview_tile_3" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_preview_tile"
+            android:tint="@color/widget_preview_tile_4" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_preview_tile"
+            android:tint="@color/widget_preview_tile_1" />
+
+        <ImageView
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_weight="1"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_preview_tile"
+            android:tint="@color/widget_preview_tile_2" />
+    </LinearLayout>
 </LinearLayout>

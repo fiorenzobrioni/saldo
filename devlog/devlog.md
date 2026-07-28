@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-28 - Fase 11.1: anteprime del picker statiche, residuo a zero
+
+**Fatto:** dalla prova sul launcher e emerso che le card del picker mostravano le anteprime **generate** (`setWidgetPreviews`, API 35): categorie reali dell'utente, ma tile senza icone e bottoni della barra con i glifi mancanti. Rimosso l'intero percorso generato: `WidgetPreviews` e il suo `WidgetPreviewWorker`, la chiamata in `SaldoApplication.onCreate`, gli override `previewSizeMode` e `providePreview` dei due widget, `provideQuickAddPreview`, i bucket `PreviewBucket`/`PreviewRowBucket` e `WidgetEntryPoint.userPreferences()`, rimasto senza chiamanti. Il picker torna al solo `previewLayout`, e quello della griglia e stato ridisegnato come mock statico: selettore Spesa/Entrata piu due file di quattro tile arrotondate, quattro tinte dai token `system_accent*` con variante `values-night`. Nessuna icona, nessun nome di categoria, niente letto dal database. Bump a versionCode 152, versionName fermo a 1.0.0.
+
+**Decisioni:** scelta utente fra quattro alternative, presa quella che azzera il costo e tiene un'anteprima somigliante. La ragione tecnica per cui il percorso generato non era sanabile a buon mercato: l'anteprima non e una risorsa dell'app ma stato tenuto da `system_server`, che la butta via a ogni aggiornamento in place e a ogni riavvio, mentre `setWidgetPreview` accetta circa due chiamate l'ora per provider. Da qui il check al cold start, la lettura del DB per comporla e il worker di retry, cioe tutto cio che l'ADR 37 aveva dovuto ammettere come "unico residuo": ora quel residuo non c'e piu e il punto (a) dell'ADR e stato riscritto di conseguenza. Il mock e volutamente povero di elementi: il picker inflaziona il `previewLayout` come RemoteViews, e le due volte in cui questa superficie ha sbagliato a disegnare era per un drawable troppo furbo (adaptive icon), quindi shape drawable e viste dell'allow-list e nient'altro. Le anteprime generate gia pubblicate sul device spariscono da sole al primo aggiornamento: azzerando `generatedPreviewCategories`, il sistema fa ricadere il launcher sul `previewLayout`.
+
+**Problemi:** nessuno. Da sapere: l'anteprima della griglia ora e dichiaratamente un segnaposto e non mostra le categorie vere, il che e anche l'unica scelta onesta per una card che il sistema disegna prima che un utente esista.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` in locale. Su device restano da confermare le due card del picker in chiaro e scuro e la sparizione delle vecchie anteprime dopo l'aggiornamento (checklist della Fase 11.1).
+
+**Prossimo:** checklist di verifica su device, poi il tag `v1.0.0`.
+
+---
+
 ## 2026-07-28 - Riga di copyright nella schermata Informazioni
 
 **Fatto:** sotto "Sviluppata da Callback Dev" compare `© 2026 Fiorenzo Brioni`, come nell'About di Snake (l'altro progetto Android dello stesso autore). Nuova stringa `about_copyright` in `values/strings.xml` con `translatable="false"`, `bodySmall` in `onSurfaceVariant` dentro `AppIdentity`, due dp di spazio sopra: sta sotto la riga dell'autore come una didascalia, senza contendere gerarchia al nome dell'app.
