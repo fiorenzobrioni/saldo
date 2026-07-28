@@ -195,7 +195,7 @@
 - [x] Revisione completa stringhe IT + EN (IT: entità uniformata su "conto/conti" al posto del misto account/conto; EN: uniformata su "transaction" al posto del misto movement/transaction; parità chiavi verificata, nessuna stringa hardcoded)
 - [x] Pass di accessibilità: contentDescription verificate su tutti gli interattivi a sola icona; riassunti TalkBack sui 4 grafici Vico (canvas muto); CTA editor/onboarding a `heightIn(min)` per il font scaling; spese/entrate distinte da segno esplicito (`formatSigned`) oltre che dal colore; righe cliccabili con merge semantico automatico. Verifica manuale TalkBack/200% su device: pending (nessun emulatore in questo ambiente)
 - [x] Empty state e stati di errore su tutte le schermate (audit: empty/loading già coperti ovunque; aggiunta gestione errori di scrittura con snackbar a conti (archivia/elimina/rettifica), registro (elimina/undo), da confermare (conferma/salta) e riordino categorie, che prima potevano crashare su un errore Room)
-- [x] Performance: registro appiattito in item lazy per riga (prima un item monolitico per giorno) con key e contentType stabili su header/righe/spaziatori, così con migliaia di record compongono e riciclano solo le righe visibili; l'aspetto a card raggruppata è preservato con forme a segmento. Paging3 non introdotto: il motore filtri e la ricerca full-text sono in-memory per design (un solo code path), da rivalutare solo se una misurazione su device con migliaia di record mostrasse problemi. Baseline profile spostato nella fase di release (Fase 11.5, e da li rinviato alla Fase 15: richiede modulo macrobenchmark e run su device, non disponibile in questo ambiente)
+- [x] Performance: registro appiattito in item lazy per riga (prima un item monolitico per giorno) con key e contentType stabili su header/righe/spaziatori, così con migliaia di record compongono e riciclano solo le righe visibili; l'aspetto a card raggruppata è preservato con forme a segmento. Paging3 non introdotto: il motore filtri e la ricerca full-text sono in-memory per design (un solo code path), da rivalutare solo se una misurazione su device con migliaia di record mostrasse problemi. Baseline profile spostato nella fase di release (Fase 11.5, e da li rinviato alla Fase 23: richiede modulo macrobenchmark e run su device, non disponibile in questo ambiente)
 
 ## Fase 9.5 - Budget, spendibile oggi e dashboard configurabile (anticipata alla v1.0)
 
@@ -673,7 +673,7 @@
 
 ## Fase 11.5 - Release v1.0 (pubblicazione su GitHub)
 
-> Chiusura della roadmap v1.0. Il canale e una release su GitHub con l'APK di debug allegato, non il Play Store (ADR 38): non c'e un account sviluppatore e il repository e la vetrina del progetto. I passi Play Store non sono cancellati, sono nella Fase 15 come strada alternativa della release v2.0.
+> Chiusura della roadmap v1.0. Il canale e una release su GitHub con l'APK di debug allegato, non il Play Store (ADR 38): non c'e un account sviluppatore e il repository e la vetrina del progetto. I passi Play Store non sono cancellati, sono nella Fase 23 come strada alternativa della release v2.0.
 
 **Preparazione**
 
@@ -709,33 +709,35 @@
 
 - [x] Obiettivi di risparmio (target, progressi, suggerimento mensile) - la primitiva di alimentazione esiste già: i trasferimenti ricorrenti verso conti `SAVINGS` (Fase 9.15/ADR 24), da cui deriva "Risparmio pianificato". Implementati nella Fase 10.0 (ADR 25)
 - [x] Recap mensile condivisibile stile "Wrapped" (promosso da Note e appunti): implementato nella Fase 10.1 (ADR 28)
-- [ ] Rilevamento automatico ricorrenze (promosso da Note e appunti): euristica on-device che nota spese simili ripetute a cadenza regolare e propone la regola dall'hub Ricorrenze; nessun dato lascia il device
+- [ ] Rilevamento automatico ricorrenze (promosso da Note e appunti): euristica on-device che nota spese simili ripetute a cadenza regolare e propone la regola dall'hub Ricorrenze; nessun dato lascia il device - dettaglio nella Fase 19
 - [x] Proiezione saldo a fine mese: forecast del saldo totale da ricorrenze in arrivo + media della spesa giornaliera del mese, mostrata come coda tratteggiata della sparkline; sempre indicata come stima. Implementata nella Fase 10.4 (ADR 30) con un calcolatore dedicato (`BalanceForecastCalculator`, gemello di `UpcomingChargesCalculator` esteso alle entrate fisse)
-- [ ] Gestione tag dedicata: schermata CRUD (rinomina, unione, eliminazione con conferma) per i tag, che oggi si creano inline ma non si amministrano; gap emerso dalla review di luglio 2026
+- [ ] Gestione tag dedicata: schermata CRUD (rinomina, unione, eliminazione con conferma) per i tag, che oggi si creano inline ma non si amministrano; gap emerso dalla review di luglio 2026 - dettaglio nella Fase 16
 - [ ] Ricerca potenziata con suggerimenti: chip di categorie, tag e descrizioni frequenti proposte sotto il campo di ricerca del registro, per arrivare al filtro giusto senza digitare
 - [x] Prestiti e finanziamenti come tipo di conto (residuo, rate mancanti, rata come trasferimento ricorrente) - approvato a luglio 2026, implementato nella Fase 11 (ADR 33)
 - [ ] Crediti e debiti verso persone (saldo per controparte, rientri parziali) - approvato a luglio 2026, dettaglio nella Fase 12 (ADR 34)
 - [ ] Movimenti futuri, scadenze una tantum e stime allineate (elenco "In arrivo", promemoria, forecast che conta ciò che è certo) - approvato a luglio 2026, dettaglio nella Fase 13 (ADR 36)
 - [ ] Allegati ai movimenti (foto dello scontrino, backup a zip) - approvato a luglio 2026, dettaglio nella Fase 14 (ADR 35)
 - [x] PIN lock + biometria (`BiometricPrompt`) + `FLAG_SECURE` opzionale - implementato nella Fase 14.5 (ADR 39)
-- [ ] Export Excel (.xlsx)
-- [ ] Export Google Sheets (nuovo foglio o aggiornamento foglio esistente; richiede verifica OAuth Google per lo scope "sensitive" `spreadsheets` - avviare la review per tempo)
+- [ ] Export Excel (.xlsx) - dettaglio nella Fase 21
+- [ ] Export Google Sheets (nuovo foglio o aggiornamento foglio esistente; richiede verifica OAuth Google per lo scope "sensitive" `spreadsheets` - avviare la review per tempo) - dettaglio nella Fase 21
 - [ ] Miglioramenti UX dal feedback della v1.0
-- [ ] Conversione valuta automatica (provider tassi, cache offline, indicazione "stimato")
-- [ ] Export PDF report con grafici
-- [ ] Cifratura backup con passphrase
-- [ ] Rimborsi collegati alla spesa originale
-- [ ] Commissioni sui trasferimenti
-- [ ] Analisi avanzate (anno su anno, pattern di spesa)
-- [ ] Valutare: sottocategorie, periodo budget personalizzato
+- [ ] Conversione valuta automatica (provider tassi, cache offline, indicazione "stimato") - dettaglio nella Fase 17
+- [ ] Export PDF report con grafici - dettaglio nella Fase 21
+- [ ] Cifratura backup con passphrase - dettaglio nella Fase 22
+- [ ] Rimborsi collegati alla spesa originale - dettaglio nella Fase 15
+- [ ] Commissioni sui trasferimenti - dettaglio nella Fase 18
+- [ ] Analisi avanzate (anno su anno, pattern di spesa) - dettaglio nella Fase 20
+- [ ] Valutare: sottocategorie (coperte dai tag, non si implementano senza rivedere la decisione di VISION). Il periodo di budget personalizzato non e piu solo da valutare: promosso alla Roadmap v3.0 (Fase 24)
 
 # Fasi da implementare (roadmap v2.0)
 
-> Le tre fasi rimaste delle quattro approvate a luglio 2026 dopo la review delle funzionalita finanziarie ([docs/review-funzionalita-finanziarie.md](./docs/review-funzionalita-finanziarie.md)), che rivede due decisioni precedenti (prestiti come sola categoria nella Fase 9.13; allegati esclusi in VISION per l'assenza di una libreria di image loading). La prima, la Fase 11, e stata implementata prima della v1.0. Design: ADR 34, 35, 36.
+> Le Fasi 12-14 sono le tre rimaste delle quattro approvate a luglio 2026 dopo la review delle funzionalita finanziarie ([docs/review-funzionalita-finanziarie-2026-07-27.md](./docs/review-funzionalita-finanziarie-2026-07-27.md)), che rivede due decisioni precedenti (prestiti come sola categoria nella Fase 9.13; allegati esclusi in VISION per l'assenza di una libreria di image loading). La prima, la Fase 11, e stata implementata prima della v1.0. Design: ADR 34, 35, 36.
 >
-> Ordine di esecuzione: 12 aggiunge risposte senza aggiungere meccaniche di denaro e riusa modelli gia in casa; 13 costa poco e chiude un'asimmetria trovata dalla review; 14 va per ultima perche e l'unica che tocca il formato di backup. La Fase cloud resta da valutare e non blocca la release; la Fase 15 e sempre l'ultima, e le fasi eventualmente approvate in futuro si inseriscono prima di lei.
+> Le Fasi 15-22 completano lo smistamento della stessa review, deciso il 28 luglio 2026: sono i candidati della tabella gia presenti nel backlog della Roadmap v2.0, promossi a fasi dettagliate. Non hanno ancora un ADR: ogni fase elenca le decisioni di design da proporre come ADR all'avvio, prima dell'implementazione. I candidati restanti della review sono pianificati nella Roadmap v3.0 (Fasi 24-29), dopo la fase di release.
 >
-> Restano deliberatamente fuori (valutate e scartate nella stessa sessione): la **riconciliazione con flag "spuntato" per movimento** (richiede una colonna, una modalita dedicata e un'abitudine che l'utente tipo non ha; la rettifica saldo continua a coprire il riallineamento) e i **conti "bene" non transazionali** per immobili o portafogli valorizzati a mano (poco codice ma rompono la semantica di Account, "il luogo dove si trovano i soldi", e si infilerebbero in ogni picker di conto degli editor).
+> Ordine di esecuzione, col criterio della review (prima cio che aggiunge risposte senza meccaniche di denaro nuove, poi cio che chiude un'asimmetria del modello, poi cio che sblocca piu superfici insieme): 12 aggiunge risposte e riusa modelli gia in casa; 13 costa poco e chiude un'asimmetria trovata dalla review; 14 tocca il formato di backup; 15 e 16 chiudono asimmetrie a costo contenuto; 17 e il gap strutturale che sblocca piu schermate insieme; 18 chiude l'ultima asimmetria del modello; 19 e 20 costruiscono analisi sopra superfici esistenti; 21 aggiunge formati di export; 22 avvolge il backup e va dopo la 14, che ne definisce il formato zip. La Fase cloud resta da valutare e non blocca la release; la Fase 23 e sempre l'ultima della roadmap v2.0, e le fasi eventualmente approvate in futuro si inseriscono prima di lei.
+>
+> Restano deliberatamente fuori (valutate e scartate): la **riconciliazione con flag "spuntato" per movimento** (richiede una colonna, una modalita dedicata e un'abitudine che l'utente tipo non ha; la rettifica saldo continua a coprire il riallineamento), i **conti "bene" non transazionali** per immobili o portafogli valorizzati a mano (poco codice ma rompono la semantica di Account, "il luogo dove si trovano i soldi", e si infilerebbero in ogni picker di conto degli editor), piu i due candidati che la review stessa chiude: il **beneficiario/payee come entita** (coperto da descrizione, ricerca full-text e tag; raddoppierebbe i selettori dell'editor senza una richiesta reale) e le **sottocategorie** (coperte dai tag, rinviate per scelta in VISION: non si implementano senza rivedere quella decisione).
 
 ## Fase 12 - Crediti e debiti verso persone
 
@@ -790,6 +792,102 @@
 - [x] Stringhe IT/EN; unit test: round-trip e reiezione del `PinHasher`, state machine e cooldown (raddoppio, tetto, deadline persistita oltre la morte del processo) dell'`AppLockManager`, `ForegroundTracker` (config change, multi-activity), flussi del `SecurityViewModel` (crea/conferma, mismatch, disable con verifica, cambio PIN), `LockViewModel` (auto-submit, countdown), erase-all che spazza il lock
 - [x] Verifica su device: setup e sblocco PIN, biometria (auto-launch e rilancio), cooldown, re-lock secondo timeout, rotazione senza re-lock, FLAG_SECURE su recenti e screenshot, sheet del widget bloccata, erase-all che rimuove il lock, TalkBack sul lock screen (verificata il 2026-07-28)
 
+## Fase 15 - Rimborsi collegati alla spesa originale
+
+> Dalla review delle funzionalita finanziarie (riga 5 della tabella; limite 3). Il flag rimborso esistente riduce la spesa della categoria scelta al momento del rimborso, nel mese del rimborso: un rimborso che arriva il mese dopo alleggerisce il mese sbagliato, e nulla garantisce che la categoria sia quella della spesa originale. La fase collega il rimborso alla spesa che compensa, cosi la spesa risulta ridotta nel proprio mese e nella propria categoria. Il flag semplice resta e mantiene il comportamento attuale per i rimborsi non collegati. ADR da proporre all'avvio: il punto critico e l'attribuzione temporale nelle query statistiche.
+
+- [ ] Colonna `refundOfTransactionId` (nullable, FK verso `transactions` con `ON DELETE SET NULL`) su `transactions`, dominio, mapper e backup (campo additivo, versione del backup invariata). Migration forward reale con bump di `SALDO_DATABASE_VERSION`, coperta da `MigrationsTest` e `MigrationChainTest` (ADR 26: niente collasso del baseline)
+- [ ] Editor movimento: con il flag rimborso attivo, selettore opzionale "Spesa da compensare" (picker delle spese recenti con ricerca); alla selezione la categoria si allinea a quella della spesa originale. Il collegamento e opzionale: senza, il flag continua a funzionare come oggi (stessa categoria, mese del rimborso)
+- [ ] Semantica statistiche del rimborso collegato: riduce la spesa nel mese e nella categoria della spesa originale, non in quelli del rimborso. Da decidere nell'ADR come le query aggregate attribuiscono il rimborso al periodo della spesa collegata (join sulla data della spesa madre) senza toccare il caso non collegato, e con quale impatto su budget, spendibile e drill-down: le cifre affiancate devono continuare a raccontare la stessa storia
+- [ ] Validazione soft: avviso se il rimborso supera la spesa collegata o se le valute differiscono, senza blocco (piu rimborsi parziali sulla stessa spesa sono legittimi)
+- [ ] Spesa eliminata: la FK degrada il collegamento a null e il rimborso torna al comportamento del flag semplice, senza errori ne orfani
+- [ ] Superficie: l'editor della spesa elenca i rimborsi collegati ricevuti (con importo netto residuo); indicatore non invasivo sulla riga del registro, come quello dei movimenti da ricorrenza (Fase 10.5)
+- [ ] Il caso limite gia gestito resta garantito da test: mese di soli rimborsi in una categoria (fetta negativa filtrata dall'anello, budget a zero e mai sotto zero)
+- [ ] Stringhe IT/EN; unit test: rimborso a cavallo di due mesi attribuito al mese della spesa, categoria allineata, rimborsi parziali multipli, collegamento decaduto, drill-down coerente, round-trip backup, dirty detection
+
+## Fase 16 - Gestione tag dedicata
+
+> Dalla review (riga 6; limite 10). I tag si creano inline e si filtrano, ma non si rinominano, non si uniscono e non si eliminano: un limite che pesa di piu ora che tracciano convenzioni leggere (spese rimborsabili, gruppi di movimenti). Nessun cambio di schema: tabella tag e cross-ref esistono dalla Fase 1, tutte le operazioni sono transazioni sul dato esistente.
+
+- [ ] Schermata "Tag" in Impostazioni > Gestione (accanto a Budget e Obiettivi): lista con conteggio dei movimenti per tag (nuova query aggregata di sola lettura), ordinamento per uso o alfabetico, ricerca in testa quando i tag sono molti
+- [ ] Rinomina con normalizzazione e controllo collisione: rinominare verso un nome gia esistente propone l'unione invece di creare un duplicato
+- [ ] Unione di due o piu tag: le cross-ref del tag sorgente passano al tag di destinazione con dedup (un movimento che li aveva entrambi non deve avere la riga doppia), il tag sorgente si elimina, tutto in un'unica transazione
+- [ ] Eliminazione con conferma esplicita: rimuove il tag e le sue cross-ref, i movimenti restano intatti. Dialog, non undo: unione ed eliminazione toccano molte righe e un ripristino parziale mentirebbe (stesso ragionamento del dialog delle regole ricorrenti, Fase 10.13)
+- [ ] Filtri attivi del registro: rinomina e unione non lasciano chip orfani (il filtro e per id, quindi la rinomina e trasparente; l'unione rimappa o rimuove il chip del tag assorbito)
+- [ ] Stringhe IT/EN; unit test: merge con dedup, rinomina con collisione, eliminazione che preserva i movimenti, conteggi per tag, rimappatura del filtro attivo
+
+## Fase 17 - Multi-valuta con conversione automatica
+
+> Dalla review (riga 7; limiti 1 e 2): il gap strutturale piu grande, ogni aggregato e mono-valuta e un conto in valuta estera non entra mai in una somma. VISION la prevede dal principio ("Conversione automatica (FUTURE, v2.0)": tassi aggiornati con cache offline, controvalore nella valuta principale ovunque, sempre indicato come stimato). E l'unica fase che porta la rete fuori dal perimetro backup/export: l'ADR da proporre all'avvio rivede quel confine e fissa provider, cadenza, cache e comportamento offline.
+
+- [ ] ADR da proporre: provider dei tassi senza account ne chiave API (candidato: feed pubblico BCE), cadenza di aggiornamento (giornaliera agganciata al worker esistente o al bisogno), persistenza della cache offline (tabella o DataStore, sempre con la data del tasso), comportamento senza rete (ultimo tasso noto con la sua data, mai un blocco), tasso corrente o storico per gli aggregati (le serie storiche sono un costo molto diverso e vanno decise, non subite)
+- [ ] I movimenti non si riscrivono mai: importo e valuta originali restano la fonte di verita, il controvalore e solo presentazione e aggregazione. Il tasso implicito registrato nei trasferimenti cross-currency resta il dato reale e non viene toccato
+- [ ] Ogni controvalore e marcato come stimato, nel formato gia scritto in VISION: "125,00 USD ≈ 115,30 € (tasso del 02/07, stimato)"; stesso linguaggio della pill di forecast (il tratteggio e il "≈" significano stima in tutta l'app)
+- [ ] Aritmetica nel dominio: tassi come `BigDecimal` con scala e arrotondamento dichiarati al punto di chiamata, mai float; conversione centralizzata in un unico converter/use case testabile
+- [ ] Superfici da sbloccare: saldo totale (i conti non primari entrano nella somma col controvalore; l'attenuazione della Fase 9.8 lascia il posto all'indicazione di stima), card Oggi e Mese, statistiche (la riga informativa della Fase 10.16 diventa "convertiti al tasso del giorno X" e il drill-down "Altre valute" resta), budget e spendibile oggi, obiettivi su conti in valuta
+- [ ] Chiusura del limite 2 della review (verificato nel codice a luglio 2026): i budget in valuta diversa dalla principale spariscono dalla schermata Budget senza spiegazione quando la valuta principale cambia; il filtro e documentato solo nel codice e nell'hint dell'editor. Con la conversione i budget restano visibili col controvalore; se la fase slittasse, valutare nel frattempo una riga informativa nella schermata Budget sul modello della Fase 10.16
+- [ ] Preferenza per disattivare la conversione (torna il comportamento attuale): l'app resta pienamente usabile per chi non vuole traffico di rete, offline-first non si negozia
+- [ ] Cache dei tassi nel backup: da decidere nell'ADR (e ricostruibile, candidata a restare fuori)
+- [ ] Stringhe IT/EN; unit test: conversione con scala per valuta, aggregati misti, fallback offline con data del tasso, disattivazione, caso mono-valuta invariato per costruzione
+
+## Fase 18 - Commissioni sui trasferimenti
+
+> Dalla review (riga 8; limite 11). La fee di un prelievo o di un bonifico oggi costringe a due inserimenti per un'operazione sola: la scelta era gia in VISION e la fase la rivede solo sul piano UX (un'operazione, un inserimento), non sul piano contabile. La commissione resta una spesa vera: conta nelle statistiche e nel budget, mentre il trasferimento resta escluso (ADR 8). ADR da proporre all'avvio.
+
+- [ ] ADR da proporre fra due strade: (a) campo fee sul record del trasferimento, che costringerebbe ogni query statistica a leggere anche i trasferimenti; (b) spesa `EXPENSE` separata generata dall'editor nella stessa transazione, collegata al trasferimento con un campo dedicato (FK `ON DELETE SET NULL`), che lascia intatte tutte le query esistenti. La (b) e la candidata: rispetta ADR 2 (trasferimento = record unico) e ADR 8 senza toccare le aggregazioni
+- [ ] Editor trasferimento: campo opzionale "Commissione" (stesso tastierino), a carico del conto sorgente e nella sua valuta; categoria della fee preassegnata e modificabile (decidere se introdurre una categoria seed "Commissioni bancarie" con backfill, come per "Prestiti & Finanziamenti" nella Fase 9.13, o riusare una categoria esistente)
+- [ ] Saldi: il conto sorgente perde importo piu commissione, la destinazione riceve solo l'importo (o la seconda gamba nei cross-currency); la commissione non entra mai nella gamba di destinazione
+- [ ] Modifica ed eliminazione coerenti: eliminare il trasferimento propone di eliminare anche la fee collegata; la fee resta comunque un movimento a se, visibile e modificabile nel registro; l'undo cross-screen ripristina la coppia
+- [ ] Ricorrenze: valutare la fee anche sulle regole di trasferimento ricorrente (bonifico mensile con commissione fissa); se rinviata, dichiararlo nella fase invece di lasciarla cadere
+- [ ] Il caso primario e il prelievo bancomat con fee: trasferimento conto -> contanti piu commissione in un solo inserimento
+- [ ] Stringhe IT/EN; unit test: saldi con fee, fee dentro statistiche e budget col trasferimento fuori, eliminazione della coppia, cross-currency, round-trip backup del collegamento, dirty detection
+
+## Fase 19 - Rilevamento automatico delle ricorrenze
+
+> Dalla review (riga 12), gia in Roadmap v2.0. Euristica interamente on-device che nota spese simili a cadenza regolare e propone la regola dall'hub Ricorrenze: nessun dato lascia il device. Nessun lavoro a riposo, nello spirito dell'ADR 37: l'euristica gira solo quando la superficie che la mostra viene aperta.
+
+- [ ] Euristica pura nel dominio (`RecurrenceDetector`, use case testabile): raggruppa i movimenti confermati per descrizione normalizzata (stessa normalizzazione Unicode della ricerca) piu conto e categoria, importo uguale o con tolleranza percentuale (bollette variabili), cadenza regolare (settimanale, mensile, annuale) con tolleranza di qualche giorno e minimo tre occorrenze
+- [ ] Esclusioni: movimenti gia generati da una regola (`recurringRuleId`), trasferimenti e rettifiche, pending
+- [ ] Quando gira: al caricamento dell'hub Ricorrenze, on demand; mai in un worker ne all'avvio dell'app, chi non apre l'hub non paga nulla. Nessuna notifica per i suggerimenti
+- [ ] Superficie: sezione "Suggerimenti" nell'hub con card "Sembra un abbonamento: descrizione, importo ogni mese" e CTA che apre l'editor regola precompilato (tipo, importo, frequenza, giorno, conto, categoria); alla creazione la regola prende `startDate` dalla prossima occorrenza prevista e `lastGeneratedDate` coerente, cosi lo storico non viene mai rigenerato
+- [ ] Dismiss persistito per suggerimento (chiave stabile derivata dal gruppo, DataStore): un suggerimento scartato non riappare; una regola creata fa sparire il suggerimento per costruzione
+- [ ] Stringhe IT/EN; unit test: cadenza mensile con giorni sfalsati, mesi corti, tolleranza sugli importi, falsi positivi mai proposti (spese frequenti irregolari), esclusioni, dismiss, precompilazione senza rigenerazione dello storico
+
+## Fase 20 - Analisi avanzate (anno su anno e pattern)
+
+> Dalla review (riga 16), gia in Roadmap v2.0. Confronto tra periodi omologhi e regolarita individuate nello storico. Stessa semantica statistiche di sempre (ADR 8: TRANSFER/ADJUSTMENT/esclusi/pending mai contati, rimborsi a ridurre): le cifre nuove devono coincidere con quelle esistenti sui periodi comuni. Nessun cambio di schema, solo query aggregate nuove.
+
+- [ ] Confronto anno su anno nelle Statistiche: mese vs stesso mese dell'anno precedente e anno vs anno precedente, con delta totale e per categoria; le categorie nuove o sparite si mostrano con il loro delta, non si nascondono
+- [ ] Mese corrente confrontato allo stesso giorno del mese omologo (stessa regola della card mese della Dashboard): mai un mese parziale contro uno pieno
+- [ ] Grafico comparativo con colonne affiancate (Vico, come i cartesiani esistenti) e drill-down coerente con le altre superfici
+- [ ] Pattern di spesa sobri e spiegabili: media mensile per categoria sugli ultimi 12 mesi, mesi anomali segnalati con criterio dichiarato (scostamento dalla media con soglia esplicita), niente scatola nera; tutto calcolato nel dominio e testabile
+- [ ] Collocazione: sezione o tab "Confronto" dentro le Statistiche, non una schermata nuova di primo livello
+- [ ] Le nuove query rispettano il filtro sulla valuta principale e la riga informativa multi-valuta (Fase 10.16); se la Fase 17 e gia consegnata usano i controvalori, con la stessa indicazione di stima
+- [ ] Stringhe IT/EN; unit test: periodi omologhi (anni bisestili, mesi corti), delta con categorie asimmetriche, mese parziale allo stesso giorno, coincidenza con le cifre delle statistiche esistenti
+
+## Fase 21 - Export PDF, Excel e Google Sheets
+
+> Dalla review (riga 18), gia in Roadmap v2.0 in tre voci. Report formattati oltre al CSV, che resta la via universale (si apre gia in Excel e in Sheets). Google Sheets era stato rimandato dall'ADR 10: lo scope OAuth `spreadsheets` e "sensitive" e richiede la verifica Google, da avviare per tempo.
+
+- [ ] Export PDF: report del periodo (totali, spese per categoria, lista movimenti filtrata) generato on-device con `PdfDocument` di piattaforma, nessuna libreria nuova; rispetta i filtri attivi del registro come il CSV; condivisione via share sheet con il FileProvider esistente
+- [ ] Contenuto del PDF costruito da un builder puro e testabile (come il builder CSV), con il rendering separato dalla composizione dei dati
+- [ ] Export Excel (.xlsx): la dipendenza va decisa prima di implementare (Apache POI e fuori misura per un'app mobile; esistono writer leggeri xlsx-only, e ogni libreria nuova resta una decisione esplicita). Se nessuna libreria regge il vincolo, la voce si chiude motivando che il CSV con separatore configurabile copre gia Excel: la decisione va scritta, non lasciata cadere
+- [ ] Export Google Sheets: nuovo foglio o aggiornamento di uno esistente; Google Sign-In via Credential Manager, scope `spreadsheets`; avviare la verifica OAuth di Google con largo anticipo (ADR 10). La rete resta fuori dal percorso core: la voce e interamente opzionale e l'app non ne dipende
+- [ ] Stessa semantica dei dati dell'export CSV (filtri attivi, convenzione decimali, colonne); gli allegati (Fase 14) non entrano in nessun formato e la schermata di export lo dice
+- [ ] Stringhe IT/EN; unit test: builder PDF (totali, impaginazione, escaping), builder xlsx se adottato, mapping colonne coerente col CSV
+
+## Fase 22 - Cifratura del backup con passphrase
+
+> Dalla review (riga 22), gia in Roadmap v2.0. Il file di backup e in chiaro e la UI lo dichiara: la fase aggiunge una passphrase opzionale all'export. La cifratura avvolge il formato esistente, non lo riscrive: il code path unico JSON/zip (ADR 5, ADR 35) resta invariato. Va dopo la Fase 14, che definisce il formato zip degli allegati.
+
+- [ ] Contenitore cifrato: AES-GCM con chiave derivata dalla passphrase via PBKDF2-HMAC-SHA256 (stessa primitiva del PIN, Fase 14.5: salt casuale e iterazioni parametrizzate salvate nell'header), tutto con `javax.crypto` di piattaforma, nessuna dipendenza nuova. Header con marker e versione del contenitore, distinti dalla versione dello schema JSON
+- [ ] L'export chiede la passphrase (con doppia digitazione) solo se l'utente attiva la cifratura; dentro il contenitore viaggia esattamente il file che sarebbe uscito comunque (JSON nudo o zip con allegati)
+- [ ] Il restore riconosce il contenitore dal contenuto, non dall'estensione (come gia per lo zip), e chiede la passphrase; errori distinti e onesti: passphrase sbagliata (autenticazione GCM fallita), file corrotto, file estraneo
+- [ ] Nessun recupero della passphrase, e l'avvertenza lo dice prima di attivare la cifratura (app offline, stesso patto del PIN: chi la perde perde quel backup, mai i dati sul device)
+- [ ] Le avvertenze della schermata Dati si aggiornano: "file non cifrato" sparisce quando la cifratura e attiva; l'anteprima di ripristino funziona anche sul contenitore cifrato (si decifra prima di ispezionare, mai dopo aver sostituito i dati)
+- [ ] I backup non cifrati esistenti restano importabili per sempre; nessun obbligo di cifratura
+- [ ] Stringhe IT/EN; unit test: round-trip cifrato (JSON e zip), passphrase errata, contenitore corrotto, header versionato con iterazioni lette dall'header, il non cifrato importa come prima
+
 ## Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.
@@ -799,17 +897,17 @@
 - [ ] Backup automatico WorkManager (periodico, solo Wi-Fi, configurabile)
 - [ ] Restore guidato dal backup Drive (primo avvio e da impostazioni)
 
-## Fase 15 - Release v2.0
+## Fase 23 - Release v2.0
 
 > Ultima fase della roadmap, sempre in fondo: si chiude quando le fasi ancora aperte sono concluse. Due strade che non si escludono: la release su GitHub e la stessa procedura della v1.0 e si fa comunque, il Play Store si aggiunge solo se e quando ci sara un account sviluppatore. La strada B e la checklist Play Store della prima stesura del piano, rimessa qui invece di essere buttata via.
 
 **Comuni alle due strade**
 
-- [ ] Fasi 12, 13 e 14 completate (la Fase cloud e opzionale e non blocca la release)
+- [ ] Fasi da 12 a 22 completate (la Fase cloud e opzionale e non blocca la release)
 - [ ] Baseline profile, rimandato dalla v1.0: modulo `:macrobenchmark`, generazione su device o emulatore, misura del guadagno al primo avvio
 - [ ] QA manuale end-to-end con la checklist della v1.0 estesa alle funzionalita nuove
-- [ ] Migration test strumentati su device dalla v1 alla versione corrente: le Fasi 12 e 14 introducono migration reali con bump di `SALDO_DATABASE_VERSION` (ADR 26)
-- [ ] Compatibilita all'indietro del backup: ripristino di un file esportato dalla 1.0 su un'installazione 2.0, allegati e zip compresi (ADR 35)
+- [ ] Migration test strumentati su device dalla v1 alla versione corrente: le Fasi 12, 14 e 15 introducono migration reali con bump di `SALDO_DATABASE_VERSION` (ADR 26)
+- [ ] Compatibilita all'indietro del backup: ripristino di un file esportato dalla 1.0 su un'installazione 2.0, allegati e zip compresi (ADR 35), piu un round-trip del contenitore cifrato (Fase 22)
 - [ ] Test su device reali: API 33 e ultimo Android stabile, piu tablet o schermo grande
 - [ ] `versionCode` +1 e `versionName` 2.0.0
 - [ ] Note di rilascio in `docs/release-notes/v2.0.0.md`, con una sezione "cosa cambia dalla 1.0"
@@ -834,6 +932,81 @@
 - [ ] targetSdk conforme alla policy annuale di Google Play al momento della pubblicazione: l'aggiornamento e una chore dedicata e testata, non un'improvvisazione a ridosso della release (ADR 14)
 - [ ] Internal testing -> closed testing -> produzione, con rollout graduale
 - [ ] Rapporto tra i due canali dichiarato nelle note di rilascio: l'APK di GitHub e firmato con un certificato diverso da quello del Play Store, quindi le due installazioni non si aggiornano a vicenda e passare da una all'altra richiede disinstallare (con un backup prima)
+
+---
+
+# Roadmap v3.0
+
+> Candidati della review delle funzionalita finanziarie ([docs/review-funzionalita-finanziarie-2026-07-27.md](./docs/review-funzionalita-finanziarie-2026-07-27.md)) promossi a fasi dettagliate il 28 luglio 2026 e collocati, per decisione esplicita, dopo la release v2.0: si dettagliano ora per non perdere le note della review, si eseguono dopo la Fase 23. L'ordine segue il criterio della review (prima cio che chiude asimmetrie del modello a costo contenuto, poi le estensioni che aprono comportamenti nuovi). Nessuna di queste fasi ha ancora un ADR: ogni fase elenca le decisioni da proporre come ADR all'avvio. La fase di release v3.0 si definira alla chiusura di queste, con la stessa procedura della Fase 23.
+>
+> Restano esclusi anche da questa roadmap, come raccomanda la review stessa: il beneficiario/payee come entita separata (coperto da descrizione, ricerca full-text e tag) e le sottocategorie (coperte dai tag, rinviate per scelta in VISION).
+
+## Fase 24 - Budget con periodo personalizzato e riporto
+
+> Dalla review (riga 9; limite 7). Il budget e solo il mese di calendario: nessun periodo "dal 27 al 27", nessun budget settimanale o annuale, nessun riporto del residuo. VISION prevede gia il periodo configurabile come evoluzione ("dal 27 al 27 per chi ragiona per stipendio").
+
+- [ ] Periodo per budget: mese di calendario (default, comportamento attuale), mese ancorato a un giorno ("dal 27 al 27"), da valutare settimana e anno; colonne additive su `budgets` (tipo di periodo, giorno di ancoraggio) con migration forward reale e bump di `SALDO_DATABASE_VERSION` (ADR 26), campo additivo nel backup
+- [ ] `BudgetPeriodCalculator` puro (stampo di `BillingCycleCalculator`): finestre `[start, end)` con clamp dei mesi corti (ancore 29-31), usato da progressi, soglie, notifiche e spendibile; `MonthWindows` resta il caso particolare del default
+- [ ] Riporto del residuo opzionale per budget: il residuo del periodo chiuso si somma al tetto del periodo corrente. Da decidere nell'ADR: se si riporta anche il residuo negativo (sforare a gennaio riduce febbraio), e da quale ancora si calcola (il riporto ricorsivo su tutta la storia va bene finche e deterministico e testato; in alternativa un watermark, mai un valore denormalizzato senza necessita)
+- [ ] Spendibile oggi e notifiche di soglia seguono il periodo del budget complessivo; i watermark delle notifiche diventano per periodo, non per mese di calendario
+- [ ] Card e schermata Budget mostrano l'intervallo attivo quando non e il mese di calendario; `InfoBanner` dell'editor budget aggiornato (oggi dichiara "mese di calendario")
+- [ ] Stringhe IT/EN; unit test: finestre con ancore 29/30/31 e febbraio, riporto positivo/negativo/disattivato, watermark per periodo, spendibile con periodo custom, round-trip backup
+
+## Fase 25 - Acquisti a rate e numero di ripetizioni
+
+> Dalla review (riga 10; limite 6). Esiste solo `endDate`, mentre VISION cita anche "data di fine opzionale (o numero di ripetizioni)": per un acquisto in 12 rate l'utente deve calcolarsi la data di fine e l'hub non sa dire quante rate mancano. Con la Fase 11 il conteggio rate esiste come stima derivata sul conto prestito; qui diventa esatto sulla regola.
+
+- [ ] Campo `totalOccurrences` (nullable) su `RecurringRuleEntity`, dominio, mapper e backup (additivo); migration forward con bump (ADR 26). Nell'editor la fine della regola diventa una scelta a tre: per sempre, fino a una data, per N ripetizioni (le ultime due mutuamente esclusive)
+- [ ] Contatore di occorrenze generate sulla regola (`generatedCount`), aggiornato con UPDATE mirato nella stessa transazione della generazione (pattern watermark dell'ADR 20: mai un count sui movimenti, che l'utente puo eliminare); il motore si spegne alla N-esima occorrenza e il catch-up non la supera mai
+- [ ] Hub e card: "rata 3 di 12" sulla riga della regola, con prossima data e rate mancanti; la regola esaurita esce dalle cifre mensili (`runsInMonthOf`) e viene mostrata come conclusa, non nascosta
+- [ ] Integrazione con la Fase 11: se la rata di un prestito ha N ripetizioni, la scheda del conto prestito mostra il conteggio esatto della regola al posto della stima `ceil(residuo / rata)`, che resta il fallback
+- [ ] Modifica di N a regola avviata: validata contro le occorrenze gia generate (N minore o uguale alle generate = regola conclusa, dichiarato nell'editor)
+- [ ] Stringhe IT/EN; unit test: spegnimento esatto alla N-esima, catch-up multi-occorrenza che si ferma al tetto, idempotenza del contatore, modifica di N, "x di N" nell'hub, round-trip backup
+
+## Fase 26 - Spesa divisa su piu categorie (split)
+
+> Dalla review (riga 11; limite 8). Lo scontrino misto (spesa alimentare piu casalinghi) oggi si registra come due movimenti separati, e il totale dello scontrino non esiste da nessuna parte. ADR da proporre all'avvio: e la fase che tocca piu query aggregate.
+
+- [ ] ADR da proporre: il candidato e una tabella `transaction_splits` (id, `transactionId` FK `ON DELETE CASCADE`, `categoryId`, `amountMinor`): il movimento resta uno (il saldo del conto vede il totale dello scontrino, che finalmente esiste) e le fette sono attribuzioni statistiche. L'alternativa dei movimenti figli duplicherebbe il denaro o complicherebbe i saldi
+- [ ] Vincolo di integrita applicativo: la somma delle fette e sempre uguale all'importo del movimento (validata al salvataggio, con resto auto-calcolato nell'editor); un movimento senza fette continua a usare la propria categoria, nessun backfill
+- [ ] Editor: azione "Dividi in piu categorie" che apre righe categoria piu importo (stesso tastierino), con resto vivo e ultimo campo completabile in automatico
+- [ ] Query statistiche e budget: le aggregazioni per categoria leggono le fette quando esistono e la categoria del movimento altrimenti, a livello di query e non di filtro UI (ADR 8); drill-down per categoria che mostra i movimenti splittati con la quota di pertinenza; nessun doppio conteggio per costruzione
+- [ ] Registro: riga col totale e indicatore split; il filtro per categoria trova i movimenti che la contengono in una fetta
+- [ ] Eliminazione categoria con riassegnazione: le fette seguono la stessa riassegnazione dei movimenti (Fase 4 e fix della Fase 10.14)
+- [ ] Migration forward con bump (ADR 26), backup additivo (lista di fette per movimento); export CSV: decidere la rappresentazione (una riga per fetta o colonna aggiuntiva) e dichiararla nella schermata
+- [ ] Stringhe IT/EN; unit test pesanti su statistiche e budget (fette vs categoria del movimento, mai doppio conteggio), somma vincolata, riassegnazione, round-trip backup, import CSV invariato per il caso semplice
+
+## Fase 27 - Pagamento parziale dell'estratto carta
+
+> Dalla review (riga 13; limite 5). `SettleCreditCardStatementUseCase` genera un trasferimento per l'intero ciclo e avanza il watermark: il pagamento parziale, il saldo minimo e la carta revolving non sono modellati, chi paga a rate inserisce i trasferimenti a mano mentre la CTA continua a proporre l'estratto pieno.
+
+- [ ] `SettleCreditCardStatementUseCase` esteso con importo parziale: il trasferimento e per l'importo scelto e il watermark del ciclo avanza solo quando il ciclo risulta interamente coperto; il pagato per ciclo si calcola dai trasferimenti verso la carta nel ciclo (calcolato, mai memorizzato, ADR 3)
+- [ ] CTA "Paga estratto": dialog con importo precompilato all'estratto pieno e modificabile; il saldo minimo lo conosce solo l'utente (campo libero, nessun calcolo di minimi ne di interessi); con un residuo aperto la CTA mostra "restano X" invece di riproporre il pieno
+- [ ] Il residuo non pagato resta a debito sul conto carta e confluisce nel ciclo successivo (revolving di fatto); l'app non calcola interessi: il debito extra da interessi lo dichiara la banca e si allinea con la rettifica saldo, come per i prestiti (ADR 33)
+- [ ] Idempotenza preservata: mutex e transazione come oggi; due pagamenti parziali ravvicinati non duplicano ne saltano il watermark
+- [ ] Indicatore di utilizzo, scheda del conto e card Dashboard "Estratto pronto" aggiornati alla semantica parziale
+- [ ] Stringhe IT/EN; unit test: parziale che non avanza il watermark, completamento in piu tranche che lo avanza una volta sola, pagamento pieno invariato, cicli arretrati con parziali, catch-up multi-ciclo
+
+## Fase 28 - Arrotondamento degli spiccioli verso un obiettivo
+
+> Dalla review (riga 17). Ogni spesa arrotondata all'unita superiore, con la differenza trasferita al conto di risparmio: si costruisce interamente su trasferimenti (ADR 2) e obiettivi (ADR 25) esistenti, nessun modello di denaro nuovo.
+
+- [ ] Preferenza opt-in (default off) "Arrotonda le spese" verso un conto `SAVINGS` scelto: ogni spesa viene arrotondata all'unita superiore della valuta e la differenza diventa un trasferimento dal conto della spesa al conto di risparmio
+- [ ] ADR da proporre sulla cadenza: trasferimento immediato per spesa (registro rumoroso ma trasparente) o aggregato giornaliero generato dal worker esistente col pattern watermark (una riga al giorno). Il registro resta la fonte di verita in entrambi i casi
+- [ ] Esclusioni: spese gia tonde (differenza zero), trasferimenti e rettifiche, pending finche non confermati, spese in valuta diversa da quella del conto di risparmio (nessuna conversione implicita); per le valute a zero decimali la funzione si disattiva e lo dichiara
+- [ ] I trasferimenti generati sono riconoscibili (origine, come i movimenti da regola nella Fase 10.5) e filtrabili; disattivare la preferenza non tocca lo storico
+- [ ] Sinergia con gli obiettivi: il risparmiato e il saldo del conto (ADR 25), quindi gli spiccioli entrano nel progresso senza codice dedicato; valutare la riga "spiccioli del mese" nella schermata Obiettivi
+- [ ] Stringhe IT/EN; unit test: differenza per scala valuta, spesa gia tonda, aggregazione giornaliera idempotente, esclusioni, disattivazione che preserva lo storico
+
+## Fase 29 - Report periodico ricorrente
+
+> Dalla review (riga 19). Coperto in buona parte dal recap mensile "Saldo Wrapped" e dalle notifiche di soglia budget: questa e una preferenza di notifica in piu, non una superficie nuova, ed e per questo l'ultima della roadmap.
+
+- [ ] Preferenza "Riepilogo settimanale" (default off) nelle notifiche: a inizio settimana (rispetta il primo giorno impostato) una notifica con spese ed entrate della settimana conclusa e delta sulla precedente; canale di notifica dedicato
+- [ ] Generata dal worker giornaliero esistente con watermark (una notifica per settimana, anche se il worker salta giorni); cifre calcolate nel dominio con la semantica statistiche e formattate con `MoneyFormatter`, mai in UI
+- [ ] Il tap apre il registro filtrato sulla settimana conclusa (preset esistente); nessuna schermata nuova
+- [ ] Valutare nello stesso giro una variante mensile che punta al recap "Saldo Wrapped" esistente: il teaser in Dashboard copre gia i primi 7 giorni del mese, la notifica sarebbe il ponte per chi non apre l'app
+- [ ] Stringhe IT/EN; unit test: watermark settimanale, primo giorno della settimana configurato, settimane a cavallo d'anno, cifre con semantica statistiche
 
 ---
 
@@ -869,7 +1042,7 @@
   - Quick entry testuale: parser offline di "12,50 pizza" → importo + categoria suggerita.
 - ~~Indicatore "generato da ricorrenza" nella lista Movimenti~~: implementato nella Fase 10.5 (luglio 2026). Icona `Repeat` sulla riga (registro, Dashboard e drill-down statistiche), banner nell'editor con il nome della regola, e filtro per origine (ricorrenti/manuali) nel registro.
 - ~~Widget quick-add, spunti dalla review di luglio 2026~~: implementati tutti nella Fase 10.19 (trasparente adattivo dal hint del wallpaper e rifiniture premium).
-- Review delle funzionalità finanziarie (luglio 2026, v0.9.106): mappa di come l'app tratta il denaro oggi, limiti e asimmetrie rilevate, e confronto con le app premium dello stesso tipo (prestiti e debiti, split, budget con riporto, rate, multi-divisa con cambi). Documento in [docs/review-funzionalita-finanziarie.md](./docs/review-funzionalita-finanziarie.md), con la tabella dei candidati in ordine di implementazione consigliata e l'elenco di ciò che si copre già con funzioni esistenti. Quattro voci sono state approvate e sono ora le Fasi 11-14 (prestiti come conto, crediti e debiti verso persone, movimenti futuri, allegati); le restanti sono candidati, e nessuna va promossa senza una decisione esplicita.
+- Review delle funzionalità finanziarie (luglio 2026, v0.9.106): mappa di come l'app tratta il denaro oggi, limiti e asimmetrie rilevate, e confronto con le app premium dello stesso tipo (prestiti e debiti, split, budget con riporto, rate, multi-divisa con cambi). Documento in [docs/review-funzionalita-finanziarie-2026-07-27.md](./docs/review-funzionalita-finanziarie-2026-07-27.md), con la tabella dei candidati in ordine di implementazione consigliata e l'elenco di ciò che si copre già con funzioni esistenti. La tabella è stata interamente smistata: quattro voci approvate subito sono le Fasi 11-14 (prestiti come conto, crediti e debiti verso persone, movimenti futuri, allegati), il PIN con biometria è stato implementato nella Fase 14.5, e il 28 luglio 2026 i candidati del backlog v2.0 sono stati promossi a fasi dettagliate (Fasi 15-22) mentre i restanti sono pianificati nella Roadmap v3.0 (Fasi 24-29). Restano esclusi, come raccomanda la review stessa, il beneficiario/payee come entità e le sottocategorie.
 
 # Bug conosciuti
 
