@@ -23,7 +23,7 @@ Un'app Android moderna, offline-first e privacy-first per il tracciamento delle 
 
 Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a monitorare spese ed entrate, tenere sotto controllo il saldo dei propri conti (banca, carte, contanti, wallet) e capire le proprie abitudini di spesa. Nessun collegamento ai conti bancari, nessun backend, nessuna registrazione: **i dati restano sul dispositivo**.
 
-## Funzionalità (v1.0)
+## Funzionalità
 
 - 👋 **Onboarding al primo avvio** - benvenuto, scelta della valuta, primo conto e, per chi torna, ripristino diretto da un backup
 - 📊 **Dashboard "Oggi"** - saldo totale con andamento degli ultimi 30 giorni (sparkline nella card principale, con una sottile linea puntinata a quota zero quando l'andamento la attraversa) e proiezione a fine mese come coda tratteggiata (stima da ricorrenze in arrivo e media di spesa giornaliera), spese del giorno e del mese (sui conti attivi: gli archiviati restano fuori, come dal saldo totale), ultimi movimenti: tutto in 5 secondi, e ogni scheda apre il proprio dettaglio con un tap. Se hai già registrato movimenti con data futura, una riga "ad oggi" sotto la cifra indica il saldo effettivamente disponibile oggi (quello rappresentato dal grafico); la stessa riga compare anche sotto il singolo conto nel dettaglio della card, ma solo per i conti il cui saldo differisce da quello di oggi
@@ -47,6 +47,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - 🌍 **Multi-valuta** - ogni movimento conserva importo e valuta originali; nei trasferimenti tra valute diverse l'editor mostra il tasso di cambio implicito nei due importi digitati. Le statistiche lavorano su una valuta sola (la conversione arriverà in seguito): quando il periodo contiene movimenti in altre valute te lo dicono, e con un tap te li mostrano
 - 🎨 **Tema personalizzabile** - chiaro/scuro/sistema, palette dell'app o colori dinamici Material You
 - ⚙️ **Preferenze** - valuta principale (automatica o esplicita), conto predefinito per i nuovi movimenti, primo giorno della settimana, scelta delle card visibili in Dashboard e apertura predefinita del dettaglio conti nella card Saldo totale (all'avvio dell'app)
+- 🔒 **Blocco app** (opzionale) - PIN di 6 cifre richiesto all'apertura, sblocco con impronta o volto, blocco automatico configurabile (subito, dopo 1 o 5 minuti in background) e attesa progressiva dopo troppi tentativi errati. Il blocco copre anche l'inserimento rapido dal widget. In più, un interruttore indipendente nasconde il contenuto nella schermata delle app recenti (e blocca gli screenshot). Il PIN non è mai salvato in chiaro e non entra nei backup
 - 💾 **Backup e ripristino su file** - export JSON versionato dove vuoi tu (nessun account richiesto), ripristino guidato con anteprima del contenuto - più **export CSV** dei movimenti filtrati, condivisibile. Dalla stessa schermata puoi anche **cancellare tutti i dati** e riportare l'app a com'era il primo giorno: la conferma ti ricorda quando hai fatto l'ultimo backup (o che non l'hai mai fatto)
 - 📥 **Import CSV** - importa i movimenti da un file CSV, anche di formato diverso da quello esportato: riconoscimento automatico di separatore, decimali e colonne (per nome, IT/EN, in qualsiasi ordine), regole di adattamento (tipo dedotto dal segno, segno normalizzato, valuta dal conto), creazione opzionale di conti/categorie/tag mancanti, rilevazione dei duplicati (contro il registro e nel file), anteprima e report finale. Solo inserimento: non modifica né elimina i movimenti esistenti
 - 🛟 **Niente modifiche perse per sbaglio** - uscendo da un editor (conto, movimento, ricorrenza, budget, categoria) con dati non salvati, l'app chiede conferma prima di scartarli; l'eliminazione di movimenti, budget e obiettivi dagli editor si annulla con un tap (undo), senza dialog di conferma
@@ -54,7 +55,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 
 ### Roadmap futura (v2.0)
 
-Crediti e debiti verso persone, movimenti futuri con promemoria, foto dello scontrino allegate ai movimenti, PIN e biometria, export Google Sheets/Excel/PDF, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
+Crediti e debiti verso persone, movimenti futuri con promemoria, foto dello scontrino allegate ai movimenti, export Google Sheets/Excel/PDF, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
 
 ## Installazione
 

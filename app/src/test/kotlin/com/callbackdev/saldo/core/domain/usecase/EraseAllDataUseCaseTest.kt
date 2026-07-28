@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.core.domain.usecase
 
 import app.cash.turbine.test
+import com.callbackdev.saldo.core.common.applock.AppLockRepository
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.BackupRepository
 import io.mockk.coEvery
@@ -15,18 +16,27 @@ class EraseAllDataUseCaseTest {
 
     private val backupRepository = mockk<BackupRepository>(relaxUnitFun = true)
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true)
+    private val appLockRepository = mockk<AppLockRepository>(relaxUnitFun = true)
     private val resetCoordinator = AppResetCoordinator()
 
-    private val useCase = EraseAllDataUseCase(backupRepository, userPreferences, resetCoordinator)
+    private val useCase = EraseAllDataUseCase(
+        backupRepository,
+        userPreferences,
+        appLockRepository,
+        resetCoordinator,
+    )
 
     @Test
     fun `wipes the database, then the preferences, then announces the reset`() = runTest {
         useCase()
 
-        // The data goes before the preferences: see the failure case below.
+        // The data goes before the preferences: see the failure case below. The
+        // app lock goes too, explicitly (ADR 39): a factory reset returns the
+        // app to a fresh install, PIN included.
         coVerifyOrder {
             backupRepository.eraseAll()
             userPreferences.clear()
+            appLockRepository.clear()
         }
         resetCoordinator.events.test {
             awaitItem()
@@ -43,5 +53,6 @@ class EraseAllDataUseCaseTest {
         // Clearing them anyway would leave an intact database that has forgotten
         // its currency, theme and default account: worse than not erasing at all.
         coVerify(exactly = 0) { userPreferences.clear() }
+        coVerify(exactly = 0) { appLockRepository.clear() }
     }
 }

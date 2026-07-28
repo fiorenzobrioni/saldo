@@ -10,9 +10,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.callbackdev.saldo.core.common.applock.AppLockManager
+import com.callbackdev.saldo.core.common.applock.AppLockRepository
+import com.callbackdev.saldo.core.common.applock.AppLockState
+import com.callbackdev.saldo.core.common.applock.bindSecureScreen
 import com.callbackdev.saldo.core.common.di.ApplicationScope
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
@@ -21,6 +29,7 @@ import com.callbackdev.saldo.core.designsystem.theme.SaldoTheme
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ProcessDueCreditCardStatementsUseCase
+import com.callbackdev.saldo.feature.applock.AppLockGate
 import com.callbackdev.saldo.feature.onboarding.OnboardingScreen
 import com.callbackdev.saldo.navigation.SaldoApp
 import dagger.hilt.android.AndroidEntryPoint
@@ -45,6 +54,12 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var userPreferences: UserPreferencesRepository
 
+    @Inject
+    lateinit var appLockManager: AppLockManager
+
+    @Inject
+    lateinit var appLockRepository: AppLockRepository
+
     private val mainViewModel: MainViewModel by viewModels()
 
     /**
@@ -58,6 +73,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Before setContent: FLAG_SECURE must be on the window ahead of the
+        // first frame, not after the first composition.
+        bindSecureScreen(appLockRepository)
         // Only on a genuine start, never on a configuration-change recreation:
         // the catch-up is idempotent but pointless to repeat on every rotation,
         // and the launching intent must open its shortcut editor just once.
@@ -102,20 +120,36 @@ class MainActivity : ComponentActivity() {
                 // the decision (one DataStore read) resolves within a frame or
                 // two, faster than any splash could fade.
                 val gate by mainViewModel.gate.collectAsStateWithLifecycle()
-                Crossfade(targetState = gate, label = "launch-gate") { current ->
-                    when (current) {
-                        LaunchGate.LOADING -> Unit
-                        LaunchGate.ONBOARDING -> OnboardingScreen(
-                            onFinished = mainViewModel::completeOnboarding,
-                        )
-                        LaunchGate.APP -> {
-                            val quickAction by pendingQuickAction.collectAsStateWithLifecycle()
-                            SaldoApp(
-                                quickAction = quickAction,
-                                onQuickActionHandled = { pendingQuickAction.value = null },
-                            )
+                // The app lock is an overlay on top of the launch gate, never
+                // a branch of it (ADR 39): switching the Crossfade would drop
+                // the per-tab back stacks on every re-lock. While the gate is
+                // not open, the covered content is also stripped of semantics
+                // so TalkBack cannot walk the UI behind the lock.
+                val lockState by appLockManager.state.collectAsStateWithLifecycle()
+                Box(modifier = Modifier.fillMaxSize()) {
+                    val contentModifier = if (lockState != AppLockState.UNLOCKED) {
+                        Modifier.clearAndSetSemantics {}
+                    } else {
+                        Modifier
+                    }
+                    Box(modifier = contentModifier) {
+                        Crossfade(targetState = gate, label = "launch-gate") { current ->
+                            when (current) {
+                                LaunchGate.LOADING -> Unit
+                                LaunchGate.ONBOARDING -> OnboardingScreen(
+                                    onFinished = mainViewModel::completeOnboarding,
+                                )
+                                LaunchGate.APP -> {
+                                    val quickAction by pendingQuickAction.collectAsStateWithLifecycle()
+                                    SaldoApp(
+                                        quickAction = quickAction,
+                                        onQuickActionHandled = { pendingQuickAction.value = null },
+                                    )
+                                }
+                            }
                         }
                     }
+                    AppLockGate()
                 }
             }
         }

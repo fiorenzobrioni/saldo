@@ -7,9 +7,7 @@ import android.appwidget.AppWidgetManager
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,15 +18,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
@@ -36,7 +33,6 @@ import androidx.compose.material.icons.outlined.ViewAgenda
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +41,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -61,7 +56,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -77,7 +71,10 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
-import com.callbackdev.saldo.core.designsystem.component.SaldoCard
+import com.callbackdev.saldo.core.designsystem.component.SettingsEntry
+import com.callbackdev.saldo.core.designsystem.component.SettingsGroup
+import com.callbackdev.saldo.core.designsystem.component.SettingsSectionHeader
+import com.callbackdev.saldo.core.designsystem.component.SettingsSwitchRow
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
@@ -96,6 +93,7 @@ fun SettingsScreen(
     onNavigateToRecurrences: () -> Unit,
     onNavigateToBudgets: () -> Unit,
     onNavigateToSavingsGoals: () -> Unit,
+    onNavigateToSecurity: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToAbout: () -> Unit,
     modifier: Modifier = Modifier,
@@ -110,6 +108,7 @@ fun SettingsScreen(
     val activeAccounts by viewModel.activeAccounts.collectAsStateWithLifecycle()
     val defaultAccountId by viewModel.defaultAccountId.collectAsStateWithLifecycle()
     val firstDayOfWeek by viewModel.firstDayOfWeek.collectAsStateWithLifecycle()
+    val appLockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle()
     var showCurrencyDialog by rememberSaveable { mutableStateOf(false) }
     var showDefaultAccountDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -323,6 +322,22 @@ fun SettingsScreen(
                 )
             }
 
+            SettingsSectionHeader(stringResource(R.string.settings_section_security))
+            SettingsGroup {
+                SettingsEntry(
+                    title = stringResource(R.string.settings_security),
+                    hint = stringResource(
+                        if (appLockEnabled) {
+                            R.string.settings_security_hint_enabled
+                        } else {
+                            R.string.settings_security_hint_disabled
+                        },
+                    ),
+                    icon = Icons.Outlined.Lock,
+                    onClick = onNavigateToSecurity,
+                )
+            }
+
             SettingsSectionHeader(stringResource(R.string.settings_section_data))
             SettingsGroup {
                 SettingsEntry(
@@ -483,36 +498,6 @@ private fun RadioRow(
 }
 
 @Composable
-private fun SettingsSectionHeader(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.titleSmall,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(start = 16.dp, top = 20.dp, end = 16.dp, bottom = 8.dp),
-    )
-}
-
-/**
- * One settings section as a grouped card: a white panel on the grey canvas that
- * holds the section's rows, so the sections read as distinct blocks instead of a
- * flat run of rows. The rows keep their transparent container and inherit the
- * card fill.
- */
-@Composable
-private fun SettingsGroup(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    SaldoCard(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-    ) {
-        Column(modifier = Modifier.padding(vertical = 4.dp), content = content)
-    }
-}
-
-@Composable
 private fun ThemeModeSelector(
     selected: ThemeMode,
     onSelected: (ThemeMode) -> Unit,
@@ -593,61 +578,3 @@ private fun RenewalLeadDaysSelector(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SettingsEntry(
-    title: String,
-    hint: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(hint) },
-        leadingContent = {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
-        },
-        trailingContent = {
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-            )
-        },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = modifier.clickable(onClick = onClick),
-    )
-}
-
-/**
- * A toggle row: title, supporting hint and a switch. The whole row is the
- * touch target ([Modifier.toggleable] with [Role.Switch], the switch itself
- * has no separate handler), matching the editors' switch rows: a bigger
- * target and a single TalkBack focus instead of two.
- */
-@Composable
-private fun SettingsSwitchRow(
-    title: String,
-    hint: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    ListItem(
-        headlineContent = { Text(title) },
-        supportingContent = { Text(hint) },
-        trailingContent = {
-            Switch(checked = checked, onCheckedChange = null)
-        },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = modifier.toggleable(
-            value = checked,
-            role = Role.Switch,
-            onValueChange = onCheckedChange,
-        ),
-    )
-}

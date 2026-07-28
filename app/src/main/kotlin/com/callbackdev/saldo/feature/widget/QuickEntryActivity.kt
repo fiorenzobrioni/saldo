@@ -10,6 +10,10 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.callbackdev.saldo.core.common.applock.AppLockManager
+import com.callbackdev.saldo.core.common.applock.AppLockRepository
+import com.callbackdev.saldo.core.common.applock.AppLockState
+import com.callbackdev.saldo.core.common.applock.bindSecureScreen
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
@@ -34,11 +38,18 @@ class QuickEntryActivity : ComponentActivity() {
     @Inject
     lateinit var userPreferences: UserPreferencesRepository
 
+    @Inject
+    lateinit var appLockManager: AppLockManager
+
+    @Inject
+    lateinit var appLockRepository: AppLockRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // The window is translucent and the sheet sits on the navigation bar:
         // without this the insets it pads for are the wrong ones.
         enableEdgeToEdge()
+        bindSecureScreen(appLockRepository)
         val route = QuickEntryRoute.from(intent)
         setContent {
             val themePreferences by userPreferences.themePreferences
@@ -55,12 +66,22 @@ class QuickEntryActivity : ComponentActivity() {
                 // launcher and turn the sheet back into a full screen.
                 applyBackground = false,
             ) {
-                QuickEntrySheet(
-                    viewModel = hiltViewModel<QuickEntryViewModel, QuickEntryViewModel.Factory>(
-                        creationCallback = { factory -> factory.create(route) },
-                    ),
-                    onDismiss = ::dismiss,
-                )
+                // The widget must not be a way around the app lock (ADR 39):
+                // while the process is LOCKED the sheet asks for the same PIN
+                // or biometric, and the unlock opens the whole app session.
+                val lockState by appLockManager.state.collectAsStateWithLifecycle()
+                when (lockState) {
+                    // Translucent window, nothing to cover: the launcher is
+                    // what shows while the gate resolves.
+                    AppLockState.EVALUATING -> Unit
+                    AppLockState.LOCKED -> QuickEntryLockSheet(onDismiss = ::dismiss)
+                    AppLockState.UNLOCKED -> QuickEntrySheet(
+                        viewModel = hiltViewModel<QuickEntryViewModel, QuickEntryViewModel.Factory>(
+                            creationCallback = { factory -> factory.create(route) },
+                        ),
+                        onDismiss = ::dismiss,
+                    )
+                }
             }
         }
     }

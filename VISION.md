@@ -511,10 +511,11 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 # Sicurezza e privacy
 
 - dati solo in locale; nessuna telemetria di terze parti nel MVP (eventuali crash report solo opt-in)
-- **PIN lock** (v2.0)
-- **sblocco biometrico** via `BiometricPrompt` (v2.0)
-- oscuramento del contenuto nelle app recenti (`FLAG_SECURE`, opzionale) - v2.0
+- **PIN lock** (consegnato, PIN a 6 cifre opzionale)
+- **sblocco biometrico** via `BiometricPrompt` (consegnato)
+- oscuramento del contenuto nelle app recenti (`FLAG_SECURE`, opzionale) - consegnato; la stessa protezione blocca anche gli screenshot
 - **cifratura backup** (v2.0)
+- il blocco è un gate di accesso all'app, non cifratura del database: il PIN non è mai salvato in chiaro (hash con salt) e non entra nei backup
 - permessi Android richiesti: praticamente nessuno (niente contatti, niente posizione, niente SMS). Anche gli allegati fotografici restano a zero permessi: il photo picker di sistema non ne richiede e la fotocamera si usa via intent, senza dichiarare `CAMERA` nel manifest
 
 ---
@@ -621,7 +622,7 @@ Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, sp
 - Crediti e debiti verso persone
 - Movimenti futuri e scadenze una tantum (elenco "in arrivo", promemoria, stima a fine mese che li conta)
 - Allegati fotografici ai movimenti (backup incluso)
-- PIN + biometria + FLAG_SECURE
+- PIN + biometria + FLAG_SECURE (consegnato in anticipo, dopo la 1.0.0)
 - Export Google Sheets, Excel (.xlsx) e PDF con grafici
 - Conversione valuta automatica
 - Cifratura backup

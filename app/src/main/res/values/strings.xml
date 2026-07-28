@@ -1096,4 +1096,44 @@
     <string name="settings_widget_pin_grid_hint">The quick-add category grid.</string>
     <string name="settings_widget_pin_bar">Bar widget on the home screen</string>
     <string name="settings_widget_pin_bar_hint">Expense and Income in a single row.</string>
+
+    <!-- App lock and screen privacy (Phase 14.5) -->
+    <string name="settings_section_security">Security</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_security_hint_enabled">App lock on</string>
+    <string name="settings_security_hint_disabled">PIN, biometrics and screen privacy</string>
+    <string name="security_title">Security</string>
+    <string name="security_section_app_lock">App lock</string>
+    <string name="security_app_lock_title">App lock</string>
+    <string name="security_app_lock_hint">Require a 6-digit PIN to open Saldo. If you forget it, the only way back in is erasing the app\'s data.</string>
+    <string name="security_change_pin">Change PIN</string>
+    <string name="security_change_pin_hint">Verify the current PIN, then choose a new one</string>
+    <string name="security_biometric_title">Biometric unlock</string>
+    <string name="security_biometric_hint">Use your fingerprint or face instead of the PIN</string>
+    <string name="security_biometric_confirm_title">Confirm biometric unlock</string>
+    <string name="security_auto_lock_title">Auto-lock</string>
+    <string name="security_auto_lock_hint">How long Saldo can stay in the background before locking again</string>
+    <string name="security_auto_lock_immediately">Right away</string>
+    <string name="security_auto_lock_one_minute">1 min</string>
+    <string name="security_auto_lock_five_minutes">5 min</string>
+    <string name="security_section_screen_privacy">Screen privacy</string>
+    <string name="security_secure_screen_title">Hide content in recents</string>
+    <string name="security_secure_screen_hint">Blanks the app in the recent apps screen. Also blocks screenshots.</string>
+    <string name="pin_create_title">Choose a PIN</string>
+    <string name="pin_create_new_title">Choose the new PIN</string>
+    <string name="pin_create_subtitle">6 digits, asked every time Saldo opens</string>
+    <string name="pin_confirm_title">Confirm the PIN</string>
+    <string name="pin_confirm_subtitle">Enter the same 6 digits again</string>
+    <string name="pin_verify_title">Enter your PIN</string>
+    <string name="pin_verify_subtitle">Needed to change this setting</string>
+    <string name="pin_error_wrong">Wrong PIN</string>
+    <string name="pin_error_mismatch">The PINs don\'t match. Start over.</string>
+    <string name="pin_progress">%1$d of %2$d digits</string>
+    <string name="pin_keypad_biometric">Biometric unlock</string>
+    <string name="lock_screen_subtitle">Enter your PIN to unlock</string>
+    <string name="lock_cooldown_message">Too many attempts. Try again in %1$s</string>
+    <string name="lock_biometric_prompt_title">Unlock Saldo</string>
+    <string name="lock_biometric_prompt_negative">Use PIN</string>
+    <string name="quick_entry_locked_title">Saldo is locked</string>
+    <string name="quick_entry_locked_subtitle">Unlock to add a movement</string>
 </resources>

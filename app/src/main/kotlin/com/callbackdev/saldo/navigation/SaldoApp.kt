@@ -37,6 +37,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.feature.about.AboutScreen
 import com.callbackdev.saldo.feature.accounts.AccountEditorScreen
+import com.callbackdev.saldo.feature.applock.SecurityScreen
 import com.callbackdev.saldo.feature.backup.BackupScreen
 import com.callbackdev.saldo.feature.accounts.AccountsScreen
 import com.callbackdev.saldo.feature.budgets.BudgetEditorScreen
@@ -186,6 +187,7 @@ fun SaldoApp(
                 onNavigateToRecurrences = { nav.navigate(RecurrencesRoute) },
                 onNavigateToBudgets = { nav.navigate(BudgetsRoute) },
                 onNavigateToSavingsGoals = { nav.navigate(SavingsGoalsRoute) },
+                onNavigateToSecurity = { nav.navigate(SecurityRoute) },
                 onNavigateToBackup = { nav.navigate(BackupRoute) },
                 onNavigateToAbout = { nav.navigate(AboutRoute) },
             )
@@ -287,6 +289,9 @@ fun SaldoApp(
                 route = route,
                 onNavigateBack = { nav.goBack() },
             )
+        }
+        entry<SecurityRoute> {
+            SecurityScreen(onNavigateBack = { nav.goBack() })
         }
         entry<BackupRoute> {
             BackupScreen(onNavigateBack = { nav.goBack() })

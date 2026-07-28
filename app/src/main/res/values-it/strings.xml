@@ -1110,4 +1110,44 @@
     <string name="settings_widget_pin_grid_hint">La griglia di categorie per l\'aggiunta rapida.</string>
     <string name="settings_widget_pin_bar">Widget barra sulla home</string>
     <string name="settings_widget_pin_bar_hint">Spesa ed Entrata in una sola riga.</string>
+
+    <!-- Blocco app e privacy dello schermo (Fase 14.5) -->
+    <string name="settings_section_security">Sicurezza</string>
+    <string name="settings_security">Sicurezza</string>
+    <string name="settings_security_hint_enabled">Blocco app attivo</string>
+    <string name="settings_security_hint_disabled">PIN, biometria e privacy dello schermo</string>
+    <string name="security_title">Sicurezza</string>
+    <string name="security_section_app_lock">Blocco app</string>
+    <string name="security_app_lock_title">Blocco app</string>
+    <string name="security_app_lock_hint">Richiedi un PIN di 6 cifre per aprire Saldo. Se lo dimentichi, l\'unico modo per rientrare è cancellare i dati dell\'app.</string>
+    <string name="security_change_pin">Cambia PIN</string>
+    <string name="security_change_pin_hint">Verifica il PIN attuale, poi scegline uno nuovo</string>
+    <string name="security_biometric_title">Sblocco biometrico</string>
+    <string name="security_biometric_hint">Usa l\'impronta o il volto al posto del PIN</string>
+    <string name="security_biometric_confirm_title">Conferma lo sblocco biometrico</string>
+    <string name="security_auto_lock_title">Blocco automatico</string>
+    <string name="security_auto_lock_hint">Per quanto Saldo può restare in background prima di ribloccarsi</string>
+    <string name="security_auto_lock_immediately">Subito</string>
+    <string name="security_auto_lock_one_minute">1 min</string>
+    <string name="security_auto_lock_five_minutes">5 min</string>
+    <string name="security_section_screen_privacy">Privacy dello schermo</string>
+    <string name="security_secure_screen_title">Nascondi nelle app recenti</string>
+    <string name="security_secure_screen_hint">Oscura l\'app nella schermata delle app recenti. Blocca anche gli screenshot.</string>
+    <string name="pin_create_title">Scegli un PIN</string>
+    <string name="pin_create_new_title">Scegli il nuovo PIN</string>
+    <string name="pin_create_subtitle">6 cifre, richieste a ogni apertura di Saldo</string>
+    <string name="pin_confirm_title">Conferma il PIN</string>
+    <string name="pin_confirm_subtitle">Inserisci di nuovo le stesse 6 cifre</string>
+    <string name="pin_verify_title">Inserisci il PIN</string>
+    <string name="pin_verify_subtitle">Serve per modificare questa impostazione</string>
+    <string name="pin_error_wrong">PIN errato</string>
+    <string name="pin_error_mismatch">I PIN non coincidono. Ricomincia.</string>
+    <string name="pin_progress">%1$d di %2$d cifre</string>
+    <string name="pin_keypad_biometric">Sblocco biometrico</string>
+    <string name="lock_screen_subtitle">Inserisci il PIN per sbloccare</string>
+    <string name="lock_cooldown_message">Troppi tentativi. Riprova tra %1$s</string>
+    <string name="lock_biometric_prompt_title">Sblocca Saldo</string>
+    <string name="lock_biometric_prompt_negative">Usa il PIN</string>
+    <string name="quick_entry_locked_title">Saldo è bloccato</string>
+    <string name="quick_entry_locked_subtitle">Sblocca per aggiungere un movimento</string>
 </resources>
