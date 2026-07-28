@@ -5,6 +5,7 @@ import com.callbackdev.saldo.core.database.mapper.toDomain
 import com.callbackdev.saldo.core.database.mapper.toEntity
 import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
+import com.callbackdev.saldo.core.domain.model.CounterpartyTotal
 import com.callbackdev.saldo.core.domain.model.DailyActivity
 import com.callbackdev.saldo.core.domain.model.DailyNet
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
@@ -232,6 +233,12 @@ class RoomTransactionRepository @Inject constructor(
     ): List<Long> =
         transactionDao.mostUsedCategories(type.name, since.toEpochMilli(), limit)
             .mapNotNull { it.categoryId }
+
+    override fun observeCounterpartyTotals(): Flow<List<CounterpartyTotal>> =
+        transactionDao.observeCounterpartyTotals().map { rows -> rows.map { it.toDomain() } }
+
+    override fun observeCounterpartyNames(): Flow<List<String>> =
+        transactionDao.observeCounterpartyNames()
 
     override suspend fun getTransaction(id: Long): Transaction? =
         transactionDao.getById(id)?.toDomain()

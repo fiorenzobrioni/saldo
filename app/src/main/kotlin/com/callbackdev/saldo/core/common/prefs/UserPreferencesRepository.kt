@@ -54,6 +54,13 @@ data class DashboardCardPreferences(
     val showSafeToSpend: Boolean = true,
     val showRecentTransactions: Boolean = true,
     val showSavingsGoals: Boolean = true,
+    /**
+     * Credits and debts toward people. On by default, but unlike the budget and
+     * savings cards it never shows an invitation: with nobody owing anything the
+     * card is simply absent, so a user who never lends money sees no trace of a
+     * feature they do not use.
+     */
+    val showCounterparties: Boolean = true,
     /** The self-expiring monthly recap teaser; off silences it for good. */
     val showRecapTeaser: Boolean = true,
 )
@@ -225,6 +232,7 @@ class UserPreferencesRepository @Inject constructor(
             showSafeToSpend = preferences[DASHBOARD_SHOW_SAFE_TO_SPEND] ?: true,
             showRecentTransactions = preferences[DASHBOARD_SHOW_RECENT_TRANSACTIONS] ?: true,
             showSavingsGoals = preferences[DASHBOARD_SHOW_SAVINGS_GOALS] ?: true,
+            showCounterparties = preferences[DASHBOARD_SHOW_COUNTERPARTIES] ?: true,
             showRecapTeaser = preferences[DASHBOARD_SHOW_RECAP_TEASER] ?: true,
         )
     }.distinctUntilChanged()
@@ -243,6 +251,10 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setShowSavingsGoalsCard(shown: Boolean) {
         dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_SAVINGS_GOALS] = shown }
+    }
+
+    suspend fun setShowCounterpartiesCard(shown: Boolean) {
+        dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_COUNTERPARTIES] = shown }
     }
 
     suspend fun setShowRecapTeaser(shown: Boolean) {
@@ -323,6 +335,7 @@ class UserPreferencesRepository @Inject constructor(
         val DASHBOARD_SHOW_RECENT_TRANSACTIONS =
             booleanPreferencesKey("dashboard_show_recent_transactions")
         val DASHBOARD_SHOW_SAVINGS_GOALS = booleanPreferencesKey("dashboard_show_savings_goals")
+        val DASHBOARD_SHOW_COUNTERPARTIES = booleanPreferencesKey("dashboard_show_counterparties")
         val DASHBOARD_SHOW_RECAP_TEASER = booleanPreferencesKey("dashboard_show_recap_teaser")
         val BALANCE_ACCOUNTS_EXPANDED_DEFAULT =
             booleanPreferencesKey("balance_accounts_expanded_default")

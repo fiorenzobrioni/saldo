@@ -109,6 +109,7 @@ class TransactionEditorViewModelTest {
         tags: List<Tag> = emptyList(),
         lastUsedAccountId: Long? = null,
         defaultAccountId: Long? = null,
+        counterpartyNames: List<String> = emptyList(),
     ): TransactionEditorViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
@@ -116,6 +117,7 @@ class TransactionEditorViewModelTest {
         every { tagRepository.observeTags() } returns flowOf(tags)
         every { userPreferences.lastUsedAccountId } returns flowOf(lastUsedAccountId)
         every { userPreferences.defaultAccountId } returns flowOf(defaultAccountId)
+        every { transactionRepository.observeCounterpartyNames() } returns flowOf(counterpartyNames)
         coEvery { transactionRepository.upsert(any()) } returns SAVED_ID
         coEvery { tagRepository.upsert(any()) } returns NEW_TAG_ID
         return TransactionEditorViewModel(
@@ -664,6 +666,186 @@ class TransactionEditorViewModelTest {
             assertEquals(TransactionEditorEvent.Deleted, awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `marking a movement as a loan forces the exclusion and saves the counterparty`() = runTest {
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        viewModel.onAmountChanged("50")
+        viewModel.onCategorySelected(groceries.id)
+        viewModel.onCounterpartyToggled(true)
+        viewModel.onCounterpartyChanged("  Marta  ")
+
+        assertTrue(viewModel.uiState.value.isExcludedFromStats)
+        viewModel.save()
+
+        assertEquals("Marta", saved.captured.counterparty)
+        assertTrue(saved.captured.isExcludedFromStats)
+        assertEquals(BigDecimal("-50.00"), saved.captured.amount)
+    }
+
+    @Test
+    fun `the exclusion switch is inert while the loan mark is on`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        viewModel.onCounterpartyToggled(true)
+        viewModel.onExcludedFromStatsChanged(false)
+
+        assertTrue(viewModel.uiState.value.isExcludedFromStats)
+    }
+
+    @Test
+    fun `removing the loan mark gives the exclusion flag back with the chosen value`() = runTest {
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        // The user had excluded the movement by hand before marking it a loan.
+        viewModel.onExcludedFromStatsChanged(true)
+        viewModel.onCounterpartyToggled(true)
+        viewModel.onCounterpartyToggled(false)
+        assertTrue(viewModel.uiState.value.isExcludedFromStats)
+
+        // Starting from an unchecked flag, removing the mark leaves it unchecked.
+        viewModel.onExcludedFromStatsChanged(false)
+        viewModel.onCounterpartyToggled(true)
+        viewModel.onCounterpartyToggled(false)
+        assertFalse(viewModel.uiState.value.isExcludedFromStats)
+
+        viewModel.onAmountChanged("10")
+        viewModel.onCategorySelected(groceries.id)
+        viewModel.save()
+        // The name typed before the mark was removed does not travel with the save.
+        assertNull(saved.captured.counterparty)
+        assertFalse(saved.captured.isExcludedFromStats)
+    }
+
+    @Test
+    fun `a loan without a name is not saved`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        viewModel.onAmountChanged("50")
+        viewModel.onCategorySelected(groceries.id)
+        viewModel.onCounterpartyToggled(true)
+        viewModel.onCounterpartyChanged("   ")
+        viewModel.save()
+
+        assertTrue(viewModel.uiState.value.showValidation)
+        assertFalse(viewModel.uiState.value.isCounterpartyValid)
+        coVerify(exactly = 0) { transactionRepository.upsert(any()) }
+    }
+
+    @Test
+    fun `a transfer drops the loan section and its counterparty`() = runTest {
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        viewModel.onCounterpartyToggled(true)
+        viewModel.onCounterpartyChanged("Marta")
+        viewModel.onTypeChanged(TransactionType.TRANSFER)
+        viewModel.onToAccountSelected(cash)
+        viewModel.onAmountChanged("50")
+        viewModel.save()
+
+        assertNull(saved.captured.counterparty)
+        assertFalse(saved.captured.isExcludedFromStats)
+    }
+
+    @Test
+    fun `editing a loan loads its counterparty and marks the form dirty when renamed`() = runTest {
+        val existing = Transaction(
+            id = 9L,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-30.00"),
+            currency = eur,
+            accountId = checking.id,
+            timestamp = Instant.parse("2026-07-01T10:00:00Z"),
+            zoneOffset = ZoneOffset.ofHours(2),
+            categoryId = groceries.id,
+            isExcludedFromStats = true,
+            counterparty = "Marta",
+        )
+        coEvery { transactionRepository.getTransaction(9L) } returns existing
+        every { tagRepository.observeTagsForTransaction(9L) } returns flowOf(emptyList())
+        val viewModel = viewModel(route = TransactionEditorRoute(9L))
+        collectState(viewModel)
+
+        assertTrue(viewModel.uiState.value.isCounterparty)
+        assertEquals("Marta", viewModel.uiState.value.counterparty)
+
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            viewModel.onCounterpartyChanged("Marta R.")
+            assertTrue(awaitItem())
+            viewModel.onCounterpartyChanged("Marta")
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a prefilled repayment opens ready to save and asks nothing on the way out`() = runTest {
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(
+            route = TransactionEditorRoute(
+                initialTypeName = TransactionType.INCOME.name,
+                initialCounterparty = "Marta",
+                initialAmountInput = "70.00",
+            ),
+            lastUsedAccountId = 1L,
+        )
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        val state = viewModel.uiState.value
+        assertEquals(TransactionType.INCOME, state.type)
+        assertEquals("70.00", state.amountInput)
+        assertEquals("Marta", state.counterparty)
+        assertTrue(state.isCounterparty)
+        assertTrue(state.isExcludedFromStats)
+        // The prefill is the baseline: leaving without touching anything is not a loss.
+        assertFalse(viewModel.hasUnsavedChanges.value)
+
+        viewModel.onCategorySelected(salary.id)
+        viewModel.save()
+
+        assertEquals(BigDecimal("70.00"), saved.captured.amount)
+        assertEquals("Marta", saved.captured.counterparty)
+        assertTrue(saved.captured.isExcludedFromStats)
+    }
+
+    @Test
+    fun `counterparty suggestions offer each known person once, minus the exact match`() = runTest {
+        val viewModel = viewModel(
+            lastUsedAccountId = 1L,
+            counterpartyNames = listOf("marta", "Marta", "Luca", "Sara"),
+        )
+        collectState(viewModel)
+
+        // Nothing suggested until the movement is marked as a loan.
+        assertEquals(emptyList<String>(), viewModel.uiState.value.counterpartySuggestions)
+
+        viewModel.onCounterpartyToggled(true)
+        assertEquals(
+            listOf("marta", "Luca", "Sara"),
+            viewModel.uiState.value.counterpartySuggestions,
+        )
+
+        viewModel.onCounterpartyChanged("mar")
+        assertEquals(listOf("marta"), viewModel.uiState.value.counterpartySuggestions)
+
+        // Once it matches a known name exactly, repeating it would be noise.
+        viewModel.onCounterpartyChanged("MARTA")
+        assertEquals(emptyList<String>(), viewModel.uiState.value.counterpartySuggestions)
     }
 
     @Test

@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Payments
@@ -93,6 +94,7 @@ fun SettingsScreen(
     onNavigateToRecurrences: () -> Unit,
     onNavigateToBudgets: () -> Unit,
     onNavigateToSavingsGoals: () -> Unit,
+    onNavigateToCounterparties: () -> Unit,
     onNavigateToSecurity: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToAbout: () -> Unit,
@@ -194,6 +196,12 @@ fun SettingsScreen(
                     hint = stringResource(R.string.settings_dashboard_show_savings_hint),
                     checked = dashboardCards.showSavingsGoals,
                     onCheckedChange = viewModel::onShowSavingsGoalsChanged,
+                )
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dashboard_show_counterparties),
+                    hint = stringResource(R.string.settings_dashboard_show_counterparties_hint),
+                    checked = dashboardCards.showCounterparties,
+                    onCheckedChange = viewModel::onShowCounterpartiesChanged,
                 )
                 SettingsSwitchRow(
                     title = stringResource(R.string.settings_dashboard_show_recent),
@@ -313,6 +321,12 @@ fun SettingsScreen(
                     hint = stringResource(R.string.settings_savings_hint),
                     icon = Icons.Outlined.Flag,
                     onClick = onNavigateToSavingsGoals,
+                )
+                SettingsEntry(
+                    title = stringResource(R.string.settings_counterparties),
+                    hint = stringResource(R.string.settings_counterparties_hint),
+                    icon = Icons.Outlined.Handshake,
+                    onClick = onNavigateToCounterparties,
                 )
                 SettingsEntry(
                     title = stringResource(R.string.settings_categories),

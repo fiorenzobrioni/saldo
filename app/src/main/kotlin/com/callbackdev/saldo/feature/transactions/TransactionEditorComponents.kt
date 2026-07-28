@@ -23,11 +23,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Notes
 import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -332,7 +334,12 @@ private fun CategoryCell(
     }
 }
 
-/** A labelled switch row with an optional supporting line. */
+/**
+ * A labelled switch row with an optional supporting line. A disabled row still
+ * shows its state (and its explanation): the exclusion flag of a loan is
+ * decided by the loan itself, and hiding the switch would leave the user
+ * wondering where it went.
+ */
 @Composable
 internal fun EditorSwitchRow(
     title: String,
@@ -340,13 +347,16 @@ internal fun EditorSwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
+    val contentAlpha = if (enabled) 1f else DISABLED_ALPHA
     Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
             .toggleable(
                 value = checked,
+                enabled = enabled,
                 role = Role.Switch,
                 onValueChange = onCheckedChange,
             )
@@ -354,14 +364,98 @@ internal fun EditorSwitchRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
+            )
             Text(
                 text = subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
             )
         }
         Spacer(Modifier.size(16.dp))
-        Switch(checked = checked, onCheckedChange = null)
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
+    }
+}
+
+/** Dimming of a row whose value is decided elsewhere, matching M3 disabled content. */
+private const val DISABLED_ALPHA = 0.38f
+
+/**
+ * The counterparty of a loan: same borderless look as the description and the
+ * note, so the three read as one block of optional detail. Errors surface only
+ * after a failed save, like every other field of the form.
+ */
+@Composable
+internal fun InlineCounterpartyField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    isError: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = { Text(stringResource(R.string.transaction_editor_counterparty_hint)) },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Outlined.Person,
+                contentDescription = null,
+                tint = if (isError) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        },
+        isError = isError,
+        supportingText = if (isError) {
+            { Text(stringResource(R.string.transaction_editor_counterparty_error)) }
+        } else {
+            null
+        },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            errorContainerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            disabledIndicatorColor = Color.Transparent,
+        ),
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/**
+ * The names already used, one tap away. Autocompletion is what keeps a free-text
+ * counterparty usable over months: without it "Luca" and "luca" drift apart in
+ * the user's typing, even though the aggregate would still merge them.
+ */
+@Composable
+internal fun CounterpartySuggestions(
+    suggestions: List<String>,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (suggestions.isEmpty()) return
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp),
+    ) {
+        suggestions.forEach { name ->
+            SuggestionChip(
+                onClick = { onSelect(name) },
+                label = {
+                    Text(text = name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                },
+            )
+        }
     }
 }

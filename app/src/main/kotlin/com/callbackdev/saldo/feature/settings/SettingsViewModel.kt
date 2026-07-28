@@ -154,6 +154,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { userPreferences.setShowSavingsGoalsCard(shown) }
     }
 
+    fun onShowCounterpartiesChanged(shown: Boolean) {
+        viewModelScope.launch { userPreferences.setShowCounterpartiesCard(shown) }
+    }
+
     fun onBalanceAccountsExpandedDefaultChanged(expanded: Boolean) {
         viewModelScope.launch { userPreferences.setBalanceAccountsExpandedByDefault(expanded) }
     }

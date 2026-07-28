@@ -43,6 +43,7 @@ import com.callbackdev.saldo.feature.accounts.AccountsScreen
 import com.callbackdev.saldo.feature.budgets.BudgetEditorScreen
 import com.callbackdev.saldo.feature.budgets.BudgetsScreen
 import com.callbackdev.saldo.feature.categories.CategoriesScreen
+import com.callbackdev.saldo.feature.counterparties.CounterpartiesScreen
 import com.callbackdev.saldo.feature.categories.CategoryEditorScreen
 import com.callbackdev.saldo.feature.dashboard.DashboardScreen
 import com.callbackdev.saldo.feature.recap.MonthlyRecapScreen
@@ -154,6 +155,7 @@ fun SaldoApp(
                 onNavigateToPending = { nav.navigate(PendingMovementsRoute) },
                 onNavigateToBudgets = { nav.navigate(BudgetsRoute) },
                 onNavigateToSavingsGoals = { nav.navigate(SavingsGoalsRoute) },
+                onNavigateToCounterparties = { nav.navigate(CounterpartiesRoute) },
                 onNavigateToFiltered = { route -> nav.navigate(route) },
                 onNavigateToRecap = { month ->
                     nav.navigate(MonthlyRecapRoute(month.year, month.monthValue))
@@ -187,6 +189,7 @@ fun SaldoApp(
                 onNavigateToRecurrences = { nav.navigate(RecurrencesRoute) },
                 onNavigateToBudgets = { nav.navigate(BudgetsRoute) },
                 onNavigateToSavingsGoals = { nav.navigate(SavingsGoalsRoute) },
+                onNavigateToCounterparties = { nav.navigate(CounterpartiesRoute) },
                 onNavigateToSecurity = { nav.navigate(SecurityRoute) },
                 onNavigateToBackup = { nav.navigate(BackupRoute) },
                 onNavigateToAbout = { nav.navigate(AboutRoute) },
@@ -273,6 +276,13 @@ fun SaldoApp(
                 onNavigateToNewAccount = {
                     nav.navigate(AccountEditorRoute(initialTypeName = AccountType.SAVINGS.name))
                 },
+            )
+        }
+        entry<CounterpartiesRoute> {
+            CounterpartiesScreen(
+                onNavigateBack = { nav.goBack() },
+                onNavigateToDrillDown = { route -> nav.navigate(route) },
+                onNavigateToEditor = { route -> nav.navigate(route) },
             )
         }
         entry<FilteredTransactionsRoute> { route ->

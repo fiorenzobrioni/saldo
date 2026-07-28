@@ -3,6 +3,7 @@ package com.callbackdev.saldo.core.database.mapper
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
 import com.callbackdev.saldo.core.database.relation.AccountTotalRow
 import com.callbackdev.saldo.core.database.relation.CategoryTotalRow
+import com.callbackdev.saldo.core.database.relation.CounterpartyTotalRow
 import com.callbackdev.saldo.core.database.relation.DailyActivityRow
 import com.callbackdev.saldo.core.database.relation.DailyNetRow
 import com.callbackdev.saldo.core.database.relation.DashboardTotalsRow
@@ -10,6 +11,7 @@ import com.callbackdev.saldo.core.database.relation.MonthlyNetRow
 import com.callbackdev.saldo.core.database.relation.MonthlyTotalRow
 import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
+import com.callbackdev.saldo.core.domain.model.CounterpartyTotal
 import com.callbackdev.saldo.core.domain.model.DailyActivity
 import com.callbackdev.saldo.core.domain.model.DailyNet
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
@@ -48,6 +50,7 @@ fun TransactionEntity.toDomain(): Transaction {
         recurringRuleId = recurringRuleId,
         isPending = isPending,
         recurringOccurrenceDate = recurringOccurrenceEpochDay?.let(LocalDate::ofEpochDay),
+        counterparty = counterparty,
     )
 }
 
@@ -72,6 +75,7 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     recurringRuleId = recurringRuleId,
     isPending = isPending,
     recurringOccurrenceEpochDay = recurringOccurrenceDate?.toEpochDay(),
+    counterparty = counterparty,
 )
 
 fun CategoryTotalRow.toDomain(currency: Currency): CategoryTotal = CategoryTotal(
@@ -117,6 +121,18 @@ fun DailyNetRow.toDomain(currency: Currency): DailyNet = DailyNet(
     date = LocalDate.ofEpochDay(epochDay),
     net = MoneyMapper.toAmount(netMinor, currency),
 )
+
+/** Parses the row's own currency: this aggregate spans every currency at once. */
+fun CounterpartyTotalRow.toDomain(): CounterpartyTotal {
+    val currency = Currency.getInstance(currency)
+    return CounterpartyTotal(
+        name = name,
+        currency = currency,
+        total = MoneyMapper.toAmount(totalMinor, currency),
+        count = count,
+        lastActivity = LocalDate.ofEpochDay(lastEpochDay),
+    )
+}
 
 fun DailyActivityRow.toDomain(currency: Currency): DailyActivity = DailyActivity(
     date = LocalDate.ofEpochDay(epochDay),

@@ -82,25 +82,37 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
         fun create(route: FilteredTransactionsRoute): FilteredTransactionsViewModel
     }
 
+    /** The route's window, or null when the drill-down spans the whole ledger. */
+    private val window: ClosedRange<LocalDate>? =
+        if (route.startEpochDay == null || route.endEpochDayExclusive == null) {
+            null
+        } else {
+            LocalDate.ofEpochDay(route.startEpochDay)..
+                LocalDate.ofEpochDay(route.endEpochDayExclusive - 1)
+        }
+
     private val filters = TransactionFilters(
-        datePreset = DatePreset.CUSTOM,
-        customStart = LocalDate.ofEpochDay(route.startEpochDay),
-        customEnd = LocalDate.ofEpochDay(route.endEpochDayExclusive - 1),
+        datePreset = if (window == null) DatePreset.ALL else DatePreset.CUSTOM,
+        customStart = window?.start,
+        customEnd = window?.endInclusive,
         categoryIds = setOfNotNull(route.categoryId),
         // With no category picked, this narrows to exactly the uncategorized
         // movements: the ring's "No category" slice and the ledger's own
         // "No category" chip resolve through the same engine predicate.
         includeUncategorized = route.uncategorizedOnly,
         accountIds = setOfNotNull(route.accountId),
+        counterparty = route.counterparty,
     )
 
     val uiState: StateFlow<FilteredTransactionsUiState> = combine(
-        transactionRepository.observeTransactionsBetween(
-            start = LocalDate.ofEpochDay(route.startEpochDay)
-                .minusDays(1).atStartOfDay(clock.zone).toInstant(),
-            end = LocalDate.ofEpochDay(route.endEpochDayExclusive)
-                .plusDays(1).atStartOfDay(clock.zone).toInstant(),
-        ),
+        // Windowed in SQL when there is a window; the whole confirmed ledger
+        // otherwise, which is what a counterparty's history is.
+        window?.let {
+            transactionRepository.observeTransactionsBetween(
+                start = it.start.minusDays(1).atStartOfDay(clock.zone).toInstant(),
+                end = it.endInclusive.plusDays(2).atStartOfDay(clock.zone).toInstant(),
+            )
+        } ?: transactionRepository.observeTransactions(),
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
         tagRepository.observeTagAssignments(),
@@ -131,7 +143,8 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
             }
         FilteredTransactionsUiState(
             isLoading = false,
-            title = route.categoryId?.let { categoryById[it]?.name }
+            title = route.counterparty
+                ?: route.categoryId?.let { categoryById[it]?.name }
                 ?: route.accountId?.let { accountById[it]?.name },
             isUncategorized = route.uncategorizedOnly,
             isOtherCurrencies = route.otherCurrenciesOnly,

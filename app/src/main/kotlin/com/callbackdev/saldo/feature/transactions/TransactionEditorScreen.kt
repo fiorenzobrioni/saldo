@@ -477,15 +477,81 @@ private fun EditorForm(
                             onCheckedChange = viewModel::onRefundChanged,
                         )
                     }
+                    CounterpartySection(
+                        uiState = uiState,
+                        onToggled = viewModel::onCounterpartyToggled,
+                        onNameChange = viewModel::onCounterpartyChanged,
+                        onFieldFocused = onCloseKeypad,
+                    )
                     EditorSwitchRow(
                         title = stringResource(R.string.transaction_editor_exclude_stats),
-                        subtitle = stringResource(R.string.transaction_editor_exclude_stats_hint),
+                        subtitle = stringResource(
+                            if (uiState.isCounterparty) {
+                                R.string.transaction_editor_exclude_stats_locked
+                            } else {
+                                R.string.transaction_editor_exclude_stats_hint
+                            },
+                        ),
                         checked = uiState.isExcludedFromStats,
                         onCheckedChange = viewModel::onExcludedFromStatsChanged,
+                        // A loan is out of the statistics by definition: the row
+                        // stays visible, showing the value the loan implies.
+                        enabled = !uiState.isCounterparty,
                     )
                 }
             }
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/**
+ * Loans between people (ADR 34): one switch, the person's name, and a line
+ * saying what the movement means in the direction it already has. An expense
+ * with a counterparty is money lent, an income with one is money coming back
+ * (or a loan received): the same two verses the ledger already has, so nothing
+ * new is invented here, and the reading is spelled out instead of being left to
+ * be deduced.
+ */
+@Composable
+private fun CounterpartySection(
+    uiState: TransactionEditorUiState,
+    onToggled: (Boolean) -> Unit,
+    onNameChange: (String) -> Unit,
+    onFieldFocused: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        EditorSwitchRow(
+            title = stringResource(R.string.transaction_editor_counterparty),
+            subtitle = stringResource(R.string.transaction_editor_counterparty_hint_row),
+            checked = uiState.isCounterparty,
+            onCheckedChange = onToggled,
+        )
+        AnimatedSection(visible = uiState.isCounterparty) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                InlineCounterpartyField(
+                    value = uiState.counterparty,
+                    onValueChange = onNameChange,
+                    isError = uiState.showValidation && !uiState.isCounterpartyValid,
+                    modifier = Modifier.onFocusChanged { if (it.isFocused) onFieldFocused() },
+                )
+                CounterpartySuggestions(
+                    suggestions = uiState.counterpartySuggestions,
+                    onSelect = onNameChange,
+                )
+                Spacer(Modifier.height(8.dp))
+                InfoBanner(
+                    text = stringResource(
+                        if (uiState.type == TransactionType.INCOME) {
+                            R.string.transaction_editor_counterparty_banner_income
+                        } else {
+                            R.string.transaction_editor_counterparty_banner_expense
+                        },
+                    ),
+                )
+                Spacer(Modifier.height(4.dp))
+            }
         }
     }
 }

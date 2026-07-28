@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.BudgetProgress
 import com.callbackdev.saldo.core.domain.model.Category
+import com.callbackdev.saldo.core.domain.model.CounterpartyLedger
 import com.callbackdev.saldo.core.domain.model.DailyBalance
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
@@ -29,6 +30,7 @@ import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveCounterpartyBalancesUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDailyBalanceHistoryUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
@@ -167,6 +169,8 @@ data class DashboardUiState(
     val safeToSpend: SafeToSpend? = null,
     /** Savings goals with progress, ordered for display (empty: no goals set). */
     val savingsGoals: List<SavingsGoalProgress> = emptyList(),
+    /** Credits and debts toward people; empty when nobody was ever recorded. */
+    val counterparties: CounterpartyLedger = CounterpartyLedger(),
     /** Which optional cards the user keeps visible (Settings > Dashboard). */
     val cardPrefs: DashboardCardPreferences = DashboardCardPreferences(),
     /**
@@ -192,6 +196,7 @@ class DashboardViewModel @Inject constructor(
     private val observeSafeToSpend: ObserveSafeToSpendUseCase,
     private val observeDueStatements: ObserveDueStatementsUseCase,
     private val observeSavingsGoalsProgress: ObserveSavingsGoalsProgressUseCase,
+    private val observeCounterpartyBalances: ObserveCounterpartyBalancesUseCase,
     private val observeDailyBalanceHistory: ObserveDailyBalanceHistoryUseCase,
     private val clock: Clock,
 ) : ViewModel() {
@@ -218,6 +223,7 @@ class DashboardViewModel @Inject constructor(
         val cardPrefs: DashboardCardPreferences,
         val dueStatements: List<DueStatement>,
         val savingsGoals: List<SavingsGoalProgress>,
+        val counterparties: CounterpartyLedger,
     )
 
     /**
@@ -258,9 +264,11 @@ class DashboardViewModel @Inject constructor(
                 observeSafeToSpend(primary),
                 userPreferences.dashboardCardPreferences,
                 observeDueStatements(),
-                observeSavingsGoalsProgress(),
-            ) { budgets, safeToSpend, cardPrefs, dueStatements, savingsGoals ->
-                Extras(budgets, safeToSpend, cardPrefs, dueStatements, savingsGoals)
+                // The typed combine stops at five flows, so the two "who holds
+                // what" sources travel together in the last slot.
+                combine(observeSavingsGoalsProgress(), observeCounterpartyBalances(), ::Pair),
+            ) { budgets, safeToSpend, cardPrefs, dueStatements, (savingsGoals, counterparties) ->
+                Extras(budgets, safeToSpend, cardPrefs, dueStatements, savingsGoals, counterparties)
             }
             val sparklineDays = List(SPARKLINE_DAYS) { today.minusDays(SPARKLINE_DAYS - 1L - it) }
             combine(
@@ -284,6 +292,7 @@ class DashboardViewModel @Inject constructor(
                     cardPrefs = bundle.cardPrefs,
                     dueStatements = bundle.dueStatements.filter { it.currency == primary },
                     savingsGoals = bundle.savingsGoals.filter { it.goal.currency == primary },
+                    counterparties = bundle.counterparties,
                 )
             }
         }
@@ -377,6 +386,7 @@ class DashboardViewModel @Inject constructor(
         cardPrefs: DashboardCardPreferences,
         dueStatements: List<DueStatement>,
         savingsGoals: List<SavingsGoalProgress>,
+        counterparties: CounterpartyLedger,
     ): DashboardUiState {
         val active = accounts.filter { !it.account.isArchived }
         val totalBalance = active
@@ -442,6 +452,7 @@ class DashboardViewModel @Inject constructor(
             budgets = budgets,
             safeToSpend = safeToSpend,
             savingsGoals = savingsGoals,
+            counterparties = counterparties,
             cardPrefs = cardPrefs,
             // The Settings switch silences the teaser without touching the
             // per-month dismissal flow.

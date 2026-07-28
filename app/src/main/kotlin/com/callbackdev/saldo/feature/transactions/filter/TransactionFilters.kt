@@ -46,6 +46,15 @@ data class TransactionFilters(
     val amountMin: BigDecimal? = null,
     val amountMax: BigDecimal? = null,
     val origin: TransactionOrigin? = null,
+    /**
+     * Keeps only the movements lent to or returned by this person (ADR 34),
+     * matched the way the aggregate groups them (case- and accent-insensitive).
+     * Null, the default, does not restrict anything. Set by the credits and
+     * debts drill-down; the ledger's filter sheet does not offer it, because a
+     * counterparty is reached from its own screen, not from a chip list that
+     * would grow with every name ever typed.
+     */
+    val counterparty: String? = null,
 ) {
     /** True when the category term restricts the list at all. */
     val hasCategoryFilter: Boolean get() = categoryIds.isNotEmpty() || includeUncategorized
@@ -59,7 +68,8 @@ data class TransactionFilters(
             tagIds.isNotEmpty() ||
             amountMin != null ||
             amountMax != null ||
-            origin != null
+            origin != null ||
+            counterparty != null
 
     /** True when the visible list is restricted in any way (filters or search). */
     val isActive: Boolean get() = hasActiveFilters || query.isNotBlank()
@@ -78,6 +88,7 @@ data class TransactionFilters(
             tagIds.isNotEmpty(),
             amountMin != null || amountMax != null,
             origin != null,
+            counterparty != null,
         ).count { it }
 
     companion object {

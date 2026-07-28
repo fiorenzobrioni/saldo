@@ -2,6 +2,7 @@ package com.callbackdev.saldo.core.domain.repository
 
 import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
+import com.callbackdev.saldo.core.domain.model.CounterpartyTotal
 import com.callbackdev.saldo.core.domain.model.DailyActivity
 import com.callbackdev.saldo.core.domain.model.DailyNet
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
@@ -176,6 +177,19 @@ interface TransactionRepository {
         end: Instant,
         currency: Currency,
     ): BigDecimal
+
+    /**
+     * Signed totals per counterparty and currency across the whole ledger
+     * (ADR 34), unmerged: the same person written two ways is two rows here,
+     * and merging them is the use case's job. Negative means the money is out.
+     */
+    fun observeCounterpartyTotals(): Flow<List<CounterpartyTotal>>
+
+    /**
+     * The counterparty names already used, most recently used first, for the
+     * editor's autocompletion. Spellings are distinct as stored.
+     */
+    fun observeCounterpartyNames(): Flow<List<String>>
 
     /** The latest confirmed movements, capped in SQL. */
     fun observeRecentTransactions(limit: Int): Flow<List<Transaction>>

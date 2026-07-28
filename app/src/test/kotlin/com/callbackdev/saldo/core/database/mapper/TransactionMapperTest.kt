@@ -5,6 +5,7 @@ import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Instant
@@ -85,6 +86,27 @@ class TransactionMapperTest {
         // Manual movements carry no occurrence.
         val manual = generated.copy(recurringRuleId = null, recurringOccurrenceDate = null)
         assertNull(manual.toEntity().recurringOccurrenceEpochDay)
+    }
+
+    @Test
+    fun `round trip preserves the counterparty of a loan`() {
+        val loan = Transaction(
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-50.00"),
+            currency = eur,
+            accountId = 3L,
+            timestamp = Instant.ofEpochMilli(1_700_000_123_000L),
+            zoneOffset = ZoneOffset.ofHours(1),
+            isExcludedFromStats = true,
+            counterparty = "Marta",
+        )
+
+        val restored = loan.toEntity().toDomain()
+
+        assertEquals("Marta", restored.counterparty)
+        assertTrue(restored.isExcludedFromStats)
+        // An ordinary movement carries none.
+        assertNull(loan.copy(counterparty = null).toEntity().counterparty)
     }
 
     @Test

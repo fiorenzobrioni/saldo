@@ -57,6 +57,7 @@ fun DashboardScreen(
     onNavigateToPending: () -> Unit,
     onNavigateToBudgets: () -> Unit,
     onNavigateToSavingsGoals: () -> Unit,
+    onNavigateToCounterparties: () -> Unit,
     onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
     onNavigateToRecap: (YearMonth) -> Unit,
     modifier: Modifier = Modifier,
@@ -115,6 +116,7 @@ fun DashboardScreen(
                     onPendingClick = onNavigateToPending,
                     onBudgetsClick = onNavigateToBudgets,
                     onSavingsGoalsClick = onNavigateToSavingsGoals,
+                    onCounterpartiesClick = onNavigateToCounterparties,
                     onNavigateToFiltered = onNavigateToFiltered,
                     onRecapClick = onNavigateToRecap,
                     onRecapDismiss = viewModel::dismissRecapTeaser,
@@ -156,6 +158,7 @@ private fun DashboardContent(
     onPendingClick: () -> Unit,
     onBudgetsClick: () -> Unit,
     onSavingsGoalsClick: () -> Unit,
+    onCounterpartiesClick: () -> Unit,
     onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
     onRecapClick: (YearMonth) -> Unit,
     onRecapDismiss: () -> Unit,
@@ -251,6 +254,17 @@ private fun DashboardContent(
                     goals = uiState.savingsGoals,
                     currency = uiState.primaryCurrency,
                     onClick = onSavingsGoalsClick,
+                )
+            }
+        }
+        // No invitation when nothing is open: a card about lent money would be
+        // noise for the many users who never lend any (the Settings switch and
+        // the Management section stay the way in).
+        if (uiState.cardPrefs.showCounterparties && uiState.counterparties.hasOpenEntries) {
+            item {
+                CounterpartiesCard(
+                    ledger = uiState.counterparties,
+                    onClick = onCounterpartiesClick,
                 )
             }
         }

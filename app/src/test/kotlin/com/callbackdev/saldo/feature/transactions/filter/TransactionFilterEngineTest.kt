@@ -31,6 +31,7 @@ class TransactionFilterEngineTest {
         description: String? = null,
         note: String? = null,
         recurringRuleId: Long? = null,
+        counterparty: String? = null,
     ) = Transaction(
         type = type,
         amount = BigDecimal(amount),
@@ -43,6 +44,7 @@ class TransactionFilterEngineTest {
         description = description,
         note = note,
         recurringRuleId = recurringRuleId,
+        counterparty = counterparty,
     )
 
     private fun matches(
@@ -330,5 +332,34 @@ class TransactionFilterEngineTest {
         // The query alone makes the view "active" but is not a filter group.
         assertEquals(0, TransactionFilters(query = "x").activeCount)
         assertTrue(TransactionFilters(query = "x").isActive)
+    }
+
+    @Test
+    fun `the counterparty term keeps one person, however the name was spelled`() {
+        val filters = TransactionFilters(counterparty = "Nicolò")
+
+        assertTrue(matches(transaction(counterparty = "Nicolò"), filters))
+        assertTrue(matches(transaction(counterparty = " nicolo "), filters))
+        assertFalse(matches(transaction(counterparty = "Nicola"), filters))
+        // A movement that is not a loan is never someone's.
+        assertFalse(matches(transaction(counterparty = null), filters))
+        // Without the term, nothing is restricted.
+        assertTrue(matches(transaction(counterparty = null), TransactionFilters.NONE))
+    }
+
+    @Test
+    fun `the search matches the counterparty like the description and the note`() {
+        val filters = TransactionFilters(query = "mart")
+
+        assertTrue(matches(transaction(counterparty = "Marta"), filters))
+        assertFalse(matches(transaction(counterparty = "Luca"), filters))
+    }
+
+    @Test
+    fun `the counterparty is its own filter group`() {
+        val filters = TransactionFilters(counterparty = "Marta")
+
+        assertEquals(1, filters.activeCount)
+        assertTrue(filters.hasActiveFilters)
     }
 }
