@@ -821,6 +821,8 @@
     <string name="about_version">Version %1$s</string>
     <string name="about_tagline">Understand where your money goes, clearly and instantly.</string>
     <string name="about_author">Developed by Callback Dev</string>
+    <!-- Author line: a name and a year, identical in every language. -->
+    <string name="about_copyright" translatable="false">© 2026 Fiorenzo Brioni</string>
     <string name="about_license_title">License</string>
     <string name="about_license_body">Saldo is free software, released under the GNU GPL-3.0 license.</string>
     <string name="about_libraries_title">Open source libraries</string>

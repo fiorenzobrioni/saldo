@@ -1,7 +1,6 @@
 package com.callbackdev.saldo.feature.widget
 
 import android.content.Context
-import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -20,8 +19,6 @@ interface WidgetEntryPoint {
     fun quickAddWidgetDataLoader(): QuickAddWidgetDataLoader
 
     fun widgetRefreshWatcher(): WidgetRefreshWatcher
-
-    fun userPreferences(): UserPreferencesRepository
 }
 
 internal fun Context.widgetEntryPoint(): WidgetEntryPoint =

@@ -7,13 +7,11 @@ import com.callbackdev.saldo.budget.BudgetNotifier
 import com.callbackdev.saldo.budget.BudgetThresholdWatcher
 import com.callbackdev.saldo.core.common.di.ApplicationScope
 import com.callbackdev.saldo.creditcard.CreditCardNotifier
-import com.callbackdev.saldo.feature.widget.WidgetPreviews
 import com.callbackdev.saldo.feature.widget.WidgetRefreshWatcher
 import com.callbackdev.saldo.recurring.RecurringNotifier
 import com.callbackdev.saldo.recurring.RecurringWorkScheduler
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -56,9 +54,5 @@ class SaldoApplication : Application(), Configuration.Provider {
         budgetThresholdWatcher.start(applicationScope)
         widgetRefreshWatcher.start(applicationScope)
         RecurringWorkScheduler.schedule(this)
-        // Republishes the picker's generated previews (API 35+) when the
-        // launcher has lost them, which an in-place update or a reboot makes it
-        // do: see WidgetPreviews for why this is not a one-shot.
-        applicationScope.launch { WidgetPreviews.publishMissing(this@SaldoApplication) }
     }
 }

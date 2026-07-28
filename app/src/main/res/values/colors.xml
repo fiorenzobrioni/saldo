@@ -36,4 +36,16 @@
          brand choice the system palette cannot express. -->
     <color name="widget_preview_expense">#BA1A1A</color>
     <color name="widget_preview_income">#3E6837</color>
+
+    <!-- The grid preview's mock tiles and type selector. Four tones rather than
+         real category colours: the preview is drawn before any user exists, so
+         it stands for the shape of the widget, not for its contents. System
+         palette tokens again, so the mock follows Material You and has a
+         values-night counterpart. -->
+    <color name="widget_preview_tile_1">@android:color/system_accent1_100</color>
+    <color name="widget_preview_tile_2">@android:color/system_accent2_100</color>
+    <color name="widget_preview_tile_3">@android:color/system_accent3_100</color>
+    <color name="widget_preview_tile_4">@android:color/system_accent1_200</color>
+    <color name="widget_preview_pill">@android:color/system_accent1_600</color>
+    <color name="widget_preview_pill_ink">@android:color/system_accent1_50</color>
 </resources>

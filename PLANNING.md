@@ -27,7 +27,7 @@
 | 7 | Date: `Instant` UTC + offset salvato | Raggruppamenti giornalieri corretti anche cambiando timezone |
 | 8 | Statistiche escludono TRANSFER e ADJUSTMENT a livello di query | Regola di dominio, non filtro UI |
 | 9 | min SDK 33 (Android 13) | Dynamic color e `POST_NOTIFICATIONS` con un solo code path; niente fallback né supporto device legacy |
-| 10 | Export Google Sheets rimandato a v1.5 | Lo scope OAuth `spreadsheets` è "sensitive" e richiede la verifica Google: fuori dal percorso critico del MVP |
+| 10 | Export Google Sheets rimandato alla roadmap v2.0 | Lo scope OAuth `spreadsheets` è "sensitive" e richiede la verifica Google: fuori dal percorso critico del MVP |
 | 11 | Navigation 3 (`androidx.navigation3`) al posto di Navigation Compose/Nav2 | Stabile da novembre 2025, raccomandata da Google per la produzione; back stack come stato Compose di proprietà dello sviluppatore, coerente con il nostro modello a single source of truth. Progetto greenfield: nessun costo di migrazione |
 | 12 | Domain layer pragmatico: Use Case solo dove c'è logica di dominio reale | Ricorrenze, rettifiche, statistiche, rimborsi, backup sì; per il CRUD banale il ViewModel usa direttamente il Repository. Evita boilerplate passacarte (per Google il domain layer è opzionale) |
 | 13 | Backup manuale su file (SAF) accanto al backup Drive, stesso formato JSON | Backup completo possibile senza account Google (coerente coi principi) e portabilità totale dei dati; un solo code path di export/restore, nessun permesso di storage richiesto |
@@ -54,7 +54,8 @@
 | 35 | I movimenti accettano allegati fotografici (scontrino, garanzia, ricevuta): tabella `attachments` con FK `ON DELETE CASCADE` verso `transactions`, file nello storage privato dell'app (`filesDir/attachments`), mai in MediaStore. Acquisizione dal Photo Picker di sistema e da `ACTION_IMAGE_CAPTURE` verso un URI del FileProvider esistente, quindi **nessun permesso** (la CAMERA non va dichiarata, altrimenti andrebbe chiesta). Ricompressione e ridimensionamento alla scrittura (lato lungo circa 2000px, JPEG) con `ImageDecoder` e decodifica della miniatura con sample size: nessuna libreria di image loading, il che rivede la nota di VISION senza aprire la porta a un'altra dipendenza. **Il backup diventa uno zip** quando esistono allegati: `backup.json` invariato dentro `saldo-backup-YYYY-MM-DD.zip` più la cartella dei file, con il restore che accetta sia lo zip sia il JSON nudo. Formato JSON e numero di versione non cambiano | La sola ragione scritta per escludere gli allegati era l'assenza di una libreria di image loading, cioè una premessa tecnica, e per qualche foto per movimento la piattaforma basta da sola. Il bisogno invece è reale e non contraddice niente di sostanziale: la foto non lascia il device, non richiede permessi, non richiede rete e non richiede OCR. Il costo vero è un altro, ed è per questo che la decisione sul backup fa parte di questo ADR e non di una fase successiva: senza lo zip il backup smetterebbe di essere completo e un ripristino restituirebbe movimenti con allegati morti, che è peggio del non avere allegati. Lo zip preserva il code path unico dell'ADR 5, perché il codec JSON non viene toccato. Cancellazione totale ed eliminazione di un movimento devono spazzare anche i file, e il restore fa una passata sugli orfani: un file senza riga in tabella è spazio occupato per sempre |
 | 36 | I movimenti datati nel futuro diventano una superficie di prodotto invece di un caso limite: elenco "In arrivo" (movimenti confermati con data futura più le occorrenze pending), promemoria opzionale per movimento che riusa canale, worker e watermark del radar pre-rinnovo, e inclusione nella coda di previsione. `BalanceForecastCalculator` smette di guardare le sole regole ricorrenti e applica alla loro data anche i movimenti futuri già registrati e le occorrenze pending del mese | Il dato esiste già (la riga "ad oggi" lo mostra sotto il saldo), ma nessuna schermata lo elenca e nessuna stima lo usa: l'app sa qualcosa di certo e lo ignora nell'unico posto in cui servirebbe. È anche la chiusura dell'asimmetria trovata nella review di luglio 2026, due stime dello stesso mese costruite su insiemi di impegni diversi (lo Spendibile oggi conta i pending, la coda della sparkline no). Non serve un tipo di movimento nuovo né una tabella: una scadenza una tantum (bollo auto, IMU, rata scolastica) è un movimento con una data, già registrabile oggi |
 | 31 | Il tastierino importi in-app torna, e vale per **tutti** i campi importo dell'app (revisione dell'ADR 16). Un solo componente in `core/designsystem` disegnato con soli token di tema, in due forme: pannello agganciato all'`EditorBottomBar` sulle schermate piene e variante compatta dentro dialog e sheet. `HeroAmountField` smette di essere un campo di testo e diventa un display con caret, quindi l'IME di sistema non si apre piu su un importo (resta per i campi di testo, e il focus dell'uno chiude l'altro). L'aritmetica sui tasti (somme in linea) resta fuori scope | I tre motivi che avevano portato all'ADR 16 sono coperti: la coerenza, perche il tastierino non e piu solo su una schermata ma su tutte; l'accessibilita, perche il display e `Role.Button` con `contentDescription` che recita l'importo, i tasti sono clickable annunciati, la tastiera hardware scrive nel campo con focus e il long-press incolla; il codice, perche la logica di editing e una funzione pura e la sanitizzazione resta quella condivisa di `MoneyInput`. In cambio si ottiene quello che l'ADR 16 non poteva dare: l'altezza del pannello e dell'app e il pannello si chiude, che e la leva con cui la schermata di inserimento garantisce due righe di categorie sopra la piega, e l'aspetto non dipende piu dalla tastiera che l'utente ha installato (barra GIF/sticker inclusa) |
-| 37 | I widget sono **punti di ingresso statici** e a costo zero per chi non li usa. Vincoli permanenti, validi per ogni intervento futuro sui widget: (a) a zero widget piazzati nessun osservatore sul database, nessun work periodico, nessun listener di sistema; l'unico residuo ammesso e il percorso delle anteprime del picker (check al cold start, ripubblicazione solo quando il sistema le ha perse, retry con tetto); (b) anche con widget piazzati, registrare un movimento non deve mai causare un redraw: il widget non mostra saldi, totali o contenuti derivati dai movimenti, e il watcher non osserva la tabella transactions; (c) i redraw scattano solo su modifiche a conti, categorie, tema o configurazione del widget, sempre attraverso la pipeline debounced. Per lo stesso motivo i widget di sola lettura (saldo totale, spese del giorno) sono fuori scope | Decisione di prodotto di luglio 2026 (Fase 10.21): il widget serve a entrare nell'app in un tap, non a visualizzare dati, ed e una feature che molti utenti non useranno mai; il suo peso a riposo deve essere indistinguibile dal non averla. Un contenuto derivato dai movimenti costa una scrittura DataStore per widget, una passata sul DB, una composizione per bucket e un payload RemoteViews al launcher **per ogni movimento registrato**: e la voce di consumo piu grande dell'intera feature, e la si evita solo tenendo i movimenti fuori da cio che il widget disegna |
+| 37 | I widget sono **punti di ingresso statici** e a costo zero per chi non li usa. Il livello raggiunto con la Fase 11.1 e un **tetto, non un traguardo**: si puo scendere sotto, mai risalire. Vincoli permanenti, validi per ogni intervento futuro sui widget: (a) **a riposo l'app non fa niente per i widget**. Con nessun widget piazzato: nessun osservatore sul database, nessun work periodico o differito, nessun listener di sistema, nessuna lettura al cold start, nessuna scrittura su DataStore. Il criterio e verificabile e va verificato: dopo un avvio a freddo senza widget piazzati non deve esistere lavoro dell'app in coda a WorkManager riconducibile ai widget, ne una query eseguita per loro; (b) **le anteprime del picker sono solo risorse**: `previewLayout` piu shape drawable e colori con variante `values-night`, disegnate come mock (niente icone rasterizzate a runtime, niente nomi di categoria, niente colori letti dal database). Le anteprime generate (`setWidgetPreviews`, API 35) sono fuori scope in modo definitivo, insieme a qualunque altra forma di anteprima che l'app debba produrre, mantenere o ripubblicare; (c) anche con widget piazzati, **registrare un movimento non causa mai un redraw**: il widget non mostra saldi, totali o contenuti derivati dai movimenti, e il watcher non osserva la tabella transactions; (d) i redraw scattano solo su modifiche a conti, categorie, tema o configurazione del widget, sempre attraverso la pipeline debounced. Per lo stesso motivo i widget di sola lettura (saldo totale, spese del giorno) sono fuori scope | Decisione di prodotto di luglio 2026 (Fase 10.21, estesa dalla Fase 11.1): il widget serve a entrare nell'app in un tap, non a visualizzare dati, ed e una feature che molti utenti non useranno mai; il suo peso a riposo deve essere indistinguibile dal non averla. Un contenuto derivato dai movimenti costa una scrittura DataStore per widget, una passata sul DB, una composizione per bucket e un payload RemoteViews al launcher **per ogni movimento registrato**: e la voce di consumo piu grande dell'intera feature, e la si evita solo tenendo i movimenti fuori da cio che il widget disegna. Il divieto sulle anteprime generate ha una causa tecnica che va scritta qui, perche il codice che la documentava e stato cancellato con esse e senza questa riga qualcuno le riproporrebbe: un'anteprima generata non e una risorsa dell'app ma stato tenuto da `system_server`, che la scarta a ogni aggiornamento in place (il manifest ri-letto azzera `generatedPreviewCategories`) e a ogni riavvio (vive in memoria, non viene mai scritta su disco), mentre `setWidgetPreview` accetta circa due chiamate l'ora per provider. Tenerla viva significa quindi, per sempre, un check a ogni avvio, una lettura del database per comporla e un worker di retry per il budget speso: lavoro ricorrente per una figurina che il sistema dimentica, mentre una risorsa statica e corretta per costruzione e costa zero. Il tetto e formulato come vincolo e non come consuntivo perche l'ottimizzazione dei widget e gia stata rifatta quattro volte: senza un livello dichiarato, ogni intervento futuro riparte dal buon senso del momento e il costo risale un pezzo alla volta |
+| 38 | La v1.0 si distribuisce come **release su GitHub** con l'APK di debug firmato dal keystore condiviso del repository, non sul Play Store: il tag `vX.Y.Z` e l'unico innesco, il workflow `release.yml` costruisce, verifica (`assembleDebug testDebugUnitTest lint detekt`) e pubblica l'APK con le note di rilascio versionate in `docs/release-notes/vX.Y.Z.md`. La pubblicazione sul Play Store non e annullata, e rinviata alla v2.0 con i suoi passi propri (account sviluppatore, build di release firmata con un keystore di upload, regole R8 verificate su device, privacy policy pubblica, scheda e canali di testing). Dalla 1.0.0 il `versionName` delle build di sviluppo diventa `1.0.<incremento>` | Il progetto non ha un account Play Store aperto e il repository e gia la vetrina del lavoro: una release con l'APK allegato rende l'app installabile subito, senza nessuno dei passi burocratici che il Play Store richiede prima ancora di poter mostrare qualcosa. Si distribuisce la build di debug e non una build di release perche e esattamente quella provata su device e in CI a ogni push: introdurre R8 e le sue regole (Room, kotlinx.serialization, Glance) proprio all'ultimo passo aggiungerebbe l'unico rischio non coperto dai test, e lo aggiungerebbe alla prima cosa che un estraneo installa. Il keystore di debug pubblico non e un'attestazione di identita e non pretende di esserlo: serve a garantire che ogni build del repository si aggiorni in place invece di richiedere una disinstallazione, ed e la stessa ragione per cui e committato (ADR: sezione "Qualita e verifica" di CLAUDE.md). Il tag come unico innesco evita la release costruita a mano da una macchina di sviluppo, che e il modo classico per pubblicare un artefatto che non corrisponde al codice taggato |
 
 ---
 
@@ -193,11 +194,11 @@
 - [x] Revisione completa stringhe IT + EN (IT: entità uniformata su "conto/conti" al posto del misto account/conto; EN: uniformata su "transaction" al posto del misto movement/transaction; parità chiavi verificata, nessuna stringa hardcoded)
 - [x] Pass di accessibilità: contentDescription verificate su tutti gli interattivi a sola icona; riassunti TalkBack sui 4 grafici Vico (canvas muto); CTA editor/onboarding a `heightIn(min)` per il font scaling; spese/entrate distinte da segno esplicito (`formatSigned`) oltre che dal colore; righe cliccabili con merge semantico automatico. Verifica manuale TalkBack/200% su device: pending (nessun emulatore in questo ambiente)
 - [x] Empty state e stati di errore su tutte le schermate (audit: empty/loading già coperti ovunque; aggiunta gestione errori di scrittura con snackbar a conti (archivia/elimina/rettifica), registro (elimina/undo), da confermare (conferma/salta) e riordino categorie, che prima potevano crashare su un errore Room)
-- [x] Performance: registro appiattito in item lazy per riga (prima un item monolitico per giorno) con key e contentType stabili su header/righe/spaziatori, così con migliaia di record compongono e riciclano solo le righe visibili; l'aspetto a card raggruppata è preservato con forme a segmento. Paging3 non introdotto: il motore filtri e la ricerca full-text sono in-memory per design (un solo code path), da rivalutare solo se una misurazione su device con migliaia di record mostrasse problemi. Baseline profile spostato in Fase 10 (richiede modulo macrobenchmark e run su device, non disponibile in questo ambiente)
+- [x] Performance: registro appiattito in item lazy per riga (prima un item monolitico per giorno) con key e contentType stabili su header/righe/spaziatori, così con migliaia di record compongono e riciclano solo le righe visibili; l'aspetto a card raggruppata è preservato con forme a segmento. Paging3 non introdotto: il motore filtri e la ricerca full-text sono in-memory per design (un solo code path), da rivalutare solo se una misurazione su device con migliaia di record mostrasse problemi. Baseline profile spostato nella fase di release (Fase 11.5, e da li rinviato alla Fase 15: richiede modulo macrobenchmark e run su device, non disponibile in questo ambiente)
 
-## Fase 9.5 - Budget, spendibile oggi e dashboard configurabile (anticipata dalla v1.5)
+## Fase 9.5 - Budget, spendibile oggi e dashboard configurabile (anticipata alla v1.0)
 
-> Anticipo deciso a luglio 2026, prima della release v1.0: la tabella budget nasce nello schema che va in produzione (migration 5->6) e il campo `budgets` entra nel backup JSON senza bump di versione. Il Widget resta in v1.5. Design: ADR 18 e 19.
+> Anticipo deciso a luglio 2026, prima della release v1.0: la tabella budget nasce nello schema che va in produzione (migration 5->6) e il campo `budgets` entra nel backup JSON senza bump di versione. Il Widget non entra in questo giro (arriverà nella Fase 10.18). Design: ADR 18 e 19.
 
 - [x] Budget: entità (`budgets`, migration 5->6, unique su categoryId), modello complessivo + per categoria di spesa, CRUD con schermata dedicata (hero card del complessivo con residuo e barra, categorie ordinate per vicinanza al tetto) ed editor (scope picker, importo nella valuta principale, eliminazione con conferma)
 - [x] Indicatori 🟢🟡🔴: `ThresholdProgressBar` condivisa nel design system, ruolo `warning` ambra in `MoneyColors` (light/dark), soglie esatte in minor units; colore mai da solo (percentuale testuale sempre presente, icona esplicita oltre il 100%)
@@ -219,7 +220,7 @@
 - [x] Perf: `MoneyFormatter` mette in cache il `NumberFormat` per `(valuta, locale)` con `ThreadLocal` (`NumberFormat` non è thread-safe) invece di ricostruirlo a ogni chiamata, che pesava scorrendo le liste di importi (commit 519a7f9)
 - [x] Perf: catch-up ricorrenze e parsing dell'intent shortcut solo all'avvio genuino (`savedInstanceState == null`), non a ogni ricreazione da cambio configurazione (rotazione ecc.); WorkManager copre comunque i giorni a device spento (commit 519a7f9)
 - [x] `SwipeToDismiss` del registro migrato fuori dall'API deprecata `confirmValueChange`: l'eliminazione osserva lo stato assestato via `snapshotFlow`, con la sola direzione destra->sinistra abilitata (stesso comportamento, niente warning, a prova di rimozione futura dell'API) (commit 754767c)
-- [x] Transizioni di schermata: valutato uno stile "espressivo" (scale shared-Z) e poi ripristinata la transizione originale slide + fade dopo verifica su device (decisione utente, condivisa). Lo scatto residuo percepito è di build debug / assenza di baseline profile, non dello spec dell'animazione: il tema è tracciato in Fase 10 (commit 754767c)
+- [x] Transizioni di schermata: valutato uno stile "espressivo" (scale shared-Z) e poi ripristinata la transizione originale slide + fade dopo verifica su device (decisione utente, condivisa). Lo scatto residuo percepito è di build debug / assenza di baseline profile, non dello spec dell'animazione: il tema è tracciato nella fase di release (Fase 11.5, commit 754767c)
 - [x] Verifica: gate `assembleDebug testDebugUnitTest lint detekt` verde in CI per ogni commit; APK di prova validato su device reale dall'utente (shortcut, skeleton, ricorrenza scaduta oggi, transizioni)
 
 ## Fase 9.7 - Fix dalla terza review completa (luglio 2026)
@@ -312,48 +313,19 @@
 - [x] Hub: terza tab Trasferimenti e card "Risparmio pianificato: X/mese" derivata dai soli trasferimenti verso conti `SAVINGS` (seme onesto degli Obiettivi di risparmio v2.0)
 - [x] Stringhe IT/EN, notifiche pre-rinnovo transfer-aware, unit test (motore, mapper, backup, editor VM, pending VM, hub VM)
 
-## Fase 10 - Release v1.0
+## Fase 9.16 - Anticipi alla v1.0: budget, import CSV e widget (luglio 2026)
 
-- [ ] Baseline profile (spostato dalla Fase 9: richiede modulo macrobenchmark e generazione su device/emulatore)
-- [ ] QA manuale end-to-end (checklist dei flussi principali)
-- [ ] Test su device reali: API 33 e ultimo Android stabile, tablet/schermi grandi (almeno layout non rotto)
-- [ ] Icona app, screenshot, scheda Play Store
-- [ ] Privacy policy (obbligatoria per il Play Store, anche senza raccolta dati)
-- [ ] Firma release, R8/proguard rules (attenzione a Room/serialization/Drive API)
-- [ ] Internal testing → closed testing → produzione
+> Voci pianificate per dopo l'MVP e consegnate invece prima della release v1.0, su richiesta utente. Quelle pianificate insieme a loro e non anticipate sono confluite nella Roadmap v2.0: PIN e biometria, export Excel, export Google Sheets, miglioramenti UX dal feedback.
+
+- [x] Budget, spendibile oggi e dashboard configurabile: anticipati nella Fase 9.5 (ADR 18 e 19)
+- [x] Import CSV (anticipato): riconoscimento automatico di separatore, decimali e colonne (mappatura per nome, alias IT/EN, ordine libero, colonne minime data+importo), regole di adattamento (tipo dedotto dal segno, normalizzazione del segno, valuta dal conto), creazione opzionale di conti/categorie/tag mancanti, rilevazione duplicati contro il registro e nel file, anteprima a due passi e report finale. Solo inserimento, in un'unica transazione. La colonna "Ricorrente" dell'export è informativa e non viene reimportata
+- [x] ~~Widget: aggiunta rapida~~ implementato nella Fase 10.18 (ADR 32), anticipato prima della v1.0 su richiesta utente. Dalla Fase 10.21 il widget e un punto di ingresso statico (niente totali ne contenuti derivati dai movimenti); per lo stesso motivo i widget di sola lettura (saldo totale) sono fuori scope
 
 ---
 
-# Roadmap v1.5
+# Fasi anticipate dalla roadmap v2.0 (implementate prima della v1.0)
 
-> Il Budget, originariamente in questa roadmap, è stato anticipato nella Fase 9.5.
-
-- [ ] PIN lock + biometria (`BiometricPrompt`) + `FLAG_SECURE` opzionale
-- [x] ~~Widget: aggiunta rapida~~ implementato nella Fase 10.18 (ADR 32), anticipato prima della v1.0 su richiesta utente. Dalla Fase 10.21 il widget e un punto di ingresso statico (niente totali ne contenuti derivati dai movimenti); per lo stesso motivo i widget di sola lettura (saldo totale) sono fuori scope
-- [x] Import CSV (anticipato): riconoscimento automatico di separatore, decimali e colonne (mappatura per nome, alias IT/EN, ordine libero, colonne minime data+importo), regole di adattamento (tipo dedotto dal segno, normalizzazione del segno, valuta dal conto), creazione opzionale di conti/categorie/tag mancanti, rilevazione duplicati contro il registro e nel file, anteprima a due passi e report finale. Solo inserimento, in un'unica transazione. La colonna "Ricorrente" dell'export è informativa e non viene reimportata
-- [ ] Export Excel (.xlsx)
-- [ ] Export Google Sheets (nuovo foglio o aggiornamento foglio esistente; richiede verifica OAuth Google per lo scope "sensitive" `spreadsheets` - avviare la review per tempo)
-- [ ] Miglioramenti UX dal feedback della v1.0
-
-# Roadmap v2.0
-
-- [x] Obiettivi di risparmio (target, progressi, suggerimento mensile) - la primitiva di alimentazione esiste già: i trasferimenti ricorrenti verso conti `SAVINGS` (Fase 9.15/ADR 24), da cui deriva "Risparmio pianificato". Implementati nella Fase 10.0 (ADR 25)
-- [x] Recap mensile condivisibile stile "Wrapped" (promosso da Note e appunti): implementato nella Fase 10.1 (ADR 28)
-- [ ] Rilevamento automatico ricorrenze (promosso da Note e appunti): euristica on-device che nota spese simili ripetute a cadenza regolare e propone la regola dall'hub Ricorrenze; nessun dato lascia il device
-- [x] Proiezione saldo a fine mese: forecast del saldo totale da ricorrenze in arrivo + media della spesa giornaliera del mese, mostrata come coda tratteggiata della sparkline; sempre indicata come stima. Implementata nella Fase 10.4 (ADR 30) con un calcolatore dedicato (`BalanceForecastCalculator`, gemello di `UpcomingChargesCalculator` esteso alle entrate fisse)
-- [ ] Gestione tag dedicata: schermata CRUD (rinomina, unione, eliminazione con conferma) per i tag, che oggi si creano inline ma non si amministrano; gap emerso dalla review di luglio 2026
-- [ ] Ricerca potenziata con suggerimenti: chip di categorie, tag e descrizioni frequenti proposte sotto il campo di ricerca del registro, per arrivare al filtro giusto senza digitare
-- [x] Prestiti e finanziamenti come tipo di conto (residuo, rate mancanti, rata come trasferimento ricorrente) - approvato a luglio 2026, implementato nella Fase 11 (ADR 33)
-- [ ] Crediti e debiti verso persone (saldo per controparte, rientri parziali) - approvato a luglio 2026, dettaglio nella Fase 12 (ADR 34)
-- [ ] Movimenti futuri, scadenze una tantum e stime allineate (elenco "In arrivo", promemoria, forecast che conta ciò che è certo) - approvato a luglio 2026, dettaglio nella Fase 13 (ADR 36)
-- [ ] Allegati ai movimenti (foto dello scontrino, backup a zip) - approvato a luglio 2026, dettaglio nella Fase 14 (ADR 35)
-- [ ] Conversione valuta automatica (provider tassi, cache offline, indicazione "stimato")
-- [ ] Export PDF report con grafici
-- [ ] Cifratura backup con passphrase
-- [ ] Rimborsi collegati alla spesa originale
-- [ ] Commissioni sui trasferimenti
-- [ ] Analisi avanzate (anno su anno, pattern di spesa)
-- [ ] Valutare: sottocategorie, periodo budget personalizzato
+> Funzionalita della roadmap v2.0 portate avanti prima della release 1.0, una fase per incremento, tutte completate. Restano numerate 10.x e 11 per non rompere i riferimenti nel devlog e nei commit; la Fase 11.5 (release v1.0) chiude il blocco perche si conclude dopo di loro.
 
 ## Fase 10.0 - Obiettivi di risparmio (luglio 2026)
 
@@ -569,7 +541,7 @@
 
 ## Fase 10.18 - Widget di inserimento rapido (luglio 2026)
 
-> Widget home anticipato dalla roadmap v1.5 su richiesta utente, prima della release v1.0. Parte da una nota a mano: prima schermata con tipo, conto e griglia categorie, seconda schermata con importo e tastierino. La struttura e confermata, con due correzioni motivate: il tastierino esce dal widget (ADR 32) e il conto sale nella configurazione del widget. Nessun cambio di schema: `SALDO_DATABASE_VERSION` resta 1, il backup non e toccato. Design: ADR 32.
+> Widget home anticipato su richiesta utente, prima della release v1.0. Parte da una nota a mano: prima schermata con tipo, conto e griglia categorie, seconda schermata con importo e tastierino. La struttura e confermata, con due correzioni motivate: il tastierino esce dal widget (ADR 32) e il conto sale nella configurazione del widget. Nessun cambio di schema: `SALDO_DATABASE_VERSION` resta 1, il backup non e toccato. Design: ADR 32.
 
 - [x] Dipendenza Glance (`androidx.glance:glance-appwidget` + `glance-material3`, 1.2.0-rc01) nel version catalog, approvata dall'utente. La 1.3.0-alpha richiede AGP 9.2 e compileSdk 37, fuori dai pin attuali (Hilt 2.58 tiene AGP a 8.x); la 1.2.0 e compilata su compileSdk 35 con AGP 8.1+ e ha l'API congelata. Ripiego dichiarato in caso di problemi: 1.1.1 stable
 - [x] **Estrazioni condivise** perche le regole del denaro non esistano in due copie: `TransactionSign.signed` (convenzione di segno, era privata nell'editor), `DefaultAccountResolver.resolve` (catena default esplicito -> ultimo usato -> primo attivo, era dentro `preselectDefaultAccount`), `QuickTransactionFactory.create` (movimento EXPENSE/INCOME con importo riscalato alla valuta del conto e offset preso alla data del movimento, non a "adesso"). L'editor completo usa i primi due, il ramo trasferimenti resta dov'era
@@ -671,19 +643,11 @@
 - [x] **Tema risolto una volta per refresh**: `loadShared` restituisce uno snapshot (dati + `QuickAddWidgetTheme`) chiavato su (config, revision), quindi niente piu collector DataStore e doppia costruzione di ColorScheme in ognuna delle 14 composizioni per bucket, e il primo frame esce gia con la palette giusta (prima partiva col tema di default e riinviava le RemoteViews). Cache condivisa portata da 1 a 8 voci: due widget con config diverse non si sfrattano piu a vicenda a ogni alternanza
 - [x] Config activity: `isBar` (chiamata binder) e `resolveWidgetTheme` non si ricalcolano piu a ogni frame (`lazy` + `remember` sui veri input)
 - [x] **Payload bitmap ridotto**: i glifi passano da maschere bianche ARGB_8888 ad ALPHA_8 (un quarto dei byte per glifo; il tint SRC_IN legge solo l'alpha di destinazione, quindi il risultato a schermo e identico). Il mark dell'app resta ARGB (ha gradienti). `LruCache` dimensionata in byte (512 KB) invece che a 64 voci
-- [x] Tetto ai retry delle anteprime generate: il worker orario di `WidgetPreviews` si riarma al massimo 4 volte (contatore nell'input data), poi si ferma fino al prossimo cold start, che ritenta comunque
+- [x] ~~Tetto ai retry delle anteprime generate: il worker orario di `WidgetPreviews` si riarma al massimo 4 volte (contatore nell'input data), poi si ferma fino al prossimo cold start, che ritenta comunque~~ superato dalla Fase 11.1: le anteprime generate sono state rimosse del tutto, worker compreso
 - [x] **Sfondo sul token Material 3 dei widget** (versionCode 147 -> 148, versionName 0.9.108 -> 0.9.109): il contenitore usa `GlanceTheme.colors.widgetBackground` invece di `colorScheme.background` (revoca della deviazione della Fase 10.18). glance-material3 deriva il token da secondaryContainer con tono aggiustato in HCT (+5 sopra il tono medio, -10 sotto, verificato sul sorgente della 1.2.x); l'anteprima in-app replica la stessa derivazione (`widgetBackgroundColorOf`, via `ColorUtils.colorToM3HCT` di androidx.core) perche una schermata Compose non ha un GlanceTheme da cui leggerla. Le preview statiche del picker passano dagli hex fissi ai token dinamici di sistema (`system_accent2_50/800` per la superficie, `system_neutral1/2` per gli inchiostri), cosi anche le card pre-generate seguono Material You
 - [x] **Fix icone delle preview statiche del picker** (prova su device della 0.9.109, versionCode 148 -> 149, versionName 0.9.109 -> 0.9.110): le ImageView dei previewLayout usavano gli adaptive-icon delle scorciatoie launcher, che `AppWidgetHostView` rende in modo inaffidabile (sulla barra: squircle intero sul bottone Spesa, nulla su Entrata). La barra ora usa due vector semplici con le stesse frecce di trend del widget vero, tintate con gli accenti brand (`widget_preview_expense/income`, variante notte con i toni scuri del brand); la griglia usa il mark `ic_launcher_foreground` (vector puro, box 56dp per compensare la safe zone)
 - [x] Test aggiornati: ordine classico, pin del conto e cache multi-voce (`QuickAddWidgetDataLoaderTest`); segnali senza movimenti e rename del conto (`WidgetRefreshWatcherTest`); config senza opacita/totale (`QuickAddWidgetPrefsTest`); tema sempre opaco (`QuickAddWidgetThemeTest`); maschera alpha (`CategoryIconBitmapsTest`)
 - [ ] Verifica su device: tint dei glifi ALPHA_8 identico su tile e bottoni (chiaro e scuro), widget invariato dopo aver registrato un movimento, redraw su rinomina conto/categoria e cambio tema, config dei widget legacy (TRANSPARENT o con opacita salvata) che riparte su sfondo solido, resa del nuovo sfondo widgetBackground (dynamic color on e off, chiaro e scuro) e corrispondenza tra widget piazzato, anteprima in-app e card del picker
-
-# Fasi approvate, da implementare (decise a luglio 2026)
-
-> Quattro funzionalità approvate dopo la review delle funzionalità finanziarie ([docs/review-funzionalita-finanziarie.md](./docs/review-funzionalita-finanziarie.md)), che rivede due decisioni precedenti (prestiti come sola categoria nella Fase 9.13; allegati esclusi in VISION per l'assenza di una libreria di image loading). Design: ADR 33, 34, 35, 36.
->
-> Ordine consigliato: 11 e 12 aggiungono risposte senza aggiungere meccaniche di denaro e riusano modelli già in casa; 13 costa poco e chiude un'asimmetria trovata dalla review; 14 va per ultima perché è l'unica che tocca il formato di backup.
->
-> Restano deliberatamente fuori (valutate e scartate nella stessa sessione): la **riconciliazione con flag "spuntato" per movimento** (richiede una colonna, una modalità dedicata e un'abitudine che l'utente tipo non ha; la rettifica saldo continua a coprire il riallineamento) e i **conti "bene" non transazionali** per immobili o portafogli valorizzati a mano (poco codice ma rompono la semantica di Account, "il luogo dove si trovano i soldi", e si infilerebbero in ogni picker di conto degli editor).
 
 ## Fase 11 - Prestiti e finanziamenti come tipo di conto
 
@@ -701,6 +665,87 @@
 - [x] Dashboard: nessuna card nuova. Il prestito compare nel breakdown della card Saldo totale come ogni altro conto (attenuato, con l'icona di esclusione dal totale già esistente)
 - [x] Stringhe IT/EN; unit test: preset di inclusione alla selezione del tipo, validazione del saldo iniziale negativo, use case (residuo, rate mancanti con arrotondamento per eccesso, nessuna regola collegata, più regole sommate, valuta diversa esclusa), round-trip backup del nuovo tipo
 - [x] Documentazione: pagina della guida utente e riga nel README; nota nella descrizione della categoria "Prestiti & Finanziamenti" che spiega quando conviene ancora usarla (chi non traccia il prestito come conto)
+
+## Fase 11.1 - Anteprime del picker statiche (luglio 2026)
+
+> Ultimo intervento sui widget prima del rilascio, su richiesta utente dopo una prova sul launcher: nel picker comparivano le anteprime **generate** (`setWidgetPreviews`, API 35), con le categorie reali ma senza icone. Chiude il residuo che l'ADR 37 si era tenuto e porta il costo dei widget a riposo a zero effettivo.
+
+- [x] Rimosso il percorso delle anteprime generate: `WidgetPreviews` con il suo `WidgetPreviewWorker`, la chiamata in `SaldoApplication.onCreate`, gli override `previewSizeMode` e `providePreview` dei due widget, `provideQuickAddPreview` e i bucket `PreviewBucket`/`PreviewRowBucket`. Con essi sparisce l'ultima lettura del DB al cold start dovuta ai widget e l'ultimo work non deciso dall'utente
+- [x] `WidgetEntryPoint.userPreferences()` rimosso: `provideQuickAddPreview` era il suo unico chiamante (il tema del widget piazzato arriva gia dallo snapshot del data loader)
+- [x] Il picker torna al solo `previewLayout`, che e una risorsa: non si rigenera, non si perde a un aggiornamento o a un riavvio e non ha limiti di frequenza da assecondare. Le anteprime generate gia pubblicate spariscono da sole al primo aggiornamento in place, perche il sistema azzera `generatedPreviewCategories` quando ri-legge il manifest
+- [x] Anteprima della griglia ridisegnata come mock statico: selettore Spesa/Entrata e due file di quattro tile arrotondate, con `LinearLayout`/`TextView`/`ImageView` e shape drawable, senza icone, nomi di categoria o colori letti dal database. Quattro tinte dai token di sistema (`system_accent*`) con variante `values-night`, cosi il mock segue Material You e il tema del launcher. L'anteprima della barra resta quella della Fase 10.21, gia statica e verificata
+- [ ] Verifica su device: le due card del picker in chiaro e scuro, nessuna traccia delle vecchie anteprime generate dopo l'aggiornamento, widget piazzato invariato. Se una vecchia anteprima sopravvivesse all'aggiornamento su un launcher che la tiene in cache propria, basta un riavvio (le anteprime generate vivono in memoria e non vengono mai scritte su disco) o una reinstallazione
+
+## Fase 11.5 - Release v1.0 (pubblicazione su GitHub)
+
+> Chiusura della roadmap v1.0. Il canale e una release su GitHub con l'APK di debug allegato, non il Play Store (ADR 38): non c'e un account sviluppatore e il repository e la vetrina del progetto. I passi Play Store non sono cancellati, sono nella Fase 15 come strada alternativa della release v2.0.
+>
+> Numerazione: nella prima stesura del piano questa era la Fase 10, subito dopo la Fase 9. Le fasi anticipate 10.x e 11 hanno poi occupato quello spazio arrivando prima del rilascio, quindi la fase di release prende il numero che le compete davvero, subito dopo l'ultima fase che rilascia (stessa convenzione delle Fasi 6.5 e 9.5, inserite a valle). Nel devlog e nei commit precedenti al 28 luglio 2026 compare ancora come "Fase 10".
+
+**Preparazione (fatta)**
+
+- [x] Canale di distribuzione deciso e documentato: release su GitHub, APK di debug firmato dal keystore condiviso del repository, aggiornabile in place da una versione all'altra (ADR 38)
+- [x] Versione portata a `versionCode` 152 e `versionName` 1.0.0 (`app/build.gradle.kts`); dalla 1.0.0 le build di sviluppo proseguono come `1.0.<incremento>`. Il `versionCode` puo avanzare senza toccare il `versionName`: identifica la build, non il nome del rilascio
+- [x] Riga di copyright nella schermata Informazioni, sotto "Sviluppata da Callback Dev": `© 2026 Fiorenzo Brioni`, `translatable="false"` perche un nome e un anno non si traducono (stesso trattamento di `about_library_names`)
+- [x] Note di rilascio complete in [docs/release-notes/v1.0.0.md](./docs/release-notes/v1.0.0.md): cosa c'e nella 1.0, download e installazione, privacy, note tecniche, limitazioni note, riepilogo in inglese
+- [x] Workflow `.github/workflows/release.yml`: al push di un tag `v*` costruisce e verifica (`assembleDebug testDebugUnitTest lint detekt`), rinomina l'APK in `saldo-<versione>-debug.apk` e pubblica la release con le note del file versionato
+- [x] CI ristretta ai push su branch, cosi il tag innesca solo il workflow di release e non due build identiche
+- [x] README allineato: badge di versione, sezione di download, roadmap futura ridotta alla sola v2.0
+- [ ] Baseline profile: rinviato alla Fase 15 (richiede un modulo macrobenchmark e una generazione su device o emulatore, non disponibili in questo ambiente). L'unico effetto e un primo avvio leggermente piu lento, dichiarato nelle limitazioni note
+
+**Verifica prima del tag (da fare su device)**
+
+- [ ] QA manuale end-to-end sui flussi principali: onboarding, spesa in 3 tap, trasferimento, rettifica saldo, ricorrenza automatica e con conferma, budget con avviso di soglia, obiettivo di risparmio, carta di credito con estratto, prestito, filtri e drill-down, recap mensile, widget
+- [ ] Verifiche su device ancora aperte delle Fasi 10.19, 10.20 e 10.21 (widget: tint dei glifi, redraw, config legacy, card del picker)
+- [ ] `MigrationsTest` strumentato eseguito su device (in CI non gira un emulatore, ADR 26)
+- [ ] Round-trip di backup su dati veri: export, cancellazione totale, ripristino, saldi identici
+- [ ] Test su device reali: API 33 e ultimo Android stabile, piu almeno un tablet o schermo grande (layout non rotto)
+- [ ] Installazione pulita su un device senza dati precedenti (onboarding dalla prima schermata)
+
+**Pubblicazione (da fare)**
+
+- [ ] Commit e push del branch, con la CI verde
+- [ ] Merge su `main` (il tag va sul commit che si vuole rilasciare)
+- [ ] Tag annotato `v1.0.0` sul commit di rilascio e push del tag
+- [ ] Workflow di release verde e release pubblicata con l'APK allegato
+- [ ] APK scaricato dalla release e installato su un device: versione 1.0.0, avvio pulito, aggiornamento in place sopra la build di sviluppo precedente senza perdita di dati
+- [ ] Voce nel devlog con la data di rilascio
+
+---
+
+# Roadmap v2.0
+
+> Backlog della prossima versione maggiore. Le voci gia consegnate restano spuntate con il riferimento alla fase che le ha implementate; quelle con una fase dedicata sono dettagliate piu sotto. Comprende anche le voci che erano pianificate per un rilascio intermedio fra l'MVP e la v2.0, riassorbite qui alla release della 1.0: quelle gia consegnate stanno nella Fase 9.16, le altre sono in elenco (PIN e biometria, export Excel e Google Sheets, miglioramenti UX dal feedback).
+
+- [x] Obiettivi di risparmio (target, progressi, suggerimento mensile) - la primitiva di alimentazione esiste già: i trasferimenti ricorrenti verso conti `SAVINGS` (Fase 9.15/ADR 24), da cui deriva "Risparmio pianificato". Implementati nella Fase 10.0 (ADR 25)
+- [x] Recap mensile condivisibile stile "Wrapped" (promosso da Note e appunti): implementato nella Fase 10.1 (ADR 28)
+- [ ] Rilevamento automatico ricorrenze (promosso da Note e appunti): euristica on-device che nota spese simili ripetute a cadenza regolare e propone la regola dall'hub Ricorrenze; nessun dato lascia il device
+- [x] Proiezione saldo a fine mese: forecast del saldo totale da ricorrenze in arrivo + media della spesa giornaliera del mese, mostrata come coda tratteggiata della sparkline; sempre indicata come stima. Implementata nella Fase 10.4 (ADR 30) con un calcolatore dedicato (`BalanceForecastCalculator`, gemello di `UpcomingChargesCalculator` esteso alle entrate fisse)
+- [ ] Gestione tag dedicata: schermata CRUD (rinomina, unione, eliminazione con conferma) per i tag, che oggi si creano inline ma non si amministrano; gap emerso dalla review di luglio 2026
+- [ ] Ricerca potenziata con suggerimenti: chip di categorie, tag e descrizioni frequenti proposte sotto il campo di ricerca del registro, per arrivare al filtro giusto senza digitare
+- [x] Prestiti e finanziamenti come tipo di conto (residuo, rate mancanti, rata come trasferimento ricorrente) - approvato a luglio 2026, implementato nella Fase 11 (ADR 33)
+- [ ] Crediti e debiti verso persone (saldo per controparte, rientri parziali) - approvato a luglio 2026, dettaglio nella Fase 12 (ADR 34)
+- [ ] Movimenti futuri, scadenze una tantum e stime allineate (elenco "In arrivo", promemoria, forecast che conta ciò che è certo) - approvato a luglio 2026, dettaglio nella Fase 13 (ADR 36)
+- [ ] Allegati ai movimenti (foto dello scontrino, backup a zip) - approvato a luglio 2026, dettaglio nella Fase 14 (ADR 35)
+- [ ] PIN lock + biometria (`BiometricPrompt`) + `FLAG_SECURE` opzionale
+- [ ] Export Excel (.xlsx)
+- [ ] Export Google Sheets (nuovo foglio o aggiornamento foglio esistente; richiede verifica OAuth Google per lo scope "sensitive" `spreadsheets` - avviare la review per tempo)
+- [ ] Miglioramenti UX dal feedback della v1.0
+- [ ] Conversione valuta automatica (provider tassi, cache offline, indicazione "stimato")
+- [ ] Export PDF report con grafici
+- [ ] Cifratura backup con passphrase
+- [ ] Rimborsi collegati alla spesa originale
+- [ ] Commissioni sui trasferimenti
+- [ ] Analisi avanzate (anno su anno, pattern di spesa)
+- [ ] Valutare: sottocategorie, periodo budget personalizzato
+
+# Fasi da implementare (roadmap v2.0)
+
+> Le tre fasi rimaste delle quattro approvate a luglio 2026 dopo la review delle funzionalita finanziarie ([docs/review-funzionalita-finanziarie.md](./docs/review-funzionalita-finanziarie.md)), che rivede due decisioni precedenti (prestiti come sola categoria nella Fase 9.13; allegati esclusi in VISION per l'assenza di una libreria di image loading). La prima, la Fase 11, e stata implementata prima della v1.0. Design: ADR 34, 35, 36.
+>
+> Ordine di esecuzione: 12 aggiunge risposte senza aggiungere meccaniche di denaro e riusa modelli gia in casa; 13 costa poco e chiude un'asimmetria trovata dalla review; 14 va per ultima perche e l'unica che tocca il formato di backup. La Fase cloud resta da valutare e non blocca la release; la Fase 15 e sempre l'ultima, e le fasi eventualmente approvate in futuro si inseriscono prima di lei.
+>
+> Restano deliberatamente fuori (valutate e scartate nella stessa sessione): la **riconciliazione con flag "spuntato" per movimento** (richiede una colonna, una modalita dedicata e un'abitudine che l'utente tipo non ha; la rettifica saldo continua a coprire il riallineamento) e i **conti "bene" non transazionali** per immobili o portafogli valorizzati a mano (poco codice ma rompono la semantica di Account, "il luogo dove si trovano i soldi", e si infilerebbero in ogni picker di conto degli editor).
 
 ## Fase 12 - Crediti e debiti verso persone
 
@@ -743,7 +788,7 @@
 - [ ] Verificare l'impatto sull'export CSV: nessuna colonna nuova, gli allegati non sono esportabili in un CSV e la cosa va detta nella schermata di export invece di essere scoperta
 - [ ] Stringhe IT/EN; unit test: normalizzazione dimensioni (funzione pura sui lati), round-trip backup con e senza allegati, orfani rilevati e spazzati, cascade dell'eliminazione; strumentati per la migration e per la scrittura reale dei file
 
-# Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
+## Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.
 
@@ -751,6 +796,42 @@
 - [ ] Upload backup su App Data Folder + rotazione (ultimi 5)
 - [ ] Backup automatico WorkManager (periodico, solo Wi-Fi, configurabile)
 - [ ] Restore guidato dal backup Drive (primo avvio e da impostazioni)
+
+## Fase 15 - Release v2.0
+
+> Ultima fase della roadmap, sempre in fondo: si chiude quando le fasi ancora aperte sono concluse. Due strade che non si escludono: la release su GitHub e la stessa procedura della v1.0 e si fa comunque, il Play Store si aggiunge solo se e quando ci sara un account sviluppatore. La strada B e la checklist Play Store della prima stesura del piano, rimessa qui invece di essere buttata via.
+
+**Comuni alle due strade**
+
+- [ ] Fasi 12, 13 e 14 completate (la Fase cloud e opzionale e non blocca la release)
+- [ ] Baseline profile, rimandato dalla v1.0: modulo `:macrobenchmark`, generazione su device o emulatore, misura del guadagno al primo avvio
+- [ ] QA manuale end-to-end con la checklist della v1.0 estesa alle funzionalita nuove
+- [ ] Migration test strumentati su device dalla v1 alla versione corrente: le Fasi 12 e 14 introducono migration reali con bump di `SALDO_DATABASE_VERSION` (ADR 26)
+- [ ] Compatibilita all'indietro del backup: ripristino di un file esportato dalla 1.0 su un'installazione 2.0, allegati e zip compresi (ADR 35)
+- [ ] Test su device reali: API 33 e ultimo Android stabile, piu tablet o schermo grande
+- [ ] `versionCode` +1 e `versionName` 2.0.0
+- [ ] Note di rilascio in `docs/release-notes/v2.0.0.md`, con una sezione "cosa cambia dalla 1.0"
+- [ ] README, VISION e guida utente allineati alle funzionalita nuove
+
+**Strada A - Release su GitHub (procedura della v1.0)**
+
+- [ ] Merge su `main`, CI verde
+- [ ] Tag annotato `v2.0.0` e push del tag: `release.yml` costruisce, verifica e pubblica l'APK di debug con le note del file versionato
+- [ ] Aggiornamento in place sopra la 1.0 verificato su device (stesso keystore di debug, `versionCode` superiore) senza perdita di dati
+- [ ] Link alla release aggiornato nel README
+
+**Strada B - Pubblicazione sul Play Store (solo con un account sviluppatore)**
+
+- [ ] Account Google Play Developer (una tantum, a pagamento) e verifica dell'identita dello sviluppatore
+- [ ] Keystore di **upload** dedicato, mai committato, con Play App Signing attivo; chiave e password come secret di GitHub Actions per la build firmata in CI
+- [ ] Build di release verificata davvero: R8 e shrinker attivi, regole proguard per Room, kotlinx.serialization, Glance e Vico, e smoke test su device dell'artefatto firmato (non del solo APK di debug)
+- [ ] Android App Bundle (`.aab`) come formato di caricamento, `versionCode` unico e crescente
+- [ ] Privacy policy pubblicata a un URL stabile (obbligatoria anche senza raccolta dati) e sezione "Sicurezza dei dati" compilata: nessun dato raccolto, nessun dato condiviso, dati cancellabili dall'app
+- [ ] Scheda dello store: nome, descrizione breve e lunga in IT ed EN, icona 512x512, immagine in evidenza 1024x500, screenshot per telefono e tablet
+- [ ] Content rating, pubblico di destinazione, dichiarazione di assenza di annunci e di acquisti in-app
+- [ ] targetSdk conforme alla policy annuale di Google Play al momento della pubblicazione: l'aggiornamento e una chore dedicata e testata, non un'improvvisazione a ridosso della release (ADR 14)
+- [ ] Internal testing -> closed testing -> produzione, con rollout graduale
+- [ ] Rapporto tra i due canali dichiarato nelle note di rilascio: l'APK di GitHub e firmato con un certificato diverso da quello del Play Store, quindi le due installazioni non si aggiornano a vicenda e passare da una all'altra richiede disinstallare (con un backup prima)
 
 ---
 

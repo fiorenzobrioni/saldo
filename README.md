@@ -11,7 +11,9 @@ Un'app Android moderna, offline-first e privacy-first per il tracciamento delle 
 ![Kotlin](https://img.shields.io/badge/Kotlin-100%25-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)
 ![License](https://img.shields.io/badge/license-GPL--3.0-blue)
-![Status](https://img.shields.io/badge/status-in%20sviluppo-orange)
+![Release](https://img.shields.io/github/v/release/fiorenzobrioni/saldo?label=release)
+
+[**⬇️ Scarica l'ultima versione**](https://github.com/fiorenzobrioni/saldo/releases/latest)
 
 </div>
 
@@ -50,9 +52,19 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 - 🛟 **Niente modifiche perse per sbaglio** - uscendo da un editor (conto, movimento, ricorrenza, budget, categoria) con dati non salvati, l'app chiede conferma prima di scartarli; l'eliminazione di movimenti, budget e obiettivi dagli editor si annulla con un tap (undo), senza dialog di conferma
 - 🇮🇹 🇬🇧 Italiano e inglese
 
-### Roadmap futura (v1.5 / v2.0)
+### Roadmap futura (v2.0)
 
 Crediti e debiti verso persone, movimenti futuri con promemoria, foto dello scontrino allegate ai movimenti, PIN e biometria, export Google Sheets/Excel/PDF, conversione valuta, cifratura backup, backup automatico su Google Drive (da valutare). Roadmap completa in [PLANNING.md](./PLANNING.md).
+
+## Installazione
+
+L'app non è (ancora) sul Play Store: si scarica dalla sezione [Releases](https://github.com/fiorenzobrioni/saldo/releases/latest) di questo repository.
+
+1. Scarica il file `saldo-<versione>-debug.apk` dagli allegati della release.
+2. Aprilo dal telefono e autorizza l'installazione da questa sorgente quando Android lo chiede.
+3. Al primo avvio scegli valuta e primo conto, oppure ripristina un backup esistente.
+
+Requisiti: Android 13 (API 33) o superiore. L'APK pubblicato è una build di debug, la stessa verificata dalla CI, firmata con il keystore di debug condiviso del repository: ogni release si installa sopra la precedente senza perdere i dati. Le note di ogni versione sono in [docs/release-notes/](./docs/release-notes/).
 
 ## Principi
 
@@ -95,7 +107,7 @@ Verifica completa (build, unit test, lint, analisi statica):
 ./gradlew assembleDebug testDebugUnitTest lint detekt
 ```
 
-La CI (GitHub Actions) esegue gli stessi task su ogni push.
+La CI (GitHub Actions) esegue gli stessi task su ogni push. Il push di un tag `vX.Y.Z` esegue la stessa verifica e pubblica una release con l'APK allegato.
 
 ## Struttura del progetto
 

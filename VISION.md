@@ -251,7 +251,7 @@ Abbonamenti attivi questo mese: 47,97 €
 Prossimo: Netflix -12,99 € il 07/07
 ```
 
-### 5. Budget (se attivo - v1.5)
+### 5. Budget (se attivo - v1.0)
 
 ```text
 Budget mese: 320,00 € rimanenti su 1.500,00 €
@@ -352,7 +352,7 @@ Le statistiche **escludono sempre** trasferimenti e rettifiche, e trattano i rim
 
 ---
 
-# Budget (v1.5)
+# Budget (v1.0)
 
 Limiti di spesa mensili, globali o per categoria:
 
@@ -371,7 +371,7 @@ Comportamento:
 
 ---
 
-# Obiettivi di risparmio (v2.0)
+# Obiettivi di risparmio (v1.0, anticipati dalla v2.0)
 
 L'utente crea obiettivi finanziari alimentati manualmente o collegati a un account dedicato:
 
@@ -442,7 +442,9 @@ Supporto completo dal MVP a livello di **dato**: ogni movimento conserva importo
 
 # Backup e sincronizzazione
 
-## Strategia principale: Google Drive (App Data Folder)
+Il backup della v1.0 è quello **manuale su file**, descritto più sotto: non richiede account e non richiede rete. Il backup su Google Drive resta la strategia automatica desiderata, ma è stato rimandato a una fase da valutare a fine roadmap (ADR 17 in PLANNING.md), fuori dal percorso di rilascio della v1.0.
+
+## Backup automatico su Google Drive (App Data Folder) - rimandato
 
 Backup automatico su **Google Drive → App Data Folder** (spazio nascosto e privato dell'app):
 
@@ -471,7 +473,7 @@ Note tecniche importanti:
 
 ## Backup manuale su file (v1.0)
 
-In parallelo al backup automatico su Drive, l'utente può esportare in qualsiasi momento un **backup completo su file**, senza alcun account:
+L'utente può esportare in qualsiasi momento un **backup completo su file**, senza alcun account. È il backup della v1.0, e resta valido anche se un domani arriverà quello automatico su Drive:
 
 - **stesso formato JSON versionato** del backup Drive: un solo code path, e il restore funziona indistintamente da entrambe le fonti
 - salvataggio tramite **Storage Access Framework** (`ACTION_CREATE_DOCUMENT`): l'utente sceglie la destinazione dal picker di sistema (memoria locale, Drive, qualunque provider di documenti) e l'app **non richiede permessi di storage**
@@ -485,12 +487,12 @@ Questa opzione rafforza i principi del progetto: backup completo possibile **sen
 
 # Export
 
-Formati supportati (v1.0: CSV; Google Sheets ed Excel: v1.5; PDF: v2.0):
+Formati supportati (v1.0: CSV; Excel, Google Sheets e PDF: v2.0):
 
 - **CSV** (separatore configurabile `,`/`;` - in Italia Excel si aspetta `;`), con export completo o filtrato
-- **Excel (.xlsx)** - v1.5
+- **Excel (.xlsx)** - v2.0
 - **PDF report** mensile/annuale con grafici - v2.0
-- **Google Sheets** - v1.5: lo scope OAuth `spreadsheets` è classificato "sensitive" da Google e richiede la verifica dell'app; rinviarlo toglie questa frizione dal percorso di release del MVP (il CSV si apre comunque in Sheets). Crea un nuovo foglio o aggiorna lo stesso (es. un foglio "Spese 2026" con un tab per mese):
+- **Google Sheets** - v2.0: lo scope OAuth `spreadsheets` è classificato "sensitive" da Google e richiede la verifica dell'app; rinviarlo toglie questa frizione dal percorso di release del MVP (il CSV si apre comunque in Sheets). Crea un nuovo foglio o aggiorna lo stesso (es. un foglio "Spese 2026" con un tab per mese):
 
 | Data | Tipo | Categoria | Account | Descrizione | Importo | Valuta | Tag |
 |------|------|-----------|---------|-------------|---------|--------|-----|
@@ -500,18 +502,18 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 
 # Import
 
-- restore da backup Google Drive
-- restore da file di backup manuale (`.json`, stesso formato del backup Drive)
-- **import CSV** con wizard di mappatura colonne (fondamentale per chi migra da altre app: Money Manager, Wallet, fogli Excel personali) - v1.5
+- restore da file di backup manuale (`.json`) con anteprima del contenuto e conferma esplicita
+- restore da backup Google Drive (insieme al backup automatico, rimandato)
+- **import CSV** (v1.0) con riconoscimento automatico di separatore, decimali e colonne, anteprima e rilevazione dei duplicati (fondamentale per chi migra da altre app: Money Manager, Wallet, fogli Excel personali)
 
 ---
 
 # Sicurezza e privacy
 
 - dati solo in locale; nessuna telemetria di terze parti nel MVP (eventuali crash report solo opt-in)
-- **PIN lock** (v1.5)
-- **sblocco biometrico** via `BiometricPrompt` (v1.5)
-- oscuramento del contenuto nelle app recenti (`FLAG_SECURE`, opzionale) - v1.5
+- **PIN lock** (v2.0)
+- **sblocco biometrico** via `BiometricPrompt` (v2.0)
+- oscuramento del contenuto nelle app recenti (`FLAG_SECURE`, opzionale) - v2.0
 - **cifratura backup** (v2.0)
 - permessi Android richiesti: praticamente nessuno (niente contatti, niente posizione, niente SMS). Anche gli allegati fotografici restano a zero permessi: il photo picker di sistema non ne richiede e la fotocamera si usa via intent, senza dichiarare `CAMERA` nel manifest
 
@@ -540,7 +542,7 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 
 # Widget
 
-- widget "aggiunta rapida" in due forme, griglia e barra (implementati, anticipati rispetto alla v1.5)
+- widget "aggiunta rapida" in due forme, griglia e barra (implementati nella v1.0)
 - i widget sono punti di ingresso statici, non superfici di visualizzazione: niente saldi, totali o contenuti derivati dai movimenti (decisione di luglio 2026, Fase 10.21). I widget di sola lettura (saldo totale, spese del giorno) sono fuori scope per questo motivo: costerebbero un refresh a ogni movimento
 
 ---
@@ -586,42 +588,50 @@ Nota sulle immagini: le icone dell'app sono e restano risorse vettoriali locali,
 
 # Roadmap (sintesi - dettaglio in PLANNING.md)
 
-## v1.0 (MVP)
+> La v1.0.0 esce a luglio 2026 come release su GitHub con l'APK allegato, non sul Play Store (ADR 38 in PLANNING.md). Il rilascio intermedio che era previsto fra l'MVP e la v2.0 è stato riassorbito: parte di quello che conteneva è uscito con la v1.0 (budget, widget, import CSV), il resto è confluito nella v2.0.
+
+## v1.0 (rilasciata)
+
+Perimetro dell'MVP:
 
 - Movimenti: spese, entrate, trasferimenti, rettifiche saldo
-- Account (con saldo iniziale, archiviazione)
+- Account con tipi espliciti (conto corrente, risparmio, prepagata, carta di credito, prestito, contanti, wallet digitale), saldo iniziale, archiviazione
 - Dashboard "Oggi"
 - Categorie personalizzabili
 - **Ricorrenze e abbonamenti** (inclusa vista abbonamenti)
 - Ricerca e filtri
 - Statistiche base (categoria, trend mensile, entrate vs uscite)
 - Multi-valuta a livello dato
-- Backup Google Drive (App Data Folder) + backup manuale su file
-- Export CSV
+- Backup manuale su file ed export CSV
 - IT + EN
 
-## v1.5
+Anticipato dalle roadmap successive prima del rilascio:
 
-- Budget per categoria e globale
-- PIN + biometria + FLAG_SECURE
-- Widget home screen
-- Import CSV con mappatura colonne
-- Export Google Sheets + Excel (.xlsx)
-- Miglioramenti UX dal feedback
+- Budget per categoria e globale, con "spendibile oggi"
+- Widget home screen (griglia e barra)
+- Import CSV con riconoscimento automatico del formato
+- Obiettivi di risparmio
+- Prestiti e finanziamenti come tipo di account (residuo, rate mancanti)
+- Recap mensile condivisibile e proiezione del saldo a fine mese
+
+Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, spostato a una fase da valutare a fine roadmap (ADR 17). Il backup della v1.0 è quello manuale su file.
 
 ## v2.0
 
-- Obiettivi di risparmio
-- Prestiti e finanziamenti come tipo di account (residuo, rate mancanti)
 - Crediti e debiti verso persone
 - Movimenti futuri e scadenze una tantum (elenco "in arrivo", promemoria, stima a fine mese che li conta)
 - Allegati fotografici ai movimenti (backup incluso)
+- PIN + biometria + FLAG_SECURE
+- Export Google Sheets, Excel (.xlsx) e PDF con grafici
 - Conversione valuta automatica
-- Export PDF avanzato con grafici
 - Cifratura backup
+- Rilevamento automatico delle ricorrenze
+- Gestione tag dedicata e ricerca con suggerimenti
 - Analisi avanzate (pattern di spesa, confronti anno su anno)
 - Rimborsi collegati alla spesa originale
 - Commissioni sui trasferimenti
+- Miglioramenti UX dal feedback della v1.0
+- Da valutare a fine roadmap: backup automatico su Google Drive
 
 ---
 
