@@ -76,7 +76,8 @@ fun QuickAddWidgetPreview(
                 PreviewBarRow(theme, showAppShortcut)
             } else {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     PreviewPill(stringResource(R.string.widget_quick_add_expense), theme, selected = true)
