@@ -27,7 +27,7 @@
 | 7 | Date: `Instant` UTC + offset salvato | Raggruppamenti giornalieri corretti anche cambiando timezone |
 | 8 | Statistiche escludono TRANSFER e ADJUSTMENT a livello di query | Regola di dominio, non filtro UI |
 | 9 | min SDK 33 (Android 13) | Dynamic color e `POST_NOTIFICATIONS` con un solo code path; niente fallback né supporto device legacy |
-| 10 | Export Google Sheets rimandato a v1.5 | Lo scope OAuth `spreadsheets` è "sensitive" e richiede la verifica Google: fuori dal percorso critico del MVP |
+| 10 | Export Google Sheets rimandato alla roadmap v2.0 (era "v1.5" finché quella roadmap esisteva, riassorbita nella v2.0 alla release della 1.0) | Lo scope OAuth `spreadsheets` è "sensitive" e richiede la verifica Google: fuori dal percorso critico del MVP |
 | 11 | Navigation 3 (`androidx.navigation3`) al posto di Navigation Compose/Nav2 | Stabile da novembre 2025, raccomandata da Google per la produzione; back stack come stato Compose di proprietà dello sviluppatore, coerente con il nostro modello a single source of truth. Progetto greenfield: nessun costo di migrazione |
 | 12 | Domain layer pragmatico: Use Case solo dove c'è logica di dominio reale | Ricorrenze, rettifiche, statistiche, rimborsi, backup sì; per il CRUD banale il ViewModel usa direttamente il Repository. Evita boilerplate passacarte (per Google il domain layer è opzionale) |
 | 13 | Backup manuale su file (SAF) accanto al backup Drive, stesso formato JSON | Backup completo possibile senza account Google (coerente coi principi) e portabilità totale dei dati; un solo code path di export/restore, nessun permesso di storage richiesto |
@@ -55,6 +55,7 @@
 | 36 | I movimenti datati nel futuro diventano una superficie di prodotto invece di un caso limite: elenco "In arrivo" (movimenti confermati con data futura più le occorrenze pending), promemoria opzionale per movimento che riusa canale, worker e watermark del radar pre-rinnovo, e inclusione nella coda di previsione. `BalanceForecastCalculator` smette di guardare le sole regole ricorrenti e applica alla loro data anche i movimenti futuri già registrati e le occorrenze pending del mese | Il dato esiste già (la riga "ad oggi" lo mostra sotto il saldo), ma nessuna schermata lo elenca e nessuna stima lo usa: l'app sa qualcosa di certo e lo ignora nell'unico posto in cui servirebbe. È anche la chiusura dell'asimmetria trovata nella review di luglio 2026, due stime dello stesso mese costruite su insiemi di impegni diversi (lo Spendibile oggi conta i pending, la coda della sparkline no). Non serve un tipo di movimento nuovo né una tabella: una scadenza una tantum (bollo auto, IMU, rata scolastica) è un movimento con una data, già registrabile oggi |
 | 31 | Il tastierino importi in-app torna, e vale per **tutti** i campi importo dell'app (revisione dell'ADR 16). Un solo componente in `core/designsystem` disegnato con soli token di tema, in due forme: pannello agganciato all'`EditorBottomBar` sulle schermate piene e variante compatta dentro dialog e sheet. `HeroAmountField` smette di essere un campo di testo e diventa un display con caret, quindi l'IME di sistema non si apre piu su un importo (resta per i campi di testo, e il focus dell'uno chiude l'altro). L'aritmetica sui tasti (somme in linea) resta fuori scope | I tre motivi che avevano portato all'ADR 16 sono coperti: la coerenza, perche il tastierino non e piu solo su una schermata ma su tutte; l'accessibilita, perche il display e `Role.Button` con `contentDescription` che recita l'importo, i tasti sono clickable annunciati, la tastiera hardware scrive nel campo con focus e il long-press incolla; il codice, perche la logica di editing e una funzione pura e la sanitizzazione resta quella condivisa di `MoneyInput`. In cambio si ottiene quello che l'ADR 16 non poteva dare: l'altezza del pannello e dell'app e il pannello si chiude, che e la leva con cui la schermata di inserimento garantisce due righe di categorie sopra la piega, e l'aspetto non dipende piu dalla tastiera che l'utente ha installato (barra GIF/sticker inclusa) |
 | 37 | I widget sono **punti di ingresso statici** e a costo zero per chi non li usa. Vincoli permanenti, validi per ogni intervento futuro sui widget: (a) a zero widget piazzati nessun osservatore sul database, nessun work periodico, nessun listener di sistema; l'unico residuo ammesso e il percorso delle anteprime del picker (check al cold start, ripubblicazione solo quando il sistema le ha perse, retry con tetto); (b) anche con widget piazzati, registrare un movimento non deve mai causare un redraw: il widget non mostra saldi, totali o contenuti derivati dai movimenti, e il watcher non osserva la tabella transactions; (c) i redraw scattano solo su modifiche a conti, categorie, tema o configurazione del widget, sempre attraverso la pipeline debounced. Per lo stesso motivo i widget di sola lettura (saldo totale, spese del giorno) sono fuori scope | Decisione di prodotto di luglio 2026 (Fase 10.21): il widget serve a entrare nell'app in un tap, non a visualizzare dati, ed e una feature che molti utenti non useranno mai; il suo peso a riposo deve essere indistinguibile dal non averla. Un contenuto derivato dai movimenti costa una scrittura DataStore per widget, una passata sul DB, una composizione per bucket e un payload RemoteViews al launcher **per ogni movimento registrato**: e la voce di consumo piu grande dell'intera feature, e la si evita solo tenendo i movimenti fuori da cio che il widget disegna |
+| 38 | La v1.0 si distribuisce come **release su GitHub** con l'APK di debug firmato dal keystore condiviso del repository, non sul Play Store: il tag `vX.Y.Z` e l'unico innesco, il workflow `release.yml` costruisce, verifica (`assembleDebug testDebugUnitTest lint detekt`) e pubblica l'APK con le note di rilascio versionate in `docs/release-notes/vX.Y.Z.md`. La pubblicazione sul Play Store non e annullata, e rinviata alla v2.0 con i suoi passi propri (account sviluppatore, build di release firmata con un keystore di upload, regole R8 verificate su device, privacy policy pubblica, scheda e canali di testing). Dalla 1.0.0 il `versionName` delle build di sviluppo diventa `1.0.<incremento>` | Il progetto non ha un account Play Store aperto e il repository e gia la vetrina del lavoro: una release con l'APK allegato rende l'app installabile subito, senza nessuno dei passi burocratici che il Play Store richiede prima ancora di poter mostrare qualcosa. Si distribuisce la build di debug e non una build di release perche e esattamente quella provata su device e in CI a ogni push: introdurre R8 e le sue regole (Room, kotlinx.serialization, Glance) proprio all'ultimo passo aggiungerebbe l'unico rischio non coperto dai test, e lo aggiungerebbe alla prima cosa che un estraneo installa. Il keystore di debug pubblico non e un'attestazione di identita e non pretende di esserlo: serve a garantire che ogni build del repository si aggiorni in place invece di richiedere una disinstallazione, ed e la stessa ragione per cui e committato (ADR: sezione "Qualita e verifica" di CLAUDE.md). Il tag come unico innesco evita la release costruita a mano da una macchina di sviluppo, che e il modo classico per pubblicare un artefatto che non corrisponde al codice taggato |
 
 ---
 
@@ -312,48 +313,19 @@
 - [x] Hub: terza tab Trasferimenti e card "Risparmio pianificato: X/mese" derivata dai soli trasferimenti verso conti `SAVINGS` (seme onesto degli Obiettivi di risparmio v2.0)
 - [x] Stringhe IT/EN, notifiche pre-rinnovo transfer-aware, unit test (motore, mapper, backup, editor VM, pending VM, hub VM)
 
-## Fase 10 - Release v1.0
+## Fase 9.16 - Anticipi dalla roadmap v1.5 (luglio 2026)
 
-- [ ] Baseline profile (spostato dalla Fase 9: richiede modulo macrobenchmark e generazione su device/emulatore)
-- [ ] QA manuale end-to-end (checklist dei flussi principali)
-- [ ] Test su device reali: API 33 e ultimo Android stabile, tablet/schermi grandi (almeno layout non rotto)
-- [ ] Icona app, screenshot, scheda Play Store
-- [ ] Privacy policy (obbligatoria per il Play Store, anche senza raccolta dati)
-- [ ] Firma release, R8/proguard rules (attenzione a Room/serialization/Drive API)
-- [ ] Internal testing → closed testing → produzione
+> Voci nate nella roadmap v1.5 e consegnate prima della release v1.0, su richiesta utente. Alla release della 1.0 la roadmap v1.5 e stata chiusa: questa fase raccoglie cio che era gia stato fatto, il resto e confluito nella Roadmap v2.0 (PIN e biometria, export Excel, export Google Sheets, miglioramenti UX dal feedback).
+
+- [x] Budget, spendibile oggi e dashboard configurabile: anticipati nella Fase 9.5 (ADR 18 e 19)
+- [x] Import CSV (anticipato): riconoscimento automatico di separatore, decimali e colonne (mappatura per nome, alias IT/EN, ordine libero, colonne minime data+importo), regole di adattamento (tipo dedotto dal segno, normalizzazione del segno, valuta dal conto), creazione opzionale di conti/categorie/tag mancanti, rilevazione duplicati contro il registro e nel file, anteprima a due passi e report finale. Solo inserimento, in un'unica transazione. La colonna "Ricorrente" dell'export è informativa e non viene reimportata
+- [x] ~~Widget: aggiunta rapida~~ implementato nella Fase 10.18 (ADR 32), anticipato prima della v1.0 su richiesta utente. Dalla Fase 10.21 il widget e un punto di ingresso statico (niente totali ne contenuti derivati dai movimenti); per lo stesso motivo i widget di sola lettura (saldo totale) sono fuori scope
 
 ---
 
-# Roadmap v1.5
+# Fasi anticipate dalla roadmap v2.0 (implementate prima della v1.0)
 
-> Il Budget, originariamente in questa roadmap, è stato anticipato nella Fase 9.5.
-
-- [ ] PIN lock + biometria (`BiometricPrompt`) + `FLAG_SECURE` opzionale
-- [x] ~~Widget: aggiunta rapida~~ implementato nella Fase 10.18 (ADR 32), anticipato prima della v1.0 su richiesta utente. Dalla Fase 10.21 il widget e un punto di ingresso statico (niente totali ne contenuti derivati dai movimenti); per lo stesso motivo i widget di sola lettura (saldo totale) sono fuori scope
-- [x] Import CSV (anticipato): riconoscimento automatico di separatore, decimali e colonne (mappatura per nome, alias IT/EN, ordine libero, colonne minime data+importo), regole di adattamento (tipo dedotto dal segno, normalizzazione del segno, valuta dal conto), creazione opzionale di conti/categorie/tag mancanti, rilevazione duplicati contro il registro e nel file, anteprima a due passi e report finale. Solo inserimento, in un'unica transazione. La colonna "Ricorrente" dell'export è informativa e non viene reimportata
-- [ ] Export Excel (.xlsx)
-- [ ] Export Google Sheets (nuovo foglio o aggiornamento foglio esistente; richiede verifica OAuth Google per lo scope "sensitive" `spreadsheets` - avviare la review per tempo)
-- [ ] Miglioramenti UX dal feedback della v1.0
-
-# Roadmap v2.0
-
-- [x] Obiettivi di risparmio (target, progressi, suggerimento mensile) - la primitiva di alimentazione esiste già: i trasferimenti ricorrenti verso conti `SAVINGS` (Fase 9.15/ADR 24), da cui deriva "Risparmio pianificato". Implementati nella Fase 10.0 (ADR 25)
-- [x] Recap mensile condivisibile stile "Wrapped" (promosso da Note e appunti): implementato nella Fase 10.1 (ADR 28)
-- [ ] Rilevamento automatico ricorrenze (promosso da Note e appunti): euristica on-device che nota spese simili ripetute a cadenza regolare e propone la regola dall'hub Ricorrenze; nessun dato lascia il device
-- [x] Proiezione saldo a fine mese: forecast del saldo totale da ricorrenze in arrivo + media della spesa giornaliera del mese, mostrata come coda tratteggiata della sparkline; sempre indicata come stima. Implementata nella Fase 10.4 (ADR 30) con un calcolatore dedicato (`BalanceForecastCalculator`, gemello di `UpcomingChargesCalculator` esteso alle entrate fisse)
-- [ ] Gestione tag dedicata: schermata CRUD (rinomina, unione, eliminazione con conferma) per i tag, che oggi si creano inline ma non si amministrano; gap emerso dalla review di luglio 2026
-- [ ] Ricerca potenziata con suggerimenti: chip di categorie, tag e descrizioni frequenti proposte sotto il campo di ricerca del registro, per arrivare al filtro giusto senza digitare
-- [x] Prestiti e finanziamenti come tipo di conto (residuo, rate mancanti, rata come trasferimento ricorrente) - approvato a luglio 2026, implementato nella Fase 11 (ADR 33)
-- [ ] Crediti e debiti verso persone (saldo per controparte, rientri parziali) - approvato a luglio 2026, dettaglio nella Fase 12 (ADR 34)
-- [ ] Movimenti futuri, scadenze una tantum e stime allineate (elenco "In arrivo", promemoria, forecast che conta ciò che è certo) - approvato a luglio 2026, dettaglio nella Fase 13 (ADR 36)
-- [ ] Allegati ai movimenti (foto dello scontrino, backup a zip) - approvato a luglio 2026, dettaglio nella Fase 14 (ADR 35)
-- [ ] Conversione valuta automatica (provider tassi, cache offline, indicazione "stimato")
-- [ ] Export PDF report con grafici
-- [ ] Cifratura backup con passphrase
-- [ ] Rimborsi collegati alla spesa originale
-- [ ] Commissioni sui trasferimenti
-- [ ] Analisi avanzate (anno su anno, pattern di spesa)
-- [ ] Valutare: sottocategorie, periodo budget personalizzato
+> Funzionalita della roadmap v2.0 portate avanti prima della release 1.0, una fase per incremento, tutte completate. Restano numerate 10.x e 11 per non rompere i riferimenti nel devlog e nei commit; la Fase 10 (release v1.0) chiude il blocco perche si conclude dopo di loro.
 
 ## Fase 10.0 - Obiettivi di risparmio (luglio 2026)
 
@@ -677,14 +649,6 @@
 - [x] Test aggiornati: ordine classico, pin del conto e cache multi-voce (`QuickAddWidgetDataLoaderTest`); segnali senza movimenti e rename del conto (`WidgetRefreshWatcherTest`); config senza opacita/totale (`QuickAddWidgetPrefsTest`); tema sempre opaco (`QuickAddWidgetThemeTest`); maschera alpha (`CategoryIconBitmapsTest`)
 - [ ] Verifica su device: tint dei glifi ALPHA_8 identico su tile e bottoni (chiaro e scuro), widget invariato dopo aver registrato un movimento, redraw su rinomina conto/categoria e cambio tema, config dei widget legacy (TRANSPARENT o con opacita salvata) che riparte su sfondo solido, resa del nuovo sfondo widgetBackground (dynamic color on e off, chiaro e scuro) e corrispondenza tra widget piazzato, anteprima in-app e card del picker
 
-# Fasi approvate, da implementare (decise a luglio 2026)
-
-> Quattro funzionalità approvate dopo la review delle funzionalità finanziarie ([docs/review-funzionalita-finanziarie.md](./docs/review-funzionalita-finanziarie.md)), che rivede due decisioni precedenti (prestiti come sola categoria nella Fase 9.13; allegati esclusi in VISION per l'assenza di una libreria di image loading). Design: ADR 33, 34, 35, 36.
->
-> Ordine consigliato: 11 e 12 aggiungono risposte senza aggiungere meccaniche di denaro e riusano modelli già in casa; 13 costa poco e chiude un'asimmetria trovata dalla review; 14 va per ultima perché è l'unica che tocca il formato di backup.
->
-> Restano deliberatamente fuori (valutate e scartate nella stessa sessione): la **riconciliazione con flag "spuntato" per movimento** (richiede una colonna, una modalità dedicata e un'abitudine che l'utente tipo non ha; la rettifica saldo continua a coprire il riallineamento) e i **conti "bene" non transazionali** per immobili o portafogli valorizzati a mano (poco codice ma rompono la semantica di Account, "il luogo dove si trovano i soldi", e si infilerebbero in ogni picker di conto degli editor).
-
 ## Fase 11 - Prestiti e finanziamenti come tipo di conto
 
 > Design: ADR 33. Revisione della decisione di prodotto della Fase 9.13. Riusa il modello della carta di credito (ADR 20) con il verso opposto e i trasferimenti ricorrenti (ADR 24): nessuna meccanica di denaro nuova, nessuna matematica degli interessi.
@@ -701,6 +665,74 @@
 - [x] Dashboard: nessuna card nuova. Il prestito compare nel breakdown della card Saldo totale come ogni altro conto (attenuato, con l'icona di esclusione dal totale già esistente)
 - [x] Stringhe IT/EN; unit test: preset di inclusione alla selezione del tipo, validazione del saldo iniziale negativo, use case (residuo, rate mancanti con arrotondamento per eccesso, nessuna regola collegata, più regole sommate, valuta diversa esclusa), round-trip backup del nuovo tipo
 - [x] Documentazione: pagina della guida utente e riga nel README; nota nella descrizione della categoria "Prestiti & Finanziamenti" che spiega quando conviene ancora usarla (chi non traccia il prestito come conto)
+
+## Fase 10 - Release v1.0 (pubblicazione su GitHub)
+
+> Chiusura della roadmap v1.0. Il canale e una release su GitHub con l'APK di debug allegato, non il Play Store (ADR 38): non c'e un account sviluppatore e il repository e la vetrina del progetto. I passi Play Store non sono cancellati, sono nella Fase 15 come strada alternativa della release v2.0. Numerazione conservata: e la Fase 10 dalla prima stesura del piano, ed e collocata qui perche si chiude dopo le fasi anticipate 10.x e 11.
+
+**Preparazione (fatta)**
+
+- [x] Canale di distribuzione deciso e documentato: release su GitHub, APK di debug firmato dal keystore condiviso del repository, aggiornabile in place da una versione all'altra (ADR 38)
+- [x] Versione portata a `versionCode` 150 e `versionName` 1.0.0 (`app/build.gradle.kts`); dalla 1.0.0 le build di sviluppo proseguono come `1.0.<incremento>`
+- [x] Note di rilascio complete in [docs/release-notes/v1.0.0.md](./docs/release-notes/v1.0.0.md): cosa c'e nella 1.0, download e installazione, privacy, note tecniche, limitazioni note, riepilogo in inglese
+- [x] Workflow `.github/workflows/release.yml`: al push di un tag `v*` costruisce e verifica (`assembleDebug testDebugUnitTest lint detekt`), rinomina l'APK in `saldo-<versione>-debug.apk` e pubblica la release con le note del file versionato
+- [x] CI ristretta ai push su branch, cosi il tag innesca solo il workflow di release e non due build identiche
+- [x] README allineato: badge di versione, sezione di download, roadmap futura senza piu la v1.5
+- [ ] Baseline profile: rinviato alla Fase 15 (richiede un modulo macrobenchmark e una generazione su device o emulatore, non disponibili in questo ambiente). L'unico effetto e un primo avvio leggermente piu lento, dichiarato nelle limitazioni note
+
+**Verifica prima del tag (da fare su device)**
+
+- [ ] QA manuale end-to-end sui flussi principali: onboarding, spesa in 3 tap, trasferimento, rettifica saldo, ricorrenza automatica e con conferma, budget con avviso di soglia, obiettivo di risparmio, carta di credito con estratto, prestito, filtri e drill-down, recap mensile, widget
+- [ ] Verifiche su device ancora aperte delle Fasi 10.19, 10.20 e 10.21 (widget: tint dei glifi, redraw, config legacy, card del picker)
+- [ ] `MigrationsTest` strumentato eseguito su device (in CI non gira un emulatore, ADR 26)
+- [ ] Round-trip di backup su dati veri: export, cancellazione totale, ripristino, saldi identici
+- [ ] Test su device reali: API 33 e ultimo Android stabile, piu almeno un tablet o schermo grande (layout non rotto)
+- [ ] Installazione pulita su un device senza dati precedenti (onboarding dalla prima schermata)
+
+**Pubblicazione (da fare)**
+
+- [ ] Commit e push del branch, con la CI verde
+- [ ] Merge su `main` (il tag va sul commit che si vuole rilasciare)
+- [ ] Tag annotato `v1.0.0` sul commit di rilascio e push del tag
+- [ ] Workflow di release verde e release pubblicata con l'APK allegato
+- [ ] APK scaricato dalla release e installato su un device: versione 1.0.0, avvio pulito, aggiornamento in place sopra la build di sviluppo precedente senza perdita di dati
+- [ ] Voce nel devlog con la data di rilascio
+
+---
+
+# Roadmap v2.0
+
+> Backlog della prossima versione maggiore. Le voci gia consegnate restano spuntate con il riferimento alla fase che le ha implementate; quelle con una fase dedicata sono dettagliate piu sotto. Comprende anche cio che restava della roadmap v1.5, chiusa alla release della 1.0 (il Budget era gia stato anticipato nella Fase 9.5, il resto e nella Fase 9.16).
+
+- [x] Obiettivi di risparmio (target, progressi, suggerimento mensile) - la primitiva di alimentazione esiste già: i trasferimenti ricorrenti verso conti `SAVINGS` (Fase 9.15/ADR 24), da cui deriva "Risparmio pianificato". Implementati nella Fase 10.0 (ADR 25)
+- [x] Recap mensile condivisibile stile "Wrapped" (promosso da Note e appunti): implementato nella Fase 10.1 (ADR 28)
+- [ ] Rilevamento automatico ricorrenze (promosso da Note e appunti): euristica on-device che nota spese simili ripetute a cadenza regolare e propone la regola dall'hub Ricorrenze; nessun dato lascia il device
+- [x] Proiezione saldo a fine mese: forecast del saldo totale da ricorrenze in arrivo + media della spesa giornaliera del mese, mostrata come coda tratteggiata della sparkline; sempre indicata come stima. Implementata nella Fase 10.4 (ADR 30) con un calcolatore dedicato (`BalanceForecastCalculator`, gemello di `UpcomingChargesCalculator` esteso alle entrate fisse)
+- [ ] Gestione tag dedicata: schermata CRUD (rinomina, unione, eliminazione con conferma) per i tag, che oggi si creano inline ma non si amministrano; gap emerso dalla review di luglio 2026
+- [ ] Ricerca potenziata con suggerimenti: chip di categorie, tag e descrizioni frequenti proposte sotto il campo di ricerca del registro, per arrivare al filtro giusto senza digitare
+- [x] Prestiti e finanziamenti come tipo di conto (residuo, rate mancanti, rata come trasferimento ricorrente) - approvato a luglio 2026, implementato nella Fase 11 (ADR 33)
+- [ ] Crediti e debiti verso persone (saldo per controparte, rientri parziali) - approvato a luglio 2026, dettaglio nella Fase 12 (ADR 34)
+- [ ] Movimenti futuri, scadenze una tantum e stime allineate (elenco "In arrivo", promemoria, forecast che conta ciò che è certo) - approvato a luglio 2026, dettaglio nella Fase 13 (ADR 36)
+- [ ] Allegati ai movimenti (foto dello scontrino, backup a zip) - approvato a luglio 2026, dettaglio nella Fase 14 (ADR 35)
+- [ ] PIN lock + biometria (`BiometricPrompt`) + `FLAG_SECURE` opzionale
+- [ ] Export Excel (.xlsx)
+- [ ] Export Google Sheets (nuovo foglio o aggiornamento foglio esistente; richiede verifica OAuth Google per lo scope "sensitive" `spreadsheets` - avviare la review per tempo)
+- [ ] Miglioramenti UX dal feedback della v1.0
+- [ ] Conversione valuta automatica (provider tassi, cache offline, indicazione "stimato")
+- [ ] Export PDF report con grafici
+- [ ] Cifratura backup con passphrase
+- [ ] Rimborsi collegati alla spesa originale
+- [ ] Commissioni sui trasferimenti
+- [ ] Analisi avanzate (anno su anno, pattern di spesa)
+- [ ] Valutare: sottocategorie, periodo budget personalizzato
+
+# Fasi da implementare (roadmap v2.0)
+
+> Le tre fasi rimaste delle quattro approvate a luglio 2026 dopo la review delle funzionalita finanziarie ([docs/review-funzionalita-finanziarie.md](./docs/review-funzionalita-finanziarie.md)), che rivede due decisioni precedenti (prestiti come sola categoria nella Fase 9.13; allegati esclusi in VISION per l'assenza di una libreria di image loading). La prima, la Fase 11, e stata implementata prima della v1.0. Design: ADR 34, 35, 36.
+>
+> Ordine di esecuzione: 12 aggiunge risposte senza aggiungere meccaniche di denaro e riusa modelli gia in casa; 13 costa poco e chiude un'asimmetria trovata dalla review; 14 va per ultima perche e l'unica che tocca il formato di backup. La Fase cloud resta da valutare e non blocca la release; la Fase 15 e sempre l'ultima, e le fasi eventualmente approvate in futuro si inseriscono prima di lei.
+>
+> Restano deliberatamente fuori (valutate e scartate nella stessa sessione): la **riconciliazione con flag "spuntato" per movimento** (richiede una colonna, una modalita dedicata e un'abitudine che l'utente tipo non ha; la rettifica saldo continua a coprire il riallineamento) e i **conti "bene" non transazionali** per immobili o portafogli valorizzati a mano (poco codice ma rompono la semantica di Account, "il luogo dove si trovano i soldi", e si infilerebbero in ogni picker di conto degli editor).
 
 ## Fase 12 - Crediti e debiti verso persone
 
@@ -743,7 +775,7 @@
 - [ ] Verificare l'impatto sull'export CSV: nessuna colonna nuova, gli allegati non sono esportabili in un CSV e la cosa va detta nella schermata di export invece di essere scoperta
 - [ ] Stringhe IT/EN; unit test: normalizzazione dimensioni (funzione pura sui lati), round-trip backup con e senza allegati, orfani rilevati e spazzati, cascade dell'eliminazione; strumentati per la migration e per la scrittura reale dei file
 
-# Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
+## Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
 > Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.
 
@@ -751,6 +783,42 @@
 - [ ] Upload backup su App Data Folder + rotazione (ultimi 5)
 - [ ] Backup automatico WorkManager (periodico, solo Wi-Fi, configurabile)
 - [ ] Restore guidato dal backup Drive (primo avvio e da impostazioni)
+
+## Fase 15 - Release v2.0
+
+> Ultima fase della roadmap, sempre in fondo: si chiude quando le fasi ancora aperte sono concluse. Due strade che non si escludono: la release su GitHub e la stessa procedura della v1.0 e si fa comunque, il Play Store si aggiunge solo se e quando ci sara un account sviluppatore. La strada B e la Fase 10 originale, rimessa qui invece di essere buttata via.
+
+**Comuni alle due strade**
+
+- [ ] Fasi 12, 13 e 14 completate (la Fase cloud e opzionale e non blocca la release)
+- [ ] Baseline profile, rimandato dalla v1.0: modulo `:macrobenchmark`, generazione su device o emulatore, misura del guadagno al primo avvio
+- [ ] QA manuale end-to-end con la checklist della v1.0 estesa alle funzionalita nuove
+- [ ] Migration test strumentati su device dalla v1 alla versione corrente: le Fasi 12 e 14 introducono migration reali con bump di `SALDO_DATABASE_VERSION` (ADR 26)
+- [ ] Compatibilita all'indietro del backup: ripristino di un file esportato dalla 1.0 su un'installazione 2.0, allegati e zip compresi (ADR 35)
+- [ ] Test su device reali: API 33 e ultimo Android stabile, piu tablet o schermo grande
+- [ ] `versionCode` +1 e `versionName` 2.0.0
+- [ ] Note di rilascio in `docs/release-notes/v2.0.0.md`, con una sezione "cosa cambia dalla 1.0"
+- [ ] README, VISION e guida utente allineati alle funzionalita nuove
+
+**Strada A - Release su GitHub (procedura della v1.0)**
+
+- [ ] Merge su `main`, CI verde
+- [ ] Tag annotato `v2.0.0` e push del tag: `release.yml` costruisce, verifica e pubblica l'APK di debug con le note del file versionato
+- [ ] Aggiornamento in place sopra la 1.0 verificato su device (stesso keystore di debug, `versionCode` superiore) senza perdita di dati
+- [ ] Link alla release aggiornato nel README
+
+**Strada B - Pubblicazione sul Play Store (solo con un account sviluppatore)**
+
+- [ ] Account Google Play Developer (una tantum, a pagamento) e verifica dell'identita dello sviluppatore
+- [ ] Keystore di **upload** dedicato, mai committato, con Play App Signing attivo; chiave e password come secret di GitHub Actions per la build firmata in CI
+- [ ] Build di release verificata davvero: R8 e shrinker attivi, regole proguard per Room, kotlinx.serialization, Glance e Vico, e smoke test su device dell'artefatto firmato (non del solo APK di debug)
+- [ ] Android App Bundle (`.aab`) come formato di caricamento, `versionCode` unico e crescente
+- [ ] Privacy policy pubblicata a un URL stabile (obbligatoria anche senza raccolta dati) e sezione "Sicurezza dei dati" compilata: nessun dato raccolto, nessun dato condiviso, dati cancellabili dall'app
+- [ ] Scheda dello store: nome, descrizione breve e lunga in IT ed EN, icona 512x512, immagine in evidenza 1024x500, screenshot per telefono e tablet
+- [ ] Content rating, pubblico di destinazione, dichiarazione di assenza di annunci e di acquisti in-app
+- [ ] targetSdk conforme alla policy annuale di Google Play al momento della pubblicazione: l'aggiornamento e una chore dedicata e testata, non un'improvvisazione a ridosso della release (ADR 14)
+- [ ] Internal testing -> closed testing -> produzione, con rollout graduale
+- [ ] Rapporto tra i due canali dichiarato nelle note di rilascio: l'APK di GitHub e firmato con un certificato diverso da quello del Play Store, quindi le due installazioni non si aggiornano a vicenda e passare da una all'altra richiede disinstallare (con un backup prima)
 
 ---
 
