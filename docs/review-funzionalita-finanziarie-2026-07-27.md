@@ -1,8 +1,8 @@
-# Review delle funzionalità finanziarie
+# Review delle funzionalità finanziarie (27 luglio 2026)
 
 Review del comportamento finanziario di Saldo e confronto con le funzionalità delle app di tracciamento spese a pagamento (Wallet by BudgetBakers, Money Manager, Bluecoins, Spendee, MoneyWiz, 1Money, Toshl).
 
-Riferimento: versionCode 145, versionName 0.9.106. La review è stata fatta leggendo dominio, DAO, use case ed editor, non solo la documentazione.
+Eseguita il 27 luglio 2026 su versionCode 145, versionName 0.9.106, leggendo dominio, DAO, use case ed editor, non solo la documentazione. Il nome del file porta la data della review: una review futura sarà un documento nuovo con la propria data, questo non si riapre.
 
 Questo documento non implementa nulla: la tabella finale è un elenco di candidati con un ordine consigliato, da smistare in PLANNING solo dopo una decisione esplicita.
 
@@ -84,7 +84,7 @@ Nessuno di questi è un bug: sono confini del modello attuale, elencati perché 
 
 Ordine consigliato di implementazione. Il criterio è: prima ciò che aggiunge risposte senza aggiungere meccaniche di denaro (costo basso, rischio basso sui saldi), poi ciò che chiude un'asimmetria del modello esistente, poi ciò che sblocca più superfici insieme, infine le estensioni che aprono un dominio nuovo.
 
-Le prime quattro righe sono state **approvate a luglio 2026** e sono pianificate in dettaglio come Fasi 11-14 di PLANNING (ADR 33, 34, 35, 36). Due di esse rivedono decisioni precedenti, e la revisione è parte della decisione: i prestiti erano stati chiusi come "sola categoria" nella Fase 9.13, e gli allegati erano esclusi da VISION per l'assenza di una libreria di image loading, cioè per una premessa tecnica.
+Le prime quattro righe sono state **approvate a luglio 2026** e sono pianificate in dettaglio come Fasi 11-14 di PLANNING (ADR 33, 34, 35, 36). Due di esse rivedono decisioni precedenti, e la revisione è parte della decisione: i prestiti erano stati chiusi come "sola categoria" nella Fase 9.13, e gli allegati erano esclusi da VISION per l'assenza di una libreria di image loading, cioè per una premessa tecnica. Le righe restanti sono state smistate il 28 luglio 2026: l'esito, riga per riga, è nella sezione 5.
 
 Legenda della colonna "In Saldo": **Sì** già presente, **Parziale** le primitive esistono ma manca la funzionalità come tale, **No** assente.
 
@@ -153,3 +153,16 @@ Elencate per chiudere il confronto: sono assenze deliberate, non gap. VISION è 
 - **Conti "bene" non transazionali** (casa, auto, portafoglio valorizzato a mano): poco codice, ma rompono la semantica di Account ("il luogo dove si trovano i soldi") e si infilerebbero in ogni picker di conto degli editor. Se un giorno rientrassero, dovrebbero essere un tipo esplicitamente escluso dai selettori dei movimenti.
 
 **Vincoli rimossi dai documenti**, perché bloccavano decisioni implementative senza una ragione di prodotto: la nota di VISION contro qualsiasi libreria di image loading (riscritta: le icone restano vettori locali, gli allegati si decodificano con le API di piattaforma, e ogni dipendenza nuova resta una decisione esplicita) e l'esclusione secca di "prestiti e ammortamenti" (ora separa il residuo, che si traccia, dal piano di ammortamento, che resta fuori).
+
+## 6. Smistamento completato (28 luglio 2026)
+
+La tabella della sezione 4 è interamente smistata in PLANNING con una decisione esplicita del 28 luglio 2026. L'esito per riga:
+
+- **Righe 1-4** (prestiti come conto, crediti e debiti verso persone, movimenti futuri, allegati): già approvate a luglio 2026 come Fasi 11-14; la Fase 11 è stata implementata prima della v1.0.
+- **Riga 20** (PIN, biometria, oscuramento in recenti): implementata nella Fase 14.5 (ADR 39), prima release dopo la v1.0.0.
+- **Righe 5, 6, 7, 8, 12, 16, 18, 22** (rimborsi collegati, gestione tag, multi-divisa, commissioni, rilevamento ricorrenze, analisi avanzate, export PDF/Excel/Sheets, cifratura backup): erano già voci del backlog v2.0 e diventano le Fasi 15-22 di PLANNING, dettagliate e da eseguire prima della release v2.0 (Fase 23). Gli ADR di design si propongono all'avvio di ciascuna fase.
+- **Righe 9, 10, 11, 13, 17, 19** (budget con periodo personalizzato, acquisti a rate, split, pagamento parziale dell'estratto, arrotondamento spiccioli, report periodico): pianificate nella Roadmap v3.0 di PLANNING come Fasi 24-29, dettagliate ora e da eseguire dopo la release v2.0.
+- **Righe 14 e 15** (payee, sottocategorie): restano non implementate, come raccomandato nella tabella.
+- **Riga 21** (backup automatico su cloud): resta nella Fase cloud di PLANNING, da valutare e non bloccante.
+
+Dei limiti della sezione 3, il punto 2 (i budget in valuta diversa dalla principale spariscono dalla schermata senza spiegazione se la valuta principale cambia) è stato riverificato nel codice alla data dello smistamento e confermato: la chiusura è un punto esplicito della Fase 17. Gli altri limiti sono coperti dalle fasi corrispondenti (1 e 2 dalla Fase 17, 3 dalla 15, 4 e 9 dalle Fasi 13 e 12 già approvate, 5 dalla 27, 6 dalla 25, 7 dalla 24, 8 dalla 26, 10 dalla 16, 11 dalla 18).
