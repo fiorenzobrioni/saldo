@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-28 - Preview statiche del picker: via gli adaptive-icon dalle ImageView
+
+**Fatto:** dalla prova su device della 0.9.109 e emerso un difetto nelle card statiche del picker: nel preview della barra il bottone Spesa mostrava lo squircle intero dell'icona scorciatoia e il bottone Entrata uno spazio vuoto. La causa e l'uso degli adaptive-icon delle scorciatoie launcher (`ic_shortcut_expense/income`) dentro le ImageView dei previewLayout: `AppWidgetHostView` rende `AdaptiveIconDrawable` in modo inaffidabile in quel contesto. La barra ora usa due vector semplici con le stesse frecce di trend del widget vero (trending down/up), tintate e con etichette negli accenti brand (`widget_preview_expense` #BA1A1A / `widget_preview_income` #3E6837, variante notte #FFB4AB / #A4D397, gli stessi toni error/tertiary delle palette brand); la griglia passa al mark `ic_launcher_foreground`, vector puro con box a 56dp per compensare la safe zone adattiva. Aggiornato anche il commento stantio del layout griglia, che raccontava ancora la rimozione delle preview generate (tornate da tempo via `WidgetPreviews`).
+
+**Decisioni:** vector semplici e mai adaptive-icon nelle preview statiche, come gia imparato sul lato Compose (dove `painterResource` su un adaptive-icon crashava). Gli accenti sono fissi e non token di sistema: la palette dinamica non ha un rosso, e il verde entrata e una scelta brand che i token non esprimono.
+
+**Problemi:** nessuno, difetto solo visivo e circoscritto ai previewLayout.
+
+**Verificato:** verifica statica; su device restano da confermare le due card del picker (chiaro e scuro). Bump a versionCode 149, versionName 0.9.110.
+
+**Prossimo:** conferma su device delle card del picker insieme al resto della checklist della Fase 10.21.
+
+---
+
 ## 2026-07-28 - Widget in riga con Material 3: sfondo sul token widgetBackground
 
 **Fatto:** il contenitore del widget passa da `colorScheme.background` (lo sfondo della Dashboard, deviazione deliberata della Fase 10.18) a `GlanceTheme.colors.widgetBackground`, il ruolo colore che Material 3 riserva ai contenitori dei widget. L'anteprima nella schermata di configurazione mostra lo stesso colore tramite `widgetBackgroundColorOf`, che replica la derivazione della libreria; le preview statiche del picker abbandonano gli hex fissi per i token dinamici di sistema (`system_accent2_50`/`system_accent2_800` per la superficie, `system_neutral1`/`system_neutral2` per gli inchiostri), con la stessa coppia values/values-night di prima. Test strumentati aggiornati: il default e il token (non piu lo sfondo dell'app) e il token si scosta da secondaryContainer nel verso giusto su entrambi i lati.

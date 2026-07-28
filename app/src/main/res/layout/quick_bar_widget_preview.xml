@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Static preview of the bar widget for the picker. Two labelled buttons side by
-    side, the same shape the real widget draws. Same colour rules as
+    side, the same glyphs and accents the real widget draws. Same colour rules as
     quick_add_widget_preview.xml: own resources with a values-night variant,
     never ?android:attr, which a previewLayout resolves against the light
-    DeviceDefault theme whatever the launcher is wearing.
+    DeviceDefault theme whatever the launcher is wearing. The icons are plain
+    vectors on purpose: the adaptive shortcut icons used here before rendered
+    unreliably in the picker (a full squircle on one button, nothing on the other).
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -22,10 +24,10 @@
         android:orientation="horizontal">
 
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:contentDescription="@null"
-            android:src="@drawable/ic_shortcut_expense" />
+            android:src="@drawable/ic_widget_preview_expense" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -33,7 +35,7 @@
             android:layout_marginStart="6dp"
             android:maxLines="1"
             android:text="@string/widget_quick_add_expense"
-            android:textColor="@color/widget_preview_ink"
+            android:textColor="@color/widget_preview_expense"
             android:textSize="14sp" />
     </LinearLayout>
 
@@ -45,10 +47,10 @@
         android:orientation="horizontal">
 
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:contentDescription="@null"
-            android:src="@drawable/ic_shortcut_income" />
+            android:src="@drawable/ic_widget_preview_income" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -56,7 +58,7 @@
             android:layout_marginStart="6dp"
             android:maxLines="1"
             android:text="@string/widget_quick_add_income"
-            android:textColor="@color/widget_preview_ink"
+            android:textColor="@color/widget_preview_income"
             android:textSize="14sp" />
     </LinearLayout>
 </LinearLayout>

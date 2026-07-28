@@ -29,4 +29,11 @@
     <color name="widget_preview_surface">@android:color/system_accent2_50</color>
     <color name="widget_preview_ink">@android:color/system_neutral1_900</color>
     <color name="widget_preview_ink_muted">@android:color/system_neutral2_700</color>
+
+    <!-- The bar preview's two accents, mirroring the real buttons (error red
+         and the brand's income green). Fixed brand values rather than system
+         tokens: the dynamic palette carries no red, and the income green is a
+         brand choice the system palette cannot express. -->
+    <color name="widget_preview_expense">#BA1A1A</color>
+    <color name="widget_preview_income">#3E6837</color>
 </resources>

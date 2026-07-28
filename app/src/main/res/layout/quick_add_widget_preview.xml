@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Static preview for the widget picker: the real widget cannot be composed
-    there (no data, no GlanceId), so this stands in for it. It is the preview on
-    every Android version - the generated one (API 35+) was removed because it
-    shadowed this layout and left the picker blank (see SaldoApplication).
+    Static preview for the widget picker: the fallback for devices below API 35
+    and for the window where the generated preview (published by WidgetPreviews)
+    has been dropped by an update or a reboot and not yet republished.
 
     Colors come from res/values(-night)/colors.xml, not from ?android:attr:
     a previewLayout is inflated with a plain application context, whose theme
     falls back to Theme.DeviceDefault.Light, so theme attributes gave near-black
     ink on a dark picker sheet. Resource qualifiers are resolved against the
     launcher's configuration and do follow its light/dark mode.
+
+    The mark is the launcher foreground vector, not the adaptive shortcut icon:
+    AppWidgetHostView renders AdaptiveIconDrawable unreliably in a previewLayout.
+    The foreground keeps its artwork inside the adaptive safe zone, hence the
+    56dp box for a ~40dp visible mark.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -20,10 +24,10 @@
     android:padding="12dp">
 
     <ImageView
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:contentDescription="@null"
-        android:src="@drawable/ic_shortcut_expense" />
+        android:src="@drawable/ic_launcher_foreground" />
 
     <TextView
         android:layout_width="wrap_content"
