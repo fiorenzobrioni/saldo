@@ -399,6 +399,9 @@ private fun Header(selectedType: TransactionType, data: QuickAddWidgetData) {
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.Vertical.CenterVertically,
     ) {
+        // Mirrors the trailing weight (badge or spacer), so the selector sits
+        // centred instead of hugging the leading edge.
+        Spacer(GlanceModifier.defaultWeight())
         TypePill(
             label = context.getString(R.string.widget_quick_add_expense),
             type = TransactionType.EXPENSE,
