@@ -14,6 +14,7 @@ import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import com.callbackdev.saldo.core.domain.model.RecurrenceMode
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 
@@ -171,6 +172,28 @@ class BackupMapperTest {
         )
 
         assertEquals(entity, entity.toBackup().toEntity())
+    }
+
+    @Test
+    fun `a loan between people survives the backup round trip`() {
+        val entity = TransactionEntity(
+            id = 43L,
+            type = TransactionType.EXPENSE,
+            amountMinor = -5_000L,
+            currency = "EUR",
+            accountId = 7L,
+            timestampEpochMilli = 1_752_000_123_456,
+            zoneOffsetSeconds = 7_200,
+            categoryId = 3L,
+            description = "prestito",
+            isExcludedFromStats = true,
+            counterparty = "Marta",
+        )
+
+        assertEquals(entity, entity.toBackup().toEntity())
+        assertEquals("Marta", entity.toBackup().counterparty)
+        // A file written before the field existed restores a plain movement.
+        assertNull(entity.copy(counterparty = null).toBackup().counterparty)
     }
 
     @Test

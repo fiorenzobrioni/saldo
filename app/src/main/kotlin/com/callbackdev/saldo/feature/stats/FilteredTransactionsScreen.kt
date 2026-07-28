@@ -202,15 +202,19 @@ private fun FilteredDayGroup(
 
 /**
  * Human label of the route's window: the month or year name when the window
- * is exactly one, a short date range otherwise. Locale casing is kept.
+ * is exactly one, a short date range otherwise. Locale casing is kept. A route
+ * without bounds (a counterparty's history) says so instead.
  */
 @Composable
 private fun drillDownPeriodLabel(route: FilteredTransactionsRoute): String {
     val locale = LocalConfiguration.current.locales[0]
+    val start = route.startEpochDay
+    val endExclusive = route.endEpochDayExclusive
+    if (start == null || endExclusive == null) {
+        return stringResource(R.string.filtered_all_time)
+    }
     return remember(route, locale) {
-        val start = LocalDate.ofEpochDay(route.startEpochDay)
-        val endInclusive = LocalDate.ofEpochDay(route.endEpochDayExclusive - 1)
-        formatWindow(start, endInclusive, locale)
+        formatWindow(LocalDate.ofEpochDay(start), LocalDate.ofEpochDay(endExclusive - 1), locale)
     }
 }
 

@@ -198,7 +198,7 @@ class BackupCodecTest {
 
         assertEquals(2, summary.accounts)
         assertEquals(1, summary.categories)
-        assertEquals(2, summary.transactions)
+        assertEquals(3, summary.transactions)
         assertEquals(1, summary.recurringRules)
         assertEquals(1, summary.tags)
         assertEquals(2, summary.budgets)
@@ -289,6 +289,19 @@ internal fun fullyPopulatedBackupFile(): BackupFile = BackupFile(
                 recurringRuleId = 30L,
                 isPending = true,
                 recurringOccurrenceEpochDay = 20_600L,
+            ),
+            TransactionBackup(
+                id = 102L,
+                type = "EXPENSE",
+                amountMinor = -50_00L,
+                currency = "EUR",
+                accountId = 1L,
+                timestampEpochMilli = 1_751_500_000_000,
+                zoneOffsetSeconds = 7_200,
+                categoryId = 10L,
+                description = "prestito",
+                isExcludedFromStats = true,
+                counterparty = "Marta",
             ),
             TransactionBackup(
                 id = 101L,

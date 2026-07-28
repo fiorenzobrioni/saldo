@@ -64,7 +64,7 @@ class BackupRoundTripTest {
             .invoke(appVersion = null)
 
         assertEquals(2, export.summary.accounts)
-        assertEquals(2, export.summary.transactions)
+        assertEquals(3, export.summary.transactions)
         assertEquals(1, export.summary.recurringRules)
     }
 

@@ -55,6 +55,15 @@ data class Transaction(
      * that prevents double generation.
      */
     val recurringOccurrenceDate: LocalDate? = null,
+    /**
+     * The person this movement is a loan to or from (ADR 34): an expense with a
+     * counterparty is money lent, an income with one is money returned or
+     * received as a loan. Null on every ordinary movement. A movement carrying a
+     * counterparty always has [isExcludedFromStats] on - lending is not
+     * spending - while its effect on the account balance is that of any other
+     * movement: the money really did leave the account.
+     */
+    val counterparty: String? = null,
 )
 
 /**

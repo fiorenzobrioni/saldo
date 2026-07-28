@@ -10,6 +10,7 @@ import androidx.room.Update
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
 import com.callbackdev.saldo.core.database.relation.AccountTotalRow
 import com.callbackdev.saldo.core.database.relation.CategoryTotalRow
+import com.callbackdev.saldo.core.database.relation.CounterpartyTotalRow
 import com.callbackdev.saldo.core.database.relation.DailyNetRow
 import com.callbackdev.saldo.core.database.relation.DashboardTotalsRow
 import com.callbackdev.saldo.core.database.relation.DailyActivityRow
@@ -657,6 +658,54 @@ interface TransactionDao {
         endMillis: Long,
         currency: String,
     ): Long?
+
+    /**
+     * Signed totals per counterparty and currency across the whole ledger
+     * (ADR 34). The sum is the plain signed amount, so a loan out (an expense)
+     * lands negative and every repayment in (an income) nets against it: partial
+     * repayments need no dedicated code. Only expenses and incomes can carry a
+     * counterparty, and pending movements are left out like everywhere else.
+     *
+     * Unlike the statistics queries this one deliberately keeps
+     * `isExcludedFromStats` rows - they all are, by construction: marking a
+     * movement as a loan forces the flag on. Archived accounts count too: money
+     * lent from an account you later archived is still owed to you.
+     *
+     * [lastEpochDay] is the group's most recent local day (ADR 7), computed
+     * from each row's own offset, for the "last activity" line.
+     */
+    @Query(
+        """
+        SELECT
+            counterparty AS name,
+            currency AS currency,
+            SUM(amountMinor) AS totalMinor,
+            COUNT(*) AS count,
+            MAX((timestampEpochMilli / 1000 + zoneOffsetSeconds) / 86400) AS lastEpochDay
+        FROM transactions
+        WHERE counterparty IS NOT NULL AND TRIM(counterparty) <> ''
+            AND isPending = 0
+            AND type IN ('EXPENSE', 'INCOME')
+        GROUP BY counterparty, currency
+        """,
+    )
+    fun observeCounterpartyTotals(): Flow<List<CounterpartyTotalRow>>
+
+    /**
+     * The counterparty names already used, most recently used first, for the
+     * editor's autocompletion. Distinct on the stored spelling; merging spellings
+     * that differ only by case or accents is the domain's job, not SQLite's
+     * (its `NOCASE` collation folds ASCII only).
+     */
+    @Query(
+        """
+        SELECT counterparty FROM transactions
+        WHERE counterparty IS NOT NULL AND TRIM(counterparty) <> ''
+        GROUP BY counterparty
+        ORDER BY MAX(timestampEpochMilli) DESC
+        """,
+    )
+    fun observeCounterpartyNames(): Flow<List<String>>
 
     companion object {
         /**

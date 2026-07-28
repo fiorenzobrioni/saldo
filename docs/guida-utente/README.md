@@ -26,6 +26,7 @@ Il manuale cresce in modo incrementale. Gli argomenti già disponibili hanno un 
 - 🔁 [Movimenti ricorrenti](movimenti-ricorrenti.md): uscite, entrate e trasferimenti che si ripetono nel tempo, con registrazione automatica o con conferma.
 - ⚡ Scorciatoie dal launcher: nuova spesa, entrata o trasferimento dall'icona dell'app.
 - 🔍 Ricerca e filtri: trovare i movimenti e vedere il totale della vista filtrata.
+- 🤝 [Crediti e debiti verso persone](crediti-e-debiti.md): denaro prestato o ricevuto da qualcuno, rientri parziali e saldo per persona.
 - 🔄 [Esportazione e importazione CSV](esportazione-importazione-csv.md): portare i movimenti fuori in un foglio di calcolo e importarli da un file, con rilevazione dei duplicati e report.
 
 ### Budget e pianificazione

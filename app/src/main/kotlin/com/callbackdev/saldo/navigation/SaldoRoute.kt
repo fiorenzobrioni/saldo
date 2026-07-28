@@ -55,11 +55,21 @@ data class CategoryEditorRoute(
  * Transaction editor: create mode when [transactionId] is null, edit mode otherwise.
  * [initialTypeName] preselects the movement type on creation (used by the dashboard
  * quick actions); it is a [com.callbackdev.saldo.core.domain.model.TransactionType] name.
+ *
+ * [initialCounterparty] and [initialAmountInput] prefill a new movement from the
+ * credits and debts screen ("mark as returned"). A non-null counterparty opens
+ * the loan section already on, blank included: that is how the empty state
+ * invites the first loan, with the section open and the name still to type.
+ * The amount is a plain decimal string, sanitized to the chosen account's
+ * currency by the editor; both are a starting point the user confirms, never a
+ * silent write.
  */
 @Serializable
 data class TransactionEditorRoute(
     val transactionId: Long? = null,
     val initialTypeName: String? = null,
+    val initialCounterparty: String? = null,
+    val initialAmountInput: String? = null,
 ) : NavKey
 
 /**
@@ -91,6 +101,15 @@ data object BudgetsRoute : NavKey
 /** Budget editor: create mode when [budgetId] is null, edit mode otherwise. */
 @Serializable
 data class BudgetEditorRoute(val budgetId: Long? = null) : NavKey
+
+/**
+ * Credits and debts toward people (ADR 34), reached from the dashboard card
+ * and Settings. A view over the movements carrying a counterparty, not a
+ * register of its own, so it has no editor route: the movements are edited
+ * where every movement is.
+ */
+@Serializable
+data object CounterpartiesRoute : NavKey
 
 /** Savings goals list, reached from the dashboard card and Settings. */
 @Serializable
@@ -125,18 +144,23 @@ data object AboutRoute : NavKey
  * as epoch days), optionally narrowed to one category or account. Pushed on
  * top of the Stats tab so back returns to the charts.
  *
+ * Both bounds null means the whole ledger, with no date restriction at all:
+ * what a credits-and-debts drill-down needs, where a loan from two years ago is
+ * exactly as relevant as yesterday's.
+ *
  * [statsScope] restricts the list to what the statistics queries counted
  * (primary currency, excluded-from-stats skipped, spend-only rows for an
  * account drill-down), so the list always agrees with the tapped figure;
  * the dashboard's today/month drill-downs keep the cash view instead.
  * [uncategorizedOnly] narrows to movements without a category (the ring's
- * uncategorized slice).
+ * uncategorized slice). [counterparty] narrows to one person (ADR 34).
  */
 @Serializable
 data class FilteredTransactionsRoute(
-    val startEpochDay: Long,
-    val endEpochDayExclusive: Long,
+    val startEpochDay: Long? = null,
+    val endEpochDayExclusive: Long? = null,
     val categoryId: Long? = null,
+    val counterparty: String? = null,
     val accountId: Long? = null,
     val statsScope: Boolean = false,
     val uncategorizedOnly: Boolean = false,

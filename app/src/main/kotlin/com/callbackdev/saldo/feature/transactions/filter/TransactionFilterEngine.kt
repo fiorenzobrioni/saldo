@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.transactions.filter
 
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.isRecurring
+import com.callbackdev.saldo.core.domain.transaction.CounterpartyNames
 import java.text.Normalizer
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -68,6 +69,7 @@ object TransactionFilterEngine {
         private val filters: TransactionFilters,
         private val range: ClosedRange<LocalDate>?,
         private val needle: String?,
+        private val counterpartyKey: String?,
     ) {
         /**
          * Whether [transaction] passes every active filter. [localDate] is
@@ -84,6 +86,7 @@ object TransactionFilterEngine {
                 matchesTags(tagIds, filters) &&
                 matchesAmount(transaction, filters) &&
                 matchesOrigin(transaction, filters) &&
+                matchesCounterparty(transaction, counterpartyKey) &&
                 matchesQuery(transaction, needle)
     }
 
@@ -96,6 +99,7 @@ object TransactionFilterEngine {
         filters = filters,
         range = dateRange(filters, today, firstDayOfWeek),
         needle = filters.query.trim().takeIf { it.isNotBlank() }?.let(::normalize),
+        counterpartyKey = filters.counterparty?.let(CounterpartyNames::key),
     )
 
     /** One-shot convenience over [compile] + [CompiledFilters.matches]. */
@@ -146,9 +150,21 @@ object TransactionFilterEngine {
             TransactionOrigin.MANUAL -> !transaction.isRecurring
         }
 
+    /**
+     * Same person, however the name was spelled that day (ADR 34): the term
+     * compares [CounterpartyNames] keys, exactly like the aggregate that led
+     * here, so the drill-down and the figure it opened from always agree.
+     */
+    private fun matchesCounterparty(transaction: Transaction, counterpartyKey: String?): Boolean {
+        if (counterpartyKey == null) return true
+        val name = transaction.counterparty ?: return false
+        return CounterpartyNames.key(name) == counterpartyKey
+    }
+
+    /** The counterparty joins description and note: a name is searchable text too. */
     private fun matchesQuery(transaction: Transaction, needle: String?): Boolean {
         if (needle == null) return true
-        return listOfNotNull(transaction.description, transaction.note)
+        return listOfNotNull(transaction.description, transaction.note, transaction.counterparty)
             .any { normalize(it).contains(needle) }
     }
 }

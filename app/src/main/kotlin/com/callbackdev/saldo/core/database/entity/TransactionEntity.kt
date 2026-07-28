@@ -53,6 +53,7 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
         Index("timestampEpochMilli"),
         Index("type"),
         Index("currency"),
+        Index("counterparty"),
         Index("recurringRuleId", "recurringOccurrenceEpochDay", unique = true),
     ],
 )
@@ -93,4 +94,12 @@ data class TransactionEntity(
      */
     @ColumnInfo(name = "recurringOccurrenceEpochDay")
     val recurringOccurrenceEpochDay: Long? = null,
+    /**
+     * The person on the other side of a loan between people: who the money was
+     * lent to, or who it came back from. Free text, not a foreign key: a
+     * counterparty is a name, not an entity to administer (ADR 34). Null for
+     * every ordinary movement. Added in schema version 2.
+     */
+    @ColumnInfo(name = "counterparty")
+    val counterparty: String? = null,
 )

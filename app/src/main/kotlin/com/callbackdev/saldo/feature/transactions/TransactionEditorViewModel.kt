@@ -15,6 +15,7 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.account.DefaultAccountResolver
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.money.TransactionSign
+import com.callbackdev.saldo.core.domain.transaction.CounterpartyNames
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
@@ -89,6 +90,14 @@ class TransactionEditorViewModel @AssistedInject constructor(
         val note: String = "",
         val selectedTagIds: Set<Long> = emptySet(),
         val isExcludedFromStats: Boolean = false,
+        /**
+         * The exclusion flag the user had chosen before marking the movement as
+         * a loan, restored when the mark is removed: forcing the flag on must
+         * not silently rewrite a choice the user made by hand.
+         */
+        val excludedBeforeCounterparty: Boolean = false,
+        val isCounterparty: Boolean = false,
+        val counterparty: String = "",
         val isRefund: Boolean = false,
         /** Read-only metadata: kept out of [snapshot] so it never marks the form dirty. */
         val isRecurring: Boolean = false,
@@ -106,6 +115,13 @@ class TransactionEditorViewModel @AssistedInject constructor(
                 isTypePreset = route.initialTypeName != null,
                 date = now.toLocalDate(),
                 time = now.toLocalTime(),
+                // Prefilled by "mark as returned": the section opens already on,
+                // with the exclusion it implies (the amount is sanitized once
+                // the account, hence the currency, is known).
+                isCounterparty = route.transactionId == null && route.initialCounterparty != null,
+                counterparty = route.initialCounterparty.orEmpty(),
+                isExcludedFromStats =
+                route.transactionId == null && route.initialCounterparty != null,
             ),
         )
     }
@@ -115,6 +131,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
         tagRepository.observeTags(),
+        transactionRepository.observeCounterpartyNames(),
         ::buildUiState,
     ).stateIn(
         scope = viewModelScope,
@@ -265,7 +282,39 @@ class TransactionEditorViewModel @AssistedInject constructor(
     }
 
     fun onExcludedFromStatsChanged(excluded: Boolean) {
+        // While the movement is marked as a loan the flag is not the user's to
+        // set: lending is never spending, and the switch is disabled to say so.
+        if (form.value.isCounterparty) return
         form.update { it.copy(isExcludedFromStats = excluded) }
+    }
+
+    /**
+     * Marks the movement as a loan to or from a person (ADR 34). Turning it on
+     * forces the exclusion from statistics; turning it off hands the flag back
+     * to the user with the value they had chosen before. The typed name stays
+     * either way, so a mistaken tap costs nothing to undo.
+     */
+    fun onCounterpartyToggled(enabled: Boolean) {
+        form.update { current ->
+            if (current.isCounterparty == enabled) {
+                current
+            } else if (enabled) {
+                current.copy(
+                    isCounterparty = true,
+                    excludedBeforeCounterparty = current.isExcludedFromStats,
+                    isExcludedFromStats = true,
+                )
+            } else {
+                current.copy(
+                    isCounterparty = false,
+                    isExcludedFromStats = current.excludedBeforeCounterparty,
+                )
+            }
+        }
+    }
+
+    fun onCounterpartyChanged(name: String) {
+        form.update { it.copy(counterparty = name) }
     }
 
     /** A refund offsets an expense: toggling it switches the category set. */
@@ -322,6 +371,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
         accounts: List<AccountWithBalance>,
         categories: List<Category>,
         tags: List<Tag>,
+        counterpartyNames: List<String>,
     ): TransactionEditorUiState {
         val byId = accounts.associateBy { it.account.id }
         val pickable = accounts.filter {
@@ -358,6 +408,9 @@ class TransactionEditorViewModel @AssistedInject constructor(
             selectedTags = tags.filter { it.id in current.selectedTagIds },
             isExcludedFromStats = current.isExcludedFromStats,
             isRefund = current.isRefund,
+            isCounterparty = current.isCounterparty,
+            counterparty = current.counterparty,
+            counterpartySuggestions = counterpartySuggestions(counterpartyNames, current),
             isRecurring = current.isRecurring,
             recurringRuleName = current.recurringRuleName,
             showValidation = current.showValidation,
@@ -380,6 +433,19 @@ class TransactionEditorViewModel @AssistedInject constructor(
             val default = DefaultAccountResolver.resolve(active, defaultId, lastUsedId)
             if (default != null) {
                 form.update { if (it.accountId == null) it.copy(accountId = default.id) else it }
+            }
+            // The prefilled amount can only be sanitized once a currency is
+            // known, so it lands here rather than in the initial form; it is
+            // part of the baseline, so leaving an untouched prefill asks nothing.
+            val digits = default?.currency?.let(MoneyMapper::fractionDigits) ?: DEFAULT_FRACTION_DIGITS
+            route.initialAmountInput?.let { prefill ->
+                form.update {
+                    if (it.amountInput.isEmpty()) {
+                        it.copy(amountInput = MoneyInput.sanitize(prefill, digits, allowNegative = false))
+                    } else {
+                        it
+                    }
+                }
             }
             captureBaseline()
         }
@@ -424,11 +490,37 @@ class TransactionEditorViewModel @AssistedInject constructor(
                     note = transaction.note.orEmpty(),
                     selectedTagIds = tagIds,
                     isExcludedFromStats = transaction.isExcludedFromStats,
+                    // Nothing says what the user would have chosen for a movement
+                    // that has always been a loan, so removing the mark hands back
+                    // an unchecked flag rather than inventing one.
+                    excludedBeforeCounterparty = transaction.counterparty == null &&
+                        transaction.isExcludedFromStats,
+                    isCounterparty = transaction.counterparty != null,
+                    counterparty = transaction.counterparty.orEmpty(),
                     isRefund = transaction.isRefund,
                 )
             }
             captureBaseline()
         }
+    }
+
+    /**
+     * The already-used names worth offering under the field: those matching what
+     * has been typed so far, one per person (the same name written two ways is
+     * one suggestion, in its most recent spelling), minus the exact match, which
+     * would only repeat what is already in the field.
+     */
+    private fun counterpartySuggestions(names: List<String>, current: Form): List<String> {
+        if (!current.isCounterparty) return emptyList()
+        val typed = CounterpartyNames.key(current.counterparty)
+        val seen = mutableSetOf<String>()
+        return names
+            .filter { seen.add(CounterpartyNames.key(it)) }
+            .filter { name ->
+                val key = CounterpartyNames.key(name)
+                key != typed && (typed.isEmpty() || key.contains(typed))
+            }
+            .take(MAX_COUNTERPARTY_SUGGESTIONS)
     }
 
     /** Builds the domain movement with the sign conventions of the model. */
@@ -469,8 +561,16 @@ class TransactionEditorViewModel @AssistedInject constructor(
             categoryId = if (hasCategory) current.categoryId else null,
             description = current.description.trim().ifEmpty { null },
             note = current.note.trim().ifEmpty { null },
-            isExcludedFromStats = if (hasCategory) current.isExcludedFromStats else false,
+            // A loan is out of the statistics by construction, whatever the
+            // switch says: the two can only disagree if the flag was forced.
+            isExcludedFromStats = hasCategory &&
+                (current.isExcludedFromStats || current.isCounterparty),
             isRefund = current.type == TransactionType.INCOME && current.isRefund,
+            counterparty = if (hasCategory && current.isCounterparty) {
+                current.counterparty.trim().ifEmpty { null }
+            } else {
+                null
+            },
             recurringRuleId = base?.recurringRuleId,
             // Carried through rather than defaulted: a pending movement is not
             // reachable from this editor today, but letting the flag fall back
@@ -527,6 +627,8 @@ class TransactionEditorViewModel @AssistedInject constructor(
         val selectedTagIds: Set<Long>,
         val isExcludedFromStats: Boolean,
         val isRefund: Boolean,
+        val isCounterparty: Boolean,
+        val counterparty: String,
     )
 
     private fun Form.snapshot() = FormSnapshot(
@@ -543,6 +645,8 @@ class TransactionEditorViewModel @AssistedInject constructor(
         selectedTagIds = selectedTagIds,
         isExcludedFromStats = isExcludedFromStats,
         isRefund = isRefund,
+        isCounterparty = isCounterparty,
+        counterparty = counterparty,
     )
 
     /**
@@ -561,5 +665,8 @@ class TransactionEditorViewModel @AssistedInject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+
+        /** Suggestions under the counterparty field: enough to pick from, never a list. */
+        const val MAX_COUNTERPARTY_SUGGESTIONS = 4
     }
 }

@@ -150,6 +150,11 @@ data class TransactionBackup(
     val recurringRuleId: Long? = null,
     val isPending: Boolean = false,
     val recurringOccurrenceEpochDay: Long? = null,
+    /**
+     * Added with loans between people (ADR 34); older files restore movements
+     * without a counterparty, which is what they were.
+     */
+    val counterparty: String? = null,
 )
 
 @Serializable

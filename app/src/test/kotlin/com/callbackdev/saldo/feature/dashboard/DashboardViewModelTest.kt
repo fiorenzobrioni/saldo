@@ -21,11 +21,13 @@ import com.callbackdev.saldo.core.domain.model.BudgetProgress
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.model.CounterpartyLedger
 import com.callbackdev.saldo.core.domain.model.DailyBalance
 import com.callbackdev.saldo.core.domain.model.SavingsGoalProgress
 import com.callbackdev.saldo.core.domain.usecase.ObserveDailyBalanceHistoryUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveCounterpartyBalancesUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSavingsGoalsProgressUseCase
 import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.testing.MainDispatcherExtension
@@ -69,6 +71,7 @@ class DashboardViewModelTest {
     private val observeSafeToSpend = mockk<ObserveSafeToSpendUseCase>()
     private val observeDueStatements = mockk<ObserveDueStatementsUseCase>()
     private val observeSavingsGoalsProgress = mockk<ObserveSavingsGoalsProgressUseCase>()
+    private val observeCounterpartyBalances = mockk<ObserveCounterpartyBalancesUseCase>()
     private val observeDailyBalanceHistory = mockk<ObserveDailyBalanceHistoryUseCase>()
 
     private fun account(
@@ -117,6 +120,7 @@ class DashboardViewModelTest {
         safeToSpend: SafeToSpend? = null,
         cardPrefs: DashboardCardPreferences = DashboardCardPreferences(),
         savingsGoals: List<SavingsGoalProgress> = emptyList(),
+        counterparties: CounterpartyLedger = CounterpartyLedger(),
         balanceHistory: List<DailyBalance> = emptyList(),
         clock: Clock = this.clock,
         dismissedRecapMonth: java.time.YearMonth? = null,
@@ -143,6 +147,7 @@ class DashboardViewModelTest {
         every { observeSafeToSpend(any()) } returns flowOf(safeToSpend)
         every { observeDueStatements() } returns flowOf(emptyList())
         every { observeSavingsGoalsProgress() } returns flowOf(savingsGoals)
+        every { observeCounterpartyBalances() } returns flowOf(counterparties)
         every { observeDailyBalanceHistory(any(), any()) } returns flowOf(balanceHistory)
         return DashboardViewModel(
             accountRepository,
@@ -154,6 +159,7 @@ class DashboardViewModelTest {
             observeSafeToSpend,
             observeDueStatements,
             observeSavingsGoalsProgress,
+            observeCounterpartyBalances,
             observeDailyBalanceHistory,
             clock,
         )
@@ -545,6 +551,7 @@ class DashboardViewModelTest {
         every { observeSafeToSpend(any()) } returns flowOf(null)
         every { observeDueStatements() } returns flowOf(emptyList())
         every { observeSavingsGoalsProgress() } returns flowOf(emptyList())
+        every { observeCounterpartyBalances() } returns flowOf(CounterpartyLedger())
         every { observeDailyBalanceHistory(any(), any()) } returns flowOf(emptyList())
         val viewModel = DashboardViewModel(
             accountRepository,
@@ -556,6 +563,7 @@ class DashboardViewModelTest {
             observeSafeToSpend,
             observeDueStatements,
             observeSavingsGoalsProgress,
+            observeCounterpartyBalances,
             observeDailyBalanceHistory,
             clock,
         )
