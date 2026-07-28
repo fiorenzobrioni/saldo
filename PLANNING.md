@@ -788,7 +788,7 @@
 - [x] FLAG_SECURE reattivo su tutte e tre le activity (`bindSecureScreen` prima di `setContent`); sheet del widget bloccata dallo stesso manager con pannello PIN compatto, config activity non bloccata (trade-off dichiarato nell'ADR)
 - [x] `EraseAllDataUseCase` rimuove anche il lock con una chiamata esplicita a `AppLockRepository.clear()`; permesso normale `USE_BIOMETRIC` nel manifest; primitive delle righe impostazioni estratte in `core/designsystem` (`SettingsRows`) e riusate da Impostazioni e Sicurezza
 - [x] Stringhe IT/EN; unit test: round-trip e reiezione del `PinHasher`, state machine e cooldown (raddoppio, tetto, deadline persistita oltre la morte del processo) dell'`AppLockManager`, `ForegroundTracker` (config change, multi-activity), flussi del `SecurityViewModel` (crea/conferma, mismatch, disable con verifica, cambio PIN), `LockViewModel` (auto-submit, countdown), erase-all che spazza il lock
-- [ ] Verifica su device: setup e sblocco PIN, biometria (auto-launch e rilancio), cooldown, re-lock secondo timeout, rotazione senza re-lock, FLAG_SECURE su recenti e screenshot, sheet del widget bloccata, erase-all che rimuove il lock, TalkBack sul lock screen
+- [x] Verifica su device: setup e sblocco PIN, biometria (auto-launch e rilancio), cooldown, re-lock secondo timeout, rotazione senza re-lock, FLAG_SECURE su recenti e screenshot, sheet del widget bloccata, erase-all che rimuove il lock, TalkBack sul lock screen (verificata il 2026-07-28)
 
 ## Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
 
