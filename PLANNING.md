@@ -194,7 +194,7 @@
 - [x] Revisione completa stringhe IT + EN (IT: entità uniformata su "conto/conti" al posto del misto account/conto; EN: uniformata su "transaction" al posto del misto movement/transaction; parità chiavi verificata, nessuna stringa hardcoded)
 - [x] Pass di accessibilità: contentDescription verificate su tutti gli interattivi a sola icona; riassunti TalkBack sui 4 grafici Vico (canvas muto); CTA editor/onboarding a `heightIn(min)` per il font scaling; spese/entrate distinte da segno esplicito (`formatSigned`) oltre che dal colore; righe cliccabili con merge semantico automatico. Verifica manuale TalkBack/200% su device: pending (nessun emulatore in questo ambiente)
 - [x] Empty state e stati di errore su tutte le schermate (audit: empty/loading già coperti ovunque; aggiunta gestione errori di scrittura con snackbar a conti (archivia/elimina/rettifica), registro (elimina/undo), da confermare (conferma/salta) e riordino categorie, che prima potevano crashare su un errore Room)
-- [x] Performance: registro appiattito in item lazy per riga (prima un item monolitico per giorno) con key e contentType stabili su header/righe/spaziatori, così con migliaia di record compongono e riciclano solo le righe visibili; l'aspetto a card raggruppata è preservato con forme a segmento. Paging3 non introdotto: il motore filtri e la ricerca full-text sono in-memory per design (un solo code path), da rivalutare solo se una misurazione su device con migliaia di record mostrasse problemi. Baseline profile spostato in Fase 10 (richiede modulo macrobenchmark e run su device, non disponibile in questo ambiente)
+- [x] Performance: registro appiattito in item lazy per riga (prima un item monolitico per giorno) con key e contentType stabili su header/righe/spaziatori, così con migliaia di record compongono e riciclano solo le righe visibili; l'aspetto a card raggruppata è preservato con forme a segmento. Paging3 non introdotto: il motore filtri e la ricerca full-text sono in-memory per design (un solo code path), da rivalutare solo se una misurazione su device con migliaia di record mostrasse problemi. Baseline profile spostato nella fase di release (Fase 11.5, e da li rinviato alla Fase 15: richiede modulo macrobenchmark e run su device, non disponibile in questo ambiente)
 
 ## Fase 9.5 - Budget, spendibile oggi e dashboard configurabile (anticipata alla v1.0)
 
@@ -220,7 +220,7 @@
 - [x] Perf: `MoneyFormatter` mette in cache il `NumberFormat` per `(valuta, locale)` con `ThreadLocal` (`NumberFormat` non è thread-safe) invece di ricostruirlo a ogni chiamata, che pesava scorrendo le liste di importi (commit 519a7f9)
 - [x] Perf: catch-up ricorrenze e parsing dell'intent shortcut solo all'avvio genuino (`savedInstanceState == null`), non a ogni ricreazione da cambio configurazione (rotazione ecc.); WorkManager copre comunque i giorni a device spento (commit 519a7f9)
 - [x] `SwipeToDismiss` del registro migrato fuori dall'API deprecata `confirmValueChange`: l'eliminazione osserva lo stato assestato via `snapshotFlow`, con la sola direzione destra->sinistra abilitata (stesso comportamento, niente warning, a prova di rimozione futura dell'API) (commit 754767c)
-- [x] Transizioni di schermata: valutato uno stile "espressivo" (scale shared-Z) e poi ripristinata la transizione originale slide + fade dopo verifica su device (decisione utente, condivisa). Lo scatto residuo percepito è di build debug / assenza di baseline profile, non dello spec dell'animazione: il tema è tracciato in Fase 10 (commit 754767c)
+- [x] Transizioni di schermata: valutato uno stile "espressivo" (scale shared-Z) e poi ripristinata la transizione originale slide + fade dopo verifica su device (decisione utente, condivisa). Lo scatto residuo percepito è di build debug / assenza di baseline profile, non dello spec dell'animazione: il tema è tracciato nella fase di release (Fase 11.5, commit 754767c)
 - [x] Verifica: gate `assembleDebug testDebugUnitTest lint detekt` verde in CI per ogni commit; APK di prova validato su device reale dall'utente (shortcut, skeleton, ricorrenza scaduta oggi, transizioni)
 
 ## Fase 9.7 - Fix dalla terza review completa (luglio 2026)
@@ -325,7 +325,7 @@
 
 # Fasi anticipate dalla roadmap v2.0 (implementate prima della v1.0)
 
-> Funzionalita della roadmap v2.0 portate avanti prima della release 1.0, una fase per incremento, tutte completate. Restano numerate 10.x e 11 per non rompere i riferimenti nel devlog e nei commit; la Fase 10 (release v1.0) chiude il blocco perche si conclude dopo di loro.
+> Funzionalita della roadmap v2.0 portate avanti prima della release 1.0, una fase per incremento, tutte completate. Restano numerate 10.x e 11 per non rompere i riferimenti nel devlog e nei commit; la Fase 11.5 (release v1.0) chiude il blocco perche si conclude dopo di loro.
 
 ## Fase 10.0 - Obiettivi di risparmio (luglio 2026)
 
@@ -666,9 +666,11 @@
 - [x] Stringhe IT/EN; unit test: preset di inclusione alla selezione del tipo, validazione del saldo iniziale negativo, use case (residuo, rate mancanti con arrotondamento per eccesso, nessuna regola collegata, più regole sommate, valuta diversa esclusa), round-trip backup del nuovo tipo
 - [x] Documentazione: pagina della guida utente e riga nel README; nota nella descrizione della categoria "Prestiti & Finanziamenti" che spiega quando conviene ancora usarla (chi non traccia il prestito come conto)
 
-## Fase 10 - Release v1.0 (pubblicazione su GitHub)
+## Fase 11.5 - Release v1.0 (pubblicazione su GitHub)
 
-> Chiusura della roadmap v1.0. Il canale e una release su GitHub con l'APK di debug allegato, non il Play Store (ADR 38): non c'e un account sviluppatore e il repository e la vetrina del progetto. I passi Play Store non sono cancellati, sono nella Fase 15 come strada alternativa della release v2.0. Numerazione conservata: e la Fase 10 dalla prima stesura del piano, ed e collocata qui perche si chiude dopo le fasi anticipate 10.x e 11.
+> Chiusura della roadmap v1.0. Il canale e una release su GitHub con l'APK di debug allegato, non il Play Store (ADR 38): non c'e un account sviluppatore e il repository e la vetrina del progetto. I passi Play Store non sono cancellati, sono nella Fase 15 come strada alternativa della release v2.0.
+>
+> Numerazione: nella prima stesura del piano questa era la Fase 10, subito dopo la Fase 9. Le fasi anticipate 10.x e 11 hanno poi occupato quello spazio arrivando prima del rilascio, quindi la fase di release prende il numero che le compete davvero, subito dopo l'ultima fase che rilascia (stessa convenzione delle Fasi 6.5 e 9.5, inserite a valle). Nel devlog e nei commit precedenti al 28 luglio 2026 compare ancora come "Fase 10".
 
 **Preparazione (fatta)**
 
@@ -786,7 +788,7 @@
 
 ## Fase 15 - Release v2.0
 
-> Ultima fase della roadmap, sempre in fondo: si chiude quando le fasi ancora aperte sono concluse. Due strade che non si escludono: la release su GitHub e la stessa procedura della v1.0 e si fa comunque, il Play Store si aggiunge solo se e quando ci sara un account sviluppatore. La strada B e la Fase 10 originale, rimessa qui invece di essere buttata via.
+> Ultima fase della roadmap, sempre in fondo: si chiude quando le fasi ancora aperte sono concluse. Due strade che non si escludono: la release su GitHub e la stessa procedura della v1.0 e si fa comunque, il Play Store si aggiunge solo se e quando ci sara un account sviluppatore. La strada B e la checklist Play Store della prima stesura del piano, rimessa qui invece di essere buttata via.
 
 **Comuni alle due strade**
 
