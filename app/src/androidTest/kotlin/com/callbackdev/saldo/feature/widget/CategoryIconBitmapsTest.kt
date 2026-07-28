@@ -37,18 +37,21 @@ class CategoryIconBitmapsTest {
     }
 
     /**
-     * The glyph is a white mask: the colour arrives as a day/night tint at the
-     * `RemoteViews` level, never baked into the pixels. Baking it froze a
-     * widget in whichever theme it was last composed under, because only the
-     * launcher knows when the system theme flips.
+     * The glyph is an alpha-only mask: the colour arrives as a day/night tint
+     * at the `RemoteViews` level, never baked into the pixels. Baking it froze
+     * a widget in whichever theme it was last composed under, because only the
+     * launcher knows when the system theme flips. ALPHA_8 rather than an ARGB
+     * white mask because the tint reads only the destination alpha, and the
+     * alpha-only config is a quarter of the payload per glyph.
      */
     @Test
-    fun theGlyphIsAWhiteMaskWithNoBakedColour() {
+    fun theGlyphIsAnAlphaMask() {
         val bitmap = CategoryIconBitmaps.glyph(
             vector = CategoryVisuals.icon("shopping_cart"),
             sizePx = size,
         )
-        assertTrue("The mask must hold pure white pixels", bitmap.hasGlyph())
+        assertEquals(Bitmap.Config.ALPHA_8, bitmap.config)
+        assertTrue("The mask must hold fully opaque pixels", bitmap.hasGlyph())
     }
 
     /**
@@ -63,7 +66,7 @@ class CategoryIconBitmapsTest {
             vector = CategoryVisuals.icon("shopping_cart"),
             sizePx = size,
         )
-        assertEquals("A corner must stay transparent", Color.TRANSPARENT, bitmap.getPixel(0, 0))
+        assertEquals("A corner must stay transparent", 0, Color.alpha(bitmap.getPixel(0, 0)))
     }
 
     @Test
@@ -97,10 +100,23 @@ class CategoryIconBitmapsTest {
         )
     }
 
-    /** True when the mask holds fully opaque white pixels, i.e. a glyph was drawn. */
+    /** The mark keeps its gradients: the one bitmap here that is not a mask. */
+    @Test
+    fun theAppMarkStaysFullColor() {
+        val context = androidx.test.core.app.ApplicationProvider
+            .getApplicationContext<android.content.Context>()
+        val mark = CategoryIconBitmaps.appMark(context, AppShortcutIcon, size)
+        assertEquals(Bitmap.Config.ARGB_8888, mark.config)
+    }
+
+    /** True when the mask holds fully opaque pixels, i.e. a glyph was drawn. */
     private fun Bitmap.hasGlyph(): Boolean {
         val pixels = IntArray(width * height)
         getPixels(pixels, 0, width, 0, 0, width, height)
-        return pixels.any { it == Color.WHITE }
+        return pixels.any { Color.alpha(it) == FULL_ALPHA }
+    }
+
+    private companion object {
+        const val FULL_ALPHA = 0xFF
     }
 }

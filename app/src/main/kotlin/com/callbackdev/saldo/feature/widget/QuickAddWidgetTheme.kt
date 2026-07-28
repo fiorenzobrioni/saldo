@@ -1,13 +1,13 @@
 package com.callbackdev.saldo.feature.widget
 
-import android.app.WallpaperColors
-import android.app.WallpaperManager
 import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.ColorUtils
 import androidx.glance.color.ColorProviders
 import androidx.glance.color.ColorProvider as DayNightColorProvider
 import androidx.glance.unit.ColorProvider
@@ -28,17 +28,21 @@ import androidx.glance.material3.ColorProviders as GlanceColorProviders
  * system theme flips - but only if it was handed both branches. The old single
  * resolved scheme meant a widget froze in whichever theme it was last composed
  * in until the next data refresh happened along. When an appearance is forced
- * (light, dark, or the wallpaper's pick for a mostly transparent widget), both
- * sides of the pair are simply the same scheme: the launcher can flip all it
- * wants, the choice made here wins.
+ * (light or dark), both sides of the pair are simply the same scheme: the
+ * launcher can flip all it wants, the choice made here wins.
+ *
+ * The background is always solid: the widget never sits directly on the
+ * wallpaper anymore, so no code here needs to know what the wallpaper looks
+ * like. The container color itself is not chosen here - the widget body uses
+ * `GlanceTheme.colors.widgetBackground`, the Material 3 token Glance derives
+ * from these schemes (see [widgetBackgroundColorOf], which mirrors it for the
+ * in-app settings preview).
  */
 data class QuickAddWidgetTheme(
     val lightScheme: ColorScheme,
     val darkScheme: ColorScheme,
     val lightMoney: MoneyColors,
     val darkMoney: MoneyColors,
-    /** The background alpha the user chose in the widget settings, 0..1. */
-    val backgroundOpacity: Float,
     /**
      * The side the in-app settings preview shows. A regular Compose screen has
      * no launcher to resolve day/night for it, so the preview picks one side
@@ -47,29 +51,23 @@ data class QuickAddWidgetTheme(
     val previewDark: Boolean,
 ) {
 
-    /** What Glance hands the launcher: both branches, resolved there. */
-    val providers: ColorProviders get() = GlanceColorProviders(lightScheme, darkScheme)
-
-    val background: ColorProvider
-        get() = DayNightColorProvider(
-            day = lightScheme.background.copy(alpha = backgroundOpacity),
-            night = darkScheme.background.copy(alpha = backgroundOpacity),
-        )
-
     /**
-     * The wash behind glyphs, denser as the background fades. At full opacity
-     * it is the app's own 16% category wash; on a mostly transparent widget
-     * that wash all but disappears into the wallpaper, and the tiles are the
-     * only local contrast the glyphs and labels get.
+     * What Glance hands the launcher: both branches, resolved there. Computed
+     * once per theme instance - the theme is shared across every size bucket
+     * of a render (see `QuickAddWidgetDataLoader.loadShared`), so a `get()`
+     * here would rebuild the same providers over a dozen times per refresh.
      */
-    val washAlpha: Float get() = BaseWashAlpha + (1f - backgroundOpacity) * WashBoost
+    val providers: ColorProviders by lazy(LazyThreadSafetyMode.NONE) {
+        GlanceColorProviders(lightScheme, darkScheme)
+    }
 
     /** A full-strength ink that still flips with the launcher's night mode. */
     fun ink(day: Color, night: Color): ColorProvider = DayNightColorProvider(day = day, night = night)
 
+    /** The wash behind glyphs: the app's own category wash, on both branches. */
     fun wash(day: Color, night: Color): ColorProvider = DayNightColorProvider(
-        day = day.copy(alpha = washAlpha),
-        night = night.copy(alpha = washAlpha),
+        day = day.copy(alpha = WashAlpha),
+        night = night.copy(alpha = WashAlpha),
     )
 
     /**
@@ -93,27 +91,53 @@ data class QuickAddWidgetTheme(
 
     /** The side the settings preview renders, since it cannot do day/night. */
     val previewScheme: ColorScheme get() = if (previewDark) darkScheme else lightScheme
-    val previewBackground: Color get() = previewScheme.background.copy(alpha = backgroundOpacity)
+
+    /**
+     * The widget container color the settings preview shows: the same
+     * `widgetBackground` token the placed widget wears, mirrored here because
+     * a regular Compose screen has no [androidx.glance.GlanceTheme] to read
+     * it from.
+     */
+    val previewBackground: Color get() = widgetBackgroundColorOf(previewScheme)
 }
 
 /**
+ * The Material 3 `widgetBackground` token for [scheme], as glance-material3
+ * derives it in `ColorProviders(light, dark)`: the scheme's secondaryContainer
+ * nudged in HCT tone (+5 above mid tone, -10 below), so the widget container
+ * reads a step apart from in-app surfaces while staying in the dynamic
+ * palette. Kept in lockstep with the library so the in-app preview cannot
+ * drift from what the launcher actually draws.
+ */
+internal fun widgetBackgroundColorOf(scheme: ColorScheme): Color {
+    val hct = FloatArray(HctComponents)
+    ColorUtils.colorToM3HCT(scheme.secondaryContainer.toArgb(), hct)
+    val adjustment = if (hct[2] > MidTone) WidgetBackgroundToneLight else WidgetBackgroundToneDark
+    val tone = (hct[2] + adjustment).coerceIn(0f, MaxTone)
+    return Color(ColorUtils.M3HCTToColor(hct[0], hct[1], tone))
+}
+
+private const val HctComponents = 3
+private const val MidTone = 50f
+private const val MaxTone = 100f
+
+/** glance-material3's own WIDGET_BG_TONE_ADJUSTMENT_LIGHT/_DARK values. */
+private const val WidgetBackgroundToneLight = 5f
+private const val WidgetBackgroundToneDark = -10f
+
+/**
  * Resolves the widget's palette from the app's theme settings and the widget's
- * own appearance override.
- *
- * A mostly transparent widget sits on the wallpaper, not on any surface this
- * code controls, so below [InkFromWallpaperBelow] of opacity the ink side comes
- * from the wallpaper's own [WallpaperColors.HINT_SUPPORTS_DARK_TEXT] - the same
- * hint the system clock uses to stay readable. The hint is global rather than
- * local to where the widget happens to sit, which is why the tiles also wear a
- * denser wash there ([QuickAddWidgetTheme.washAlpha]): the hint picks the side,
- * the wash guarantees the glyphs a floor of local contrast.
+ * own appearance override. Pure function of its inputs: no wallpaper reads, no
+ * binder calls, so the result can be cached per render (see
+ * `QuickAddWidgetDataLoader.loadShared`) and re-resolved only when the theme
+ * settings or the widget configuration actually change.
  */
 fun resolveWidgetTheme(
     context: Context,
     preferences: ThemePreferences,
     config: QuickAddWidgetConfig,
 ): QuickAddWidgetTheme {
-    val forcedDark = forcedDark(context, preferences, config)
+    val forcedDark = forcedDark(preferences, config)
     val lightBase = if (preferences.useDynamicColor) dynamicLightColorScheme(context) else BrandLightColorScheme
     val darkBase = if (preferences.useDynamicColor) dynamicDarkColorScheme(context) else BrandDarkColorScheme
     val light = if (forcedDark == true) darkBase else lightBase
@@ -123,7 +147,6 @@ fun resolveWidgetTheme(
         darkScheme = dark,
         lightMoney = moneyColors(light, darkTheme = forcedDark ?: false),
         darkMoney = moneyColors(dark, darkTheme = forcedDark ?: true),
-        backgroundOpacity = config.backgroundOpacity,
         previewDark = forcedDark ?: context.isSystemInDarkMode(),
     )
 }
@@ -133,19 +156,12 @@ fun resolveWidgetTheme(
  * null when both branches are real and the launcher decides.
  */
 private fun forcedDark(
-    context: Context,
     preferences: ThemePreferences,
     config: QuickAddWidgetConfig,
 ): Boolean? = when (config.appearance) {
     WidgetAppearance.LIGHT -> false
     WidgetAppearance.DARK -> true
-    WidgetAppearance.SYSTEM, WidgetAppearance.TRANSPARENT ->
-        if (config.backgroundOpacity < InkFromWallpaperBelow) {
-            // A light wallpaper asks for dark text, which is the light palette.
-            wallpaperSupportsDarkText(context)?.not() ?: preferences.mode.forcedDark()
-        } else {
-            preferences.mode.forcedDark()
-        }
+    WidgetAppearance.SYSTEM, WidgetAppearance.TRANSPARENT -> preferences.mode.forcedDark()
 }
 
 private fun ThemeMode.forcedDark(): Boolean? = when (this) {
@@ -154,27 +170,9 @@ private fun ThemeMode.forcedDark(): Boolean? = when (this) {
     ThemeMode.DARK -> true
 }
 
-/**
- * Whether the home wallpaper is light enough for dark text, or null when the
- * wallpaper offers no hint (some live wallpapers) and the theme should decide.
- * Needs no permission: the hint is public precisely so surfaces drawn over the
- * wallpaper can stay readable.
- */
-private fun wallpaperSupportsDarkText(context: Context): Boolean? = runCatching {
-    WallpaperManager.getInstance(context)
-        .getWallpaperColors(WallpaperManager.FLAG_SYSTEM)
-        ?.let { colors -> colors.colorHints and WallpaperColors.HINT_SUPPORTS_DARK_TEXT != 0 }
-}.getOrNull()
-
 private fun Context.isSystemInDarkMode(): Boolean =
     resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
         Configuration.UI_MODE_NIGHT_YES
 
-/** Below this opacity the widget reads against the wallpaper, not its own background. */
-private const val InkFromWallpaperBelow = 0.5f
-
 /** Matches `CategoryCell`: the app's unselected category wash. */
-private const val BaseWashAlpha = 0.16f
-
-/** How much the wash densifies on the way to a fully transparent background. */
-private const val WashBoost = 0.22f
+internal const val WashAlpha = 0.16f

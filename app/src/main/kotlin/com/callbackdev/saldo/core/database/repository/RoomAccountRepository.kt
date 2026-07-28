@@ -23,6 +23,9 @@ class RoomAccountRepository @Inject constructor(
     override fun observeAccountsWithBalance(): Flow<List<AccountWithBalance>> =
         accountDao.observeAllWithBalance().map { rows -> rows.map { it.toDomain() } }
 
+    override fun observeAccounts(): Flow<List<Account>> =
+        accountDao.observeAll().map { rows -> rows.map { it.toDomain() } }
+
     override fun observeAccountsWithBalanceAsOfToday(
         todayEpochDayExclusive: Long,
     ): Flow<List<AccountWithBalance>> =

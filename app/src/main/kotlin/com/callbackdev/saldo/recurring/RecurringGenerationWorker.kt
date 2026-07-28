@@ -10,7 +10,6 @@ import com.callbackdev.saldo.core.domain.usecase.CheckUpcomingRenewalsUseCase
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ProcessDueCreditCardStatementsUseCase
 import com.callbackdev.saldo.creditcard.CreditCardNotifier
-import com.callbackdev.saldo.feature.widget.WidgetRefreshWatcher
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
@@ -33,7 +32,6 @@ class RecurringGenerationWorker @AssistedInject constructor(
     private val budgetNotifier: BudgetNotifier,
     private val processDueStatements: ProcessDueCreditCardStatementsUseCase,
     private val creditCardNotifier: CreditCardNotifier,
-    private val widgetRefreshWatcher: WidgetRefreshWatcher,
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result = runCatching {
@@ -46,11 +44,9 @@ class RecurringGenerationWorker @AssistedInject constructor(
         creditCardNotifier.notify(processDueStatements())
         // After generation, so an automatic charge that crosses a budget
         // threshold alerts on the same run, even with the device untouched.
+        // No widget refresh here: the widget shows no totals, so a generated
+        // movement changes nothing it draws.
         budgetNotifier.notify(checkBudgetThresholds())
-        // Last: the widget shows today's spending, so it goes stale at midnight
-        // even on a device nobody touched, and any movement generated above
-        // changes what it should say.
-        widgetRefreshWatcher.refresh()
     }.fold(
         onSuccess = { Result.success() },
         onFailure = { Result.retry() },

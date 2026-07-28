@@ -5,9 +5,9 @@
     framework still validates against.
 
     widgetFeatures marks the configuration as optional and re-openable: the
-    widget works the moment it is dropped (app default account, most used
-    categories) and can be configured later, instead of gating the first use
-    behind a setup screen.
+    widget works the moment it is dropped (app default account, categories in
+    the app's own order) and can be configured later, instead of gating the
+    first use behind a setup screen.
 
     minResizeHeight goes down to one launcher row: at that height the widget
     stops being a grid and becomes two buttons (see WidgetStyle.ACTIONS), so the

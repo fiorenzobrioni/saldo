@@ -14,6 +14,48 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-28 - Preview statiche del picker: via gli adaptive-icon dalle ImageView
+
+**Fatto:** dalla prova su device della 0.9.109 e emerso un difetto nelle card statiche del picker: nel preview della barra il bottone Spesa mostrava lo squircle intero dell'icona scorciatoia e il bottone Entrata uno spazio vuoto. La causa e l'uso degli adaptive-icon delle scorciatoie launcher (`ic_shortcut_expense/income`) dentro le ImageView dei previewLayout: `AppWidgetHostView` rende `AdaptiveIconDrawable` in modo inaffidabile in quel contesto. La barra ora usa due vector semplici con le stesse frecce di trend del widget vero (trending down/up), tintate e con etichette negli accenti brand (`widget_preview_expense` #BA1A1A / `widget_preview_income` #3E6837, variante notte #FFB4AB / #A4D397, gli stessi toni error/tertiary delle palette brand); la griglia passa al mark `ic_launcher_foreground`, vector puro con box a 56dp per compensare la safe zone adattiva. Aggiornato anche il commento stantio del layout griglia, che raccontava ancora la rimozione delle preview generate (tornate da tempo via `WidgetPreviews`).
+
+**Decisioni:** vector semplici e mai adaptive-icon nelle preview statiche, come gia imparato sul lato Compose (dove `painterResource` su un adaptive-icon crashava). Gli accenti sono fissi e non token di sistema: la palette dinamica non ha un rosso, e il verde entrata e una scelta brand che i token non esprimono.
+
+**Problemi:** nessuno, difetto solo visivo e circoscritto ai previewLayout.
+
+**Verificato:** verifica statica; su device restano da confermare le due card del picker (chiaro e scuro). Bump a versionCode 149, versionName 0.9.110.
+
+**Prossimo:** conferma su device delle card del picker insieme al resto della checklist della Fase 10.21.
+
+---
+
+## 2026-07-28 - Widget in riga con Material 3: sfondo sul token widgetBackground
+
+**Fatto:** il contenitore del widget passa da `colorScheme.background` (lo sfondo della Dashboard, deviazione deliberata della Fase 10.18) a `GlanceTheme.colors.widgetBackground`, il ruolo colore che Material 3 riserva ai contenitori dei widget. L'anteprima nella schermata di configurazione mostra lo stesso colore tramite `widgetBackgroundColorOf`, che replica la derivazione della libreria; le preview statiche del picker abbandonano gli hex fissi per i token dinamici di sistema (`system_accent2_50`/`system_accent2_800` per la superficie, `system_neutral1`/`system_neutral2` per gli inchiostri), con la stessa coppia values/values-night di prima. Test strumentati aggiornati: il default e il token (non piu lo sfondo dell'app) e il token si scosta da secondaryContainer nel verso giusto su entrambi i lati.
+
+**Decisioni:** la derivazione non e stata presa a memoria: verificato sul sorgente di glance-material3 (branch di release della 1.2.x) che `widgetBackground` e secondaryContainer con il tono aggiustato in HCT (+5 sopra il tono medio, -10 sotto, costanti `WIDGET_BG_TONE_ADJUSTMENT_*`), calcolato con `ColorUtils.colorToM3HCT`/`M3HCTToColor` di androidx.core (nel progetto: 1.18.0, le API ci sono). Nel widget si usa il token vero via GlanceTheme, cosi un eventuale cambio della libreria arriva gratis; la replica locale serve solo all'anteprima Compose, che un GlanceTheme non ce l'ha, ed e documentata come specchio da tenere allineato. I toni dei token statici del picker seguono la stessa matematica: secondaryContainer chiaro e tono 90, +5 = 95 = `accent2_50`; scuro e 30, -10 = 20 = `accent2_800`. Restano fuori di proposito: le tile categoria (colori propri per disegno, ammessi dalle linee guida come brand), e l'altezza delle pillole a 34dp (sotto i 48dp canonici dei touch target, ma il budget verticale dei bucket e stato risolto attorno a quel valore e le linee guida widget non fissano un minimo in dp: se ne riparla solo con una riprogettazione dei bucket).
+
+**Problemi:** nessuno. L'unica attenzione e che con la palette brand (dynamic color off) lo sfondo del widget ora e una velatura del secondaryContainer del brand invece del bianco/near-black della Dashboard: e l'effetto voluto dal token, da giudicare su device.
+
+**Verificato:** verifica statica dei diff; JVM non tocca la nuova derivazione (il getter dell'anteprima non viene mai letto dai test del loader). CI su push per `assembleDebug testDebugUnitTest lint`. Bump a versionCode 148, versionName 0.9.109.
+
+**Prossimo:** verifica su device estesa alla resa del nuovo sfondo (dynamic on/off, chiaro/scuro) e alla corrispondenza widget piazzato / anteprima in-app / card del picker.
+
+---
+
+## 2026-07-28 - Fase 10.21: widget statici, meno refresh e meno memoria
+
+**Fatto:** refactor dei due widget (griglia e barra) per ridurre consumo di risorse e memoria, su decisione utente a valle di una review dedicata: il widget e un punto di ingresso rapido, non una superficie di visualizzazione. Rimosso il totale "oggi" (header, query, switch di configurazione, stringhe) e con lui `WidgetMidnightRefreshWorker`, la chiamata `refresh()` del worker giornaliero delle ricorrenze, `ACTION_VIEW_TODAY` con il suo plumbing in MainActivity/SaldoApp e la query `getAccountPeriodTotals` rimasta senza chiamanti. Rimossi slider di opacita e inchiostro adattivo dal wallpaper: sfondo sempre solido (Sistema/Chiaro/Scuro) e via il `OnColorsChangedListener`, che era l'unico percorso di refresh non deciso dall'utente (redraw completo, non debounced, a ogni cambio colori del wallpaper). La griglia segue l'ordine della schermata Categorie invece del most-used (lo switch diventa "Scegli le categorie"; la preselezione most-used resta solo nella sheet, dove costa una query per tap). Il conto di default non si risolve piu al render: il widget passa alla sheet l'id del conto fissato se vivo, altrimenti null, e la sheet risolve la catena di default come gia faceva. Watcher alleggerito: via il flusso movimenti, conti osservati con la nuova `AccountRepository.observeAccounts()` (senza saldi). `loadShared` ora restituisce dati + tema risolto in uno snapshot chiavato su (config, revision), con cache a 8 voci; la config activity calcola `isBar` e il tema una volta sola. Glifi in ALPHA_8 (un quarto dei byte), `LruCache` in byte (512 KB), tetto di 4 retry alle anteprime generate.
+
+**Decisioni:** il criterio guida e che dopo questo giro il widget si ridisegna solo quando cambiano conti, categorie o tema: registrare un movimento non lo tocca piu, ne come dato (niente totale), ne come ordinamento (niente most-used), ne come query invalidata (niente `observeAccountsWithBalance` da sentinella, che Room ri-eseguiva a ogni scrittura su transactions). Il tema dentro lo snapshot funziona perche ogni cambio delle preferenze tema arriva al widget comunque come bump di revisione: chiave uguale, palette uguale, per costruzione. ALPHA_8 e equivalente a schermo perche il tint (SRC_IN/SRC_ATOP) legge solo l'alpha di destinazione; il mark dell'app resta ARGB per i gradienti. `WidgetAppearance.TRANSPARENT` legacy si normalizza a SYSTEM su sfondo solido: la trasparenza non e piu offerta e non deve poter tornare da uno stato salvato.
+
+**Problemi:** nessuno bloccante. Il punto da tenere d'occhio e la resa del tint sui glifi ALPHA_8 attraverso RemoteViews, teoricamente identica ma da confermare a occhio su device (chiaro e scuro): e il primo elemento della checklist di verifica della Fase 10.21.
+
+**Verificato:** verifica statica dei diff (nessun SDK locale); test JVM aggiornati e da confermare in CI: `QuickAddWidgetDataLoaderTest` (ordine classico, pin del conto, cache multi-voce e tema nello snapshot), `WidgetRefreshWatcherTest` (segnali senza movimenti, rename del conto), `QuickAddWidgetPrefsTest`, piu gli strumentati `QuickAddWidgetThemeTest` e `CategoryIconBitmapsTest` riallineati. Bump a versionCode 147, versionName 0.9.108.
+
+**Prossimo:** verifica su device della Fase 10.21 (tint ALPHA_8, widget fermo dopo un movimento, redraw su rename/tema, config legacy); restano in sospeso anche le verifiche su device di 10.19 e 10.20 nelle parti non superate da questo refactor.
+
+---
+
 ## 2026-07-28 - Fase 11: prestiti e finanziamenti come tipo di conto
 
 **Fatto:** `AccountType.LOAN` (Prestito o finanziamento) secondo l'ADR 33, dichiarato subito dopo `CREDIT_CARD` così i due tipi debito restano vicini nel raggruppamento per ordinal. Visuals dedicati (icona nuova `request_quote`, colore marrone della palette, etichetta e descrizione d'uso IT/EN che spiega le tre regole: residuo col segno meno come saldo iniziale, rata come trasferimento ricorrente, alternativa della categoria "Prestiti & Finanziamenti" senza mescolare le due modalità). Editor: saldo iniziale obbligatorio e negativo per il tipo (hint dedicato ed errore esplicito al salvataggio), preset `isIncludedInTotal` e `isIncludedInBudget` a off alla selezione del tipo con la nuova guardia `userToggledTotal` gemella di quella del budget. Nuovo `ObserveLoanProgressUseCase` (residuo, quota rimborsata, rata mensile equivalente, prossima rata, rate mancanti `ceil(residuo/rata)`, data stimata di estinzione) e scheda `LoanRowExtras` nella riga del conto, gemella di quella della carta di credito: barra del rimborsato in ruolo positivo, residuo in evidenza, prossima rata e stima delle rate mancanti; stato "estinto" a residuo zero con suggerimento di archiviazione. La logica "equivalente mensile dei trasferimenti ricorrenti verso un conto" è stata estratta da `ObserveSavingsGoalsProgressUseCase` in `RecurrenceCalculator.plannedMonthlyTransfersMinor` (col predicato `isPlannedTransferInto` condiviso), usata da obiettivi e prestiti. Documentazione: pagina della guida utente `prestiti-e-finanziamenti.md`, riga nel README, checkbox della Fase 11 spuntate.

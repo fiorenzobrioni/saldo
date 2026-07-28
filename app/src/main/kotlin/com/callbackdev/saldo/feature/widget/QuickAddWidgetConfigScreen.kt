@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,7 +29,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -47,7 +45,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.callbackdev.saldo.R
@@ -61,16 +58,14 @@ import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
-import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 
 /**
  * The widget's optional setup, in two flavors served by the same activity: the
- * grid's (account, starting type, categories, today total) and the bar's
- * (account, buttons, app shortcut). Appearance and opacity are common. One
- * screen per flavor rather than one screen with captions explaining which
- * option applies at which size - the option that does not apply is simply not
- * there.
+ * grid's (account, starting type, categories) and the bar's (account, buttons,
+ * app shortcut). Appearance is common. One screen per flavor rather than one
+ * screen with captions explaining which option applies at which size - the
+ * option that does not apply is simply not there.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,14 +75,12 @@ fun QuickAddWidgetConfigScreen(
     theme: QuickAddWidgetTheme,
     onAccountSelected: (Long?) -> Unit,
     onTypeSelected: (TransactionType) -> Unit,
-    onShowTodayTotalChanged: (Boolean) -> Unit,
     onShowAppShortcutChanged: (Boolean) -> Unit,
     onButtonsSelected: (WidgetActionButtons) -> Unit,
-    onUseMostUsedChanged: (Boolean) -> Unit,
+    onCustomCategoriesChanged: (Boolean) -> Unit,
     onCategoryToggled: (Long) -> Unit,
     onPinnedReordered: (List<Long>) -> Unit,
     onAppearanceSelected: (WidgetAppearance) -> Unit,
-    onOpacityChanged: (Float) -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -180,16 +173,6 @@ fun QuickAddWidgetConfigScreen(
                     AppearanceSelector(state.config.appearance, onAppearanceSelected)
                 }
             }
-            item(key = "opacity") {
-                Section(stringResource(R.string.widget_config_opacity)) {
-                    OpacitySlider(state.config.backgroundOpacity, onOpacityChanged)
-                    Text(
-                        text = stringResource(R.string.widget_config_opacity_caption),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
             if (!isBar) {
                 item(key = "type") {
                     Section(stringResource(R.string.widget_config_type)) {
@@ -217,15 +200,15 @@ fun QuickAddWidgetConfigScreen(
                     )
                 }
             } else {
-                item(key = "most-used") {
+                item(key = "custom-categories") {
                     SwitchRow(
-                        title = stringResource(R.string.widget_config_most_used),
-                        subtitle = stringResource(R.string.widget_config_most_used_caption),
-                        checked = state.config.usesMostUsed,
-                        onCheckedChange = onUseMostUsedChanged,
+                        title = stringResource(R.string.widget_config_custom_categories),
+                        subtitle = stringResource(R.string.widget_config_custom_categories_caption),
+                        checked = state.config.usesCustomCategories,
+                        onCheckedChange = onCustomCategoriesChanged,
                     )
                 }
-                if (!state.config.usesMostUsed) {
+                if (state.config.usesCustomCategories) {
                     item(key = "pinned-header") {
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
@@ -273,14 +256,6 @@ fun QuickAddWidgetConfigScreen(
                         }
                     }
                 }
-                item(key = "today-total") {
-                    SwitchRow(
-                        title = stringResource(R.string.widget_config_today_total),
-                        subtitle = stringResource(R.string.widget_config_today_total_caption),
-                        checked = state.config.showTodayTotal,
-                        onCheckedChange = onShowTodayTotalChanged,
-                    )
-                }
             }
         }
     }
@@ -310,7 +285,7 @@ private const val PINNED_KEY_PREFIX = "pinned-"
 /**
  * One pinned category: avatar in the widget's own visual language, the name,
  * a way out and a drag handle. Removing the last one flips the grid back to
- * the adaptive categories, which is what an empty pinned list means.
+ * the app's own category order, which is what an empty pinned list means.
  */
 @Composable
 private fun PinnedCategoryRow(
@@ -495,9 +470,10 @@ private fun SwitchRow(
 }
 
 /**
- * Three options, not four: "transparent" stopped being an appearance the day
- * the opacity slider arrived - it is the slider's zero. Legacy widgets that
- * still store it read back as exactly that (see [QuickAddWidgetPrefs.read]).
+ * Three options, not four: "transparent" is no longer offered - the widget
+ * always sits on a solid app surface, so it never has to watch the wallpaper
+ * to stay readable. Legacy widgets that still store it read back as SYSTEM
+ * (see [QuickAddWidgetPrefs.read]).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -521,27 +497,5 @@ private fun AppearanceSelector(selected: WidgetAppearance, onSelect: (WidgetAppe
     }
 }
 
-@Composable
-private fun OpacitySlider(value: Float, onChange: (Float) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Slider(
-            value = value,
-            onValueChange = onChange,
-            modifier = Modifier.weight(1f),
-        )
-        // A fixed slot so the row does not breathe while the thumb drags.
-        Text(
-            text = "${(value * 100).roundToInt()}%",
-            style = MaterialTheme.typography.labelMedium,
-            textAlign = TextAlign.End,
-            modifier = Modifier.width(40.dp),
-        )
-    }
-}
-
-/** Matches the widget's own tile wash at full opacity. */
+/** Matches the widget's own tile wash. */
 private const val AvatarWashAlpha = 0.16f

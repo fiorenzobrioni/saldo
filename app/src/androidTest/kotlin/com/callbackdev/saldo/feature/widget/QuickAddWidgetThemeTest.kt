@@ -31,17 +31,42 @@ class QuickAddWidgetThemeTest {
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
     private val brandPreferences = ThemePreferences(mode = ThemeMode.LIGHT, useDynamicColor = false)
 
+    /**
+     * The settings preview must show the same container color the launcher
+     * draws: the Material 3 widgetBackground token, not the app's own
+     * background surface.
+     */
     @Test
-    fun theWidgetSitsOnTheAppBackgroundByDefault() {
+    fun theWidgetSitsOnTheWidgetBackgroundTokenByDefault() {
         val theme = resolveWidgetTheme(context, brandPreferences, QuickAddWidgetConfig())
-        assertEquals(BrandLightColorScheme.background, theme.previewBackground)
+        assertEquals(widgetBackgroundColorOf(BrandLightColorScheme), theme.previewBackground)
+        assertNotEquals(BrandLightColorScheme.background, theme.previewBackground)
     }
 
     @Test
     fun theWidgetCanBeDarkWhileTheAppIsLight() {
         val config = QuickAddWidgetConfig(appearance = WidgetAppearance.DARK)
         val theme = resolveWidgetTheme(context, brandPreferences, config)
-        assertEquals(BrandDarkColorScheme.background, theme.previewBackground)
+        assertEquals(widgetBackgroundColorOf(BrandDarkColorScheme), theme.previewBackground)
+    }
+
+    /**
+     * The token's whole point: a step apart from secondaryContainer, lighter
+     * on the light side and darker on the dark side, exactly as
+     * glance-material3 derives it for the launcher.
+     */
+    @Test
+    fun theWidgetBackgroundTokenStepsAwayFromSecondaryContainer() {
+        assertTrue(
+            "Light widget background must be lighter than secondaryContainer",
+            widgetBackgroundColorOf(BrandLightColorScheme).luminance() >
+                BrandLightColorScheme.secondaryContainer.luminance(),
+        )
+        assertTrue(
+            "Dark widget background must be darker than secondaryContainer",
+            widgetBackgroundColorOf(BrandDarkColorScheme).luminance() <
+                BrandDarkColorScheme.secondaryContainer.luminance(),
+        )
     }
 
     @Test
@@ -52,7 +77,7 @@ class QuickAddWidgetThemeTest {
             ThemePreferences(mode = ThemeMode.DARK, useDynamicColor = false),
             config,
         )
-        assertEquals(BrandLightColorScheme.background, theme.previewBackground)
+        assertEquals(widgetBackgroundColorOf(BrandLightColorScheme), theme.previewBackground)
         assertTrue(
             "Ink on a light widget must be dark",
             theme.previewScheme.onSurfaceVariant.luminance() < theme.previewBackground.luminance(),
@@ -98,42 +123,15 @@ class QuickAddWidgetThemeTest {
         assertNotEquals(theme.lightScheme.background, theme.darkScheme.background)
     }
 
-    @Test
-    fun theOpacityCarriesIntoTheBackgroundAndOnlyTheBackground() {
-        val config = QuickAddWidgetConfig(backgroundOpacity = 0f)
-        val theme = resolveWidgetTheme(context, brandPreferences, config)
-        assertEquals(0f, theme.previewBackground.alpha, 0.001f)
-        assertEquals(1f, theme.previewScheme.onSurfaceVariant.alpha, 0.001f)
-    }
-
-    @Test
-    fun aHalfOpacityBackgroundIsHalfOpaque() {
-        val config = QuickAddWidgetConfig(backgroundOpacity = 0.6f)
-        val theme = resolveWidgetTheme(context, brandPreferences, config)
-        assertEquals(0.6f, theme.previewBackground.alpha, 0.001f)
-    }
-
     /**
-     * As the background fades, the tile washes densify: they become the only
-     * local contrast the glyphs and labels get over an arbitrary wallpaper.
+     * The widget always sits on a solid app surface: the opacity slider and
+     * the wallpaper-hint ink are gone, so a translucent background would mean
+     * a regression, not a setting.
      */
     @Test
-    fun theWashDensifiesAsTheBackgroundFades() {
-        val opaque = resolveWidgetTheme(context, brandPreferences, QuickAddWidgetConfig())
-        val transparent = resolveWidgetTheme(
-            context,
-            brandPreferences,
-            QuickAddWidgetConfig(backgroundOpacity = 0f),
-        )
-        assertTrue(
-            "Wash at opacity 0 (${transparent.washAlpha}) must be denser than at 1 (${opaque.washAlpha})",
-            transparent.washAlpha > opaque.washAlpha,
-        )
-    }
-
-    @Test
-    fun theBackgroundIsOpaqueByDefaultSoTheWidgetNeverDisappears() {
+    fun theBackgroundIsAlwaysOpaqueSoTheWidgetNeverDisappears() {
         val theme = resolveWidgetTheme(context, brandPreferences, QuickAddWidgetConfig())
         assertEquals(1f, theme.previewBackground.alpha, 0.001f)
+        assertEquals(1f, theme.previewScheme.onSurfaceVariant.alpha, 0.001f)
     }
 }

@@ -12,16 +12,28 @@
         Ink and surface of the static widget previews shown in the launcher's
         widget picker (res/layout/quick_*_widget_preview.xml).
 
-        Own colors rather than ?android:attr/textColorPrimary, because a
-        previewLayout is not inflated with our theme: AppWidgetHostView builds a
-        plain application context (createApplicationContext with
+        System dynamic-palette resources rather than ?android:attr/textColorPrimary,
+        because a previewLayout is not inflated with our theme: AppWidgetHostView
+        builds a plain application context (createApplicationContext with
         CONTEXT_RESTRICTED), which has no theme resource, so the framework falls
         back to Theme.DeviceDefault.Light for anything read with ?android:attr -
         near-black ink, invisible on a dark picker sheet. Resources *are*
         resolved against the launcher's configuration, so a values-night variant
         is what actually follows the launcher's light/dark mode.
+
+        The tones mirror what the placed widget draws under Material You: the
+        surface is the widgetBackground token (secondaryContainer, tone 90+5 in
+        light and 30-10 in dark, hence accent2 at tones 95/20), the inks are
+        onSurface (neutral1 at 10/90) and onSurfaceVariant (neutral2 at 30/80).
     -->
-    <color name="widget_preview_surface">#FFFBFF</color>
-    <color name="widget_preview_ink">#1B1B1F</color>
-    <color name="widget_preview_ink_muted">#45464F</color>
+    <color name="widget_preview_surface">@android:color/system_accent2_50</color>
+    <color name="widget_preview_ink">@android:color/system_neutral1_900</color>
+    <color name="widget_preview_ink_muted">@android:color/system_neutral2_700</color>
+
+    <!-- The bar preview's two accents, mirroring the real buttons (error red
+         and the brand's income green). Fixed brand values rather than system
+         tokens: the dynamic palette carries no red, and the income green is a
+         brand choice the system palette cannot express. -->
+    <color name="widget_preview_expense">#BA1A1A</color>
+    <color name="widget_preview_income">#3E6837</color>
 </resources>

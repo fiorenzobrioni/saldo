@@ -3,7 +3,6 @@ package com.callbackdev.saldo.feature.widget
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.material.icons.Icons
@@ -72,6 +71,11 @@ import kotlinx.coroutines.flow.first
  * is a broadcast to the app process plus a `RemoteViews` round trip back to the
  * launcher, which a keypad would make the user feel on every single digit. What
  * a widget does well - one tap on glanceable content - it keeps.
+ *
+ * A static entry point by design: no balances, no daily totals, no
+ * usage-derived ordering. Everything it draws changes only when the user edits
+ * accounts, categories or the theme, so refreshes are rare and the launcher's
+ * copy stays untouched in between.
  *
  * Everything the widget draws is read *inside* the composition, and that is
  * load-bearing rather than stylistic. `provideGlance` runs once, when the
@@ -174,29 +178,25 @@ internal val PreviewRowBucket = DpSize(250.dp, 88.dp)
  * row by contract.
  */
 internal suspend fun GlanceAppWidget.provideQuickAddContent(context: Context, id: GlanceId) {
-    val entryPoint = context.widgetEntryPoint()
-    val loader = entryPoint.quickAddWidgetDataLoader()
-    val preferences = entryPoint.userPreferences()
-    // Loaded once up front purely so the first frame is already right: the
+    val loader = context.widgetEntryPoint().quickAddWidgetDataLoader()
+    // Loaded once up front purely so the first frame is already right - data
+    // *and* palette, so no frame ever goes out in the default theme: the
     // composition below owns every read from here on.
     val initialInputs = WidgetInputs.from(getAppWidgetState(context, id))
-    val initialData = loader.loadShared(initialInputs.config, initialInputs.revision)
+    val initialSnapshot = loader.loadShared(initialInputs.config, initialInputs.revision)
     provideContent {
         val inputs = WidgetInputs.from(currentState())
         // Reloads on every change of the inputs. The content runs once per
         // bucket of the Responsive set, so the load is the shared one: many
-        // compositions, one database pass.
-        val data by produceState(initialData, inputs) {
+        // compositions, one database pass, one theme resolution.
+        val snapshot by produceState(initialSnapshot, inputs) {
             value = loader.loadShared(inputs.config, inputs.revision)
         }
-        val themePreferences by preferences.themePreferences
-            .collectAsState(initial = ThemePreferences())
-        val theme = resolveWidgetTheme(LocalContext.current, themePreferences, inputs.config)
-        GlanceTheme(colors = theme.providers) {
+        GlanceTheme(colors = snapshot.theme.providers) {
             // The selector follows the state, not the loaded data: the
             // control the user just pressed has to answer immediately, and
             // the grid catches up a frame later.
-            WidgetBody(inputs.config, data, theme)
+            WidgetBody(inputs.config, snapshot.data, snapshot.theme)
         }
     }
 }
@@ -217,10 +217,8 @@ internal suspend fun GlanceAppWidget.provideQuickAddPreview(context: Context) {
         .getOrDefault(
             QuickAddWidgetData(
                 type = config.type,
-                account = null,
                 categories = emptyList(),
-                todayTotal = null,
-                showTodayTotal = config.showTodayTotal,
+                hasAccounts = false,
             ),
         )
     val themePreferences = runCatching { entryPoint.userPreferences().themePreferences.first() }
@@ -235,8 +233,8 @@ internal suspend fun GlanceAppWidget.provideQuickAddPreview(context: Context) {
 
 /**
  * Everything that makes the widget reload. The configuration is the user's
- * doing; [QuickAddWidgetConfig] alone would not notice a movement being
- * recorded, so [WidgetRefreshWatcher] bumps a revision through the same widget
+ * doing; [QuickAddWidgetConfig] alone would not notice a category or theme
+ * edit, so [WidgetRefreshWatcher] bumps a revision through the same widget
  * state and this carries it into the composition.
  */
 private data class WidgetInputs(val config: QuickAddWidgetConfig, val revision: Long) {
@@ -364,11 +362,14 @@ private fun WidgetBody(
         // appWidgetBackground marks this as the widget's face for the launcher,
         // which is what the placement and resize animations attach to; the
         // corner radius is the system's own, so the widget wears the same
-        // rounding as every other widget on the device instead of a private 24dp.
+        // rounding as every other widget on the device instead of a private
+        // 24dp. The fill is the Material 3 widgetBackground token - the color
+        // role the platform reserves for widget containers - resolved by the
+        // launcher on both theme branches like every other color here.
         modifier = GlanceModifier
             .fillMaxSize()
             .appWidgetBackground()
-            .background(theme.background)
+            .background(GlanceTheme.colors.widgetBackground)
             .cornerRadius(android.R.dimen.system_app_widget_background_radius)
             .padding(
                 horizontal = layout.paddingHorizontal.dp,
@@ -456,10 +457,12 @@ private fun Header(selectedType: TransactionType, data: QuickAddWidgetData) {
         if (data.pinnedAccountName != null) {
             // A widget pinned to one account says which: with two widgets on
             // two accounts, an unlabelled pair is a wrong-account entry waiting
-            // to happen. Weighted so a long name gives way, never the amount.
+            // to happen. Weighted so a long name gives way, never the pills.
             Text(
                 text = data.pinnedAccountName,
-                modifier = GlanceModifier.defaultWeight().padding(start = AmountGap),
+                modifier = GlanceModifier
+                    .defaultWeight()
+                    .padding(start = BadgeGap, end = BadgeEndPadding),
                 style = TextStyle(
                     color = GlanceTheme.colors.onSurfaceVariant,
                     fontSize = BadgeFontSize,
@@ -469,28 +472,6 @@ private fun Header(selectedType: TransactionType, data: QuickAddWidgetData) {
             )
         } else {
             Spacer(GlanceModifier.defaultWeight())
-        }
-        if (data.todayTotal != null) {
-            Text(
-                // Labelled, not a bare number: an amount floating in a corner
-                // reads as a balance, a budget, anything - "Today" pins it.
-                // Tapping it opens the day it is summarizing.
-                text = context.getString(R.string.widget_quick_add_today, data.todayTotal),
-                modifier = GlanceModifier
-                    .padding(start = AmountGap, end = AmountEndPadding)
-                    .clickable(
-                        actionStartActivity(
-                            Intent(context, MainActivity::class.java)
-                                .setAction(MainActivity.ACTION_VIEW_TODAY),
-                        ),
-                    ),
-                style = TextStyle(
-                    color = GlanceTheme.colors.onSurfaceVariant,
-                    fontSize = LabelFontSize,
-                    fontWeight = FontWeight.Medium,
-                ),
-                maxLines = 1,
-            )
         }
     }
 }
@@ -561,7 +542,7 @@ private fun ColumnScope.MoneyActions(
                 icon = ExpenseIcon,
                 ink = theme.expenseAccent,
                 wash = theme.expenseWash,
-                accountId = data.account?.id,
+                accountId = data.pinnedAccountId,
                 type = TransactionType.EXPENSE,
             )
         }
@@ -572,7 +553,7 @@ private fun ColumnScope.MoneyActions(
                 icon = IncomeIcon,
                 ink = theme.incomeAccent,
                 wash = theme.incomeWash,
-                accountId = data.account?.id,
+                accountId = data.pinnedAccountId,
                 type = TransactionType.INCOME,
             )
         }
@@ -734,7 +715,10 @@ private fun CategoryTile(
                 context = context,
                 type = data.type,
                 categoryId = category.id,
-                accountId = data.account?.id,
+                // Null unless the widget is pinned to a live account: the
+                // sheet resolves the app default itself at open time, so the
+                // widget never has to redraw to track it.
+                accountId = data.pinnedAccountId,
             ),
         ),
     )
@@ -858,8 +842,8 @@ private val PillCornerRadius = 17.dp
 private val PillPaddingHorizontal = 14.dp
 
 /** A text box hugs its glyphs tighter than a pill hugs its label. */
-private val AmountGap = 8.dp
-private val AmountEndPadding = 4.dp
+private val BadgeGap = 8.dp
+private val BadgeEndPadding = 4.dp
 
 private val LabelFontSize = 13.sp
 private val TileLabelFontSize = 12.sp

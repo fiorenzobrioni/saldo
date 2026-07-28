@@ -10,6 +10,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
@@ -48,14 +49,16 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
     /**
      * Which of the two providers this instance belongs to: the same activity
      * configures both, and the flavor decides which sections the screen shows
-     * (the bar has no grid to configure, the grid no buttons).
+     * (the bar has no grid to configure, the grid no buttons). Lazy because it
+     * is a binder call: resolved once per activity, never per frame.
      */
-    private val isBar: Boolean
-        get() = runCatching {
+    private val isBar: Boolean by lazy {
+        runCatching {
             AppWidgetManager.getInstance(this)
                 .getAppWidgetInfo(appWidgetId)
                 ?.provider?.className == SaldoQuickBarWidgetReceiver::class.java.name
         }.getOrDefault(false)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -78,25 +81,27 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
             }
             SaldoTheme(darkTheme = darkTheme, dynamicColor = themePreferences.useDynamicColor) {
                 val state by viewModel.uiState.collectAsStateWithLifecycle()
-                QuickAddWidgetConfigScreen(
-                    state = state,
-                    isBar = isBar,
-                    // Resolved here, from the same function the widget uses, so
-                    // the preview cannot drift from what actually gets drawn.
-                    theme = resolveWidgetTheme(
+                // Resolved by the same function the widget uses, so the preview
+                // cannot drift from what actually gets drawn - and remembered on
+                // its real inputs, so it is not rebuilt on every recomposition.
+                val theme = remember(themePreferences, state.config.appearance) {
+                    resolveWidgetTheme(
                         context = this@QuickAddWidgetConfigActivity,
                         preferences = themePreferences,
                         config = state.config,
-                    ),
+                    )
+                }
+                QuickAddWidgetConfigScreen(
+                    state = state,
+                    isBar = isBar,
+                    theme = theme,
                     onAccountSelected = viewModel::onAccountSelected,
                     onTypeSelected = viewModel::onTypeSelected,
-                    onShowTodayTotalChanged = viewModel::onShowTodayTotalChanged,
                     onShowAppShortcutChanged = viewModel::onShowAppShortcutChanged,
-                    onUseMostUsedChanged = viewModel::onUseMostUsedChanged,
+                    onCustomCategoriesChanged = viewModel::onCustomCategoriesChanged,
                     onCategoryToggled = viewModel::onCategoryToggled,
                     onPinnedReordered = viewModel::onPinnedReordered,
                     onAppearanceSelected = viewModel::onAppearanceSelected,
-                    onOpacityChanged = viewModel::onOpacityChanged,
                     onButtonsSelected = viewModel::onButtonsSelected,
                     onConfirm = ::confirm,
                     onCancel = ::finish,
@@ -134,9 +139,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     prefs[QuickAddWidgetPrefs.Type] = config.type.name
                     prefs[QuickAddWidgetPrefs.PinnedCategoryIds] =
                         QuickAddWidgetPrefs.encodePinned(config.pinnedCategoryIds)
-                    prefs[QuickAddWidgetPrefs.ShowTodayTotal] = config.showTodayTotal
                     prefs[QuickAddWidgetPrefs.Appearance] = config.appearance.name
-                    prefs[QuickAddWidgetPrefs.BackgroundOpacity] = config.backgroundOpacity
                     prefs[QuickAddWidgetPrefs.Buttons] = config.buttons.name
                     // Confirming settings puts the widget back on its configured
                     // start: leaving the runtime choice behind would mean the

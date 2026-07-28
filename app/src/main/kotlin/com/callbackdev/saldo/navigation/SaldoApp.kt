@@ -58,7 +58,6 @@ import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.TransactionType
-import java.time.LocalDate
 
 /** Height of the Material 3 navigation bar content (excluding the system inset). */
 private val BottomBarHeight = 80.dp
@@ -86,8 +85,6 @@ private const val SLIDE_DIVISOR = 6
 fun SaldoApp(
     quickAction: TransactionType? = null,
     onQuickActionHandled: () -> Unit = {},
-    openToday: Boolean = false,
-    onOpenTodayHandled: () -> Unit = {},
 ) {
     // One back stack per tab (Nav3 multiple-back-stacks recipe): switching
     // tabs keeps every tab's ViewModels, scroll and filters alive.
@@ -102,21 +99,6 @@ fun SaldoApp(
         if (quickAction != null) {
             nav.navigate(TransactionEditorRoute(initialTypeName = quickAction.name))
             onQuickActionHandled()
-        }
-    }
-
-    // The widget's today total was tapped: the same drill-down the dashboard's
-    // own today card opens, resolved to the current day at navigation time.
-    LaunchedEffect(openToday) {
-        if (openToday) {
-            val today = LocalDate.now()
-            nav.navigate(
-                FilteredTransactionsRoute(
-                    startEpochDay = today.toEpochDay(),
-                    endEpochDayExclusive = today.plusDays(1).toEpochDay(),
-                ),
-            )
-            onOpenTodayHandled()
         }
     }
 

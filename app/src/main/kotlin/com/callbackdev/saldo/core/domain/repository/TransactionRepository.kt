@@ -8,7 +8,6 @@ import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
-import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -192,26 +191,12 @@ interface TransactionRepository {
     ): Flow<DashboardTotals>
 
     /**
-     * Cash spend/income of a single account in `[start, end)`, with the same
-     * cash rules as [observeDashboardTotals] (pending excluded, transfers and
-     * adjustments out, excluded-from-stats still in). [currency] is the
-     * account's own: its movements carry no other. Feeds the quick-add widget
-     * pinned to that account, which is why it is a one-shot snapshot.
-     */
-    suspend fun getAccountPeriodTotals(
-        accountId: Long,
-        start: Instant,
-        end: Instant,
-        currency: Currency,
-    ): PeriodTotals
-
-    /**
      * Ids of the categories used most often for movements of [type] since
-     * [since], most used first. Powers the quick-add widget's grid: it is a
-     * "what do I usually tap" shortcut, so unlike the statistics queries it
-     * counts every currency, every account and even movements excluded from
-     * statistics. Empty on a fresh install, where the caller falls back to the
-     * user's own category order.
+     * [since], most used first. Powers the quick-entry sheet's preselected
+     * category: it is a "what do I usually tap" shortcut, so unlike the
+     * statistics queries it counts every currency, every account and even
+     * movements excluded from statistics. Empty on a fresh install, where the
+     * caller falls back to the user's own category order.
      */
     suspend fun mostUsedCategoryIds(
         type: TransactionType,

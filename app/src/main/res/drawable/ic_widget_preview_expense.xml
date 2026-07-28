@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Trending-down arrow for the bar widget's static picker preview: the same
+    glyph the placed widget draws on its Expense button. A plain vector, never
+    an adaptive icon: AppWidgetHostView renders a previewLayout's ImageViews
+    unreliably with AdaptiveIconDrawable (one button showed the icon's full
+    squircle, the other nothing at all).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:autoMirrored="true"
+    android:tint="@color/widget_preview_expense"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M16,18l2.29,-2.29 -4.88,-4.88 -4,4L2,7.41 3.41,6l6,6 4,-4 6.3,6.29L22,12v6z" />
+</vector>

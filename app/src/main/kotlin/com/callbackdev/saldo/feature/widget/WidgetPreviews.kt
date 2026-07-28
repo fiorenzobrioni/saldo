@@ -13,6 +13,7 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
 import java.time.Duration
 import kotlin.reflect.KClass
 
@@ -53,6 +54,17 @@ object WidgetPreviews {
     /** Just past the system's own hourly window, so the retry finds a fresh budget. */
     private val RetryDelay: Duration = Duration.ofMinutes(65)
 
+    /**
+     * How many rate-limited publishes in a row are worth retrying before
+     * giving up until the next cold start. Without a ceiling, a preview the
+     * system never accepts (or a `generatedPreviewCategories` bit that never
+     * turns on) would keep an hourly worker alive indefinitely; after this
+     * many misses the next app launch retries anyway.
+     */
+    internal const val MAX_RETRY_ATTEMPTS = 4
+
+    internal const val ATTEMPT_KEY = "attempt"
+
     private val receivers: List<KClass<out GlanceAppWidgetReceiver>> = listOf(
         SaldoQuickAddWidgetReceiver::class,
         SaldoQuickBarWidgetReceiver::class,
@@ -62,24 +74,27 @@ object WidgetPreviews {
      * Publishes a preview for every provider that has none, and arms a retry if
      * the system refused one.
      *
-     * [fromRetry] tells the two callers apart, and both differences are about
+     * [attempt] is 0 for the startup call and counts up through the retry
+     * worker. It tells the two callers apart, and both differences are about
      * not cancelling the work that is running: the retry worker re-arms with
      * [ExistingWorkPolicy.APPEND_OR_REPLACE] (REPLACE would cancel the very
      * work doing the enqueue) and never clears the queue, which only the
      * startup call does, to drop a retry that is no longer needed.
      */
-    suspend fun publishMissing(context: Context, fromRetry: Boolean = false) {
+    suspend fun publishMissing(context: Context, attempt: Int = 0) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return
         // The SDK guard cannot sit outside the lambda for lint's NewApi check,
         // so the API 35 surface is its own object and this is the only hop.
         val refused = Api35.publishMissing(context, receivers)
         val work = WorkManager.getInstance(context)
+        val fromRetry = attempt > 0
         when {
-            refused -> {
+            refused && attempt < MAX_RETRY_ATTEMPTS -> {
                 val policy =
                     if (fromRetry) ExistingWorkPolicy.APPEND_OR_REPLACE else ExistingWorkPolicy.REPLACE
                 val request = OneTimeWorkRequestBuilder<WidgetPreviewWorker>()
                     .setInitialDelay(RetryDelay)
+                    .setInputData(workDataOf(ATTEMPT_KEY to attempt + 1))
                     .build()
                 work.enqueueUniqueWork(WORK_NAME, policy, request)
             }
@@ -136,7 +151,9 @@ object WidgetPreviews {
  * The retry half of [WidgetPreviews], for the window where the system has
  * already spent the provider's hourly budget. Plain `CoroutineWorker` rather
  * than `@HiltWorker`: it needs a context and nothing else, and the Hilt factory
- * falls back to the default one for workers it does not know.
+ * falls back to the default one for workers it does not know. The attempt
+ * counter rides the work request itself, so the chain ends after
+ * [WidgetPreviews.MAX_RETRY_ATTEMPTS] instead of re-arming hourly forever.
  */
 class WidgetPreviewWorker(
     appContext: Context,
@@ -144,7 +161,8 @@ class WidgetPreviewWorker(
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result {
-        WidgetPreviews.publishMissing(applicationContext, fromRetry = true)
+        val attempt = inputData.getInt(WidgetPreviews.ATTEMPT_KEY, 1)
+        WidgetPreviews.publishMissing(applicationContext, attempt = attempt)
         return Result.success()
     }
 }
