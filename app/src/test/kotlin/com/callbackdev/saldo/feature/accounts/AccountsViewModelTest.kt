@@ -12,6 +12,7 @@ import com.callbackdev.saldo.core.domain.creditcard.BillingCycle
 import com.callbackdev.saldo.core.domain.usecase.AdjustBalanceUseCase
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveLoanProgressUseCase
 import com.callbackdev.saldo.core.domain.usecase.SettleCreditCardStatementUseCase
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.coEvery
@@ -41,6 +42,7 @@ class AccountsViewModelTest {
     private val recurringRuleRepository = mockk<RecurringRuleRepository>()
     private val adjustBalance = mockk<AdjustBalanceUseCase>()
     private val observeDueStatements = mockk<ObserveDueStatementsUseCase>()
+    private val observeLoanProgress = mockk<ObserveLoanProgressUseCase>()
     private val settleStatement = mockk<SettleCreditCardStatementUseCase>()
     private val clock: Clock = Clock.fixed(Instant.parse("2026-07-21T10:00:00Z"), ZoneId.of("Europe/Rome"))
 
@@ -65,12 +67,14 @@ class AccountsViewModelTest {
         coEvery { accountRepository.upsert(any()) } returns 1L
         coEvery { recurringRuleRepository.countForAccount(any()) } returns 0
         every { observeDueStatements() } returns flowOf(dueStatements)
+        every { observeLoanProgress() } returns flowOf(emptyMap())
         return AccountsViewModel(
             accountRepository,
             transactionRepository,
             recurringRuleRepository,
             adjustBalance,
             observeDueStatements,
+            observeLoanProgress,
             settleStatement,
             clock,
         )

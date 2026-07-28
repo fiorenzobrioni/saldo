@@ -14,6 +14,7 @@ import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.RequestQuote
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.ShoppingBag
@@ -54,6 +55,7 @@ object AccountVisuals {
     private val icons: Map<String, ImageVector> = linkedMapOf(
         "account_balance" to Icons.Outlined.AccountBalance,
         "credit_card" to Icons.Outlined.CreditCard,
+        "request_quote" to Icons.Outlined.RequestQuote,
         "contactless" to Icons.Outlined.Contactless,
         "add_card" to Icons.Outlined.AddCard,
         "payments" to Icons.Outlined.Payments,
@@ -84,6 +86,7 @@ object AccountVisuals {
         AccountType.SAVINGS -> "savings"
         AccountType.PREPAID_CARD -> "add_card"
         AccountType.CREDIT_CARD -> "credit_card"
+        AccountType.LOAN -> "request_quote"
         AccountType.CASH -> "payments"
         AccountType.DIGITAL_WALLET -> "wallet"
         AccountType.OTHER -> "account_balance_wallet"
@@ -99,7 +102,9 @@ object AccountVisuals {
      * card and indigo for a digital wallet (two card/digital hues kept apart
      * from checking's blue), deep purple for a credit card (a card feel, and
      * deliberately not red so it never reads as the app's below-zero warning),
-     * and neutral blue-grey for "other".
+     * brown for a loan (a debt weight of its own, distinct from the card's
+     * purple and, like it, deliberately not red), and neutral blue-grey for
+     * "other".
      */
     @Suppress("MagicNumber")
     fun defaultColorFor(type: AccountType): Int = when (type) {
@@ -107,6 +112,7 @@ object AccountVisuals {
         AccountType.SAVINGS -> 0x43A047 // green
         AccountType.PREPAID_CARD -> 0x00ACC1 // cyan
         AccountType.CREDIT_CARD -> 0x7E57C2 // deep purple
+        AccountType.LOAN -> 0x8D6E63 // brown
         AccountType.CASH -> 0xF9A825 // amber
         AccountType.DIGITAL_WALLET -> 0x5C6BC0 // indigo
         AccountType.OTHER -> 0x546E7A // blue grey
@@ -124,6 +130,7 @@ fun AccountType.labelRes(): Int = when (this) {
     AccountType.SAVINGS -> R.string.account_type_savings
     AccountType.PREPAID_CARD -> R.string.account_type_prepaid_card
     AccountType.CREDIT_CARD -> R.string.account_type_credit_card
+    AccountType.LOAN -> R.string.account_type_loan
     AccountType.CASH -> R.string.account_type_cash
     AccountType.DIGITAL_WALLET -> R.string.account_type_digital_wallet
     AccountType.OTHER -> R.string.account_type_other
@@ -139,6 +146,7 @@ fun AccountType.infoRes(): Int = when (this) {
     AccountType.SAVINGS -> R.string.account_type_info_savings
     AccountType.PREPAID_CARD -> R.string.account_type_info_prepaid
     AccountType.CREDIT_CARD -> R.string.account_type_info_credit_card
+    AccountType.LOAN -> R.string.account_type_info_loan
     AccountType.CASH -> R.string.account_type_info_cash
     AccountType.DIGITAL_WALLET -> R.string.account_type_info_wallet
     AccountType.OTHER -> R.string.account_type_info_other

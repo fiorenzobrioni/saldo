@@ -81,6 +81,7 @@ import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.model.LoanProgress
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import kotlinx.coroutines.flow.first
 
@@ -299,6 +300,7 @@ private fun AccountsList(
                     AccountReorderableRow(
                         item = entry.item,
                         dueStatement = uiState.dueStatement(entry.item.account.id),
+                        loanProgress = uiState.loanProgress(entry.item.account.id),
                         elevated = isDragging,
                         onClick = { onAccountClick(entry.item) },
                         onSettleStatement = { onSettleStatement(entry.item.account.id) },
@@ -389,6 +391,7 @@ private fun LaunchedActiveResync(
 private fun AccountReorderableRow(
     item: AccountWithBalance,
     dueStatement: DueStatement?,
+    loanProgress: LoanProgress?,
     elevated: Boolean,
     onClick: () -> Unit,
     onSettleStatement: () -> Unit,
@@ -422,6 +425,7 @@ private fun AccountReorderableRow(
                 dueStatement = dueStatement,
                 onSettleStatement = onSettleStatement,
             )
+            LoanRowExtras(item = item, progress = loanProgress)
         }
     }
 }
@@ -525,6 +529,7 @@ private fun AccountsCard(
                         dueStatement = uiState.dueStatement(item.account.id),
                         onSettleStatement = { onSettleStatement(item.account.id) },
                     )
+                    LoanRowExtras(item = item, progress = uiState.loanProgress(item.account.id))
                 }
             }
         }

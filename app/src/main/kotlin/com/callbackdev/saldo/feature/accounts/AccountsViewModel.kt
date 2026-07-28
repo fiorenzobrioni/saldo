@@ -13,6 +13,7 @@ import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.AdjustBalanceUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveLoanProgressUseCase
 import com.callbackdev.saldo.core.domain.usecase.SettleCreditCardStatementUseCase
 import com.callbackdev.saldo.core.domain.usecase.StatementSettlement
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -39,6 +40,7 @@ class AccountsViewModel @Inject constructor(
     private val recurringRuleRepository: RecurringRuleRepository,
     private val adjustBalance: AdjustBalanceUseCase,
     private val observeDueStatements: ObserveDueStatementsUseCase,
+    private val observeLoanProgress: ObserveLoanProgressUseCase,
     private val settleStatement: SettleCreditCardStatementUseCase,
     private val clock: Clock,
 ) : ViewModel() {
@@ -58,7 +60,8 @@ class AccountsViewModel @Inject constructor(
         dialog,
         selectedAccountId,
         observeDueStatements(),
-    ) { accounts, currentDialog, selectedId, due ->
+        observeLoanProgress(),
+    ) { accounts, currentDialog, selectedId, due, loans ->
         AccountsUiState(
             isLoading = false,
             activeGroups = buildAccountTypeGroups(accounts.filter { !it.account.isArchived }),
@@ -70,6 +73,7 @@ class AccountsViewModel @Inject constructor(
             // newest one's (they differ only after a multi-cycle catch-up).
             dueStatements = due.groupBy { it.accountId }
                 .mapValues { (_, statements) -> statements.first() },
+            loanProgressById = loans,
         )
     }.stateIn(
         scope = viewModelScope,

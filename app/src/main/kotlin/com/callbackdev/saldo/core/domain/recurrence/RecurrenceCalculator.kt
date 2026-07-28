@@ -2,12 +2,15 @@ package com.callbackdev.saldo.core.domain.recurrence
 
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import com.callbackdev.saldo.core.domain.model.RecurringRule
+import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.runsInMonthOf
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.ChronoUnit
+import java.util.Currency
 
 /**
  * Pure date/amount math for recurring rules. No Android, no I/O: fully unit
@@ -118,6 +121,47 @@ object RecurrenceCalculator {
             .multiply(perYear)
             .divide(BigDecimal(MONTHS_PER_YEAR), MoneyMapper.fractionDigits(rule.currency), RoundingMode.HALF_UP)
     }
+
+    /**
+     * The monthly-equivalent, in minor units, of the active recurring transfers
+     * landing in [accountId] this month, summed across rules. Only same-currency
+     * ([currency]) fixed-amount rules count: a cross-currency transfer has its
+     * received amount entered only at confirmation and a variable-amount rule
+     * has nothing to spread, so neither can be projected.
+     *
+     * Shared on purpose between the savings goals projection and the loan
+     * progress estimate (PLANNING ADR 33): both read "how much lands in this
+     * account per month" and must agree on it.
+     */
+    fun plannedMonthlyTransfersMinor(
+        rules: List<RecurringRule>,
+        accountId: Long,
+        currency: Currency,
+        today: LocalDate,
+    ): Long = rules
+        .filter { isPlannedTransferInto(it, accountId, currency, today) }
+        .fold(0L) { acc, rule ->
+            val monthly = monthlyEquivalent(rule) ?: BigDecimal.ZERO
+            acc + MoneyMapper.toMinorUnits(monthly, currency)
+        }
+
+    /**
+     * Whether [rule] is a fixed-amount transfer rule in [currency] that lands in
+     * [accountId] and carries a cost into the month of [today]. The predicate
+     * behind [plannedMonthlyTransfersMinor], exposed so callers that need the
+     * matching rules themselves (e.g. the next installment of a loan) select
+     * exactly the same set they were priced on.
+     */
+    fun isPlannedTransferInto(
+        rule: RecurringRule,
+        accountId: Long,
+        currency: Currency,
+        today: LocalDate,
+    ): Boolean = rule.type == TransactionType.TRANSFER &&
+        rule.transferAccountId == accountId &&
+        rule.amount != null &&
+        rule.currency == currency &&
+        rule.runsInMonthOf(today)
 
     /** Charges per year for a frequency, used to normalize to a monthly figure. */
     @Suppress("MagicNumber")
