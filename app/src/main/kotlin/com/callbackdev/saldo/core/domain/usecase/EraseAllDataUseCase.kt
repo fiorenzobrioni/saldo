@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.core.domain.usecase
 
+import com.callbackdev.saldo.core.common.applock.AppLockRepository
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.BackupRepository
 import kotlinx.coroutines.channels.Channel
@@ -44,12 +45,18 @@ class AppResetCoordinator @Inject constructor() {
 class EraseAllDataUseCase @Inject constructor(
     private val backupRepository: BackupRepository,
     private val userPreferences: UserPreferencesRepository,
+    private val appLockRepository: AppLockRepository,
     private val resetCoordinator: AppResetCoordinator,
 ) {
 
     suspend operator fun invoke() {
         backupRepository.eraseAll()
         userPreferences.clear()
+        // Deliberate and explicit (ADR 39): the PIN lives in its own store
+        // precisely so it cannot be wiped as a side effect, and a factory
+        // reset removes it on purpose - back to a fresh install, and whoever
+        // triggers this is already past the lock.
+        appLockRepository.clear()
         resetCoordinator.publish()
     }
 }

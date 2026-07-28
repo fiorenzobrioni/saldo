@@ -108,6 +108,10 @@ data class SavingsGoalEditorRoute(val goalId: Long? = null) : NavKey
 @Serializable
 data class MonthlyRecapRoute(val year: Int, val month: Int) : NavKey
 
+/** Security settings (app lock, biometrics, screen privacy), reached from Settings. */
+@Serializable
+data object SecurityRoute : NavKey
+
 /** Manual file backup and guided restore, reached from Settings. */
 @Serializable
 data object BackupRoute : NavKey

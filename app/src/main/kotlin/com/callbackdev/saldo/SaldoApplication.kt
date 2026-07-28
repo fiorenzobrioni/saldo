@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.callbackdev.saldo.budget.BudgetNotifier
 import com.callbackdev.saldo.budget.BudgetThresholdWatcher
+import com.callbackdev.saldo.core.common.applock.AppLockLifecycleObserver
 import com.callbackdev.saldo.core.common.di.ApplicationScope
 import com.callbackdev.saldo.creditcard.CreditCardNotifier
 import com.callbackdev.saldo.feature.widget.WidgetRefreshWatcher
@@ -36,6 +37,9 @@ class SaldoApplication : Application(), Configuration.Provider {
     lateinit var widgetRefreshWatcher: WidgetRefreshWatcher
 
     @Inject
+    lateinit var appLockLifecycleObserver: AppLockLifecycleObserver
+
+    @Inject
     @ApplicationScope
     lateinit var applicationScope: CoroutineScope
 
@@ -53,6 +57,8 @@ class SaldoApplication : Application(), Configuration.Provider {
         creditCardNotifier.createChannel()
         budgetThresholdWatcher.start(applicationScope)
         widgetRefreshWatcher.start(applicationScope)
+        // Feeds the app lock's re-lock timer across every activity (ADR 39).
+        registerActivityLifecycleCallbacks(appLockLifecycleObserver)
         RecurringWorkScheduler.schedule(this)
     }
 }

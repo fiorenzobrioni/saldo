@@ -17,6 +17,8 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.applock.AppLockRepository
+import com.callbackdev.saldo.core.common.applock.bindSecureScreen
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
@@ -37,6 +39,9 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
 
     @Inject
     lateinit var userPreferences: UserPreferencesRepository
+
+    @Inject
+    lateinit var appLockRepository: AppLockRepository
 
     private val viewModel: QuickAddWidgetConfigViewModel by viewModels()
 
@@ -63,6 +68,10 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Screen privacy applies here too (account names on screen); the lock
+        // gate deliberately does not: this is a system placement flow that
+        // shows no amounts (trade-off stated in PLANNING, Fase 14.5).
+        bindSecureScreen(appLockRepository)
         // Declared up front: if the user backs out, the launcher must still keep
         // the widget rather than dropping it as a failed placement.
         setResult(RESULT_CANCELED, resultIntent())

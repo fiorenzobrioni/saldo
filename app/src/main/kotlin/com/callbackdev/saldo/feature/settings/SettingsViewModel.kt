@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.applock.AppLockRepository
 import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
@@ -26,7 +27,16 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val userPreferences: UserPreferencesRepository,
     accountRepository: AccountRepository,
+    appLockRepository: AppLockRepository,
 ) : ViewModel() {
+
+    /** Whether the app lock is on; drives the Security entry's hint. */
+    val appLockEnabled: StateFlow<Boolean> = appLockRepository.lockEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = false,
+        )
 
     /** The explicit primary currency; null shows as "Automatic". */
     val primaryCurrencyOverride: StateFlow<Currency?> = userPreferences.primaryCurrencyOverride

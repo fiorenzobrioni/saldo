@@ -44,3 +44,4 @@ Il manuale cresce in modo incrementale. Gli argomenti già disponibili hanno un 
 
 - 💾 Backup, export e import: salvare, esportare e ripristinare i dati.
 - ⚙️ Impostazioni: tema, valuta, notifiche e altre preferenze.
+- 🔒 [Blocco app e privacy dello schermo](blocco-app.md): PIN di 6 cifre, sblocco biometrico, blocco automatico e contenuto nascosto nelle app recenti.

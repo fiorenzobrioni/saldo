@@ -5,6 +5,9 @@
     <!-- Informative/confirmation notifications for generated recurring movements. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Biometric unlock of the optional app lock (normal permission, no prompt). -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
     <application
         android:name=".SaldoApplication"
         android:allowBackup="false"
