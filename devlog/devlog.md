@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-28 - Riga di copyright nella schermata Informazioni
+
+**Fatto:** sotto "Sviluppata da Callback Dev" compare `© 2026 Fiorenzo Brioni`, come nell'About di Snake (l'altro progetto Android dello stesso autore). Nuova stringa `about_copyright` in `values/strings.xml` con `translatable="false"`, `bodySmall` in `onSurfaceVariant` dentro `AppIdentity`, due dp di spazio sopra: sta sotto la riga dell'autore come una didascalia, senza contendere gerarchia al nome dell'app.
+
+**Decisioni:** stringa non traducibile e presente nel solo `values`, come gia si fa per `about_library_names`: un nome proprio e un anno sono identici in ogni lingua, e duplicarli in `values-it` creerebbe due punti da tenere allineati per niente. Anno fisso nella risorsa e non calcolato a runtime: il copyright si riferisce all'anno di pubblicazione, non alla data in cui l'utente apre la schermata. `versionCode` a 151 con `versionName` fermo a 1.0.0: il codice identifica la build e deve avanzare perche il device di test aggiorni in place, il nome identifica il rilascio e resta quello che verra taggato.
+
+**Problemi:** nessuno.
+
+**Verificato:** `assembleDebug testDebugUnitTest lint detekt` in locale. Resa della riga da confermare su device insieme al resto della checklist della Fase 11.5.
+
+**Prossimo:** invariato, la checklist di verifica su device e poi il tag `v1.0.0`.
+
+---
+
 ## 2026-07-28 - La fase di release v1.0 diventa la 11.5
 
 **Fatto:** rinumerata la fase di rilascio da "Fase 10" a "Fase 11.5" e aggiornati i riferimenti in PLANNING (nota dell'H1 delle fasi anticipate, riga del baseline profile nella Fase 9, nota sulle transizioni nella Fase 9.6, nota della Fase 15). Ora l'ordine di lettura del documento coincide con l'ordine dei numeri: 9.16, 10.0-10.21, 11, 11.5, 12, 13, 14, cloud, 15.

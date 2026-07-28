@@ -675,7 +675,8 @@
 **Preparazione (fatta)**
 
 - [x] Canale di distribuzione deciso e documentato: release su GitHub, APK di debug firmato dal keystore condiviso del repository, aggiornabile in place da una versione all'altra (ADR 38)
-- [x] Versione portata a `versionCode` 150 e `versionName` 1.0.0 (`app/build.gradle.kts`); dalla 1.0.0 le build di sviluppo proseguono come `1.0.<incremento>`
+- [x] Versione portata a `versionCode` 151 e `versionName` 1.0.0 (`app/build.gradle.kts`); dalla 1.0.0 le build di sviluppo proseguono come `1.0.<incremento>`. Il `versionCode` puo avanzare senza toccare il `versionName`: identifica la build, non il nome del rilascio
+- [x] Riga di copyright nella schermata Informazioni, sotto "Sviluppata da Callback Dev": `© 2026 Fiorenzo Brioni`, `translatable="false"` perche un nome e un anno non si traducono (stesso trattamento di `about_library_names`)
 - [x] Note di rilascio complete in [docs/release-notes/v1.0.0.md](./docs/release-notes/v1.0.0.md): cosa c'e nella 1.0, download e installazione, privacy, note tecniche, limitazioni note, riepilogo in inglese
 - [x] Workflow `.github/workflows/release.yml`: al push di un tag `v*` costruisce e verifica (`assembleDebug testDebugUnitTest lint detekt`), rinomina l'APK in `saldo-<versione>-debug.apk` e pubblica la release con le note del file versionato
 - [x] CI ristretta ai push su branch, cosi il tag innesca solo il workflow di release e non due build identiche
