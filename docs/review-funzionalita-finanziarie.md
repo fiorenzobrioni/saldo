@@ -107,9 +107,9 @@ Legenda della colonna "In Saldo": **Sì** già presente, **Parziale** le primiti
 | 15 | Sottocategorie | Un secondo livello sotto la categoria | No (rinviato per scelta in VISION) | Coperto dai tag, che assolvono lo stesso bisogno senza un secondo livello nei picker e nei grafici. Non implementare senza rivedere la decisione |
 | 16 | Analisi avanzate (anno su anno, pattern) | Confronto tra periodi omologhi e ricorrenze di spesa individuate nello storico | No (già in roadmap v2.0) | Oggi: statistiche con periodo personalizzato più recap mensile |
 | 17 | Arrotondamento spiccioli verso un obiettivo | Ogni spesa arrotondata all'euro superiore, la differenza trasferita al conto di risparmio | No | Nessuna. Si costruisce interamente sui trasferimenti esistenti e sugli obiettivi di risparmio, nessun modello nuovo |
-| 18 | Export PDF, Excel, Google Sheets | Report formattati oltre al CSV | No (già in roadmap v1.5 e v2.0) | Oggi: export CSV filtrato, che si apre in Excel e in Sheets |
+| 18 | Export PDF, Excel, Google Sheets | Report formattati oltre al CSV | No (già in roadmap v2.0) | Oggi: export CSV filtrato, che si apre in Excel e in Sheets |
 | 19 | Report periodico ricorrente | Riepilogo settimanale o mensile recapitato come notifica | Parziale | Coperto dal recap mensile "Saldo Wrapped" più le notifiche di soglia budget. Una notifica settimanale sarebbe una preferenza in più, non una funzionalità nuova |
-| 20 | PIN, biometria, oscuramento in recenti | Blocco dell'app all'apertura e contenuto nascosto nelle app recenti | No (già in roadmap v1.5) | Nessuna. È la funzionalità premium più attesa che non tocca il modello finanziario |
+| 20 | PIN, biometria, oscuramento in recenti | Blocco dell'app all'apertura e contenuto nascosto nelle app recenti | No (già in roadmap v2.0) | Nessuna. È la funzionalità premium più attesa che non tocca il modello finanziario |
 | 21 | Backup automatico su cloud | Copia periodica fuori dal dispositivo, senza azione manuale | No (fase cloud da valutare) | Oggi: backup manuale su file via picker di sistema, salvabile su qualunque provider (Drive incluso) |
 | 22 | Cifratura del backup | File di backup protetto da passphrase | No (già in roadmap v2.0) | Nessuna. Il file JSON è in chiaro e la UI lo dichiara |
 
