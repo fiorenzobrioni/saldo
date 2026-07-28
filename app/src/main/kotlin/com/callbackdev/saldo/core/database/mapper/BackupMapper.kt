@@ -170,6 +170,8 @@ fun TransactionEntity.toBackup(): TransactionBackup = TransactionBackup(
     isPending = isPending,
     recurringOccurrenceEpochDay = recurringOccurrenceEpochDay,
     counterparty = counterparty,
+    hasReminder = hasReminder,
+    lastReminderEpochDay = lastReminderEpochDay,
 )
 
 fun TransactionBackup.toEntity(): TransactionEntity = TransactionEntity(
@@ -192,6 +194,8 @@ fun TransactionBackup.toEntity(): TransactionEntity = TransactionEntity(
     isPending = isPending,
     recurringOccurrenceEpochDay = recurringOccurrenceEpochDay,
     counterparty = counterparty,
+    hasReminder = hasReminder,
+    lastReminderEpochDay = lastReminderEpochDay,
 )
 
 fun TransactionTagCrossRef.toBackup(): TransactionTagBackup =

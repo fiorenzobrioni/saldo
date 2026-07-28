@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.BudgetProgress
@@ -19,8 +20,10 @@ import com.callbackdev.saldo.core.domain.model.fallbackCurrency
 import com.callbackdev.saldo.core.domain.model.hasEndedBy
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.model.runsInMonthOf
+import com.callbackdev.saldo.core.domain.model.UpcomingMovement
 import com.callbackdev.saldo.core.domain.recurrence.BalanceForecastCalculator
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
+import com.callbackdev.saldo.core.domain.recurrence.RuleOccurrence
 import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.common.time.midnightTicker
@@ -35,9 +38,11 @@ import com.callbackdev.saldo.core.domain.usecase.ObserveDailyBalanceHistoryUseCa
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSavingsGoalsProgressUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveUpcomingMovementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.feature.accounts.sortedByTypeThenName
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
+import com.callbackdev.saldo.feature.upcoming.UpcomingItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -84,6 +89,21 @@ data class RecurringSummary(
     /** Whether any recurring rule (either type, any currency) is active. */
     val hasRules: Boolean = false,
 )
+
+/**
+ * The dashboard's preview of what is coming (ADR 36): the soonest few movements
+ * and the size of the whole list, so the card can say "and 4 more" without
+ * carrying them all.
+ */
+data class UpcomingPreview(
+    val items: List<UpcomingItem> = emptyList(),
+    val totalCount: Int = 0,
+) {
+    val isEmpty: Boolean get() = totalCount == 0
+
+    /** How many the card is not showing; zero when it shows them all. */
+    val hiddenCount: Int get() = (totalCount - items.size).coerceAtLeast(0)
+}
 
 /** Time-of-day band that selects the dashboard greeting. */
 enum class GreetingBand {
@@ -160,6 +180,8 @@ data class DashboardUiState(
     val recurring: RecurringSummary = RecurringSummary(),
     /** Number of recurring movements awaiting confirmation. */
     val pendingCount: Int = 0,
+    /** What is coming, for the preview card: the soonest few and how many there are. */
+    val upcoming: UpcomingPreview = UpcomingPreview(),
     /** Confirm-mode credit card statements waiting to be paid (primary currency shown). */
     val dueStatements: List<DueStatement> = emptyList(),
     val recent: List<TransactionListItem> = emptyList(),
@@ -198,6 +220,7 @@ class DashboardViewModel @Inject constructor(
     private val observeSavingsGoalsProgress: ObserveSavingsGoalsProgressUseCase,
     private val observeCounterpartyBalances: ObserveCounterpartyBalancesUseCase,
     private val observeDailyBalanceHistory: ObserveDailyBalanceHistoryUseCase,
+    private val observeUpcomingMovements: ObserveUpcomingMovementsUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -213,7 +236,7 @@ class DashboardViewModel @Inject constructor(
         val recent: List<Transaction>,
         val categories: List<Category>,
         val rules: List<RecurringRule>,
-        val pendingCount: Int,
+        val upcoming: List<UpcomingMovement>,
     )
 
     /** The budget/goal figures that join on top of the core [Sources]. */
@@ -253,9 +276,11 @@ class DashboardViewModel @Inject constructor(
                 transactionRepository.observeRecentTransactions(RECENT_COUNT),
                 categoryRepository.observeCategories(),
                 recurringRuleRepository.observeRules(),
-                transactionRepository.observePendingTransactions(),
-            ) { totals, recent, categories, rules, pending ->
-                Sources(totals, recent, categories, rules, pending.size)
+                // Future-dated movements and pending occurrences in one flow:
+                // the forecast walks them and the card previews them.
+                observeUpcomingMovements.movements(today),
+            ) { totals, recent, categories, rules, upcoming ->
+                Sources(totals, recent, categories, rules, upcoming)
             }
             // Budget/goal figures collapse into one bundle so the whole dashboard
             // stays within the typed combine arity.
@@ -397,8 +422,8 @@ class DashboardViewModel @Inject constructor(
         // [totalBalance] when future-dated confirmed movements are already
         // booked. Surface it only on that divergence, so the card stays quiet
         // when the headline already is the today figure.
-        val balanceAsOfToday = balanceHistory.lastOrNull()?.balance
-            ?.takeIf { it.compareTo(totalBalance) != 0 }
+        val todayBalance = balanceHistory.lastOrNull()?.balance ?: totalBalance
+        val balanceAsOfToday = todayBalance.takeIf { it.compareTo(totalBalance) != 0 }
 
         val totals = sources.totals
         val previousReference = totals.previousMonthToDateSpend.takeIf { it.signum() > 0 }
@@ -427,14 +452,22 @@ class DashboardViewModel @Inject constructor(
             // name) so the total-balance breakdown and the full list agree.
             accounts = active.sortedByTypeThenName(),
             balanceHistory = balanceHistory,
-            // Anchored to the headline balance, the same figure the last
-            // history point equals, so the dashed tail attaches seamlessly.
+            // Anchored to the today figure, the point the drawn line ends on,
+            // so the dashed tail attaches seamlessly and every future movement
+            // is applied once, on its own day, instead of all at once here.
             balanceForecast = if (balanceHistory.size > 1) {
                 BalanceForecastCalculator.projectToEndOfMonth(
-                    currentBalance = totalBalance,
+                    balanceAsOfToday = todayBalance,
                     today = today,
                     nonRecurringMonthToDateSpend = totals.monthToDateNonRecurringSpend,
                     rules = sources.rules,
+                    upcoming = BalanceForecastCalculator.upcomingNetByDay(
+                        movements = sources.upcoming,
+                        includedAccountIds = totalAccountIds(active, primary),
+                        firstForecastDay = today.plusDays(1),
+                        lastForecastDay = today.withDayOfMonth(today.lengthOfMonth()),
+                    ),
+                    materializedOccurrences = materializedOccurrences(sources.upcoming),
                     currency = primary,
                 )
             } else {
@@ -446,7 +479,8 @@ class DashboardViewModel @Inject constructor(
             previousMonthSpendToDate = previousReference,
             spentMoreThanLastMonth = spentMore,
             recurring = recurringSummary(sources.rules, primary, today, savingsAccountIds(accounts)),
-            pendingCount = sources.pendingCount,
+            pendingCount = sources.upcoming.count { it.isPending },
+            upcoming = upcomingPreview(sources.upcoming, accountById, categoryById, sources.rules),
             dueStatements = dueStatements,
             recent = recent,
             budgets = budgets,
@@ -460,6 +494,53 @@ class DashboardViewModel @Inject constructor(
             date = today,
             greetingBand = greetingBand,
             greetingRoll = greetingRoll,
+        )
+    }
+
+    /**
+     * Ids of the accounts that count toward the total balance in [primary]:
+     * the same set the balance query filters on, so the forecast applies a
+     * future movement exactly when the balance eventually will.
+     */
+    private fun totalAccountIds(accounts: List<AccountWithBalance>, primary: Currency): Set<Long> =
+        accounts
+            .filter { it.account.isIncludedInTotal && it.account.currency == primary }
+            .map { it.account.id }
+            .toSet()
+
+    /**
+     * The rule occurrences already filled by an upcoming movement. Those slots
+     * are counted through the movement itself, so the schedule walk must skip
+     * them or the same charge would land twice on the same day.
+     */
+    private fun materializedOccurrences(upcoming: List<UpcomingMovement>): Set<RuleOccurrence> =
+        upcoming.mapNotNullTo(mutableSetOf()) { movement ->
+            val ruleId = movement.transaction.recurringRuleId ?: return@mapNotNullTo null
+            val occurrence = movement.transaction.recurringOccurrenceDate ?: return@mapNotNullTo null
+            RuleOccurrence(ruleId, occurrence)
+        }
+
+    /** The soonest [UPCOMING_PREVIEW_COUNT] movements, resolved for display. */
+    private fun upcomingPreview(
+        upcoming: List<UpcomingMovement>,
+        accountById: Map<Long, Account>,
+        categoryById: Map<Long, Category>,
+        rules: List<RecurringRule>,
+    ): UpcomingPreview {
+        if (upcoming.isEmpty()) return UpcomingPreview()
+        val ruleById = rules.associateBy { it.id }
+        return UpcomingPreview(
+            items = upcoming.take(UPCOMING_PREVIEW_COUNT).map { movement ->
+                val transaction = movement.transaction
+                UpcomingItem(
+                    movement = movement,
+                    account = accountById[transaction.accountId],
+                    transferAccount = transaction.transferAccountId?.let { accountById[it] },
+                    category = transaction.categoryId?.let { categoryById[it] },
+                    rule = transaction.recurringRuleId?.let { ruleById[it] },
+                )
+            },
+            totalCount = upcoming.size,
         )
     }
 
@@ -537,6 +618,9 @@ class DashboardViewModel @Inject constructor(
 
         /** Window of the balance sparkline on the hero card, today included. */
         const val SPARKLINE_DAYS = 30
+
+        /** How many upcoming movements the dashboard card previews before summarizing. */
+        const val UPCOMING_PREVIEW_COUNT = 3
 
         /** Last day of the month on which the recap teaser is offered. */
         const val RECAP_TEASER_MAX_DAY = 7

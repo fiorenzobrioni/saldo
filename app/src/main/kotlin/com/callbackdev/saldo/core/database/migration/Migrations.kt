@@ -39,4 +39,23 @@ private val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2)
+/**
+ * Adds the per-movement reminder (ADR 36): `hasReminder`, the user's request to
+ * be warned before a future-dated movement falls due, and
+ * `lastReminderEpochDay`, the watermark that keeps a daily run from notifying
+ * twice about the same date. Both purely additive - the flag needs a NOT NULL
+ * default, the watermark is nullable - so `ALTER TABLE ADD COLUMN` suffices and
+ * every existing movement reads back as having no reminder, which is what it
+ * had. No index: the reminder scan is a one-shot over the handful of
+ * future-dated rows, already served by the timestamp index.
+ */
+private val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "ALTER TABLE `transactions` ADD COLUMN `hasReminder` INTEGER NOT NULL DEFAULT 0",
+        )
+        db.execSQL("ALTER TABLE `transactions` ADD COLUMN `lastReminderEpochDay` INTEGER")
+    }
+}
+
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)

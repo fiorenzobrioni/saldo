@@ -28,6 +28,24 @@ interface TransactionRepository {
     /** Recurring movements awaiting confirmation, oldest first. */
     fun observePendingTransactions(): Flow<List<Transaction>>
 
+    /**
+     * Confirmed movements dated on [day] or later (their own local day, ADR 7),
+     * soonest first. With tomorrow as the argument, the movements that have not
+     * happened yet: booked in the ledger, but outside every window closed on
+     * today. Feeds the "Upcoming" list and the forecast tail (ADR 36).
+     */
+    fun observeTransactionsFrom(day: LocalDate): Flow<List<Transaction>>
+
+    /**
+     * Confirmed movements with a reminder due between [from] and [to]
+     * (inclusive) that have not been reminded about yet for their own date.
+     * One-shot: the caller is the daily worker.
+     */
+    suspend fun getDueReminders(from: LocalDate, to: LocalDate): List<Transaction>
+
+    /** Records [date] as the movement date already reminded about. */
+    suspend fun updateReminderWatermark(transactionId: Long, date: LocalDate)
+
     /** Movements whose instant is in `[start, end)`, most recent first. */
     fun observeTransactionsBetween(start: Instant, end: Instant): Flow<List<Transaction>>
 

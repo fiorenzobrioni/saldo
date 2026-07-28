@@ -47,7 +47,6 @@ import com.callbackdev.saldo.feature.counterparties.CounterpartiesScreen
 import com.callbackdev.saldo.feature.categories.CategoryEditorScreen
 import com.callbackdev.saldo.feature.dashboard.DashboardScreen
 import com.callbackdev.saldo.feature.recap.MonthlyRecapScreen
-import com.callbackdev.saldo.feature.recurring.PendingMovementsScreen
 import com.callbackdev.saldo.feature.recurring.RecurringRuleEditorScreen
 import com.callbackdev.saldo.feature.recurring.RecurrencesScreen
 import com.callbackdev.saldo.feature.savings.SavingsGoalEditorScreen
@@ -58,6 +57,7 @@ import com.callbackdev.saldo.feature.stats.StatsScreen
 import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
+import com.callbackdev.saldo.feature.upcoming.UpcomingScreen
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.TransactionType
 
@@ -152,7 +152,8 @@ fun SaldoApp(
                 },
                 onSeeAllTransactions = { nav.switchTab(TopLevelDestination.TRANSACTIONS) },
                 onNavigateToRecurrences = { nav.navigate(RecurrencesRoute) },
-                onNavigateToPending = { nav.navigate(PendingMovementsRoute) },
+                onNavigateToPending = { nav.navigate(UpcomingRoute(pendingOnly = true)) },
+                onNavigateToUpcoming = { nav.navigate(UpcomingRoute()) },
                 onNavigateToBudgets = { nav.navigate(BudgetsRoute) },
                 onNavigateToSavingsGoals = { nav.navigate(SavingsGoalsRoute) },
                 onNavigateToCounterparties = { nav.navigate(CounterpartiesRoute) },
@@ -234,6 +235,7 @@ fun SaldoApp(
         entry<RecurrencesRoute> {
             RecurrencesScreen(
                 onNavigateBack = { nav.goBack() },
+                onNavigateToUpcoming = { nav.navigate(UpcomingRoute()) },
                 onNavigateToNewRule = { type ->
                     nav.navigate(RecurringRuleEditorRoute(initialTypeName = type.name))
                 },
@@ -248,8 +250,12 @@ fun SaldoApp(
                 onNavigateBack = { nav.goBack() },
             )
         }
-        entry<PendingMovementsRoute> {
-            PendingMovementsScreen(onNavigateBack = { nav.goBack() })
+        entry<UpcomingRoute> { route ->
+            UpcomingScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
+                onNavigateToTransaction = { id -> nav.navigate(TransactionEditorRoute(id)) },
+            )
         }
         entry<BudgetsRoute> {
             BudgetsScreen(

@@ -256,6 +256,7 @@
     <string name="transactions_snackbar_deleted">Movimento eliminato</string>
     <string name="date_today">Oggi</string>
     <string name="date_yesterday">Ieri</string>
+    <string name="date_tomorrow">Domani</string>
     <string name="transaction_type_expense">Spesa</string>
     <string name="transaction_type_income">Entrata</string>
     <string name="transaction_type_transfer">Trasferimento</string>
@@ -986,6 +987,8 @@
     <string name="settings_dashboard_show_savings_hint">Mostra i progressi verso i tuoi obiettivi di risparmio</string>
     <string name="settings_dashboard_show_counterparties">Scheda crediti e debiti</string>
     <string name="settings_dashboard_show_counterparties_hint">Mostra quanto ti devono e quanto devi (solo quando c\'è qualcosa di aperto)</string>
+    <string name="settings_dashboard_show_upcoming">Card In arrivo</string>
+    <string name="settings_dashboard_show_upcoming_hint">Anticipa i prossimi movimenti in programma (solo quando c\'è qualcosa in arrivo)</string>
 
     <!-- Obiettivi di risparmio -->
     <string name="settings_savings">Obiettivi di risparmio</string>
@@ -1184,4 +1187,43 @@
     <string name="lock_biometric_prompt_negative">Usa il PIN</string>
     <string name="quick_entry_locked_title">Saldo è bloccato</string>
     <string name="quick_entry_locked_subtitle">Sblocca per aggiungere un movimento</string>
+
+    <!-- In arrivo: movimenti futuri e occorrenze da confermare (Fase 13, ADR 36) -->
+    <string name="upcoming_title">In arrivo</string>
+    <string name="upcoming_outgoing">In uscita</string>
+    <string name="upcoming_incoming">In entrata</string>
+    <string name="upcoming_filter_all">Tutto</string>
+    <string name="upcoming_filter_pending">Da confermare (%1$d)</string>
+    <string name="upcoming_tap_to_confirm">Da confermare</string>
+    <string name="upcoming_reminder_badge">Promemoria attivo</string>
+    <string name="upcoming_other_currencies">I totali contano solo la valuta principale; l\'elenco mostra tutti i movimenti.</string>
+    <string name="upcoming_empty_title">Non c\'è niente in arrivo</string>
+    <string name="upcoming_empty_body">Qui compaiono i movimenti con una data futura e le occorrenze da confermare, così vedi cosa sta per succedere prima che succeda.</string>
+    <string name="recurrences_upcoming_hint">Le prossime occorrenze e i movimenti con data futura</string>
+    <plurals name="upcoming_pending_note">
+        <item quantity="one">%1$d movimento ancora da confermare: il suo importo non è nei totali.</item>
+        <item quantity="other">%1$d movimenti ancora da confermare: i loro importi non sono nei totali.</item>
+    </plurals>
+    <string name="dashboard_upcoming_title">In arrivo</string>
+    <plurals name="dashboard_upcoming_count">
+        <item quantity="one">%1$d movimento</item>
+        <item quantity="other">%1$d movimenti</item>
+    </plurals>
+    <plurals name="dashboard_upcoming_more">
+        <item quantity="one">e altro %1$d</item>
+        <item quantity="other">e altri %1$d</item>
+    </plurals>
+    <string name="transaction_editor_reminder">Ricordamelo</string>
+    <string name="transaction_editor_reminder_hint">Avvisami prima di questa data, con l\'anticipo impostato per le spese ricorrenti</string>
+    <string name="transaction_editor_reminder_disabled">I promemoria sono disattivati in Impostazioni > Notifiche: la scelta viene salvata, ma non arriverà nessuna notifica finché non li riattivi.</string>
+    <string name="notif_movement_reminder_today">%1$s scade oggi</string>
+    <string name="notif_movement_reminder_untitled">Un movimento</string>
+    <plurals name="notif_movement_reminder_title">
+        <item quantity="one">%1$s scade domani</item>
+        <item quantity="other">%1$s scade fra %2$d giorni</item>
+    </plurals>
+    <plurals name="notif_movement_reminder_summary_title">
+        <item quantity="one">%1$d movimento in arrivo</item>
+        <item quantity="other">%1$d movimenti in arrivo</item>
+    </plurals>
 </resources>

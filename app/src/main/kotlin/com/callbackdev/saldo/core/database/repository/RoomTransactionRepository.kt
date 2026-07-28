@@ -36,6 +36,16 @@ class RoomTransactionRepository @Inject constructor(
     override fun observePendingTransactions(): Flow<List<Transaction>> =
         transactionDao.observePending().map { rows -> rows.map { it.toDomain() } }
 
+    override fun observeTransactionsFrom(day: LocalDate): Flow<List<Transaction>> =
+        transactionDao.observeAfter(day.toEpochDay()).map { rows -> rows.map { it.toDomain() } }
+
+    override suspend fun getDueReminders(from: LocalDate, to: LocalDate): List<Transaction> =
+        transactionDao.getDueReminders(from.toEpochDay(), to.toEpochDay()).map { it.toDomain() }
+
+    override suspend fun updateReminderWatermark(transactionId: Long, date: LocalDate) {
+        transactionDao.updateReminderWatermark(transactionId, date.toEpochDay())
+    }
+
     override fun observeTransactionsBetween(
         start: Instant,
         end: Instant,

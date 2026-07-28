@@ -61,6 +61,13 @@ data class DashboardCardPreferences(
      * feature they do not use.
      */
     val showCounterparties: Boolean = true,
+    /**
+     * What is coming: future-dated movements and occurrences to confirm. Like
+     * the credits card it has no invitation state - with nothing ahead there is
+     * nothing to preview - but unlike it, it always has the "to confirm" card as
+     * a second way in, so turning it off never buries the queue.
+     */
+    val showUpcoming: Boolean = true,
     /** The self-expiring monthly recap teaser; off silences it for good. */
     val showRecapTeaser: Boolean = true,
 )
@@ -233,6 +240,7 @@ class UserPreferencesRepository @Inject constructor(
             showRecentTransactions = preferences[DASHBOARD_SHOW_RECENT_TRANSACTIONS] ?: true,
             showSavingsGoals = preferences[DASHBOARD_SHOW_SAVINGS_GOALS] ?: true,
             showCounterparties = preferences[DASHBOARD_SHOW_COUNTERPARTIES] ?: true,
+            showUpcoming = preferences[DASHBOARD_SHOW_UPCOMING] ?: true,
             showRecapTeaser = preferences[DASHBOARD_SHOW_RECAP_TEASER] ?: true,
         )
     }.distinctUntilChanged()
@@ -255,6 +263,10 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setShowCounterpartiesCard(shown: Boolean) {
         dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_COUNTERPARTIES] = shown }
+    }
+
+    suspend fun setShowUpcomingCard(shown: Boolean) {
+        dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_UPCOMING] = shown }
     }
 
     suspend fun setShowRecapTeaser(shown: Boolean) {
@@ -336,6 +348,7 @@ class UserPreferencesRepository @Inject constructor(
             booleanPreferencesKey("dashboard_show_recent_transactions")
         val DASHBOARD_SHOW_SAVINGS_GOALS = booleanPreferencesKey("dashboard_show_savings_goals")
         val DASHBOARD_SHOW_COUNTERPARTIES = booleanPreferencesKey("dashboard_show_counterparties")
+        val DASHBOARD_SHOW_UPCOMING = booleanPreferencesKey("dashboard_show_upcoming")
         val DASHBOARD_SHOW_RECAP_TEASER = booleanPreferencesKey("dashboard_show_recap_teaser")
         val BALANCE_ACCOUNTS_EXPANDED_DEFAULT =
             booleanPreferencesKey("balance_accounts_expanded_default")

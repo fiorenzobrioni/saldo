@@ -102,4 +102,20 @@ data class TransactionEntity(
      */
     @ColumnInfo(name = "counterparty")
     val counterparty: String? = null,
+    /**
+     * Whether the user asked to be reminded before this movement's date (ADR 36).
+     * Only meaningful while the date is in the future: a one-off deadline (car
+     * tax, a school instalment) becomes a dated movement with a reminder,
+     * without inventing a fake yearly rule. Added in schema version 3.
+     */
+    @ColumnInfo(name = "hasReminder", defaultValue = "0")
+    val hasReminder: Boolean = false,
+    /**
+     * Watermark twin of [RecurringRuleEntity.lastReminderEpochDay]: the movement
+     * date already reminded about, so a daily worker run inside the lead window
+     * does not repeat itself. Null until the first reminder is posted, and reset
+     * when the date moves. Added in schema version 3.
+     */
+    @ColumnInfo(name = "lastReminderEpochDay")
+    val lastReminderEpochDay: Long? = null,
 )

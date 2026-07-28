@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.feature.transactions
 
 import app.cash.turbine.test
+import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
@@ -110,6 +111,7 @@ class TransactionEditorViewModelTest {
         lastUsedAccountId: Long? = null,
         defaultAccountId: Long? = null,
         counterpartyNames: List<String> = emptyList(),
+        remindersEnabled: Boolean = true,
     ): TransactionEditorViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
@@ -118,6 +120,9 @@ class TransactionEditorViewModelTest {
         every { userPreferences.lastUsedAccountId } returns flowOf(lastUsedAccountId)
         every { userPreferences.defaultAccountId } returns flowOf(defaultAccountId)
         every { transactionRepository.observeCounterpartyNames() } returns flowOf(counterpartyNames)
+        every { userPreferences.renewalReminderPreferences } returns flowOf(
+            RenewalReminderPreferences(enabled = remindersEnabled, leadDays = 3),
+        )
         coEvery { transactionRepository.upsert(any()) } returns SAVED_ID
         coEvery { tagRepository.upsert(any()) } returns NEW_TAG_ID
         return TransactionEditorViewModel(
@@ -862,5 +867,134 @@ class TransactionEditorViewModelTest {
     private companion object {
         const val SAVED_ID = 42L
         const val NEW_TAG_ID = 77L
+    }
+
+    // --- Reminder for a future-dated movement (Phase 13, ADR 36) ---
+
+    @Test
+    fun `the reminder section appears only once the date is in the future`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+
+        // Today: nothing to remind about.
+        assertFalse(viewModel.uiState.value.hasReminderSection)
+
+        viewModel.onDateSelected(LocalDate.of(2026, 8, 20))
+
+        assertTrue(viewModel.uiState.value.hasReminderSection)
+    }
+
+    @Test
+    fun `a reminder on a future movement is saved with the movement`() = runTest {
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(lastUsedAccountId = 1L)
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        viewModel.onAmountChanged("212")
+        viewModel.onCategorySelected(groceries.id)
+        viewModel.onDateSelected(LocalDate.of(2026, 8, 20))
+        viewModel.onReminderChanged(true)
+        viewModel.save()
+
+        assertTrue(saved.captured.hasReminder)
+        // Nothing has been announced yet, so there is no watermark to carry.
+        assertNull(saved.captured.lastReminderDate)
+    }
+
+    @Test
+    fun `editing a movement keeps its reminder watermark when the date does not move`() = runTest {
+        val stored = Transaction(
+            id = SAVED_ID,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-212.00"),
+            currency = eur,
+            accountId = 1L,
+            timestamp = LocalDate.of(2026, 8, 20).atTime(12, 0)
+                .atZone(ZoneId.of("Europe/Rome")).toInstant(),
+            zoneOffset = ZoneOffset.ofHours(2),
+            categoryId = groceries.id,
+            description = "Bollo auto",
+            hasReminder = true,
+            lastReminderDate = LocalDate.of(2026, 8, 18),
+        )
+        val saved = slot<Transaction>()
+        coEvery { transactionRepository.getTransaction(SAVED_ID) } returns stored
+        every { tagRepository.observeTagsForTransaction(SAVED_ID) } returns flowOf(emptyList())
+        val viewModel = viewModel(route = TransactionEditorRoute(transactionId = SAVED_ID))
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        assertTrue(viewModel.uiState.value.hasReminder)
+        viewModel.onDescriptionChanged("Bollo auto 2026")
+        viewModel.save()
+
+        assertEquals(LocalDate.of(2026, 8, 18), saved.captured.lastReminderDate)
+    }
+
+    @Test
+    fun `moving the date re-arms the reminder by dropping the watermark`() = runTest {
+        val stored = Transaction(
+            id = SAVED_ID,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-212.00"),
+            currency = eur,
+            accountId = 1L,
+            timestamp = LocalDate.of(2026, 8, 20).atTime(12, 0)
+                .atZone(ZoneId.of("Europe/Rome")).toInstant(),
+            zoneOffset = ZoneOffset.ofHours(2),
+            categoryId = groceries.id,
+            hasReminder = true,
+            lastReminderDate = LocalDate.of(2026, 8, 18),
+        )
+        val saved = slot<Transaction>()
+        coEvery { transactionRepository.getTransaction(SAVED_ID) } returns stored
+        every { tagRepository.observeTagsForTransaction(SAVED_ID) } returns flowOf(emptyList())
+        val viewModel = viewModel(route = TransactionEditorRoute(transactionId = SAVED_ID))
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        viewModel.onDateSelected(LocalDate.of(2026, 9, 15))
+        viewModel.save()
+
+        assertTrue(saved.captured.hasReminder)
+        assertNull(saved.captured.lastReminderDate)
+    }
+
+    @Test
+    fun `toggling the reminder marks the form dirty`() = runTest {
+        val stored = Transaction(
+            id = SAVED_ID,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-212.00"),
+            currency = eur,
+            accountId = 1L,
+            timestamp = LocalDate.of(2026, 8, 20).atTime(12, 0)
+                .atZone(ZoneId.of("Europe/Rome")).toInstant(),
+            zoneOffset = ZoneOffset.ofHours(2),
+            categoryId = groceries.id,
+        )
+        coEvery { transactionRepository.getTransaction(SAVED_ID) } returns stored
+        every { tagRepository.observeTagsForTransaction(SAVED_ID) } returns flowOf(emptyList())
+        val viewModel = viewModel(route = TransactionEditorRoute(transactionId = SAVED_ID))
+        collectState(viewModel)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.hasUnsavedChanges.collect {}
+        }
+
+        assertFalse(viewModel.hasUnsavedChanges.value)
+        viewModel.onReminderChanged(true)
+
+        assertTrue(viewModel.hasUnsavedChanges.value)
+    }
+
+    @Test
+    fun `the editor reports reminders turned off in Settings`() = runTest {
+        val viewModel = viewModel(lastUsedAccountId = 1L, remindersEnabled = false)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.remindersEnabled.collect {}
+        }
+
+        assertFalse(viewModel.remindersEnabled.value)
     }
 }
