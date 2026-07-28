@@ -256,13 +256,21 @@ private fun EditorForm(
         // guidance in the credit card section). The two sections cross-fade
         // when the type changes instead of snapping.
         AnimatedSection(visible = !uiState.isCreditCard) {
+            // A loan's initial balance is today's remaining debt: mandatory and
+            // negative, with its own hint and an explicit error on save.
+            val showLoanError = uiState.showValidation && !uiState.isLoanBalanceValid
             AmountTextField(
                 target = initialBalanceTarget,
                 label = stringResource(R.string.account_editor_initial_balance),
                 onActivate = onActivateAmount,
                 suffix = uiState.currency.symbol,
-                supportingText = stringResource(R.string.account_editor_initial_balance_hint),
+                supportingText = when {
+                    showLoanError -> stringResource(R.string.account_editor_loan_balance_error)
+                    uiState.isLoan -> stringResource(R.string.account_editor_initial_balance_hint_loan)
+                    else -> stringResource(R.string.account_editor_initial_balance_hint)
+                },
                 showSignToggle = true,
+                isError = showLoanError,
             )
         }
         AnimatedSection(visible = uiState.isCreditCard) {

@@ -176,6 +176,118 @@ class AccountEditorViewModelTest {
     }
 
     @Test
+    fun `selecting loan presets total and budget exclusion until the user decides`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onTypeChanged(AccountType.LOAN)
+        assertFalse(viewModel.uiState.value.isIncludedInTotal)
+        assertFalse(viewModel.uiState.value.isIncludedInBudget)
+
+        // Switching away restores the presets for ordinary accounts.
+        viewModel.onTypeChanged(AccountType.CHECKING)
+        assertTrue(viewModel.uiState.value.isIncludedInTotal)
+        assertTrue(viewModel.uiState.value.isIncludedInBudget)
+
+        // An explicit user choice survives any later type change.
+        viewModel.onIncludedInTotalChanged(false)
+        viewModel.onTypeChanged(AccountType.LOAN)
+        viewModel.onTypeChanged(AccountType.CHECKING)
+        assertFalse(viewModel.uiState.value.isIncludedInTotal)
+    }
+
+    @Test
+    fun `turning the total back on for a loan survives re-selecting the type`() = runTest {
+        val viewModel = viewModel()
+
+        viewModel.onTypeChanged(AccountType.LOAN)
+        // The patrimonial reading is the user's explicit choice: the preset
+        // must never claw it back.
+        viewModel.onIncludedInTotalChanged(true)
+        viewModel.onTypeChanged(AccountType.CHECKING)
+        viewModel.onTypeChanged(AccountType.LOAN)
+
+        assertTrue(viewModel.uiState.value.isIncludedInTotal)
+    }
+
+    @Test
+    fun `editing a loan keeps the persisted inclusion flags`() = runTest {
+        val existing = Account(
+            id = 7L,
+            name = "Mutuo",
+            type = AccountType.LOAN,
+            currency = eur,
+            initialBalance = BigDecimal("-120000.00"),
+            isIncludedInTotal = true,
+            isIncludedInBudget = true,
+            createdAt = Instant.parse("2026-01-01T00:00:00Z"),
+        )
+        coEvery { accountRepository.getAccount(7L) } returns existing
+        coEvery { transactionRepository.countForAccount(7L) } returns 3
+
+        val viewModel = viewModel(AccountEditorRoute(accountId = 7L))
+
+        // The persisted (user's) choices are never overwritten by the preset.
+        assertTrue(viewModel.uiState.value.isIncludedInTotal)
+        assertTrue(viewModel.uiState.value.isIncludedInBudget)
+    }
+
+    @Test
+    fun `saving a loan with a zero, positive or missing balance surfaces validation`() = runTest {
+        val viewModel = viewModel()
+        viewModel.onNameChanged("Prestito auto")
+        viewModel.onTypeChanged(AccountType.LOAN)
+
+        listOf("", "0", "500").forEach { input ->
+            viewModel.onInitialBalanceChanged(input)
+            viewModel.save()
+            assertTrue(viewModel.uiState.value.showValidation, "input \"$input\" must be rejected")
+        }
+        coVerify(exactly = 0) { accountRepository.upsert(any()) }
+    }
+
+    @Test
+    fun `a loan saves its negative remaining debt and the exclusion presets`() = runTest {
+        val saved = slot<Account>()
+        coEvery { accountRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel()
+
+        viewModel.onNameChanged("Prestito auto")
+        viewModel.onTypeChanged(AccountType.LOAN)
+        viewModel.onInitialBalanceChanged("-8400,50")
+        viewModel.save()
+
+        viewModel.events.test {
+            assertEquals(AccountEditorEvent.Saved, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        with(saved.captured) {
+            assertEquals(AccountType.LOAN, type)
+            assertEquals(BigDecimal("-8400.50"), initialBalance)
+            assertFalse(isIncludedInTotal)
+            assertFalse(isIncludedInBudget)
+            assertEquals(null, creditCard)
+        }
+    }
+
+    @Test
+    fun `the loan balance rule does not touch other types`() = runTest {
+        val saved = slot<Account>()
+        coEvery { accountRepository.upsert(capture(saved)) } returns 1L
+        val viewModel = viewModel()
+
+        // A positive initial balance stays legal for an ordinary account.
+        viewModel.onNameChanged("Conto")
+        viewModel.onInitialBalanceChanged("500")
+        viewModel.save()
+
+        viewModel.events.test {
+            assertEquals(AccountEditorEvent.Saved, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        assertEquals(BigDecimal("500"), saved.captured.initialBalance)
+    }
+
+    @Test
     fun `an empty initial balance defaults to zero`() = runTest {
         val saved = slot<Account>()
         coEvery { accountRepository.upsert(capture(saved)) } returns 1L

@@ -146,6 +146,7 @@
     <string name="account_type_savings">Savings account</string>
     <string name="account_type_prepaid_card">Prepaid card</string>
     <string name="account_type_credit_card">Credit card</string>
+    <string name="account_type_loan">Loan or financing</string>
     <string name="account_type_cash">Cash</string>
     <string name="account_type_digital_wallet">Digital wallet</string>
     <string name="account_type_other">Other</string>
@@ -164,6 +165,16 @@
     <string name="account_cc_statement_due">Statement ready to pay</string>
     <string name="account_cc_statement_charge_date">Charged on %1$s</string>
     <string name="account_cc_pay_statement">Pay %1$s</string>
+    <!-- Loan row extras -->
+    <string name="account_loan_repaid_title">Repaid</string>
+    <string name="account_loan_percent">%1$d%%</string>
+    <string name="account_loan_residual_label">Remaining debt</string>
+    <string name="account_loan_next_installment">Next installment: %1$s on %2$s</string>
+    <plurals name="account_loan_remaining_installments">
+        <item quantity="one">~%1$d installment left (estimate)</item>
+        <item quantity="other">~%1$d installments left (estimate)</item>
+    </plurals>
+    <string name="account_loan_paid_off">Loan paid off: archive the account to keep its history</string>
     <string name="accounts_adjust_title">Adjust balance</string>
     <string name="accounts_adjust_current">Current balance: %1$s</string>
     <string name="accounts_adjust_real_balance">Actual balance</string>
@@ -192,6 +203,8 @@
     <string name="account_editor_currency_locked">Cannot be changed: the account already has transactions</string>
     <string name="account_editor_initial_balance">Initial balance</string>
     <string name="account_editor_initial_balance_hint">The current balance is computed from here</string>
+    <string name="account_editor_initial_balance_hint_loan">Today\'s remaining debt, with a minus sign</string>
+    <string name="account_editor_loan_balance_error">A loan starts from its remaining debt: enter a negative amount</string>
     <string name="account_editor_section_color">Color</string>
     <string name="account_editor_section_icon">Icon</string>
     <string name="account_editor_color_option">Color %1$d</string>
@@ -206,6 +219,7 @@
     <string name="account_type_info_savings">A fence around the money you set aside: fill it and dip into it with transfers from your main account. It counts toward the total balance but is excluded from the budget by default, so drawing on savings never consumes the month\'s budget. It also fits cash parked for investments: the app tracks the amount, not the quotes.</string>
     <string name="account_type_info_prepaid">A card with its own balance, like a prepaid card: top it up with a transfer and spend straight from it.</string>
     <string name="account_type_info_credit_card">For deferred cards charged once a month to the linked account. The balance starts at zero: if you already owe something on the current cycle, use "Adjust balance" after saving and it will be charged with the next statement.</string>
+    <string name="account_type_info_loan">For a loan, financing plan or mortgage. The initial balance is today\'s remaining debt with a minus sign, as stated by the bank (plan interest included): the app never computes interest. Record each installment as a recurring transfer from the paying account: like every transfer it stays out of statistics, and to realign with the bank you can always use "Adjust balance". If you prefer to see installments in your spending statistics, don\'t track the loan as an account and use the "Loans &amp; Financing" category instead: together they would count the same money twice.</string>
     <string name="account_type_info_cash">The cash in your wallet. An ATM withdrawal is recorded as a transfer from the account to cash: it moves money, it is not an expense.</string>
     <string name="account_type_info_wallet">A digital wallet with its own balance (PayPal, Satispay, Revolut). If your wallet draws from your bank account without holding a balance, record the spending on the account instead.</string>
     <string name="account_type_info_other">Any other money container: meal vouchers, gift cards, a shared kitty.</string>

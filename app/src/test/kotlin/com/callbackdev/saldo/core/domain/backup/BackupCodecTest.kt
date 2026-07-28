@@ -98,6 +98,26 @@ class BackupCodecTest {
     }
 
     @Test
+    fun `a loan account round-trips and passes validation`() {
+        val file = fullyPopulatedBackupFile()
+        val withLoan = file.copy(
+            data = file.data.copy(
+                accounts = file.data.accounts + AccountBackup(
+                    id = 3L,
+                    name = "Mutuo",
+                    type = "LOAN",
+                    currency = "EUR",
+                    initialBalanceMinor = -12_000_00L,
+                    isIncludedInTotal = false,
+                    isIncludedInBudget = false,
+                ),
+            ),
+        )
+
+        assertEquals(withLoan, BackupCodec.decode(BackupCodec.encode(withLoan)))
+    }
+
+    @Test
     fun `an unknown currency code is rejected at decode time`() {
         val file = fullyPopulatedBackupFile()
         val tampered = file.copy(

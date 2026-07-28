@@ -17,6 +17,7 @@ Il manuale cresce in modo incrementale. Gli argomenti già disponibili hanno un 
 - 🔧 Rettifica saldo: allineare il saldo dell'app al saldo reale del conto.
 - 🐖 Conto di risparmio: il recinto dei soldi messi da parte.
 - 💳 Carte di credito a saldo: ciclo di addebito differito ed estratto sul conto collegato.
+- 📉 [Prestiti e finanziamenti](prestiti-e-finanziamenti.md): il debito residuo come conto, la rata come trasferimento ricorrente, rate mancanti stimate.
 
 ### Movimenti
 

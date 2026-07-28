@@ -5,8 +5,6 @@ import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.SavingsGoal
 import com.callbackdev.saldo.core.domain.model.SavingsGoalProgress
-import com.callbackdev.saldo.core.domain.model.TransactionType
-import com.callbackdev.saldo.core.domain.model.runsInMonthOf
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
@@ -70,7 +68,11 @@ class ObserveSavingsGoalsProgressUseCase @Inject constructor(
         val remaining = MoneyMapper.toAmount(remainingMinor, goal.currency)
         val isReached = savedMinor >= targetMinor
 
-        val plannedMinor = plannedMonthlyMinor(goal, rules, today)
+        // The monthly-equivalent of the active same-currency recurring transfers
+        // landing in the goal's account (shared with the loan progress estimate;
+        // cross-currency and variable-amount rules are skipped there).
+        val plannedMinor =
+            RecurrenceCalculator.plannedMonthlyTransfersMinor(rules, goal.accountId, goal.currency, today)
         val suggestedMinor = suggestedMonthlyMinor(goal, remainingMinor, isReached, today)
 
         return SavingsGoalProgress(
@@ -86,25 +88,6 @@ class ObserveSavingsGoalsProgressUseCase @Inject constructor(
             onTrack = if (suggestedMinor != null && plannedMinor > 0) plannedMinor >= suggestedMinor else null,
         )
     }
-
-    /**
-     * The monthly-equivalent of the active same-currency recurring transfers
-     * landing in the goal's account, in minor units. Cross-currency and
-     * variable-amount rules have no fixed received amount and are skipped.
-     */
-    private fun plannedMonthlyMinor(goal: SavingsGoal, rules: List<RecurringRule>, today: LocalDate): Long =
-        rules
-            .filter { rule ->
-                rule.type == TransactionType.TRANSFER &&
-                    rule.transferAccountId == goal.accountId &&
-                    rule.amount != null &&
-                    rule.currency == goal.currency &&
-                    rule.runsInMonthOf(today)
-            }
-            .fold(0L) { acc, rule ->
-                val monthly = RecurrenceCalculator.monthlyEquivalent(rule) ?: BigDecimal.ZERO
-                acc + MoneyMapper.toMinorUnits(monthly, goal.currency)
-            }
 
     /**
      * Minor units to set aside each month to reach the target by the goal date:

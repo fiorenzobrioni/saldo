@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.accounts
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.model.LoanProgress
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import java.math.BigDecimal
 import java.util.Currency
@@ -36,11 +37,16 @@ data class AccountsUiState(
     val dialog: AccountsDialog? = null,
     /** Credit card statements waiting to be paid, keyed by account id. */
     val dueStatements: Map<Long, DueStatement> = emptyMap(),
+    /** Repayment state of the active loan accounts, keyed by account id. */
+    val loanProgressById: Map<Long, LoanProgress> = emptyMap(),
 ) {
     val isEmpty: Boolean get() = !isLoading && activeGroups.isEmpty() && archived.isEmpty()
 
     /** The statement due for [accountId], or null. */
     fun dueStatement(accountId: Long): DueStatement? = dueStatements[accountId]
+
+    /** The loan repayment state for [accountId], or null for non-loans. */
+    fun loanProgress(accountId: Long): LoanProgress? = loanProgressById[accountId]
 }
 
 /** Modal flows on top of the accounts list. */

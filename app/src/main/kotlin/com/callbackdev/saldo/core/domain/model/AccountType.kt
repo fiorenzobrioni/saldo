@@ -34,6 +34,19 @@ enum class AccountType {
      */
     CREDIT_CARD,
 
+    /**
+     * Loan, financing plan or mortgage (prestito o finanziamento): a debt that
+     * pre-exists the app, tracked as a negative balance shrinking toward zero
+     * (PLANNING ADR 33). The initial balance is today's remaining debt as
+     * stated by the bank (plan interest included), so it is mandatory and
+     * negative; each installment is a transfer from the paying account, so it
+     * stays out of statistics and lands the balance exactly at zero with the
+     * last one. The app never computes interest or amortization plans.
+     * Declared right after [CREDIT_CARD] on purpose: the accounts list groups
+     * sections by ordinal and the two debt types belong side by side.
+     */
+    LOAN,
+
     /** Physical cash (contanti). */
     CASH,
 

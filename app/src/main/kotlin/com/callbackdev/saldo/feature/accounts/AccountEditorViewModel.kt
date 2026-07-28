@@ -66,6 +66,16 @@ data class AccountEditorUiState(
 ) {
     val isNameValid: Boolean get() = name.isNotBlank()
     val isCreditCard: Boolean get() = type == AccountType.CREDIT_CARD
+    val isLoan: Boolean get() = type == AccountType.LOAN
+
+    /**
+     * A loan's initial balance is today's remaining debt, so it is mandatory
+     * and strictly negative (the opposite of the credit card rule, where the
+     * initial balance is forbidden: there the debt is built by the cycle's
+     * movements, here it pre-exists the app). Always true for other types.
+     */
+    val isLoanBalanceValid: Boolean
+        get() = !isLoan || MoneyInput.parse(initialBalanceInput)?.let { it.signum() < 0 } == true
 }
 
 /** Default billing cycle days for a freshly configured credit card. */
@@ -118,10 +128,11 @@ class AccountEditorViewModel @AssistedInject constructor(
             currency = fallbackCurrency,
             color = AccountVisuals.defaultColorFor(initialType),
             icon = AccountVisuals.defaultIconFor(initialType),
-            // Apply the ADR 22 savings preset to the seeded type too, so a
-            // preselected savings account opens already excluded from the budget
-            // (an explicit toggle still wins from here on).
-            isIncludedInBudget = initialType != AccountType.SAVINGS,
+            // Apply the ADR 22 savings preset (and the ADR 33 loan one) to the
+            // seeded type too, so a preselected account opens with the right
+            // inclusion defaults (an explicit toggle still wins from here on).
+            isIncludedInBudget = initialType != AccountType.SAVINGS && initialType != AccountType.LOAN,
+            isIncludedInTotal = initialType != AccountType.LOAN,
         ),
     )
     val uiState: StateFlow<AccountEditorUiState> = _uiState.asStateFlow()
@@ -172,6 +183,9 @@ class AccountEditorViewModel @AssistedInject constructor(
     /** True once the user touches the budget toggle: type changes stop presetting it. */
     private var userToggledBudget = false
 
+    /** True once the user touches the total toggle: type changes stop presetting it. */
+    private var userToggledTotal = false
+
     /** True once the user picks a currency: the async preselection stops overriding it. */
     private var userPickedCurrency = false
 
@@ -217,6 +231,7 @@ class AccountEditorViewModel @AssistedInject constructor(
             userPickedCurrency = true
             // A persisted inclusion choice is the user's: never preset over it.
             userToggledBudget = true
+            userToggledTotal = true
             val movementCount = transactionRepository.countForAccount(accountId)
             _uiState.update {
                 it.copy(
@@ -255,13 +270,23 @@ class AccountEditorViewModel @AssistedInject constructor(
                 type = type,
                 icon = if (userPickedIcon) it.icon else AccountVisuals.defaultIconFor(type),
                 color = if (userPickedColor) it.color else AccountVisuals.defaultColorFor(type),
-                // Savings default to excluded from the budget (dipping into
-                // savings should not consume the month's budget); an explicit
-                // user choice always wins over the preset.
+                // Savings and loans default to excluded from the budget
+                // (dipping into savings should not consume the month's budget;
+                // a loan installment is a transfer, invisible to it anyway);
+                // an explicit user choice always wins over the preset.
                 isIncludedInBudget = if (userToggledBudget) {
                     it.isIncludedInBudget
                 } else {
-                    type != AccountType.SAVINGS
+                    type != AccountType.SAVINGS && type != AccountType.LOAN
+                },
+                // Loans also default out of the total balance (ADR 33): the
+                // Dashboard answers "how much do I have", and a six-figure
+                // mortgage would bury that answer. Including it is the user's
+                // explicit patrimonial reading, never the preset's.
+                isIncludedInTotal = if (userToggledTotal) {
+                    it.isIncludedInTotal
+                } else {
+                    type != AccountType.LOAN
                 },
             )
         }
@@ -309,6 +334,7 @@ class AccountEditorViewModel @AssistedInject constructor(
     }
 
     fun onIncludedInTotalChanged(included: Boolean) {
+        userToggledTotal = true
         _uiState.update { it.copy(isIncludedInTotal = included) }
     }
 
@@ -342,7 +368,7 @@ class AccountEditorViewModel @AssistedInject constructor(
     fun save() {
         val state = _uiState.value
         if (state.isLoading || isSaving) return
-        if (!state.isNameValid) {
+        if (!state.isNameValid || !state.isLoanBalanceValid) {
             _uiState.update { it.copy(showValidation = true) }
             return
         }
