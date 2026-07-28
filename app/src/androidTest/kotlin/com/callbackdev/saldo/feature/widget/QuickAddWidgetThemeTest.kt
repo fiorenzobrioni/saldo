@@ -31,17 +31,42 @@ class QuickAddWidgetThemeTest {
     private val context = ApplicationProvider.getApplicationContext<android.content.Context>()
     private val brandPreferences = ThemePreferences(mode = ThemeMode.LIGHT, useDynamicColor = false)
 
+    /**
+     * The settings preview must show the same container color the launcher
+     * draws: the Material 3 widgetBackground token, not the app's own
+     * background surface.
+     */
     @Test
-    fun theWidgetSitsOnTheAppBackgroundByDefault() {
+    fun theWidgetSitsOnTheWidgetBackgroundTokenByDefault() {
         val theme = resolveWidgetTheme(context, brandPreferences, QuickAddWidgetConfig())
-        assertEquals(BrandLightColorScheme.background, theme.previewBackground)
+        assertEquals(widgetBackgroundColorOf(BrandLightColorScheme), theme.previewBackground)
+        assertNotEquals(BrandLightColorScheme.background, theme.previewBackground)
     }
 
     @Test
     fun theWidgetCanBeDarkWhileTheAppIsLight() {
         val config = QuickAddWidgetConfig(appearance = WidgetAppearance.DARK)
         val theme = resolveWidgetTheme(context, brandPreferences, config)
-        assertEquals(BrandDarkColorScheme.background, theme.previewBackground)
+        assertEquals(widgetBackgroundColorOf(BrandDarkColorScheme), theme.previewBackground)
+    }
+
+    /**
+     * The token's whole point: a step apart from secondaryContainer, lighter
+     * on the light side and darker on the dark side, exactly as
+     * glance-material3 derives it for the launcher.
+     */
+    @Test
+    fun theWidgetBackgroundTokenStepsAwayFromSecondaryContainer() {
+        assertTrue(
+            "Light widget background must be lighter than secondaryContainer",
+            widgetBackgroundColorOf(BrandLightColorScheme).luminance() >
+                BrandLightColorScheme.secondaryContainer.luminance(),
+        )
+        assertTrue(
+            "Dark widget background must be darker than secondaryContainer",
+            widgetBackgroundColorOf(BrandDarkColorScheme).luminance() <
+                BrandDarkColorScheme.secondaryContainer.luminance(),
+        )
     }
 
     @Test
@@ -52,7 +77,7 @@ class QuickAddWidgetThemeTest {
             ThemePreferences(mode = ThemeMode.DARK, useDynamicColor = false),
             config,
         )
-        assertEquals(BrandLightColorScheme.background, theme.previewBackground)
+        assertEquals(widgetBackgroundColorOf(BrandLightColorScheme), theme.previewBackground)
         assertTrue(
             "Ink on a light widget must be dark",
             theme.previewScheme.onSurfaceVariant.luminance() < theme.previewBackground.luminance(),

@@ -362,11 +362,14 @@ private fun WidgetBody(
         // appWidgetBackground marks this as the widget's face for the launcher,
         // which is what the placement and resize animations attach to; the
         // corner radius is the system's own, so the widget wears the same
-        // rounding as every other widget on the device instead of a private 24dp.
+        // rounding as every other widget on the device instead of a private
+        // 24dp. The fill is the Material 3 widgetBackground token - the color
+        // role the platform reserves for widget containers - resolved by the
+        // launcher on both theme branches like every other color here.
         modifier = GlanceModifier
             .fillMaxSize()
             .appWidgetBackground()
-            .background(theme.background)
+            .background(GlanceTheme.colors.widgetBackground)
             .cornerRadius(android.R.dimen.system_app_widget_background_radius)
             .padding(
                 horizontal = layout.paddingHorizontal.dp,

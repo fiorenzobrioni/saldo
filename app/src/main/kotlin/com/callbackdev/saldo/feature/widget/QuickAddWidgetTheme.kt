@@ -6,6 +6,8 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.core.graphics.ColorUtils
 import androidx.glance.color.ColorProviders
 import androidx.glance.color.ColorProvider as DayNightColorProvider
 import androidx.glance.unit.ColorProvider
@@ -29,9 +31,12 @@ import androidx.glance.material3.ColorProviders as GlanceColorProviders
  * (light or dark), both sides of the pair are simply the same scheme: the
  * launcher can flip all it wants, the choice made here wins.
  *
- * The background is always the solid app surface: the widget never sits
- * directly on the wallpaper anymore, so no code here needs to know what the
- * wallpaper looks like.
+ * The background is always solid: the widget never sits directly on the
+ * wallpaper anymore, so no code here needs to know what the wallpaper looks
+ * like. The container color itself is not chosen here - the widget body uses
+ * `GlanceTheme.colors.widgetBackground`, the Material 3 token Glance derives
+ * from these schemes (see [widgetBackgroundColorOf], which mirrors it for the
+ * in-app settings preview).
  */
 data class QuickAddWidgetTheme(
     val lightScheme: ColorScheme,
@@ -55,12 +60,6 @@ data class QuickAddWidgetTheme(
     val providers: ColorProviders by lazy(LazyThreadSafetyMode.NONE) {
         GlanceColorProviders(lightScheme, darkScheme)
     }
-
-    val background: ColorProvider
-        get() = DayNightColorProvider(
-            day = lightScheme.background,
-            night = darkScheme.background,
-        )
 
     /** A full-strength ink that still flips with the launcher's night mode. */
     fun ink(day: Color, night: Color): ColorProvider = DayNightColorProvider(day = day, night = night)
@@ -92,8 +91,39 @@ data class QuickAddWidgetTheme(
 
     /** The side the settings preview renders, since it cannot do day/night. */
     val previewScheme: ColorScheme get() = if (previewDark) darkScheme else lightScheme
-    val previewBackground: Color get() = previewScheme.background
+
+    /**
+     * The widget container color the settings preview shows: the same
+     * `widgetBackground` token the placed widget wears, mirrored here because
+     * a regular Compose screen has no [androidx.glance.GlanceTheme] to read
+     * it from.
+     */
+    val previewBackground: Color get() = widgetBackgroundColorOf(previewScheme)
 }
+
+/**
+ * The Material 3 `widgetBackground` token for [scheme], as glance-material3
+ * derives it in `ColorProviders(light, dark)`: the scheme's secondaryContainer
+ * nudged in HCT tone (+5 above mid tone, -10 below), so the widget container
+ * reads a step apart from in-app surfaces while staying in the dynamic
+ * palette. Kept in lockstep with the library so the in-app preview cannot
+ * drift from what the launcher actually draws.
+ */
+internal fun widgetBackgroundColorOf(scheme: ColorScheme): Color {
+    val hct = FloatArray(HctComponents)
+    ColorUtils.colorToM3HCT(scheme.secondaryContainer.toArgb(), hct)
+    val adjustment = if (hct[2] > MidTone) WidgetBackgroundToneLight else WidgetBackgroundToneDark
+    val tone = (hct[2] + adjustment).coerceIn(0f, MaxTone)
+    return Color(ColorUtils.M3HCTToColor(hct[0], hct[1], tone))
+}
+
+private const val HctComponents = 3
+private const val MidTone = 50f
+private const val MaxTone = 100f
+
+/** glance-material3's own WIDGET_BG_TONE_ADJUSTMENT_LIGHT/_DARK values. */
+private const val WidgetBackgroundToneLight = 5f
+private const val WidgetBackgroundToneDark = -10f
 
 /**
  * Resolves the widget's palette from the app's theme settings and the widget's
