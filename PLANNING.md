@@ -27,7 +27,7 @@
 | 7 | Date: `Instant` UTC + offset salvato | Raggruppamenti giornalieri corretti anche cambiando timezone |
 | 8 | Statistiche escludono TRANSFER e ADJUSTMENT a livello di query | Regola di dominio, non filtro UI |
 | 9 | min SDK 33 (Android 13) | Dynamic color e `POST_NOTIFICATIONS` con un solo code path; niente fallback né supporto device legacy |
-| 10 | Export Google Sheets rimandato alla roadmap v2.0 (era "v1.5" finché quella roadmap esisteva, riassorbita nella v2.0 alla release della 1.0) | Lo scope OAuth `spreadsheets` è "sensitive" e richiede la verifica Google: fuori dal percorso critico del MVP |
+| 10 | Export Google Sheets rimandato alla roadmap v2.0 | Lo scope OAuth `spreadsheets` è "sensitive" e richiede la verifica Google: fuori dal percorso critico del MVP |
 | 11 | Navigation 3 (`androidx.navigation3`) al posto di Navigation Compose/Nav2 | Stabile da novembre 2025, raccomandata da Google per la produzione; back stack come stato Compose di proprietà dello sviluppatore, coerente con il nostro modello a single source of truth. Progetto greenfield: nessun costo di migrazione |
 | 12 | Domain layer pragmatico: Use Case solo dove c'è logica di dominio reale | Ricorrenze, rettifiche, statistiche, rimborsi, backup sì; per il CRUD banale il ViewModel usa direttamente il Repository. Evita boilerplate passacarte (per Google il domain layer è opzionale) |
 | 13 | Backup manuale su file (SAF) accanto al backup Drive, stesso formato JSON | Backup completo possibile senza account Google (coerente coi principi) e portabilità totale dei dati; un solo code path di export/restore, nessun permesso di storage richiesto |
@@ -196,9 +196,9 @@
 - [x] Empty state e stati di errore su tutte le schermate (audit: empty/loading già coperti ovunque; aggiunta gestione errori di scrittura con snackbar a conti (archivia/elimina/rettifica), registro (elimina/undo), da confermare (conferma/salta) e riordino categorie, che prima potevano crashare su un errore Room)
 - [x] Performance: registro appiattito in item lazy per riga (prima un item monolitico per giorno) con key e contentType stabili su header/righe/spaziatori, così con migliaia di record compongono e riciclano solo le righe visibili; l'aspetto a card raggruppata è preservato con forme a segmento. Paging3 non introdotto: il motore filtri e la ricerca full-text sono in-memory per design (un solo code path), da rivalutare solo se una misurazione su device con migliaia di record mostrasse problemi. Baseline profile spostato in Fase 10 (richiede modulo macrobenchmark e run su device, non disponibile in questo ambiente)
 
-## Fase 9.5 - Budget, spendibile oggi e dashboard configurabile (anticipata dalla v1.5)
+## Fase 9.5 - Budget, spendibile oggi e dashboard configurabile (anticipata alla v1.0)
 
-> Anticipo deciso a luglio 2026, prima della release v1.0: la tabella budget nasce nello schema che va in produzione (migration 5->6) e il campo `budgets` entra nel backup JSON senza bump di versione. Il Widget resta in v1.5. Design: ADR 18 e 19.
+> Anticipo deciso a luglio 2026, prima della release v1.0: la tabella budget nasce nello schema che va in produzione (migration 5->6) e il campo `budgets` entra nel backup JSON senza bump di versione. Il Widget non entra in questo giro (arriverà nella Fase 10.18). Design: ADR 18 e 19.
 
 - [x] Budget: entità (`budgets`, migration 5->6, unique su categoryId), modello complessivo + per categoria di spesa, CRUD con schermata dedicata (hero card del complessivo con residuo e barra, categorie ordinate per vicinanza al tetto) ed editor (scope picker, importo nella valuta principale, eliminazione con conferma)
 - [x] Indicatori 🟢🟡🔴: `ThresholdProgressBar` condivisa nel design system, ruolo `warning` ambra in `MoneyColors` (light/dark), soglie esatte in minor units; colore mai da solo (percentuale testuale sempre presente, icona esplicita oltre il 100%)
@@ -313,9 +313,9 @@
 - [x] Hub: terza tab Trasferimenti e card "Risparmio pianificato: X/mese" derivata dai soli trasferimenti verso conti `SAVINGS` (seme onesto degli Obiettivi di risparmio v2.0)
 - [x] Stringhe IT/EN, notifiche pre-rinnovo transfer-aware, unit test (motore, mapper, backup, editor VM, pending VM, hub VM)
 
-## Fase 9.16 - Anticipi dalla roadmap v1.5 (luglio 2026)
+## Fase 9.16 - Anticipi alla v1.0: budget, import CSV e widget (luglio 2026)
 
-> Voci nate nella roadmap v1.5 e consegnate prima della release v1.0, su richiesta utente. Alla release della 1.0 la roadmap v1.5 e stata chiusa: questa fase raccoglie cio che era gia stato fatto, il resto e confluito nella Roadmap v2.0 (PIN e biometria, export Excel, export Google Sheets, miglioramenti UX dal feedback).
+> Voci pianificate per dopo l'MVP e consegnate invece prima della release v1.0, su richiesta utente. Quelle pianificate insieme a loro e non anticipate sono confluite nella Roadmap v2.0: PIN e biometria, export Excel, export Google Sheets, miglioramenti UX dal feedback.
 
 - [x] Budget, spendibile oggi e dashboard configurabile: anticipati nella Fase 9.5 (ADR 18 e 19)
 - [x] Import CSV (anticipato): riconoscimento automatico di separatore, decimali e colonne (mappatura per nome, alias IT/EN, ordine libero, colonne minime data+importo), regole di adattamento (tipo dedotto dal segno, normalizzazione del segno, valuta dal conto), creazione opzionale di conti/categorie/tag mancanti, rilevazione duplicati contro il registro e nel file, anteprima a due passi e report finale. Solo inserimento, in un'unica transazione. La colonna "Ricorrente" dell'export è informativa e non viene reimportata
@@ -541,7 +541,7 @@
 
 ## Fase 10.18 - Widget di inserimento rapido (luglio 2026)
 
-> Widget home anticipato dalla roadmap v1.5 su richiesta utente, prima della release v1.0. Parte da una nota a mano: prima schermata con tipo, conto e griglia categorie, seconda schermata con importo e tastierino. La struttura e confermata, con due correzioni motivate: il tastierino esce dal widget (ADR 32) e il conto sale nella configurazione del widget. Nessun cambio di schema: `SALDO_DATABASE_VERSION` resta 1, il backup non e toccato. Design: ADR 32.
+> Widget home anticipato su richiesta utente, prima della release v1.0. Parte da una nota a mano: prima schermata con tipo, conto e griglia categorie, seconda schermata con importo e tastierino. La struttura e confermata, con due correzioni motivate: il tastierino esce dal widget (ADR 32) e il conto sale nella configurazione del widget. Nessun cambio di schema: `SALDO_DATABASE_VERSION` resta 1, il backup non e toccato. Design: ADR 32.
 
 - [x] Dipendenza Glance (`androidx.glance:glance-appwidget` + `glance-material3`, 1.2.0-rc01) nel version catalog, approvata dall'utente. La 1.3.0-alpha richiede AGP 9.2 e compileSdk 37, fuori dai pin attuali (Hilt 2.58 tiene AGP a 8.x); la 1.2.0 e compilata su compileSdk 35 con AGP 8.1+ e ha l'API congelata. Ripiego dichiarato in caso di problemi: 1.1.1 stable
 - [x] **Estrazioni condivise** perche le regole del denaro non esistano in due copie: `TransactionSign.signed` (convenzione di segno, era privata nell'editor), `DefaultAccountResolver.resolve` (catena default esplicito -> ultimo usato -> primo attivo, era dentro `preselectDefaultAccount`), `QuickTransactionFactory.create` (movimento EXPENSE/INCOME con importo riscalato alla valuta del conto e offset preso alla data del movimento, non a "adesso"). L'editor completo usa i primi due, il ramo trasferimenti resta dov'era
@@ -677,7 +677,7 @@
 - [x] Note di rilascio complete in [docs/release-notes/v1.0.0.md](./docs/release-notes/v1.0.0.md): cosa c'e nella 1.0, download e installazione, privacy, note tecniche, limitazioni note, riepilogo in inglese
 - [x] Workflow `.github/workflows/release.yml`: al push di un tag `v*` costruisce e verifica (`assembleDebug testDebugUnitTest lint detekt`), rinomina l'APK in `saldo-<versione>-debug.apk` e pubblica la release con le note del file versionato
 - [x] CI ristretta ai push su branch, cosi il tag innesca solo il workflow di release e non due build identiche
-- [x] README allineato: badge di versione, sezione di download, roadmap futura senza piu la v1.5
+- [x] README allineato: badge di versione, sezione di download, roadmap futura ridotta alla sola v2.0
 - [ ] Baseline profile: rinviato alla Fase 15 (richiede un modulo macrobenchmark e una generazione su device o emulatore, non disponibili in questo ambiente). L'unico effetto e un primo avvio leggermente piu lento, dichiarato nelle limitazioni note
 
 **Verifica prima del tag (da fare su device)**
@@ -702,7 +702,7 @@
 
 # Roadmap v2.0
 
-> Backlog della prossima versione maggiore. Le voci gia consegnate restano spuntate con il riferimento alla fase che le ha implementate; quelle con una fase dedicata sono dettagliate piu sotto. Comprende anche cio che restava della roadmap v1.5, chiusa alla release della 1.0 (il Budget era gia stato anticipato nella Fase 9.5, il resto e nella Fase 9.16).
+> Backlog della prossima versione maggiore. Le voci gia consegnate restano spuntate con il riferimento alla fase che le ha implementate; quelle con una fase dedicata sono dettagliate piu sotto. Comprende anche le voci che erano pianificate per un rilascio intermedio fra l'MVP e la v2.0, riassorbite qui alla release della 1.0: quelle gia consegnate stanno nella Fase 9.16, le altre sono in elenco (PIN e biometria, export Excel e Google Sheets, miglioramenti UX dal feedback).
 
 - [x] Obiettivi di risparmio (target, progressi, suggerimento mensile) - la primitiva di alimentazione esiste già: i trasferimenti ricorrenti verso conti `SAVINGS` (Fase 9.15/ADR 24), da cui deriva "Risparmio pianificato". Implementati nella Fase 10.0 (ADR 25)
 - [x] Recap mensile condivisibile stile "Wrapped" (promosso da Note e appunti): implementato nella Fase 10.1 (ADR 28)

@@ -588,7 +588,7 @@ Nota sulle immagini: le icone dell'app sono e restano risorse vettoriali locali,
 
 # Roadmap (sintesi - dettaglio in PLANNING.md)
 
-> La v1.0.0 esce a luglio 2026 come release su GitHub con l'APK allegato, non sul Play Store (ADR 38 in PLANNING.md). Con il rilascio la roadmap v1.5 è stata chiusa: parte di quello che conteneva è uscito con la v1.0 (budget, widget, import CSV), il resto è confluito nella v2.0.
+> La v1.0.0 esce a luglio 2026 come release su GitHub con l'APK allegato, non sul Play Store (ADR 38 in PLANNING.md). Il rilascio intermedio che era previsto fra l'MVP e la v2.0 è stato riassorbito: parte di quello che conteneva è uscito con la v1.0 (budget, widget, import CSV), il resto è confluito nella v2.0.
 
 ## v1.0 (rilasciata)
 
