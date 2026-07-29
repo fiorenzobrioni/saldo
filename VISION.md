@@ -118,7 +118,7 @@ Un rimborso (es. un reso Amazon, un amico che restituisce la cena) **non è un'e
 16/03  Rimborso amici    +40,00 €   (collegato → riduce Ristorante a -20,00 €)
 ```
 
-Per il MVP è accettabile una versione semplificata (entrata con flag "rimborso" e stessa categoria della spesa); il collegamento esplicito può arrivare dopo.
+L'app usa la versione semplificata: entrata con flag "rimborso" e categoria della spesa scelta dall'utente, che l'editor restringe alle sole categorie di spesa. Il collegamento esplicito alla spesa originale è **da valutare** e non è pianificato (Fase 31 in PLANNING.md, che ne spiega il perché).
 
 ---
 
@@ -630,10 +630,9 @@ Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, sp
 - Rilevamento automatico delle ricorrenze
 - Gestione tag dedicata e ricerca con suggerimenti
 - Analisi avanzate (pattern di spesa, confronti anno su anno)
-- Rimborsi collegati alla spesa originale
 - Commissioni sui trasferimenti
 - Miglioramenti UX dal feedback della v1.0
-- Da valutare, fuori dal piano: allegati fotografici ai movimenti, backup automatico su Google Drive
+- Da valutare, fuori dal piano: allegati fotografici ai movimenti, rimborsi collegati alla spesa originale, backup automatico su Google Drive
 
 ---
 

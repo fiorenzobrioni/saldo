@@ -628,7 +628,7 @@ Lingue, commit, regole di dominio sugli importi, stringhe e gate di build stanno
 
 > Le fasi vengono dalla review delle funzionalita finanziarie di luglio 2026 ([docs/review-funzionalita-finanziarie-2026-07-27.md](./docs/review-funzionalita-finanziarie-2026-07-27.md)). Le Fasi 15-22 non hanno ancora un ADR: ognuna elenca le decisioni di design da proporre come ADR all'avvio, prima dell'implementazione.
 >
-> Ordine di esecuzione, col criterio della review (prima cio che chiude un'asimmetria del modello a costo contenuto, poi cio che sblocca piu superfici insieme): 15 e 16 chiudono asimmetrie a costo contenuto; 17 e il gap strutturale che sblocca piu schermate insieme; 18 chiude l'ultima asimmetria del modello; 19 e 20 costruiscono analisi sopra superfici esistenti; 21 aggiunge formati di export; 22 avvolge il backup. La Fase cloud resta da valutare e non blocca la release; la Fase 23 e sempre l'ultima della roadmap v2.0, e le fasi eventualmente approvate in futuro si inseriscono prima di lei.
+> Ordine di esecuzione, col criterio della review (prima cio che chiude un'asimmetria del modello a costo contenuto, poi cio che sblocca piu superfici insieme): 16 chiude un'asimmetria a costo contenuto; 17 e il gap strutturale che sblocca piu schermate insieme; 18 chiude l'ultima asimmetria del modello; 19 e 20 costruiscono analisi sopra superfici esistenti; 21 aggiunge formati di export; 22 avvolge il backup. La Fase cloud resta da valutare e non blocca la release; la Fase 23 e sempre l'ultima della roadmap v2.0, e le fasi eventualmente approvate in futuro si inseriscono prima di lei.
 >
 > Restano deliberatamente fuori (valutate e scartate): la **riconciliazione con flag "spuntato" per movimento** (richiede una colonna, una modalita dedicata e un'abitudine che l'utente tipo non ha; la rettifica saldo continua a coprire il riallineamento), i **conti "bene" non transazionali** per immobili o portafogli valorizzati a mano (poco codice ma rompono la semantica di Account, "il luogo dove si trovano i soldi", e si infilerebbero in ogni picker di conto degli editor), piu i due candidati che la review stessa chiude: il **beneficiario/payee come entita** (coperto da descrizione, ricerca full-text e tag; raddoppierebbe i selettori dell'editor senza una richiesta reale) e le **sottocategorie** (coperte dai tag, rinviate per scelta in VISION: non si implementano senza rivedere quella decisione).
 
@@ -680,19 +680,6 @@ Voci della v2.0 che non hanno una fase propria:
 - [x] `EraseAllDataUseCase` rimuove anche il lock con una chiamata esplicita a `AppLockRepository.clear()`; permesso normale `USE_BIOMETRIC` nel manifest; primitive delle righe impostazioni estratte in `core/designsystem` (`SettingsRows`) e riusate da Impostazioni e Sicurezza
 - [x] Stringhe IT/EN; unit test: round-trip e reiezione del `PinHasher`, state machine e cooldown (raddoppio, tetto, deadline persistita oltre la morte del processo) dell'`AppLockManager`, `ForegroundTracker` (config change, multi-activity), flussi del `SecurityViewModel` (crea/conferma, mismatch, disable con verifica, cambio PIN), `LockViewModel` (auto-submit, countdown), erase-all che spazza il lock
 - [x] Verifica su device: setup e sblocco PIN, biometria (auto-launch e rilancio), cooldown, re-lock secondo timeout, rotazione senza re-lock, FLAG_SECURE su recenti e screenshot, sheet del widget bloccata, erase-all che rimuove il lock, TalkBack sul lock screen (verificata il 2026-07-28)
-
-## Fase 15 - Rimborsi collegati alla spesa originale
-
-> Dalla review delle funzionalita finanziarie (riga 5 della tabella; limite 3). Il flag rimborso esistente riduce la spesa della categoria scelta al momento del rimborso, nel mese del rimborso: un rimborso che arriva il mese dopo alleggerisce il mese sbagliato, e nulla garantisce che la categoria sia quella della spesa originale. La fase collega il rimborso alla spesa che compensa, cosi la spesa risulta ridotta nel proprio mese e nella propria categoria. Il flag semplice resta e mantiene il comportamento attuale per i rimborsi non collegati. ADR da proporre all'avvio: il punto critico e l'attribuzione temporale nelle query statistiche.
-
-- [ ] Colonna `refundOfTransactionId` (nullable, FK verso `transactions` con `ON DELETE SET NULL`) su `transactions`, dominio, mapper e backup (campo additivo, versione del backup invariata). Migration forward reale con bump di `SALDO_DATABASE_VERSION`, coperta da `MigrationsTest` e `MigrationChainTest` (ADR 26: niente collasso del baseline)
-- [ ] Editor movimento: con il flag rimborso attivo, selettore opzionale "Spesa da compensare" (picker delle spese recenti con ricerca); alla selezione la categoria si allinea a quella della spesa originale. Il collegamento e opzionale: senza, il flag continua a funzionare come oggi (stessa categoria, mese del rimborso)
-- [ ] Semantica statistiche del rimborso collegato: riduce la spesa nel mese e nella categoria della spesa originale, non in quelli del rimborso. Da decidere nell'ADR come le query aggregate attribuiscono il rimborso al periodo della spesa collegata (join sulla data della spesa madre) senza toccare il caso non collegato, e con quale impatto su budget, spendibile e drill-down: le cifre affiancate devono continuare a raccontare la stessa storia
-- [ ] Validazione soft: avviso se il rimborso supera la spesa collegata o se le valute differiscono, senza blocco (piu rimborsi parziali sulla stessa spesa sono legittimi)
-- [ ] Spesa eliminata: la FK degrada il collegamento a null e il rimborso torna al comportamento del flag semplice, senza errori ne orfani
-- [ ] Superficie: l'editor della spesa elenca i rimborsi collegati ricevuti (con importo netto residuo); indicatore non invasivo sulla riga del registro, come quello dei movimenti da ricorrenza (Fase 10.5)
-- [ ] Il caso limite gia gestito resta garantito da test: mese di soli rimborsi in una categoria (fetta negativa filtrata dall'anello, budget a zero e mai sotto zero)
-- [ ] Stringhe IT/EN; unit test: rimborso a cavallo di due mesi attribuito al mese della spesa, categoria allineata, rimborsi parziali multipli, collegamento decaduto, drill-down coerente, round-trip backup, dirty detection
 
 ## Fase 16 - Gestione tag dedicata
 
@@ -795,7 +782,7 @@ Voci della v2.0 che non hanno una fase propria:
 - [ ] Fasi da 12 a 22 completate (la Fase cloud e opzionale e non blocca la release)
 - [ ] Baseline profile, rimandato dalla v1.0: modulo `:macrobenchmark`, generazione su device o emulatore, misura del guadagno al primo avvio
 - [ ] QA manuale end-to-end con la checklist della v1.0 estesa alle funzionalita nuove
-- [ ] Migration test strumentati su device dalla v1 alla versione corrente: le Fasi 12, 13 e 15 introducono migration reali con bump di `SALDO_DATABASE_VERSION` (ADR 26)
+- [ ] Migration test strumentati su device dalla v1 alla versione corrente: le Fasi 12 e 13 introducono migration reali con bump di `SALDO_DATABASE_VERSION` (ADR 26)
 - [ ] Compatibilita all'indietro del backup: ripristino di un file esportato dalla 1.0 su un'installazione 2.0, piu un round-trip del contenitore cifrato (Fase 22)
 - [ ] Test su device reali: API 33 e ultimo Android stabile, piu tablet o schermo grande
 - [ ] `versionCode` +1 e `versionName` 2.0.0
@@ -919,6 +906,45 @@ Voci della v2.0 che non hanno una fase propria:
 - [ ] Verificare l'impatto sull'export CSV: nessuna colonna nuova, gli allegati non sono esportabili in un CSV e la cosa va detta nella schermata di export invece di essere scoperta
 - [ ] Se la fase arriva dopo la Fase 22, la cifratura del backup va estesa al contenitore zip
 - [ ] Stringhe IT/EN; unit test: normalizzazione dimensioni (funzione pura sui lati), round-trip backup con e senza allegati, orfani rilevati e spazzati, cascade dell'eliminazione; strumentati per la migration e per la scrittura reale dei file
+
+## Fase 31 - Rimborsi collegati alla spesa originale
+
+> Dalla review delle funzionalità finanziarie (riga 5 della tabella; limite 3). **Non pianificata**, valutata il 29 luglio 2026: è una funzione da poche occasioni l'anno (un reso, una cena anticipata) che costerebbe superficie nuova in due editor, e qui l'app non ha un difetto da riparare. Con il flag rimborso attivo l'editor **restringe già** il picker alle sole categorie di spesa: il collegamento previene un errore di classificazione dell'utente, non un comportamento sbagliato dell'app. Contro la filosofia di semplicità non c'è nulla, ma il rapporto fra uso reale e superficie aggiunta non regge il confronto con le fasi di uso quotidiano.
+>
+> Il flag rimborso semplice resta come è oggi: riduce la spesa della categoria scelta, nel mese del rimborso.
+>
+> La fase si sposta intera perché nessun pezzo è consegnabile da solo: validazione, indicatore di riga, elenco dei rimborsi ricevuti e allineamento della categoria dipendono tutti dal collegamento. Se viene ripresa, le due parti qui sotto vanno decise separatamente: la **A** è il collegamento, la **B** è la riattribuzione temporale, ed è la B a portare quasi tutto il costo e tutto il dubbio. La A senza la B è coerente e utile; la B senza la A è impossibile.
+
+**Parte A - Collegamento alla spesa e categoria allineata**
+
+- [ ] Colonna `refundOfTransactionId` (nullable, FK self-referenziale verso `transactions` con `ON DELETE SET NULL` e indice, che Room pretende) su `transactions`, dominio, mapper e backup (campo additivo, versione del backup invariata). Migration forward reale con bump di `SALDO_DATABASE_VERSION`, coperta da `MigrationsTest` e `MigrationChainTest` (ADR 26: niente collasso del baseline)
+- [ ] Restore e FK self-referenziale: il ripristino inserisce i movimenti con un solo `insertAll`, e con un vincolo immediato un rimborso che precede la propria spesa madre nella lista fa fallire l'inserimento. Va reso deterministico (genitori prima, `defer_foreign_keys` dentro la transazione, oppure due passate): oggi funzionerebbe solo per il fatto che gli id crescono nel tempo
+- [ ] Tenuta del collegamento su undo ed eliminazione in blocco: la FK azzera i link quando la spesa madre viene eliminata, e l'undo la reinserisce con lo stesso id **senza** ripristinarli, perché il payload dell'undo non li conosce. Vale per swipe-delete, editor ed eliminazione in blocco della vista filtrata: i link dei figli devono entrare nel payload di ripristino
+- [ ] Editor entrata, con il flag rimborso attivo: riga opzionale "Spesa da compensare" che apre una sheet di scelta con ricerca sulle spese recenti (stampo di `AccountPickerSheet` e `CategoryPickerSheet`), con chip riassuntivo rimovibile (data, importo e categoria della spesa scelta). Alla selezione la categoria si allinea a quella della spesa madre. Il campo entra nello snapshot di dirty detection
+- [ ] Editor della spesa madre: sezione di sola lettura con i rimborsi ricevuti e il residuo netto (nuova query `observeRefundsFor`)
+- [ ] Indicatore di riga non invasivo nel registro, sul modello dell'icona `Repeat` della Fase 10.5: sul rimborso collegato e sulla spesa già rimborsata, con `contentDescription` dedicata (mai solo un colore)
+- [ ] Validazione soft: avviso senza blocco se il rimborso supera la spesa collegata o se le valute differiscono, perché più rimborsi parziali sulla stessa spesa sono legittimi
+- [ ] Il collegamento non entra nell'export CSV: è un id interno e non è ricostruibile in un file portabile. Sopravvive nel backup JSON, che preserva gli id; la schermata di export lo dichiara come già fa per gli altri campi che restano fuori
+- [ ] Stringhe IT/EN; unit test: categoria allineata alla selezione, collegamento decaduto per spesa eliminata, link ripristinati dall'undo, round-trip backup, dirty detection
+
+**Parte B - Riattribuzione al mese e alla categoria della spesa madre**
+
+> Qui il dubbio non è di costo ma di merito, e va sciolto con un ADR prima di scrivere una riga. Tre argomenti sono contro:
+>
+> 1. **Contraddice un precedente esplicito.** La Fase 10.14 ha deciso che le statistiche non si riscrivono retroattivamente ("sono una superficie di analisi storica, e cancellarvi retroattivamente un conto archiviato disallineerebbe anche i drill-down"). Qui il fatto scatenante è un evento di denaro reale legato a quella spesa e non un'azione neutra come l'archiviazione, quindi è una tensione e non una violazione: ma va affrontata, non aggirata.
+> 2. **Peggiora la superficie più usata.** L'ADR 18 vuole che il budget combaci con gli aggregati delle statistiche, ed è il motivo per cui il budget usa la semantica statistica. Se il rimborso alleggerisce il mese della spesa, il denaro che è rientrato in tasca questo mese non allarga il budget né lo Spendibile oggi di questo mese. L'unica via d'uscita, mese della madre per le statistiche e mese proprio per il budget, rompe quell'invariante.
+> 3. **Il beneficio riguarda il caso minoritario.** Un rimborso alleggerisce il mese sbagliato solo quando arriva a cavallo di due mesi (un reso tipico si chiude in giorni), mentre il costo si paga su ogni superficie statistica dell'app.
+>
+> L'argomento a favore resta serio: "quanto mi è costato luglio davvero" è una domanda legittima, e un rimborso di agosto lascia luglio più caro del vero e agosto più economico del vero. Se un domani quella domanda diventasse centrale, questa è la strada.
+
+- [ ] ADR da proporre e da sciogliere prima dell'implementazione: il rimborso collegato riduce la spesa nel mese e nella categoria della madre, oppure resta nel proprio mese come oggi
+- [ ] Una dozzina di query aggregate da riscrivere con self-join sulla madre e `COALESCE` sia nella finestra temporale sia nella chiave di raggruppamento: anello categorie, barre dei 12 mesi, entrate vs uscite, spese per conto, budget complessivo e per categoria più le due varianti one-shot che alimentano le soglie, le cinque del recap (totali di periodo, top categorie, spesa più grande, giorno più attivo, ricorrenti addebitati) e l'avviso multivaluta. La finestra passa da colonna indicizzata a espressione su join, quindi il piano di query cambia su tutte le superfici statistiche
+- [ ] Drill-down: il motore filtri è in memoria, quindi `matchesStatsScope` e la finestra data vanno allineati a mano. L'elenco di giugno mostrerà un movimento datato luglio, e la schermata deve dirlo invece di lasciarlo scoprire
+- [ ] Watermark delle notifiche di soglia: se il consumato di un mese chiuso cala, l'80% già notificato resta notificato su un budget che ora è sotto soglia. Da decidere cosa fa il watermark mensile, e nessuna delle risposte è indolore
+- [ ] Semantica di cassa invariata: saldo, card Oggi/Mese, sparkline e riga "ad oggi" continuano a vedere il rimborso alla sua data. Lo stesso movimento vivrebbe in due mesi diversi a seconda della superficie, e questo va scritto dove l'utente lo possa leggere
+- [ ] Recap e mesi chiusi: un mese già recappato e condiviso cambierebbe cifre a distanza. Da decidere se il recap si congela alla prima apertura o se accetta di essere mobile
+- [ ] Il caso limite già gestito resta garantito da test: mese di soli rimborsi in una categoria (fetta negativa filtrata dall'anello, budget a zero e mai sotto zero)
+- [ ] Unit test: rimborso a cavallo di due mesi attribuito al mese della spesa, rimborsi parziali multipli, collegamento decaduto, drill-down coerente
 
 ---
 
