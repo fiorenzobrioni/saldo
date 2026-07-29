@@ -65,4 +65,4 @@ Sono due situazioni diverse:
 
 ## Backup e ripristino
 
-Il nome della controparte fa parte del movimento, quindi viene salvato ed è ripristinato dal backup insieme a tutto il resto. L'esportazione CSV, invece, non ha (ancora) una colonna dedicata: per portare via i dati senza perdere nulla usa il backup.
+Il nome della controparte fa parte del movimento, quindi viene salvato ed è ripristinato dal backup insieme a tutto il resto. Anche l'esportazione CSV ha una colonna **Controparte**, e l'importazione la rilegge: una riga con una controparte viene esclusa dalle statistiche da sola, senza che tu debba ricordartene. Vedi [Esportazione e importazione CSV](esportazione-importazione-csv.md).

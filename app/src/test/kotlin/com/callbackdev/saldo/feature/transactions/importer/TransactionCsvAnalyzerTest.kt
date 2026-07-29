@@ -7,6 +7,7 @@ import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -30,7 +31,8 @@ class TransactionCsvAnalyzerTest {
         CsvField.TO_ACCOUNT to "To account", CsvField.AMOUNT to "Amount",
         CsvField.CURRENCY to "Currency", CsvField.RECEIVED_AMOUNT to "Amount received",
         CsvField.RECEIVED_CURRENCY to "Currency received", CsvField.TAGS to "Tags",
-        CsvField.NOTE to "Note",
+        CsvField.NOTE to "Note", CsvField.COUNTERPARTY to "Counterparty",
+        CsvField.EXCLUDED_FROM_STATS to "Excluded from stats", CsvField.REFUND to "Refund",
     )
     private val typeLabels = mapOf(
         TransactionType.EXPENSE to "Expense", TransactionType.INCOME to "Income",
@@ -39,6 +41,7 @@ class TransactionCsvAnalyzerTest {
     private val header = listOf(
         "Date", "Type", "Category", "Description", "Account", "To account",
         "Amount", "Currency", "Amount received", "Currency received", "Tags", "Note",
+        "Counterparty", "Excluded from stats", "Refund",
     )
     private val mapping = CsvHeaderMapper.map(header, columnLabels)!!
 
@@ -48,7 +51,11 @@ class TransactionCsvAnalyzerTest {
         description: String = "", account: String = "Checking", toAccount: String = "",
         amount: String = "-10,00", currency: String = "EUR", receivedAmount: String = "",
         receivedCurrency: String = "", tags: String = "", note: String = "",
-    ) = listOf(date, type, category, description, account, toAccount, amount, currency, receivedAmount, receivedCurrency, tags, note)
+        counterparty: String = "", excluded: String = "", refund: String = "",
+    ) = listOf(
+        date, type, category, description, account, toAccount, amount, currency,
+        receivedAmount, receivedCurrency, tags, note, counterparty, excluded, refund,
+    )
 
     private fun context(
         accounts: List<Account> = listOf(checking, savings),
@@ -186,7 +193,7 @@ class TransactionCsvAnalyzerTest {
 
     @Test
     fun `blank lines are ignored and not counted`() {
-        val analysis = analyze(listOf(row(description = "Pizza"), List(12) { "" }))
+        val analysis = analyze(listOf(row(description = "Pizza"), List(15) { "" }))
         assertEquals(1, analysis.totalRows)
     }
 
@@ -203,5 +210,83 @@ class TransactionCsvAnalyzerTest {
         )
         assertNull(analysis.importable.single().movement.categoryName)
         assertTrue(analysis.newCategories.isEmpty())
+    }
+
+    @Test
+    fun `a counterparty forces the exclusion from the statistics even without the flag`() {
+        val analysis = analyze(listOf(row(amount = "-50,00", counterparty = "Luca", excluded = "")))
+        val movement = analysis.importable.single().movement
+        assertEquals("Luca", movement.counterparty)
+        assertTrue(movement.isExcludedFromStats)
+    }
+
+    @Test
+    fun `a repayment coming back in keeps its counterparty`() {
+        val analysis = analyze(
+            listOf(row(type = "Income", amount = "20,00", counterparty = " Luca ")),
+        )
+        val movement = analysis.importable.single().movement
+        assertEquals(TransactionType.INCOME, movement.type)
+        assertEquals("Luca", movement.counterparty)
+        assertTrue(movement.isExcludedFromStats)
+    }
+
+    @Test
+    fun `a counterparty on a transfer is dropped and reported`() {
+        val analysis = analyze(
+            listOf(
+                row(
+                    type = "Transfer", account = "Checking", toAccount = "Savings",
+                    amount = "-100,00", counterparty = "Luca",
+                ),
+            ),
+        )
+        val importable = analysis.importable.single()
+        assertNull(importable.movement.counterparty)
+        assertFalse(importable.movement.isExcludedFromStats)
+        assertTrue(RowAdjustmentCode.COUNTERPARTY_DROPPED in importable.adjustments)
+    }
+
+    @Test
+    fun `the exclusion flag stands on its own without a counterparty`() {
+        val analysis = analyze(listOf(row(amount = "-30,00", excluded = "Sì")))
+        val movement = analysis.importable.single().movement
+        assertNull(movement.counterparty)
+        assertTrue(movement.isExcludedFromStats)
+    }
+
+    @Test
+    fun `a refund is read on an income and normalized away on an expense`() {
+        val analysis = analyze(
+            listOf(
+                row(type = "Income", amount = "30,00", description = "Reso", refund = "Yes"),
+                row(type = "Expense", amount = "-30,00", description = "Spesa", refund = "Yes"),
+            ),
+        )
+        val movements = analysis.importable.map { it.movement }
+        assertTrue(movements.first().isRefund)
+        assertFalse(movements.last().isRefund)
+    }
+
+    @Test
+    fun `an unrecognized flag token never turns the flag on`() {
+        val analysis = analyze(listOf(row(amount = "-30,00", excluded = "boh", refund = "boh")))
+        val movement = analysis.importable.single().movement
+        assertFalse(movement.isExcludedFromStats)
+        assertFalse(movement.isRefund)
+    }
+
+    @Test
+    fun `the counterparty does not change the duplicate signature`() {
+        // The same movement exported before the column existed must still match.
+        val signature = MovementSignature.of(
+            LocalDate.of(2026, 7, 8), TransactionType.EXPENSE, BigDecimal("-50.00"), eur, "Checking", "Anticipo",
+        )
+        val analysis = analyze(
+            listOf(row(amount = "-50,00", description = "Anticipo", counterparty = "Luca")),
+            context(signatures = setOf(signature)),
+        )
+        assertEquals(0, analysis.importableCount)
+        assertEquals(1, analysis.duplicateCount)
     }
 }

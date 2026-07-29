@@ -32,11 +32,14 @@ Il file esportato ha una riga di intestazione e una riga per movimento, con ques
 - **Valuta**: la valuta dell'importo.
 - **Importo ricevuto** e **Valuta ricevuta**: la gamba in entrata dei trasferimenti tra valute diverse.
 - **Tag**, **Nota**.
+- **Controparte**: il nome della persona, per i movimenti marcati come prestito o restituzione (vedi [Crediti e debiti](crediti-e-debiti.md)); vuoto su tutti gli altri.
+- **Escluso dalle statistiche**: riporta "Sì" quando il movimento non entra nelle statistiche, vuoto altrimenti. È sempre "Sì" sui movimenti con una controparte, che sono esclusi per costruzione.
+- **Rimborso**: riporta "Sì" sulle entrate marcate come rimborso (che nelle statistiche riducono le spese invece di contare come entrata), vuoto altrimenti.
 - **Ricorrente**: riporta "Sì" quando il movimento è stato generato da una regola di Movimenti ricorrenti, vuoto se lo hai inserito a mano. È un'indicazione informativa, utile per esempio a filtrare gli abbonamenti nel foglio di calcolo.
 
 Al termine il file viene passato al menu di condivisione del telefono: puoi salvarlo tra i file, inviarlo via email o aprirlo in un'altra app. Il file non lascia mai il dispositivo se non sei tu a condividerlo.
 
-I campi di testo (descrizione, nota, categoria, conto, tag) che iniziano con un carattere che un foglio di calcolo interpreterebbe come formula (per esempio `=`, `+`, `@`) vengono fatti precedere da un apostrofo, così all'apertura del file restano testo e non vengono eseguiti. L'importazione rimuove di nuovo quell'apostrofo, quindi il testo originale viene ripristinato senza differenze.
+I campi di testo (descrizione, nota, categoria, conto, tag, controparte) che iniziano con un carattere che un foglio di calcolo interpreterebbe come formula (per esempio `=`, `+`, `@`) vengono fatti precedere da un apostrofo, così all'apertura del file restano testo e non vengono eseguiti. L'importazione rimuove di nuovo quell'apostrofo, quindi il testo originale viene ripristinato senza differenze.
 
 ## Importazione
 
@@ -74,6 +77,17 @@ I conti, le categorie e i tag citati nel file sono cercati per nome tra quelli e
 
 Una riga senza conto, con un importo o una data illeggibili, o un trasferimento senza conto di destinazione, viene scartata e conteggiata tra gli errori.
 
+### Controparte, esclusione dalle statistiche e rimborso
+
+Anche queste tre colonne vengono rilette, con le stesse regole che valgono nell'app:
+
+- **Controparte**: il nome viene ripreso così com'è, senza doverlo creare da nessuna parte (non esiste un'anagrafica delle persone). Una riga con una controparte viene automaticamente **esclusa dalle statistiche**, anche se la colonna dell'esclusione dice altro: prestare denaro non è una spesa e riaverlo non è un'entrata. Il movimento compare quindi subito nella schermata Crediti e debiti.
+- Solo le spese e le entrate possono avere una controparte. Se un trasferimento o una rettifica ne indica una, il nome viene lasciato cadere e la riga è conteggiata tra quelle corrette in automatico.
+- **Escluso dalle statistiche**: vale anche da sola, per i movimenti che hai escluso a mano senza che ci sia di mezzo una persona.
+- **Rimborso**: viene letto solo sulle entrate, perché solo un'entrata può essere il rimborso di una spesa.
+
+Le colonne che indicano "sì" o "no" sono lette con tolleranza (`Sì`, `Yes`, `X`, `1`, `true` e simili valgono "sì"). Un valore vuoto o non riconoscibile vale sempre "no", così un contenuto inatteso non attiva mai un flag per sbaglio.
+
 ### Rilevazione dei duplicati
 
 Con l'opzione **Salta i duplicati** attiva (default), l'importazione riconosce ed evita i doppioni in due direzioni:
@@ -81,7 +95,7 @@ Con l'opzione **Salta i duplicati** attiva (default), l'importazione riconosce e
 - rispetto ai movimenti **già presenti** nel registro;
 - rispetto alle **altre righe dello stesso file** (una riga ripetuta viene importata una volta sola).
 
-Due movimenti sono considerati lo stesso quando coincidono per data, tipo, importo, valuta, conto e descrizione. Se disattivi l'opzione, ogni riga valida viene importata anche se identica a una esistente.
+Due movimenti sono considerati lo stesso quando coincidono per data, tipo, importo, valuta, conto e descrizione. La controparte e i due flag non entrano nel confronto: così un file esportato prima che quelle colonne esistessero continua a riconoscere i movimenti da cui proviene, invece di reimportarli in doppio. Se disattivi l'opzione, ogni riga valida viene importata anche se identica a una esistente.
 
 ### Anteprima e report
 

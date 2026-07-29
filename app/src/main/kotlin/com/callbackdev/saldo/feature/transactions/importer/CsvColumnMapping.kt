@@ -17,6 +17,9 @@ enum class CsvField {
     RECEIVED_CURRENCY,
     TAGS,
     NOTE,
+    COUNTERPARTY,
+    EXCLUDED_FROM_STATS,
+    REFUND,
 }
 
 /** Which physical column index backs each recognized [CsvField]. */
@@ -60,6 +63,11 @@ object CsvHeaderMapper {
         CsvField.RECEIVED_CURRENCY to listOf("valutaricevuta", "currencyreceived", "receivedcurrency"),
         CsvField.TAGS to listOf("tag", "tags", "etichette", "labels"),
         CsvField.NOTE to listOf("nota", "note", "notes", "annotazioni", "memo"),
+        CsvField.COUNTERPARTY to listOf("controparte", "counterparty", "persona", "person"),
+        CsvField.EXCLUDED_FROM_STATS to listOf(
+            "esclusodallestatistiche", "escluso", "excludedfromstats", "excluded", "nostats",
+        ),
+        CsvField.REFUND to listOf("rimborso", "refund", "reimbursement"),
     )
 
     /**

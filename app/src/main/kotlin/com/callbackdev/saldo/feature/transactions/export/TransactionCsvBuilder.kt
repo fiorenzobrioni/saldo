@@ -22,6 +22,9 @@ data class CsvColumnLabels(
     val receivedCurrency: String,
     val tags: String,
     val note: String,
+    val counterparty: String,
+    val excludedFromStats: String,
+    val refund: String,
     val recurring: String,
 )
 
@@ -35,6 +38,8 @@ data class CsvColumnLabels(
  * - dates are ISO (`yyyy-MM-dd`), in the movement's own timezone (ADR 7);
  * - amounts are the signed effect on the account, in the account's currency;
  *   the received columns carry the incoming leg of cross-currency transfers;
+ * - the flag columns carry the localized "yes" when set and are left empty
+ *   otherwise, so a spreadsheet filter has a single value to look for;
  * - the document starts with a BOM so spreadsheets detect UTF-8, and fields
  *   containing the separator, quotes or newlines are quoted.
  */
@@ -50,13 +55,13 @@ object TransactionCsvBuilder {
         typeLabels: Map<TransactionType, String>,
         labels: CsvColumnLabels,
         separator: CsvSeparator,
-        recurringMark: String,
+        yesMark: String,
     ): String {
         val header = listOf(
             labels.date, labels.type, labels.category, labels.description,
             labels.account, labels.toAccount, labels.amount, labels.currency,
             labels.receivedAmount, labels.receivedCurrency, labels.tags, labels.note,
-            labels.recurring,
+            labels.counterparty, labels.excludedFromStats, labels.refund, labels.recurring,
         )
         val rows = items.map { item ->
             val transaction = item.transaction
@@ -75,10 +80,17 @@ object TransactionCsvBuilder {
                 transaction.transferCurrency?.currencyCode.orEmpty(),
                 CsvFormulaGuard.guard(tagNames[transaction.id].orEmpty().joinToString(TAG_SEPARATOR)),
                 CsvFormulaGuard.guard(transaction.note.orEmpty()),
+                CsvFormulaGuard.guard(transaction.counterparty.orEmpty()),
+                // Written even where it is implied by the counterparty (a loan is
+                // always out of the statistics, ADR 34): the column has to stand
+                // on its own for a movement excluded by hand, which is the case
+                // the counterparty column cannot describe.
+                if (transaction.isExcludedFromStats) yesMark else "",
+                if (transaction.isRefund) yesMark else "",
                 // Informational flag only: the export marks movements a recurring
                 // rule generated, but the import never rebuilds that link (it has
                 // no rule to attach to), so an imported movement is always manual.
-                if (transaction.isRecurring) recurringMark else "",
+                if (transaction.isRecurring) yesMark else "",
             )
         }
         return buildString {

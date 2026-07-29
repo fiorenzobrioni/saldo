@@ -761,8 +761,11 @@
     <string name="csv_header_received_currency">Currency received</string>
     <string name="csv_header_tags">Tags</string>
     <string name="csv_header_note">Note</string>
+    <string name="csv_header_counterparty">Counterparty</string>
+    <string name="csv_header_excluded_from_stats">Excluded from stats</string>
+    <string name="csv_header_refund">Refund</string>
     <string name="csv_header_recurring">Recurring</string>
-    <string name="csv_value_recurring">Yes</string>
+    <string name="csv_value_yes">Yes</string>
 
     <!-- CSV import -->
     <string name="csv_import_title">Import CSV</string>
