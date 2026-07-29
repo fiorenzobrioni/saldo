@@ -22,6 +22,7 @@ import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.tag.TagNames
 import com.callbackdev.saldo.core.domain.undo.UndoDeleteCoordinator
 import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
@@ -279,14 +280,14 @@ class TransactionEditorViewModel @AssistedInject constructor(
         }
     }
 
-    /** Creates (or reuses, case-insensitively) a tag and selects it. */
+    /** Creates (or reuses, per [TagNames]) a tag and selects it. */
     fun onCreateTag(name: String) {
-        val trimmed = name.trim()
-        if (trimmed.isEmpty()) return
+        val normalized = TagNames.normalize(name)
+        if (normalized.isEmpty()) return
         viewModelScope.launch {
             val existingTag = tagRepository.observeTags().first()
-                .firstOrNull { it.name.equals(trimmed, ignoreCase = true) }
-            val tagId = existingTag?.id ?: tagRepository.upsert(Tag(name = trimmed))
+                .firstOrNull { TagNames.sameName(it.name, normalized) }
+            val tagId = existingTag?.id ?: tagRepository.upsert(Tag(name = normalized))
             form.update { it.copy(selectedTagIds = it.selectedTagIds + tagId) }
         }
     }

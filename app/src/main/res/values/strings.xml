@@ -1215,4 +1215,40 @@
         <item quantity="one">%1$d movement coming up</item>
         <item quantity="other">%1$d movements coming up</item>
     </plurals>
+
+    <!-- Tag management (Phase 16) -->
+    <string name="settings_tags">Tags</string>
+    <string name="settings_tags_hint">Rename, merge or delete the labels of your movements</string>
+    <string name="tags_title">Tags</string>
+    <string name="tags_search_hint">Search tags</string>
+    <string name="tags_search_clear">Clear the search</string>
+    <string name="tags_sort_usage">Most used</string>
+    <string name="tags_sort_name">A-Z</string>
+    <string name="tags_never_used">Never used</string>
+    <plurals name="tags_movement_count">
+        <item quantity="one">%1$d movement</item>
+        <item quantity="other">%1$d movements</item>
+    </plurals>
+    <string name="tags_empty_title">No tags yet</string>
+    <string name="tags_empty_body">Tags are created in the movement editor, next to the category. Once you use one, this is where you rename it, merge duplicates or delete it.</string>
+    <string name="tags_no_results_title">No tag found</string>
+    <string name="tags_no_results_body">No tag matches your search.</string>
+    <string name="tags_action_rename">Rename</string>
+    <string name="tags_action_merge">Merge other tags into this one</string>
+    <string name="tags_action_delete">Delete</string>
+    <string name="tags_rename_title">Rename tag</string>
+    <string name="tags_rename_label">Name</string>
+    <string name="tags_rename_collision">“%1$s” already exists: confirming merges the two tags into one.</string>
+    <string name="tags_merge_title">Merge into “%1$s”</string>
+    <string name="tags_merge_body">The movements of the chosen tags move to “%1$s” and the chosen tags are deleted. No movement is touched.</string>
+    <string name="tags_merge_confirm">Merge</string>
+    <string name="tags_delete_title">Delete the tag?</string>
+    <string name="tags_delete_body_unused">No movement uses “%1$s”.</string>
+    <plurals name="tags_delete_body">
+        <item quantity="one">“%1$s” will be removed from %2$d movement. The movement itself is not deleted.</item>
+        <item quantity="other">“%1$s” will be removed from %2$d movements. The movements themselves are not deleted.</item>
+    </plurals>
+    <string name="tags_delete_confirm">Delete</string>
+    <string name="tags_snackbar_merged">Tags merged into “%1$s”</string>
+    <string name="tags_snackbar_deleted">Tag “%1$s” deleted</string>
 </resources>

@@ -27,6 +27,8 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -110,12 +112,14 @@ class TransactionsViewModelTest {
         accounts: List<Account> = listOf(checking),
         tags: List<Tag> = emptyList(),
         tagAssignments: Map<Long, Set<Long>> = emptyMap(),
+        // A live flow when the test needs the tag list to change mid-flight.
+        tagsFlow: Flow<List<Tag>>? = null,
     ): TransactionsViewModel {
         every { transactionRepository.observeTransactions() } returns flowOf(transactions)
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
         every { categoryRepository.observeCategories() } returns flowOf(listOf(groceries))
-        every { tagRepository.observeTags() } returns flowOf(tags)
+        every { tagRepository.observeTags() } returns (tagsFlow ?: flowOf(tags))
         every { tagRepository.observeTagAssignments() } returns flowOf(tagAssignments)
         return TransactionsViewModel(
             transactionRepository = transactionRepository,
@@ -217,6 +221,29 @@ class TransactionsViewModelTest {
                 TransactionsEvent.TransactionDeleted(target, listOf(5L)),
                 awaitItem(),
             )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a tag that disappears is pruned from the active filter`() = runTest {
+        val tags = MutableStateFlow(listOf(Tag("work", id = 5L), Tag("trips", id = 6L)))
+        val viewModel = viewModel(tagsFlow = tags)
+
+        viewModel.uiState.test {
+            var state = awaitItem()
+            while (state.isLoading) state = awaitItem()
+
+            viewModel.applyFilters(state.filters.copy(tagIds = setOf(5L, 6L)))
+            state = awaitItem()
+            while (state.filters.tagIds != setOf(5L, 6L)) state = awaitItem()
+
+            // Tag 6 is merged away or deleted in Settings > Tags: its id must
+            // not survive as an invisible, unremovable chip.
+            tags.value = listOf(Tag("work", id = 5L))
+            state = awaitItem()
+            while (state.filters.tagIds != setOf(5L)) state = awaitItem()
+            assertEquals(setOf(5L), state.filters.tagIds)
             cancelAndIgnoreRemainingEvents()
         }
     }

@@ -9,6 +9,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import com.callbackdev.saldo.core.database.entity.TagEntity
 import com.callbackdev.saldo.core.database.entity.TransactionTagCrossRef
+import com.callbackdev.saldo.core.database.relation.TagUsageRow
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -45,6 +46,10 @@ interface TagDao {
     @Query("SELECT * FROM transaction_tag_cross_ref")
     fun observeAllCrossRefs(): Flow<List<TransactionTagCrossRef>>
 
+    /** Movement count per tag; a tag attached to nothing produces no row. */
+    @Query("SELECT tagId, COUNT(*) AS count FROM transaction_tag_cross_ref GROUP BY tagId")
+    fun observeUsageCounts(): Flow<List<TagUsageRow>>
+
     /** One-shot dump of every tag, for backup export. */
     @Query("SELECT * FROM tags ORDER BY id ASC")
     suspend fun getAll(): List<TagEntity>
@@ -77,4 +82,28 @@ interface TagDao {
         clearCrossRefs(transactionId)
         tagIds.forEach { tagId -> insertCrossRef(TransactionTagCrossRef(transactionId, tagId)) }
     }
+
+    /**
+     * Merges [sourceIds] into [targetId]: every assignment moves onto the
+     * target, then the source tags disappear, all in one transaction. The
+     * `UPDATE OR IGNORE` skips the rows whose movement already carries the
+     * target (the composite primary key would collide), so a movement that had
+     * both tags keeps exactly one assignment; the skipped leftovers go with
+     * the delete that follows.
+     */
+    @Transaction
+    suspend fun mergeInto(targetId: Long, sourceIds: List<Long>) {
+        reassignCrossRefs(targetId, sourceIds)
+        deleteCrossRefsForTags(sourceIds)
+        deleteByIds(sourceIds)
+    }
+
+    @Query("UPDATE OR IGNORE transaction_tag_cross_ref SET tagId = :targetId WHERE tagId IN (:sourceIds)")
+    suspend fun reassignCrossRefs(targetId: Long, sourceIds: List<Long>)
+
+    @Query("DELETE FROM transaction_tag_cross_ref WHERE tagId IN (:sourceIds)")
+    suspend fun deleteCrossRefsForTags(sourceIds: List<Long>)
+
+    @Query("DELETE FROM tags WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Long>)
 }
