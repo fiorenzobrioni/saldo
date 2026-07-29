@@ -215,7 +215,7 @@ class TransactionDaoUpcomingTest {
         val date = today.plusDays(2)
         val id = transactionDao.insert(movement(date, amountMinor = -42_00L, hasReminder = true))
 
-        transactionDao.updateReminderWatermark(id, date)
+        transactionDao.updateReminderWatermark(id, date.toEpochDay())
 
         val row = transactionDao.getById(id)!!
         assertEquals(date.toEpochDay(), row.lastReminderEpochDay)
