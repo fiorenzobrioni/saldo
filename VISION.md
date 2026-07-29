@@ -104,7 +104,7 @@ Campi:
 - **riferimento alla ricorrenza**: se il movimento è stato generato da una regola ricorrente
 - **note**: campo lungo opzionale
 - **controparte**: nome della persona, quando il movimento è denaro prestato o restituito (vedi Crediti e debiti verso persone)
-- **allegati**: zero o più foto (scontrino, garanzia, ricevuta), opzionali
+- **allegati**: zero o più foto (scontrino, garanzia, ricevuta), opzionali - funzione da valutare, vedi Allegati
 
 ### Rimborsi
 
@@ -407,6 +407,8 @@ Un prestito ricevuto da una persona si traccia qui e non come account prestito: 
 
 # Allegati
 
+> Funzione **da valutare**, non pianificata: Fase 30 in PLANNING.md, che ne spiega il perché.
+
 Un movimento può portare con sé una o più foto: lo scontrino, la ricevuta, il cartellino della garanzia.
 
 - acquisizione dalla galleria o dalla fotocamera, **senza alcun permesso** (photo picker di sistema e intent della fotocamera)
@@ -621,7 +623,6 @@ Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, sp
 
 - Crediti e debiti verso persone
 - Movimenti futuri e scadenze una tantum (elenco "in arrivo", promemoria, stima a fine mese che li conta)
-- Allegati fotografici ai movimenti (backup incluso)
 - PIN + biometria + FLAG_SECURE (consegnato in anticipo, dopo la 1.0.0)
 - Export Google Sheets, Excel (.xlsx) e PDF con grafici
 - Conversione valuta automatica
@@ -632,7 +633,7 @@ Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, sp
 - Rimborsi collegati alla spesa originale
 - Commissioni sui trasferimenti
 - Miglioramenti UX dal feedback della v1.0
-- Da valutare a fine roadmap: backup automatico su Google Drive
+- Da valutare, fuori dal piano: allegati fotografici ai movimenti, backup automatico su Google Drive
 
 ---
 

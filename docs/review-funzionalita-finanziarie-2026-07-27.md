@@ -93,7 +93,7 @@ Legenda della colonna "In Saldo": **Sì** già presente, **Parziale** le primiti
 | 1 | **Prestiti e finanziamenti come tipo di conto** (approvata, Fase 11) | Prestito, finanziamento o mutuo come conto a saldo negativo che si riduce: residuo, quota rimborsata, rate mancanti stimate, rata come trasferimento ricorrente | No | La copertura attuale (ricorrenza più categoria "Prestiti & Finanziamenti") registra il flusso di cassa ma non sa dire quanto manca, pur avendo in memoria ogni rata. Resta valida per chi vuole la rata dentro le statistiche e non traccia il prestito: le due modalità non si mescolano |
 | 2 | **Crediti e debiti verso persone** (approvata, Fase 12) | Quanto hai prestato e quanto devi, con saldo per persona e rientri parziali | Parziale | Le primitive ci sono (spesa esclusa dalle statistiche, rientro come rimborso, tag con il nome), ma richiedono una convenzione che l'utente deve inventarsi e mantenere. Manca solo l'aggregato: si implementa come vista sui movimenti esistenti, non come registro parallelo |
 | 3 | **Movimenti futuri e scadenze una tantum** (approvata, Fase 13) | Elenco "In arrivo", promemoria su un movimento datato nel futuro, e stima di fine mese che conta ciò che è già certo | Parziale | Il movimento futuro si registra già oggi e compare nella riga "ad oggi", ma nessuna schermata lo elenca e la coda di previsione lo ignora. La scadenza annuale si può ancora modellare come regola ricorrente, che resta la via giusta quando la scadenza si ripete davvero |
-| 4 | **Allegati fotografici** (approvata, Fase 14) | Foto dello scontrino o della garanzia sul movimento, senza permessi e senza OCR | No | Nessuna. Include la decisione sul backup, che diventa uno zip quando ci sono allegati: un backup che perde le foto non sarebbe un backup |
+| 4 | **Allegati fotografici** (Fase 30, da valutare) | Foto dello scontrino o della garanzia sul movimento, senza permessi e senza OCR | No | Nessuna. Include la decisione sul backup, che diventa uno zip quando ci sono allegati: un backup che perde le foto non sarebbe un backup |
 | 5 | Rimborsi collegati alla spesa originale | Il rimborso punta alla spesa che compensa, invece di limitarsi a scegliere la stessa categoria: la spesa risulta ridotta nel proprio mese e nella propria categoria | Parziale (flag rimborso) | Nel frattempo: entrata con flag "rimborso" e stessa categoria della spesa. Il flag non copre il caso a cavallo di due mesi |
 | 6 | Gestione tag dedicata | Schermata per rinominare, unire ed eliminare i tag, che oggi si creano solo inline | No | Nessuna, i tag si amministrano solo cancellandoli dai singoli movimenti |
 | 7 | Multi-divisa con gestione dei cambi | Tassi aggiornati con cache offline, controvalore nella valuta principale in saldo totale, statistiche e budget, sempre marcato come stimato | No (multi-valuta solo a livello di dato) | Oggi si usa la valuta per conto e per movimento, il tasso implicito mostrato nei trasferimenti cross-currency e la riga informativa delle statistiche. È il gap strutturale che sblocca più schermate insieme |
@@ -141,11 +141,11 @@ Elencate per chiudere il confronto: sono assenze deliberate, non gap. VISION è 
 | Beni non monetari (immobili, veicoli, portafogli valorizzati a mano) | L'app tiene contenitori di denaro reale. Il saldo totale è però già la lettura del patrimonio netto della parte liquida, debiti tracciati inclusi: non serve un modulo per averla |
 | Piani di ammortamento e calcolo degli interessi | Confine spostato: il **debito residuo si traccia** (Fase 11, è un conto a saldo negativo), la matematica del piano no. Il residuo lo dichiara l'utente, come già fa con la rettifica saldo |
 | Spese condivise multi-utente in stile Splitwise | Nessuna funzione social o multi-utente. La parte utile per un'app a utente singolo è l'aggregato dei crediti verso persone (Fase 12), che non richiede alcuna macchina di condivisione |
-| OCR e lettura automatica dello scontrino | La foto dell'allegato entra (Fase 14), la lettura automatica dell'importo no: sarebbe un'altra app. L'allegato è una prova da ritrovare, non una fonte di dati |
+| OCR e lettura automatica dello scontrino | La foto dell'allegato è una fase a sé (Fase 30), la lettura automatica dell'importo no: sarebbe un'altra app. L'allegato è una prova da ritrovare, non una fonte di dati |
 
 ## 5. Decisioni prese su questa review (luglio 2026)
 
-**Approvate**: prestiti e finanziamenti come tipo di conto, crediti e debiti verso persone, movimenti futuri con promemoria e stime allineate, allegati fotografici. Sono le Fasi 11-14 di PLANNING, con i rispettivi ADR 33, 34, 35 e 36.
+**Approvate**: prestiti e finanziamenti come tipo di conto, crediti e debiti verso persone, movimenti futuri con promemoria e stime allineate, allegati fotografici. Sono le Fasi 11, 12, 13 e 30 di PLANNING, con i rispettivi ADR 33, 34, 35 e 36.
 
 **Valutate e scartate nella stessa sessione**, per non lasciarle come domande aperte:
 
@@ -158,8 +158,8 @@ Elencate per chiudere il confronto: sono assenze deliberate, non gap. VISION è 
 
 La tabella della sezione 4 è interamente smistata in PLANNING con una decisione esplicita del 28 luglio 2026. L'esito per riga:
 
-- **Righe 1-4** (prestiti come conto, crediti e debiti verso persone, movimenti futuri, allegati): già approvate a luglio 2026 come Fasi 11-14; la Fase 11 è stata implementata prima della v1.0.
-- **Riga 20** (PIN, biometria, oscuramento in recenti): implementata nella Fase 14.5 (ADR 39), prima release dopo la v1.0.0.
+- **Righe 1-4** (prestiti come conto, crediti e debiti verso persone, movimenti futuri, allegati): già approvate a luglio 2026 come Fasi 11, 12, 13 e 30; le Fasi 11, 12 e 13 sono state implementate, gli allegati sono fra le fasi da valutare.
+- **Riga 20** (PIN, biometria, oscuramento in recenti): implementata nella Fase 14 (ADR 39), prima release dopo la v1.0.0.
 - **Righe 5, 6, 7, 8, 12, 16, 18, 22** (rimborsi collegati, gestione tag, multi-divisa, commissioni, rilevamento ricorrenze, analisi avanzate, export PDF/Excel/Sheets, cifratura backup): erano già voci del backlog v2.0 e diventano le Fasi 15-22 di PLANNING, dettagliate e da eseguire prima della release v2.0 (Fase 23). Gli ADR di design si propongono all'avvio di ciascuna fase.
 - **Righe 9, 10, 11, 13, 17, 19** (budget con periodo personalizzato, acquisti a rate, split, pagamento parziale dell'estratto, arrotondamento spiccioli, report periodico): pianificate nella Roadmap v3.0 di PLANNING come Fasi 24-29, dettagliate ora e da eseguire dopo la release v2.0.
 - **Righe 14 e 15** (payee, sottocategorie): restano non implementate, come raccomandato nella tabella.
