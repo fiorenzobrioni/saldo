@@ -654,7 +654,7 @@ Voci della v2.0 che non hanno una fase propria:
 - [x] Stringhe IT/EN; unit test: flag forzato dal toggle e ripristinato alla disattivazione, aggregazione per controparte (rientri parziali, controparti con soli rientri, nome con maiuscole diverse), filtro per controparte nel motore filtri, round-trip backup del campo, dirty detection, verso e importo della precompilazione del rientro
 - [x] Documentazione: pagina della guida utente ([crediti-e-debiti.md](./docs/guida-utente/crediti-e-debiti.md)) e riga nel README
 - [x] Export e import CSV allineati al modello (aggiunto il 29 luglio 2026, dopo la chiusura della fase, chiude la nota che era in "Note e appunti"): tre colonne nuove dopo "Nota", **Controparte**, **Escluso dalle statistiche** e **Rimborso**, scritte dall'export e rilette dall'import. In import valgono le regole dell'editor: la controparte forza l'esclusione dalle statistiche (ADR 34), solo spese ed entrate possono averne una (su un trasferimento o una rettifica il nome viene lasciato cadere e la riga è conteggiata tra quelle corrette, nuovo `RowAdjustmentCode.COUNTERPARTY_DROPPED`), il rimborso vale solo sulle entrate; i due flag sui tipi che non li ammettono sono normalizzati in silenzio, perché lì non portano informazione. `MovementSignature` resta invariata di proposito: allargarla farebbe reimportare in doppio i file esportati prima delle colonne nuove. Il riconoscimento delle intestazioni è additivo (alias IT/EN), quindi un file senza le colonne nuove si importa esattamente come prima
-- [ ] Verifica su device (non eseguibile in CI, ADR 26): `MigrationsTest` strumentato e aggiornamento in place dalla 1.0.2 su un'installazione con dati reali, per vedere la migration 1 -> 2 applicata senza perdite
+- [x] Verifica su device (non eseguibile in CI, ADR 26): `MigrationsTest` strumentato e aggiornamento in place dalla 1.0.2 su un'installazione con dati reali, per vedere la migration 1 -> 2 applicata senza perdite
 
 ## Fase 13 - Movimenti futuri, scadenze e stime allineate
 
@@ -669,7 +669,7 @@ Voci della v2.0 che non hanno una fase propria:
 - [x] Verificato che il movimento futuro resta fuori da saldo "ad oggi", statistiche, budget e card Oggi/Mese fino alla sua data, e che incide invece sul saldo del conto: coperto da `TransactionDaoUpcomingTest` (strumentato, a livello di query) perché è diventata una promessa esplicita
 - [x] Stringhe IT/EN; unit test: forecast ancorato al saldo di oggi, con movimento futuro isolato, con movimento futuro generato da regola (nessun doppio conteggio, più il contro-test senza guard), con pending del mese, pending datata nel passato applicata al primo giorno utile, gambe dei trasferimenti e conti esclusi; elenco ordinato, vuoto e filtrato-vuoto, origini, totali per valuta; watermark del promemoria che non rinotifica e che si riarma; round-trip del backup; dirty detection dell'interruttore
 - [x] Documentazione: pagina della guida utente ([in-arrivo.md](./docs/guida-utente/in-arrivo.md)) e righe nel README
-- [ ] Verifica su device (non eseguibile in CI, ADR 26): `MigrationsTest` strumentato e aggiornamento in place dalla 1.0.3, per vedere la migration 2 -> 3 applicata senza perdite
+- [x] Verifica su device (non eseguibile in CI, ADR 26): `MigrationsTest` strumentato e aggiornamento in place dalla 1.0.3, per vedere la migration 2 -> 3 applicata senza perdite
 
 ## Fase 14 - Blocco app (PIN, biometria, FLAG_SECURE)
 
