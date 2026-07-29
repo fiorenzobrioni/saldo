@@ -14,6 +14,16 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-29 - Fase 16 verificata: giro manuale sul device e TagDaoTest verde
+
+**Fatto:** chiusa l'ultima checkbox della Fase 16. Giro manuale sul device dell'utente dopo il merge della PR #68 (rinomina con collisione, unione con dedup, eliminazione, pulizia del chip del tag assorbito nel registro): tutto ok. `TagDaoTest` eseguito sul workflow "Instrumented tests" (emulatore API 34): verde.
+
+**Problemi:** il primo lancio del workflow e fallito con `initializationError: Failed loading specified test class 'TagDaoTest'` prima di eseguire qualsiasi test: l'input `tests` del workflow finisce tale e quale in `-Pandroid.testInstrumentationRunnerArguments.class=`, e il runner fa un `Class.forName` letterale, quindi il filtro vuole il **nome qualificato completo** (`com.callbackdev.saldo.core.database.TagDaoTest`), come nell'esempio della descrizione dell'input. Rilanciato col nome completo, tutto verde. Possibile miglioramento futuro: passare il filtro come `tests_regex` invece di `class`, cosi anche il nome semplice funzionerebbe; per ora resta com'e.
+
+**Prossimo:** Fase 32 (tile delle Impostazioni rapide), secondo l'ordine della roadmap v2.0; restano aperte le verifiche su device con dati reali delle Fasi 12 e 13 (aggiornamento in place con le migration 1 -> 2 e 2 -> 3).
+
+---
+
 ## 2026-07-29 - Fase 16: gestione tag dedicata
 
 **Fatto:** implementata l'intera Fase 16 senza toccare lo schema (tabelle `tags` e `transaction_tag_cross_ref` esistono dalla Fase 1, `SALDO_DATABASE_VERSION` resta 3). Nuova schermata "Tag" in Impostazioni > Gestione (`feature/tags`: `TagsScreen`, `TagsDialogs`, `TagsViewModel`, `TagsUiState`; route `TagsRoute` registrata in `SaldoApp`): una riga per tag con avatar a iniziali (tinta stabile derivata dal nome, come le controparti), conteggio dei movimenti da una nuova query aggregata (`TagDao.observeUsageCounts`, GROUP BY sulla cross-ref), ordinamento per uso o alfabetico con controllo segmentato e ricerca in testa da 8 tag in su. Il tap apre la sheet delle azioni: rinomina (dialog con campo precompilato e autofocus), "Unisci qui altri tag" (dialog con checkbox e conteggi, piu tag in un colpo solo) ed elimina (dialog con il conteggio, il testo dice che i movimenti restano). Esiti comunicati con snackbar; fallimenti di scrittura con la stringa generica esistente.

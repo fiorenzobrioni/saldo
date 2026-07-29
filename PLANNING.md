@@ -693,7 +693,7 @@ Voci della v2.0 che non hanno una fase propria:
 - [x] Eliminazione con conferma esplicita: rimuove il tag e le sue cross-ref (cascade della FK), i movimenti restano intatti e il dialog dice in quanti movimenti compare. Dialog, non undo: unione ed eliminazione toccano molte righe e un ripristino parziale mentirebbe (stesso ragionamento del dialog delle regole ricorrenti, Fase 10.13)
 - [x] Filtri attivi del registro: rinomina e unione non lasciano chip orfani (il filtro e per id, quindi la rinomina e trasparente; gli id che non esistono piu vengono rimossi dal filtro attivo appena la lista dei tag cambia, quindi l'unione rimuove il chip del tag assorbito)
 - [x] Stringhe IT/EN; unit test JVM: rinomina con collisione (proposta di unione, esclusione del tag stesso), ordinamento e ricerca, conteggi agganciati alle righe, rimappatura del filtro attivo del registro, normalizzazione `TagNames`; test strumentati a livello di query (`TagDaoTest`): merge con dedup e con piu sorgenti, conteggi per tag, eliminazione che preserva i movimenti
-- [ ] Verifica su device (non eseguibile in CI, ADR 26): `TagDaoTest` strumentato e giro manuale su rinomina con collisione, unione, eliminazione e pulizia del chip del tag assorbito nel registro
+- [x] Verifica su device (non eseguibile in CI, ADR 26): giro manuale sul device il 2026-07-29 (rinomina con collisione, unione, eliminazione, pulizia del chip del tag assorbito nel registro) e `TagDaoTest` verde sul workflow "Instrumented tests" (il filtro classe del workflow vuole il nome qualificato completo, `com.callbackdev.saldo.core.database.TagDaoTest`)
 
 ## Fase 17 - Multi-valuta con conversione automatica
 
