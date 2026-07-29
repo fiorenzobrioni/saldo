@@ -24,6 +24,9 @@ class RoomTagRepository @Inject constructor(
             refs.groupBy({ it.transactionId }, { it.tagId }).mapValues { (_, ids) -> ids.toSet() }
         }
 
+    override fun observeTagUsage(): Flow<Map<Long, Int>> =
+        tagDao.observeUsageCounts().map { rows -> rows.associate { it.tagId to it.count } }
+
     override suspend fun upsert(tag: Tag): Long {
         val entity = tag.toEntity()
         return if (entity.id == 0L) {
@@ -35,6 +38,14 @@ class RoomTagRepository @Inject constructor(
     }
 
     override suspend fun delete(tag: Tag) = tagDao.delete(tag.toEntity())
+
+    override suspend fun merge(targetId: Long, sourceIds: Set<Long>) {
+        // The target can never be its own source: moving its assignments onto
+        // itself and then deleting it would silently lose the tag.
+        val sources = sourceIds - targetId
+        if (sources.isEmpty()) return
+        tagDao.mergeInto(targetId, sources.toList())
+    }
 
     override suspend fun setTagsForTransaction(transactionId: Long, tagIds: List<Long>) =
         tagDao.setTagsForTransaction(transactionId, tagIds)

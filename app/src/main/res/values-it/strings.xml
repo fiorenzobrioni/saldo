@@ -1229,4 +1229,40 @@
         <item quantity="one">%1$d movimento in arrivo</item>
         <item quantity="other">%1$d movimenti in arrivo</item>
     </plurals>
+
+    <!-- Gestione tag (Fase 16) -->
+    <string name="settings_tags">Tag</string>
+    <string name="settings_tags_hint">Rinomina, unisci o elimina le etichette dei movimenti</string>
+    <string name="tags_title">Tag</string>
+    <string name="tags_search_hint">Cerca tra i tag</string>
+    <string name="tags_search_clear">Cancella la ricerca</string>
+    <string name="tags_sort_usage">Più usati</string>
+    <string name="tags_sort_name">A-Z</string>
+    <string name="tags_never_used">Mai usato</string>
+    <plurals name="tags_movement_count">
+        <item quantity="one">%1$d movimento</item>
+        <item quantity="other">%1$d movimenti</item>
+    </plurals>
+    <string name="tags_empty_title">Ancora nessun tag</string>
+    <string name="tags_empty_body">I tag si creano dall\'editor dei movimenti, accanto alla categoria. Quando ne usi uno, da qui puoi rinominarlo, unire i doppioni o eliminarlo.</string>
+    <string name="tags_no_results_title">Nessun tag trovato</string>
+    <string name="tags_no_results_body">Nessun tag corrisponde alla ricerca.</string>
+    <string name="tags_action_rename">Rinomina</string>
+    <string name="tags_action_merge">Unisci qui altri tag</string>
+    <string name="tags_action_delete">Elimina</string>
+    <string name="tags_rename_title">Rinomina tag</string>
+    <string name="tags_rename_label">Nome</string>
+    <string name="tags_rename_collision">“%1$s” esiste già: confermando, i due tag diventeranno uno.</string>
+    <string name="tags_merge_title">Unisci in “%1$s”</string>
+    <string name="tags_merge_body">I movimenti dei tag scelti passano a “%1$s” e i tag scelti vengono eliminati. Nessun movimento viene toccato.</string>
+    <string name="tags_merge_confirm">Unisci</string>
+    <string name="tags_delete_title">Eliminare il tag?</string>
+    <string name="tags_delete_body_unused">Nessun movimento usa “%1$s”.</string>
+    <plurals name="tags_delete_body">
+        <item quantity="one">“%1$s” verrà tolto da %2$d movimento. Il movimento non viene eliminato.</item>
+        <item quantity="other">“%1$s” verrà tolto da %2$d movimenti. I movimenti non vengono eliminati.</item>
+    </plurals>
+    <string name="tags_delete_confirm">Elimina</string>
+    <string name="tags_snackbar_merged">Tag uniti in “%1$s”</string>
+    <string name="tags_snackbar_deleted">Tag “%1$s” eliminato</string>
 </resources>

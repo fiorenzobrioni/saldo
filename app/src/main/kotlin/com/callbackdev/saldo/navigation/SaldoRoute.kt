@@ -41,6 +41,13 @@ data class AccountEditorRoute(
 data object CategoriesRoute : NavKey
 
 /**
+ * Tag management (rename, merge, delete), reached from Settings. Tags are
+ * still created inline in the movement editor; this screen only curates them.
+ */
+@Serializable
+data object TagsRoute : NavKey
+
+/**
  * Category editor: create mode when [categoryId] is null, edit mode otherwise.
  * [initialTypeName] preselects the type (the tab the editor was opened from);
  * it is a [com.callbackdev.saldo.core.domain.model.CategoryType] name.

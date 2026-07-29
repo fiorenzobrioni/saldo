@@ -61,6 +61,26 @@ class TransactionsViewModel @Inject constructor(
 
     private val filters = MutableStateFlow(TransactionFilters.DEFAULT)
 
+    init {
+        // A tag deleted or merged away in Settings > Tags must not survive as an
+        // active filter: the chip row cannot render an id that has no name, so
+        // the leftover would keep narrowing the list with nothing to tap to
+        // remove it. Renames are transparent (the filter is by id); only ids
+        // that no longer exist are dropped.
+        viewModelScope.launch {
+            tagRepository.observeTags().collect { tags ->
+                val ids = tags.mapTo(mutableSetOf()) { it.id }
+                filters.update { current ->
+                    if (current.tagIds.all { it in ids }) {
+                        current
+                    } else {
+                        current.copy(tagIds = current.tagIds.filterTo(mutableSetOf()) { it in ids })
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * The search text, mirrored synchronously: the field's `value` must not
      * round-trip through the filtered-list combine (which re-filters the

@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.EventRepeat
@@ -91,6 +92,7 @@ import java.util.Currency
 fun SettingsScreen(
     onNavigateToAccounts: () -> Unit,
     onNavigateToCategories: () -> Unit,
+    onNavigateToTags: () -> Unit,
     onNavigateToRecurrences: () -> Unit,
     onNavigateToBudgets: () -> Unit,
     onNavigateToSavingsGoals: () -> Unit,
@@ -339,6 +341,12 @@ fun SettingsScreen(
                     hint = stringResource(R.string.settings_categories_hint),
                     icon = Icons.Outlined.Category,
                     onClick = onNavigateToCategories,
+                )
+                SettingsEntry(
+                    title = stringResource(R.string.settings_tags),
+                    hint = stringResource(R.string.settings_tags_hint),
+                    icon = Icons.AutoMirrored.Outlined.Label,
+                    onClick = onNavigateToTags,
                 )
             }
 

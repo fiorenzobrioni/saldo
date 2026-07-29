@@ -54,6 +54,7 @@ import com.callbackdev.saldo.feature.savings.SavingsGoalsScreen
 import com.callbackdev.saldo.feature.settings.SettingsScreen
 import com.callbackdev.saldo.feature.stats.FilteredTransactionsScreen
 import com.callbackdev.saldo.feature.stats.StatsScreen
+import com.callbackdev.saldo.feature.tags.TagsScreen
 import com.callbackdev.saldo.core.domain.undo.UndoableDelete
 import com.callbackdev.saldo.feature.transactions.TransactionEditorScreen
 import com.callbackdev.saldo.feature.transactions.TransactionsScreen
@@ -187,6 +188,7 @@ fun SaldoApp(
                 modifier = topLevelModifier,
                 onNavigateToAccounts = { nav.navigate(AccountsRoute) },
                 onNavigateToCategories = { nav.navigate(CategoriesRoute) },
+                onNavigateToTags = { nav.navigate(TagsRoute) },
                 onNavigateToRecurrences = { nav.navigate(RecurrencesRoute) },
                 onNavigateToBudgets = { nav.navigate(BudgetsRoute) },
                 onNavigateToSavingsGoals = { nav.navigate(SavingsGoalsRoute) },
@@ -225,6 +227,9 @@ fun SaldoApp(
                 route = route,
                 onNavigateBack = { nav.goBack() },
             )
+        }
+        entry<TagsRoute> {
+            TagsScreen(onNavigateBack = { nav.goBack() })
         }
         entry<TransactionEditorRoute> { route ->
             TransactionEditorScreen(
