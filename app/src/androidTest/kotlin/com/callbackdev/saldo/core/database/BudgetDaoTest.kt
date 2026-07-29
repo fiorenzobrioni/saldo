@@ -56,8 +56,11 @@ class BudgetDaoTest {
     private fun budget(category: Long? = null, amountMinor: Long = 50_000L) =
         BudgetEntity(categoryId = category, amountMinor = amountMinor, currency = "EUR")
 
+    // Explicit Unit: assertThrows returns the caught exception, so an inferred
+    // return type would make this a non-void @Test method, which JUnit 4
+    // rejects while building the class - taking down the whole class with it.
     @Test
-    fun uniqueIndexRejectsASecondBudgetForTheSameCategory() = runBlocking {
+    fun uniqueIndexRejectsASecondBudgetForTheSameCategory() = runBlocking<Unit> {
         budgetDao.insert(budget(category = categoryId))
 
         assertThrows(SQLiteConstraintException::class.java) {
