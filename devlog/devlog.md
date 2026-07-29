@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-29 - Test strumentati su emulatore in CI (workflow manuale)
+
+**Fatto:** nuovo workflow [`.github/workflows/instrumented-tests.yml`](../.github/workflows/instrumented-tests.yml), avviabile a mano dalla scheda Actions, che esegue `:app:connectedDebugAndroidTest` su un emulatore. Le 15 classi di test strumentati del repo (`MigrationsTest`, `DatabaseCreationTest`, i sei `TransactionDao*Test`, `BudgetDaoTest`, `BalanceAdjustmentTest`, `SaldoDatabaseTest`, `CategoryIconBitmapsTest`, `QuickAddWidgetThemeTest`, `AppShortcutIconTest`, `SaldoAppNavigationTest`) finora giravano solo a mano sul device dell'utente. Due input: livello API a scelta fra 33 (il minSdk) e 34, e un filtro opzionale per classe, cosi si puo lanciare il solo `MigrationsTest` dopo un cambio di schema. I report vengono caricati come artefatto sempre, non solo in caso di fallimento.
+
+**Decisioni:** la richiesta partiva da un workflow di esempio per il **baseline profile**, e non l'ho creato: `:app:generateBaselineProfile` non esiste in questo repo, perche il task lo crea il plugin `androidx.baselineprofile` che richiede un modulo generatore dedicato (oggi c'e solo `:app`), un `BaselineProfileGenerator` che pilota l'app con UiAutomator, un build type non-debuggable e tre dipendenze nuove nel version catalog. Creare il workflow prima di quel lavoro avrebbe prodotto un bottone che fallisce sempre; resta un punto della Fase 23. I test strumentati invece **non chiedono nulla di nuovo**: schemi Room esportati (1, 2, 3), `room-testing` e gli asset dell'androidTest sono gia a posto, serviva solo un emulatore.
+
+Tre scelte tecniche che divergono dall'esempio ricevuto, con la ragione. **Runner Linux e non macOS**: i runner Linux espongono la virtualizzazione annidata, quindi l'emulatore prende l'accelerazione KVM senza pagare un runner macOS, e soprattutto l'immagine `aosp_atd` (quella leggera, senza Play services ne setup wizard, che l'esempio giustamente sceglieva) esiste solo per x86_64, che i runner macOS arm64 non eseguono. **Nessun commit automatico dai runner**: l'esempio faceva `git push` dal workflow, cosa che contrasta col flusso del progetto (PR aperte via API, merge fatto dall'utente) e che con un branch protetto fallirebbe; i risultati escono come artefatto. **JDK 21 temurin e `gradle/actions/setup-gradle`** come in `ci.yml`, non zulu con la cache manuale: il build produce bytecode Java 17 ma Gradle gira su 21, e la configurazione resta una sola per tutti i workflow.
+
+**Problemi:** nessuno in scrittura (YAML validato), ma il workflow non e ancora stato eseguito e va considerato non verificato finche non parte una volta. Due cose sono probabili al primo giro: qualche test strumentato non gira da un po' e potrebbe fallire per davvero, che e esattamente il valore del workflow, e `SaldoAppNavigationTest`, essendo un test Compose, e il candidato piu probabile a risultare instabile su emulatore. Il workflow **non** chiude le due verifiche su device aperte delle Fasi 12 e 13: l'ADR 26 chiede l'aggiornamento in place su dati reali, che un emulatore pulito non riproduce. Nessun bump di versione: nessun file dell'app e stato toccato.
+
+**Prossimo:** lanciare il workflow una prima volta e sistemare cio che emerge; poi verifica su device delle migration 1 -> 2 e 2 -> 3 (Fasi 12 e 13) e Fase 16.
+
+---
+
 ## 2026-07-29 - Roadmap v2.0 riselezionata: sei fasi parcheggiate, due promosse, 17 e 19 riscritte
 
 **Fatto:** passata completa sulle fasi rimaste con un criterio nuovo, deciso con l'utente: **una fase resta in roadmap se serve spesso o se la sua assenza si paga** (un dato sbagliato, un dato che si puo creare e non correggere, un backup perso), valutata sull'utilita generale in vista di una pubblicazione sullo store e non sull'uso personale. Il criterio e ora scritto nell'intro della Roadmap v2.0.
