@@ -1,0 +1,95 @@
+name: Instrumented tests
+
+# Runs the androidTest suite on an emulator, which the main CI cannot do.
+# Manual only: an emulator run costs minutes and the suite is not needed on
+# every push. Dispatch it after touching the database schema, the DAOs or the
+# widget rasterizer, and before releasing a schema change (ADR 26).
+on:
+  workflow_dispatch:
+    inputs:
+      api-level:
+        description: "Emulator API level (33 is the app's minSdk)"
+        type: choice
+        default: "34"
+        options:
+          - "33"
+          - "34"
+      tests:
+        description: "Optional class filter, e.g. com.callbackdev.saldo.core.database.MigrationsTest"
+        type: string
+        required: false
+        default: ""
+
+concurrency:
+  group: instrumented-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  connected:
+    name: androidTest on API ${{ inputs.api-level }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # The Linux runners expose nested virtualisation, so the emulator gets
+      # KVM acceleration without paying for a macOS runner. Without this step
+      # the emulator falls back to software rendering and the job crawls.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Same JDK and Gradle setup as ci.yml: the build targets Java 17
+      # bytecode but Gradle itself runs on 21.
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compose Gradle arguments
+        id: args
+        env:
+          TESTS: ${{ inputs.tests }}
+        run: |
+          if [ -n "$TESTS" ]; then
+            echo "extra=-Pandroid.testInstrumentationRunnerArguments.class=$TESTS" >> "$GITHUB_OUTPUT"
+          else
+            echo "extra=" >> "$GITHUB_OUTPUT"
+          fi
+
+      # aosp_atd is the test-only system image: no Play services, no setup
+      # wizard, boots in a fraction of the time of a full image. It exists for
+      # x86_64 only, which is one reason this job runs on Linux and not on the
+      # arm64 macOS runners.
+      - name: Run instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          EXTRA_ARGS: ${{ steps.args.outputs.extra }}
+        with:
+          api-level: ${{ inputs.api-level }}
+          target: aosp_atd
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew :app:connectedDebugAndroidTest $EXTRA_ARGS
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidtest-reports-api${{ inputs.api-level }}
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+          retention-days: 14
+          if-no-files-found: warn

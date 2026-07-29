@@ -118,7 +118,7 @@ Un rimborso (es. un reso Amazon, un amico che restituisce la cena) **non è un'e
 16/03  Rimborso amici    +40,00 €   (collegato → riduce Ristorante a -20,00 €)
 ```
 
-Per il MVP è accettabile una versione semplificata (entrata con flag "rimborso" e stessa categoria della spesa); il collegamento esplicito può arrivare dopo.
+L'app usa la versione semplificata: entrata con flag "rimborso" e categoria della spesa scelta dall'utente, che l'editor restringe alle sole categorie di spesa. Il collegamento esplicito alla spesa originale è **da valutare** e non è pianificato (Fase 31 in PLANNING.md, che ne spiega il perché).
 
 ---
 
@@ -176,7 +176,7 @@ Regole:
 - non ha categoria
 - non compare **mai** nelle statistiche di spesa/entrata
 - è un singolo record con `fromAccountId` e `toAccountId` (non due movimenti separati: evita disallineamenti)
-- eventuale **commissione di trasferimento** (es. prelievo ATM con fee): modellabile come spesa separata collegata (post-MVP), per ora l'utente registra la fee a mano
+- eventuale **commissione di trasferimento** (es. prelievo ATM con fee): l'utente registra la fee come spesa a parte. Modellarla dentro l'operazione è una funzione da valutare, non pianificata (Fase 18 in PLANNING.md)
 - trasferimenti tra account in valute diverse: nel MVP l'utente inserisce entrambi gli importi (quanto esce e quanto entra); la conversione automatica è una feature futura
 
 Questo richiede supporto architetturale già in fase iniziale (è nel data model dal giorno 1).
@@ -489,12 +489,11 @@ Questa opzione rafforza i principi del progetto: backup completo possibile **sen
 
 # Export
 
-Formati supportati (v1.0: CSV; Excel, Google Sheets e PDF: v2.0):
+Il formato dell'app è il **CSV** (separatore configurabile `,`/`;` - in Italia Excel si aspetta `;`), con export completo o filtrato. Si apre già in Excel e in Google Sheets, ed è la ragione per cui gli altri tre formati sono **da valutare** e non pianificati (Fase 21 in PLANNING.md):
 
-- **CSV** (separatore configurabile `,`/`;` - in Italia Excel si aspetta `;`), con export completo o filtrato
-- **Excel (.xlsx)** - v2.0
-- **PDF report** mensile/annuale con grafici - v2.0
-- **Google Sheets** - v2.0: lo scope OAuth `spreadsheets` è classificato "sensitive" da Google e richiede la verifica dell'app; rinviarlo toglie questa frizione dal percorso di release del MVP (il CSV si apre comunque in Sheets). Crea un nuovo foglio o aggiorna lo stesso (es. un foglio "Spese 2026" con un tab per mese):
+- **Excel (.xlsx)** - da valutare: richiederebbe una libreria nuova per un file che il CSV già copre
+- **PDF report** mensile/annuale con grafici - da valutare: è l'unico dei tre con un uso proprio, il resoconto da mandare a qualcuno, ed è anche il più economico (`PdfDocument` di piattaforma)
+- **Google Sheets** - da valutare: lo scope OAuth `spreadsheets` è classificato "sensitive" da Google e richiede la verifica dell'app, molta frizione per un foglio che si ottiene già importando il CSV. Creerebbe un nuovo foglio o aggiornerebbe lo stesso (es. un foglio "Spese 2026" con un tab per mese):
 
 | Data | Tipo | Categoria | Account | Descrizione | Importo | Valuta | Tag |
 |------|------|-----------|---------|-------------|---------|--------|-----|
@@ -624,16 +623,13 @@ Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, sp
 - Crediti e debiti verso persone
 - Movimenti futuri e scadenze una tantum (elenco "in arrivo", promemoria, stima a fine mese che li conta)
 - PIN + biometria + FLAG_SECURE (consegnato in anticipo, dopo la 1.0.0)
-- Export Google Sheets, Excel (.xlsx) e PDF con grafici
 - Conversione valuta automatica
-- Cifratura backup
-- Rilevamento automatico delle ricorrenze
 - Gestione tag dedicata e ricerca con suggerimenti
-- Analisi avanzate (pattern di spesa, confronti anno su anno)
-- Rimborsi collegati alla spesa originale
-- Commissioni sui trasferimenti
+- Rilevamento automatico delle ricorrenze
+- Aggiunta rapida dalla tendina delle impostazioni rapide, e inserimento rapido testuale ("12,50 pizza")
+- Cifratura backup
 - Miglioramenti UX dal feedback della v1.0
-- Da valutare, fuori dal piano: allegati fotografici ai movimenti, backup automatico su Google Drive
+- Da valutare, fuori dal piano: allegati fotografici ai movimenti, rimborsi collegati alla spesa originale, commissioni sui trasferimenti, analisi avanzate, export PDF/Excel/Google Sheets, pagamento parziale dell'estratto carta, arrotondamento degli spiccioli, riepilogo settimanale, backup automatico su Google Drive
 
 ---
 
