@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-29 - Primo giro del workflow strumentato: il source set androidTest non compilava
+
+**Fatto:** primo lancio di "Instrumented tests" su `main`, API 34, suite intera. Fallito in 49 secondi su `:app:compileDebugAndroidTestKotlin`, prima ancora di installare l'APK, quindi nessun test eseguito. Causa unica: `TransactionDaoUpcomingTest:218` chiamava `transactionDao.updateReminderWatermark(id, date)` passando un `LocalDate` a un parametro `Long`. Corretto in `date.toEpochDay()`, una riga.
+
+**Decisioni:** e uno scambio di livello, non un errore di logica: il repository di dominio espone `updateReminderWatermark(transactionId: Long, date: LocalDate)` e converte lui, il DAO vuole gia l'epoch day. Che l'intenzione fosse quella lo dimostra l'asserzione tre righe sotto, che gia usa `date.toEpochDay()`. Verificate tutte le altre chiamate del source set androidTest ai parametri epoch day (`observeAfter`, `getDueReminders`, `observeAllBalancesAsOf`, `observeNetChangeBefore`): usano tutte `.toEpochDay()`, quindi quello era l'unico punto.
+
+**Problemi:** il fatto in se: quel test e della Fase 13, del 28 luglio, e **non era mai stato compilato da nessuno**. `testDebugUnitTest` non tocca il source set androidTest e su device non era stato lanciato, tanto che la verifica su device della Fase 13 e ancora aperta: un errore di compilazione e rimasto in `main` per un giorno senza che niente lo segnalasse. Il workflow ha fatto esattamente il lavoro per cui e stato scritto, al primo giro. Buona notizia collaterale: l'infrastruttura ha funzionato subito (KVM abilitato, emulatore avviato, 33 task dalla cache Gradle), quindi la scelta runner Linux piu immagine `aosp_atd` regge. Nessun bump di versione: il source set androidTest non entra nell'APK.
+
+**Prossimo:** rilanciare il workflow con la correzione e vedere il primo esito vero della suite, che e ancora ignoto: se le quindici classi passino, se `MigrationsTest` regga le migration 1 -> 2 e 2 -> 3, e se `SaldoAppNavigationTest` sia stabile su emulatore.
+
+---
+
 ## 2026-07-29 - Test strumentati su emulatore in CI (workflow manuale)
 
 **Fatto:** nuovo workflow [`.github/workflows/instrumented-tests.yml`](../.github/workflows/instrumented-tests.yml), avviabile a mano dalla scheda Actions, che esegue `:app:connectedDebugAndroidTest` su un emulatore. Le 15 classi di test strumentati del repo (`MigrationsTest`, `DatabaseCreationTest`, i sei `TransactionDao*Test`, `BudgetDaoTest`, `BalanceAdjustmentTest`, `SaldoDatabaseTest`, `CategoryIconBitmapsTest`, `QuickAddWidgetThemeTest`, `AppShortcutIconTest`, `SaldoAppNavigationTest`) finora giravano solo a mano sul device dell'utente. Due input: livello API a scelta fra 33 (il minSdk) e 34, e un filtro opzionale per classe, cosi si puo lanciare il solo `MigrationsTest` dopo un cambio di schema. I report vengono caricati come artefatto sempre, non solo in caso di fallimento.
