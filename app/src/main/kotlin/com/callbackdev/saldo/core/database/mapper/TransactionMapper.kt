@@ -51,6 +51,8 @@ fun TransactionEntity.toDomain(): Transaction {
         isPending = isPending,
         recurringOccurrenceDate = recurringOccurrenceEpochDay?.let(LocalDate::ofEpochDay),
         counterparty = counterparty,
+        hasReminder = hasReminder,
+        lastReminderDate = lastReminderEpochDay?.let(LocalDate::ofEpochDay),
     )
 }
 
@@ -76,6 +78,8 @@ fun Transaction.toEntity(): TransactionEntity = TransactionEntity(
     isPending = isPending,
     recurringOccurrenceEpochDay = recurringOccurrenceDate?.toEpochDay(),
     counterparty = counterparty,
+    hasReminder = hasReminder,
+    lastReminderEpochDay = lastReminderDate?.toEpochDay(),
 )
 
 fun CategoryTotalRow.toDomain(currency: Currency): CategoryTotal = CategoryTotal(

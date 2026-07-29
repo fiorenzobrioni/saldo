@@ -155,6 +155,13 @@ data class TransactionBackup(
      * without a counterparty, which is what they were.
      */
     val counterparty: String? = null,
+    /**
+     * Added with future movements and their reminders (ADR 36). The watermark
+     * travels with the flag, like the recurring rules' one, so restoring a
+     * backup does not re-notify about a date already announced.
+     */
+    val hasReminder: Boolean = false,
+    val lastReminderEpochDay: Long? = null,
 )
 
 @Serializable

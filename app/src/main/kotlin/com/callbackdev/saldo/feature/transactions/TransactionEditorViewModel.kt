@@ -12,6 +12,7 @@ import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.localDate
 import com.callbackdev.saldo.core.domain.account.DefaultAccountResolver
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.money.TransactionSign
@@ -35,6 +36,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -99,6 +101,14 @@ class TransactionEditorViewModel @AssistedInject constructor(
         val isCounterparty: Boolean = false,
         val counterparty: String = "",
         val isRefund: Boolean = false,
+        /** Whether to be reminded before a future-dated movement falls due (ADR 36). */
+        val hasReminder: Boolean = false,
+        /**
+         * The movement date already reminded about, carried through untouched
+         * unless the date changes: it is a watermark, not a user choice, and
+         * rewriting it here would either re-notify or silence a real reminder.
+         */
+        val lastReminderDate: LocalDate? = null,
         /** Read-only metadata: kept out of [snapshot] so it never marks the form dirty. */
         val isRecurring: Boolean = false,
         val recurringRuleName: String? = null,
@@ -317,6 +327,16 @@ class TransactionEditorViewModel @AssistedInject constructor(
         form.update { it.copy(counterparty = name) }
     }
 
+    /**
+     * Asks (or stops asking) to be reminded before this movement falls due.
+     * Only offered while the date is in the future, so turning it on always
+     * means something; a date moved back into the past leaves the flag alone
+     * and simply stops the reminder from ever coming due.
+     */
+    fun onReminderChanged(enabled: Boolean) {
+        form.update { it.copy(hasReminder = enabled) }
+    }
+
     /** A refund offsets an expense: toggling it switches the category set. */
     fun onRefundChanged(refund: Boolean) {
         form.update { it.copy(isRefund = refund, categoryId = null) }
@@ -411,11 +431,26 @@ class TransactionEditorViewModel @AssistedInject constructor(
             isCounterparty = current.isCounterparty,
             counterparty = current.counterparty,
             counterpartySuggestions = counterpartySuggestions(counterpartyNames, current),
+            hasReminder = current.hasReminder,
+            today = LocalDate.now(clock),
             isRecurring = current.isRecurring,
             recurringRuleName = current.recurringRuleName,
             showValidation = current.showValidation,
         )
     }
+
+    /**
+     * Whether the app may post reminders at all (Settings > Notifications).
+     * The editor uses it to say so instead of letting the switch promise a
+     * notification that would never arrive.
+     */
+    val remindersEnabled: StateFlow<Boolean> = userPreferences.renewalReminderPreferences
+        .map { it.enabled }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = true,
+        )
 
     /**
      * Preselects the account for a new movement: the explicit Settings
@@ -498,6 +533,8 @@ class TransactionEditorViewModel @AssistedInject constructor(
                     isCounterparty = transaction.counterparty != null,
                     counterparty = transaction.counterparty.orEmpty(),
                     isRefund = transaction.isRefund,
+                    hasReminder = transaction.hasReminder,
+                    lastReminderDate = transaction.lastReminderDate,
                 )
             }
             captureBaseline()
@@ -577,6 +614,15 @@ class TransactionEditorViewModel @AssistedInject constructor(
             // to false would silently confirm one the day it becomes editable.
             isPending = base?.isPending ?: false,
             recurringOccurrenceDate = base?.recurringOccurrenceDate,
+            // The flag survives a date moved into the past: it simply never
+            // comes due, and moving the date forward again restores the
+            // intention instead of quietly having dropped it.
+            hasReminder = current.hasReminder,
+            // Moving the date re-arms the reminder: the watermark records the
+            // date already announced, and a new date has not been announced.
+            lastReminderDate = current.lastReminderDate.takeIf {
+                base != null && base.localDate == current.date
+            },
         )
     }
 
@@ -629,6 +675,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
         val isRefund: Boolean,
         val isCounterparty: Boolean,
         val counterparty: String,
+        val hasReminder: Boolean,
     )
 
     private fun Form.snapshot() = FormSnapshot(
@@ -647,6 +694,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
         isRefund = isRefund,
         isCounterparty = isCounterparty,
         counterparty = counterparty,
+        hasReminder = hasReminder,
     )
 
     /**

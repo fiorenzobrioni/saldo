@@ -90,9 +90,14 @@ data class RecurringRuleEditorRoute(
     val initialTypeName: String? = null,
 ) : NavKey
 
-/** Confirmation of pending recurring movements (confirm mode / variable amount). */
+/**
+ * What is coming (ADR 36): confirmed movements dated in the future and
+ * occurrences still to confirm, in one list. [pendingOnly] opens it on the
+ * confirmation queue, which is how the dashboard's "to confirm" card enters -
+ * a starting filter, not a different screen.
+ */
 @Serializable
-data object PendingMovementsRoute : NavKey
+data class UpcomingRoute(val pendingOnly: Boolean = false) : NavKey
 
 /** Budget management (overall and per-category), reached from the dashboard and Settings. */
 @Serializable

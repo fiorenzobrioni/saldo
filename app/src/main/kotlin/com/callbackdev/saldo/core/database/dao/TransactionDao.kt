@@ -90,6 +90,59 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE isPending = 1 ORDER BY timestampEpochMilli ASC, id ASC")
     fun observePending(): Flow<List<TransactionEntity>>
 
+    /**
+     * Confirmed movements whose own local day (ADR 7) is [startEpochDay] or
+     * later, soonest first: with tomorrow as the cutoff, the movements dated in
+     * the future. They are already part of the ledger and of the headline
+     * balance, but of nothing that is scoped to today or to a closed window, so
+     * this is the only query that can list them (ADR 36).
+     *
+     * Rows, not an aggregate: the "Upcoming" list needs each movement, and the
+     * forecast reduces them to a per-day net in the domain, where the same rule
+     * occurrence can be recognised and not counted a second time.
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE isPending = 0
+            AND (timestampEpochMilli / 1000 + zoneOffsetSeconds) / 86400 >= :startEpochDay
+        ORDER BY timestampEpochMilli ASC, id ASC
+        """,
+    )
+    fun observeAfter(startEpochDay: Long): Flow<List<TransactionEntity>>
+
+    /**
+     * Confirmed movements carrying a reminder whose local day falls in
+     * `[startEpochDay, endEpochDay]` and that have not been reminded about for
+     * that very day yet. The watermark comparison is the movement's own, so a
+     * date pushed further out re-arms the reminder while a repeated run inside
+     * the window stays quiet. One-shot: the notifier runs from a worker, not
+     * from a screen.
+     */
+    @Query(
+        """
+        SELECT * FROM transactions
+        WHERE isPending = 0 AND hasReminder = 1
+            AND (timestampEpochMilli / 1000 + zoneOffsetSeconds) / 86400
+                BETWEEN :startEpochDay AND :endEpochDay
+            AND (
+                lastReminderEpochDay IS NULL
+                OR lastReminderEpochDay < (timestampEpochMilli / 1000 + zoneOffsetSeconds) / 86400
+            )
+        ORDER BY timestampEpochMilli ASC, id ASC
+        """,
+    )
+    suspend fun getDueReminders(startEpochDay: Long, endEpochDay: Long): List<TransactionEntity>
+
+    /**
+     * Advances a movement's reminder watermark on its own, without a full-row
+     * update: the worker runs alongside the editor, and rewriting a whole row
+     * read at the start of the run would clobber an edit saved meanwhile (the
+     * same reasoning as the recurring and credit card watermarks).
+     */
+    @Query("UPDATE transactions SET lastReminderEpochDay = :epochDay WHERE id = :id")
+    suspend fun updateReminderWatermark(id: Long, epochDay: Long)
+
     @Query(
         """
         SELECT * FROM transactions

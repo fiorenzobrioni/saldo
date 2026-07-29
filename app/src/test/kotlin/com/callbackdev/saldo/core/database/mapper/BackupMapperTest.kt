@@ -14,6 +14,7 @@ import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import com.callbackdev.saldo.core.domain.model.RecurrenceMode
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -194,6 +195,30 @@ class BackupMapperTest {
         assertEquals("Marta", entity.toBackup().counterparty)
         // A file written before the field existed restores a plain movement.
         assertNull(entity.copy(counterparty = null).toBackup().counterparty)
+    }
+
+    @Test
+    fun `a movement reminder and its watermark survive the backup round trip`() {
+        val entity = TransactionEntity(
+            id = 44L,
+            type = TransactionType.EXPENSE,
+            amountMinor = -21_000L,
+            currency = "EUR",
+            accountId = 7L,
+            timestampEpochMilli = 1_752_000_123_456,
+            zoneOffsetSeconds = 7_200,
+            categoryId = 3L,
+            description = "bollo auto",
+            hasReminder = true,
+            lastReminderEpochDay = 20_640L,
+        )
+
+        assertEquals(entity, entity.toBackup().toEntity())
+        // The watermark travels with the flag, so restoring does not re-notify
+        // about a date already announced.
+        assertEquals(20_640L, entity.toBackup().lastReminderEpochDay)
+        // A file written before the field existed restores a movement without one.
+        assertFalse(entity.copy(hasReminder = false).toBackup().hasReminder)
     }
 
     @Test

@@ -55,6 +55,7 @@ fun DashboardScreen(
     onSeeAllTransactions: () -> Unit,
     onNavigateToRecurrences: () -> Unit,
     onNavigateToPending: () -> Unit,
+    onNavigateToUpcoming: () -> Unit,
     onNavigateToBudgets: () -> Unit,
     onNavigateToSavingsGoals: () -> Unit,
     onNavigateToCounterparties: () -> Unit,
@@ -114,6 +115,7 @@ fun DashboardScreen(
                     onTransactionClick = onNavigateToEditTransaction,
                     onRecurringClick = onNavigateToRecurrences,
                     onPendingClick = onNavigateToPending,
+                    onUpcomingClick = onNavigateToUpcoming,
                     onBudgetsClick = onNavigateToBudgets,
                     onSavingsGoalsClick = onNavigateToSavingsGoals,
                     onCounterpartiesClick = onNavigateToCounterparties,
@@ -156,6 +158,7 @@ private fun DashboardContent(
     onTransactionClick: (Long) -> Unit,
     onRecurringClick: () -> Unit,
     onPendingClick: () -> Unit,
+    onUpcomingClick: () -> Unit,
     onBudgetsClick: () -> Unit,
     onSavingsGoalsClick: () -> Unit,
     onCounterpartiesClick: () -> Unit,
@@ -270,6 +273,17 @@ private fun DashboardContent(
         }
         if (uiState.pendingCount > 0) {
             item { PendingConfirmationCard(count = uiState.pendingCount, onClick = onPendingClick) }
+        }
+        // Below the confirmation nudge: what still needs an answer comes before
+        // what is merely scheduled.
+        if (uiState.cardPrefs.showUpcoming && !uiState.upcoming.isEmpty) {
+            item {
+                UpcomingCard(
+                    preview = uiState.upcoming,
+                    today = uiState.date,
+                    onClick = onUpcomingClick,
+                )
+            }
         }
         if (uiState.dueStatements.isNotEmpty()) {
             item {

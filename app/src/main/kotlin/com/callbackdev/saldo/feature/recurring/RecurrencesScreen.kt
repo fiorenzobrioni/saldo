@@ -16,9 +16,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Upcoming
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -80,6 +82,7 @@ fun RecurrencesScreen(
     onNavigateBack: () -> Unit,
     onNavigateToNewRule: (TransactionType) -> Unit,
     onNavigateToEditRule: (Long) -> Unit,
+    onNavigateToUpcoming: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecurrencesViewModel = hiltViewModel(),
 ) {
@@ -166,6 +169,7 @@ fun RecurrencesScreen(
                     savingsCurrency = uiState.savingsCurrency,
                     onSortSelected = viewModel::onSortSelected,
                     onItemClick = onNavigateToEditRule,
+                    onUpcomingClick = onNavigateToUpcoming,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -183,6 +187,7 @@ private fun RecurrencesContent(
     savingsCurrency: Currency,
     onSortSelected: (SubscriptionSort) -> Unit,
     onItemClick: (Long) -> Unit,
+    onUpcomingClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val isIncome = type == TransactionType.INCOME
@@ -230,6 +235,9 @@ private fun RecurrencesContent(
                     },
                 )
             }
+        }
+        item {
+            UpcomingLinkRow(onClick = onUpcomingClick)
         }
         item {
             SortHeader(
@@ -376,6 +384,48 @@ private fun PlannedSavingsCard(
                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                 )
             }
+        }
+    }
+}
+
+/**
+ * The way from the rules to their next occurrences. The hub administers
+ * schedules, "Upcoming" lists what those schedules (and every dated movement)
+ * are about to produce: two different questions, one link between them, so
+ * neither screen is a dead end.
+ */
+@Composable
+private fun UpcomingLinkRow(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    SaldoCard(onClick = onClick, modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(
+                horizontal = SaldoDimens.cardPadding,
+                vertical = SaldoDimens.cardPaddingVertical,
+            ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Upcoming,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp),
+            )
+            Column(modifier = Modifier.weight(1f).padding(start = 16.dp)) {
+                Text(
+                    text = stringResource(R.string.upcoming_title),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = stringResource(R.string.recurrences_upcoming_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

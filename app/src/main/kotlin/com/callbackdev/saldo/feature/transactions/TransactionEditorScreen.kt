@@ -105,6 +105,7 @@ fun TransactionEditorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsStateWithLifecycle()
+    val remindersEnabled by viewModel.remindersEnabled.collectAsStateWithLifecycle()
     val guard = rememberUnsavedChangesGuard(hasUnsavedChanges, onNavigateBack)
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -210,6 +211,7 @@ fun TransactionEditorScreen(
             EditorForm(
                 uiState = uiState,
                 viewModel = viewModel,
+                remindersEnabled = remindersEnabled,
                 primaryAmount = primaryAmount,
                 secondaryAmount = secondaryAmount,
                 activeAmount = activeAmount,
@@ -338,6 +340,7 @@ private fun saveLabelRes(type: TransactionType): Int = when (type) {
 private fun EditorForm(
     uiState: TransactionEditorUiState,
     viewModel: TransactionEditorViewModel,
+    remindersEnabled: Boolean,
     primaryAmount: AmountTarget,
     secondaryAmount: AmountTarget,
     activeAmount: AmountField?,
@@ -466,6 +469,13 @@ private fun EditorForm(
                 onToggle = viewModel::onTagToggled,
                 onAddClick = onAddTagClick,
             )
+            AnimatedSection(visible = uiState.hasReminderSection) {
+                ReminderSection(
+                    uiState = uiState,
+                    remindersEnabled = remindersEnabled,
+                    onToggled = viewModel::onReminderChanged,
+                )
+            }
             AnimatedSection(visible = uiState.hasCategorySection) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Spacer(Modifier.height(8.dp))
@@ -501,6 +511,43 @@ private fun EditorForm(
                 }
             }
             Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+/**
+ * The reminder for a movement dated ahead (ADR 36): one switch, and the lead
+ * time is the one already configured for recurring renewals rather than a
+ * second setting - "how early do you want to know" is one question. The
+ * section only exists while the date is in the future, and it appears the
+ * moment the date crosses it, so the option shows up exactly when it means
+ * something.
+ *
+ * With notifications turned off in Settings the switch still works (the choice
+ * is recorded on the movement) but says plainly that nothing will arrive: a
+ * switch that promises a notification the app will not post is worse than no
+ * switch at all.
+ */
+@Composable
+private fun ReminderSection(
+    uiState: TransactionEditorUiState,
+    remindersEnabled: Boolean,
+    onToggled: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Spacer(Modifier.height(8.dp))
+        EditorSwitchRow(
+            title = stringResource(R.string.transaction_editor_reminder),
+            subtitle = stringResource(R.string.transaction_editor_reminder_hint),
+            checked = uiState.hasReminder,
+            onCheckedChange = onToggled,
+        )
+        AnimatedSection(visible = uiState.hasReminder && !remindersEnabled) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                InfoBanner(text = stringResource(R.string.transaction_editor_reminder_disabled))
+                Spacer(Modifier.height(4.dp))
+            }
         }
     }
 }

@@ -27,6 +27,7 @@ import com.callbackdev.saldo.core.domain.model.SavingsGoalProgress
 import com.callbackdev.saldo.core.domain.usecase.ObserveDailyBalanceHistoryUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveUpcomingMovementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveCounterpartyBalancesUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSavingsGoalsProgressUseCase
 import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
@@ -122,6 +123,8 @@ class DashboardViewModelTest {
         savingsGoals: List<SavingsGoalProgress> = emptyList(),
         counterparties: CounterpartyLedger = CounterpartyLedger(),
         balanceHistory: List<DailyBalance> = emptyList(),
+        /** Confirmed movements dated in the future (ADR 36). */
+        upcoming: List<Transaction> = emptyList(),
         clock: Clock = this.clock,
         dismissedRecapMonth: java.time.YearMonth? = null,
         previousMonthTotals: List<com.callbackdev.saldo.core.domain.model.MonthlyTotal> = emptyList(),
@@ -149,6 +152,13 @@ class DashboardViewModelTest {
         every { observeSavingsGoalsProgress() } returns flowOf(savingsGoals)
         every { observeCounterpartyBalances() } returns flowOf(counterparties)
         every { observeDailyBalanceHistory(any(), any()) } returns flowOf(balanceHistory)
+        every { transactionRepository.observeTransactionsFrom(any()) } returns flowOf(upcoming)
+        val observeUpcomingMovements = ObserveUpcomingMovementsUseCase(
+            transactionRepository,
+            accountRepository,
+            userPreferences,
+            clock,
+        )
         return DashboardViewModel(
             accountRepository,
             userPreferences,
@@ -161,6 +171,7 @@ class DashboardViewModelTest {
             observeSavingsGoalsProgress,
             observeCounterpartyBalances,
             observeDailyBalanceHistory,
+            observeUpcomingMovements,
             clock,
         )
     }
@@ -382,7 +393,7 @@ class DashboardViewModelTest {
     }
 
     @Test
-    fun `balance forecast walks from the headline balance with spend average and recurring charges`() = runTest {
+    fun `balance forecast walks from the today balance with spend average and recurring charges`() = runTest {
         val history = listOf(
             DailyBalance(LocalDate.of(2026, 7, 7), BigDecimal("110.00")),
             DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal("100.00")),
@@ -410,7 +421,8 @@ class DashboardViewModelTest {
             val forecast = awaitLoaded().balanceForecast
             assertEquals(LocalDate.of(2026, 7, 9), forecast.first().date)
             assertEquals(LocalDate.of(2026, 7, 31), forecast.last().date)
-            // The walk starts from the headline balance (100.00), not the history.
+            // The walk starts from the last history point (100.00), the point
+            // the drawn line ends on, so the dashed tail attaches to it.
             assertEquals(BigDecimal("90.00"), forecast.first().balance)
             // 100.00 - 23 x 10.00 - 10.00 (Netflix on the 20th).
             assertEquals(BigDecimal("-140.00"), forecast.last().balance)
@@ -553,6 +565,13 @@ class DashboardViewModelTest {
         every { observeSavingsGoalsProgress() } returns flowOf(emptyList())
         every { observeCounterpartyBalances() } returns flowOf(CounterpartyLedger())
         every { observeDailyBalanceHistory(any(), any()) } returns flowOf(emptyList())
+        every { transactionRepository.observeTransactionsFrom(any()) } returns flowOf(emptyList())
+        val observeUpcomingMovements = ObserveUpcomingMovementsUseCase(
+            transactionRepository,
+            accountRepository,
+            userPreferences,
+            clock,
+        )
         val viewModel = DashboardViewModel(
             accountRepository,
             userPreferences,
@@ -565,6 +584,7 @@ class DashboardViewModelTest {
             observeSavingsGoalsProgress,
             observeCounterpartyBalances,
             observeDailyBalanceHistory,
+            observeUpcomingMovements,
             clock,
         )
 
@@ -817,4 +837,94 @@ class DashboardViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
+    @Test
+    fun `the forecast starts from the today balance, not from the headline it runs ahead of`() = runTest {
+        // A confirmed movement dated later this month is already in the account
+        // balance (100.00) but not in the balance as of today (130.00). The tail
+        // must attach to the today figure and apply the movement on its own day,
+        // or it would book it twice: once at the start, once when it arrives.
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("100.00"))),
+            balanceHistory = listOf(
+                DailyBalance(LocalDate.of(2026, 7, 7), BigDecimal("130.00")),
+                DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal("130.00")),
+            ),
+            upcoming = listOf(
+                futureMovement(id = 1L, accountId = 1L, amount = "-30.00", day = 20),
+            ),
+        )
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+
+            assertEquals(BigDecimal("130.00"), state.balanceAsOfToday)
+            val byDate = state.balanceForecast.associate { it.date to it.balance }
+            assertEquals(BigDecimal("130.00"), byDate[LocalDate.of(2026, 7, 19)])
+            assertEquals(BigDecimal("100.00"), byDate[LocalDate.of(2026, 7, 20)])
+            assertEquals(BigDecimal("100.00"), state.balanceForecast.last().balance)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a future movement on an account outside the total does not bend the tail`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(
+                AccountWithBalance(account(1L, eur), BigDecimal("100.00")),
+                AccountWithBalance(
+                    account(9L, eur, includedInTotal = false),
+                    BigDecimal("500.00"),
+                ),
+            ),
+            balanceHistory = listOf(
+                DailyBalance(LocalDate.of(2026, 7, 7), BigDecimal("100.00")),
+                DailyBalance(LocalDate.of(2026, 7, 8), BigDecimal("100.00")),
+            ),
+            upcoming = listOf(
+                futureMovement(id = 1L, accountId = 9L, amount = "-400.00", day = 20),
+            ),
+        )
+
+        viewModel.uiState.test {
+            assertEquals(BigDecimal("100.00"), awaitLoaded().balanceForecast.last().balance)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `the upcoming card previews the soonest movements and counts the rest`() = runTest {
+        val viewModel = viewModel(
+            accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal("100.00"))),
+            upcoming = (1..5).map { index ->
+                futureMovement(id = index.toLong(), accountId = 1L, amount = "-5.00", day = 9 + index)
+            },
+        )
+
+        viewModel.uiState.test {
+            val preview = awaitLoaded().upcoming
+
+            assertEquals(5, preview.totalCount)
+            assertEquals(listOf(1L, 2L, 3L), preview.items.map { it.id })
+            assertEquals(2, preview.hiddenCount)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /** A confirmed movement dated on [day] of July 2026, after today (the 8th). */
+    private fun futureMovement(
+        id: Long,
+        accountId: Long,
+        amount: String,
+        day: Int,
+    ) = Transaction(
+        id = id,
+        type = TransactionType.EXPENSE,
+        amount = BigDecimal(amount),
+        currency = eur,
+        accountId = accountId,
+        timestamp = LocalDate.of(2026, 7, day).atTime(12, 0).atZone(zone).toInstant(),
+        zoneOffset = java.time.ZoneOffset.ofHours(2),
+        description = "future-$id",
+    )
 }

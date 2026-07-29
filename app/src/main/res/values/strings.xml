@@ -254,6 +254,7 @@
     <string name="transactions_snackbar_deleted">Transaction deleted</string>
     <string name="date_today">Today</string>
     <string name="date_yesterday">Yesterday</string>
+    <string name="date_tomorrow">Tomorrow</string>
     <string name="transaction_type_expense">Expense</string>
     <string name="transaction_type_income">Income</string>
     <string name="transaction_type_transfer">Transfer</string>
@@ -971,6 +972,8 @@
     <string name="settings_dashboard_show_savings_hint">Show progress toward your savings goals</string>
     <string name="settings_dashboard_show_counterparties">Credits and debts card</string>
     <string name="settings_dashboard_show_counterparties_hint">Show what people owe you and what you owe them (only when something is open)</string>
+    <string name="settings_dashboard_show_upcoming">Upcoming card</string>
+    <string name="settings_dashboard_show_upcoming_hint">Preview the next scheduled movements (only when something is ahead)</string>
 
     <!-- Savings goals -->
     <string name="settings_savings">Savings goals</string>
@@ -1170,4 +1173,43 @@
     <string name="lock_biometric_prompt_negative">Use PIN</string>
     <string name="quick_entry_locked_title">Saldo is locked</string>
     <string name="quick_entry_locked_subtitle">Unlock to add a movement</string>
+
+    <!-- Upcoming: future-dated movements and occurrences to confirm (Phase 13, ADR 36) -->
+    <string name="upcoming_title">Upcoming</string>
+    <string name="upcoming_outgoing">Going out</string>
+    <string name="upcoming_incoming">Coming in</string>
+    <string name="upcoming_filter_all">All</string>
+    <string name="upcoming_filter_pending">To confirm (%1$d)</string>
+    <string name="upcoming_tap_to_confirm">To confirm</string>
+    <string name="upcoming_reminder_badge">Reminder set</string>
+    <string name="upcoming_other_currencies">The totals only count the main currency; the list shows every movement.</string>
+    <string name="upcoming_empty_title">Nothing ahead</string>
+    <string name="upcoming_empty_body">Movements dated in the future and occurrences to confirm show up here, so you can see what is coming before it happens.</string>
+    <string name="recurrences_upcoming_hint">The next occurrences and the movements dated ahead</string>
+    <plurals name="upcoming_pending_note">
+        <item quantity="one">%1$d movement still to confirm: its amount is not in the totals yet.</item>
+        <item quantity="other">%1$d movements still to confirm: their amounts are not in the totals yet.</item>
+    </plurals>
+    <string name="dashboard_upcoming_title">Upcoming</string>
+    <plurals name="dashboard_upcoming_count">
+        <item quantity="one">%1$d movement</item>
+        <item quantity="other">%1$d movements</item>
+    </plurals>
+    <plurals name="dashboard_upcoming_more">
+        <item quantity="one">and %1$d more</item>
+        <item quantity="other">and %1$d more</item>
+    </plurals>
+    <string name="transaction_editor_reminder">Remind me</string>
+    <string name="transaction_editor_reminder_hint">Notify me before this date, with the lead time set for recurring charges</string>
+    <string name="transaction_editor_reminder_disabled">Reminders are off in Settings > Notifications: the choice is saved, but no notification will arrive until you turn them on.</string>
+    <string name="notif_movement_reminder_today">%1$s is due today</string>
+    <string name="notif_movement_reminder_untitled">A movement</string>
+    <plurals name="notif_movement_reminder_title">
+        <item quantity="one">%1$s is due tomorrow</item>
+        <item quantity="other">%1$s is due in %2$d days</item>
+    </plurals>
+    <plurals name="notif_movement_reminder_summary_title">
+        <item quantity="one">%1$d movement coming up</item>
+        <item quantity="other">%1$d movements coming up</item>
+    </plurals>
 </resources>

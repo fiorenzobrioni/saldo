@@ -16,6 +16,7 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.usecase.DueMovementReminder
 import com.callbackdev.saldo.core.domain.usecase.GeneratedMovement
 import com.callbackdev.saldo.core.domain.usecase.UpcomingRenewal
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -123,6 +124,59 @@ class RecurringNotifier @Inject constructor(
         }
     }
 
+    /**
+     * Posts the reminders for future-dated movements falling due (ADR 36). The
+     * upcoming channel is reused deliberately: from the user's side "something
+     * is about to be charged" is one kind of news, whether a subscription
+     * renews or a deadline they typed in arrives, and splitting it in two
+     * channels would only mean two switches to keep aligned.
+     *
+     * A separate notification id from the renewal radar's, so the two do not
+     * replace each other on the same day.
+     */
+    fun notifyMovementReminders(reminders: List<DueMovementReminder>) {
+        val reminder = reminders.singleOrNull()
+        when {
+            reminders.isEmpty() -> return
+
+            reminder != null -> post(
+                id = ID_MOVEMENT_REMINDER,
+                channelId = CHANNEL_UPCOMING,
+                title = reminder.title(),
+                body = MoneyFormatter.format(
+                    reminder.transaction.amount.abs(),
+                    reminder.transaction.currency,
+                ),
+            )
+
+            else -> post(
+                id = ID_MOVEMENT_REMINDER,
+                channelId = CHANNEL_UPCOMING,
+                title = context.resources.getQuantityString(
+                    R.plurals.notif_movement_reminder_summary_title,
+                    reminders.size,
+                    reminders.size,
+                ),
+                body = reminders.joinToString(separator = ", ") { it.label() },
+            )
+        }
+    }
+
+    private fun DueMovementReminder.title(): String = if (daysUntil == 0) {
+        context.getString(R.string.notif_movement_reminder_today, label())
+    } else {
+        context.resources.getQuantityString(
+            R.plurals.notif_movement_reminder_title,
+            daysUntil,
+            label(),
+            daysUntil,
+        )
+    }
+
+    /** The movement's own description, or a neutral stand-in when it has none. */
+    private fun DueMovementReminder.label(): String =
+        title.ifBlank { context.getString(R.string.notif_movement_reminder_untitled) }
+
     private fun UpcomingRenewal.title(): String {
         val todayRes = when (type) {
             TransactionType.INCOME -> R.string.notif_upcoming_income_today
@@ -179,5 +233,6 @@ class RecurringNotifier @Inject constructor(
         const val ID_ACTIVITY = 1001
         const val ID_CONFIRM = 1002
         const val ID_UPCOMING = 1003
+        const val ID_MOVEMENT_REMINDER = 1004
     }
 }
