@@ -780,8 +780,11 @@
     <string name="csv_header_received_currency">Valuta ricevuta</string>
     <string name="csv_header_tags">Tag</string>
     <string name="csv_header_note">Nota</string>
+    <string name="csv_header_counterparty">Controparte</string>
+    <string name="csv_header_excluded_from_stats">Escluso dalle statistiche</string>
+    <string name="csv_header_refund">Rimborso</string>
     <string name="csv_header_recurring">Ricorrente</string>
-    <string name="csv_value_recurring">Sì</string>
+    <string name="csv_value_yes">Sì</string>
 
     <!-- Import CSV -->
     <string name="csv_import_title">Importa CSV</string>

@@ -34,6 +34,9 @@ class TransactionCsvBuilderTest {
         receivedCurrency = "Currency received",
         tags = "Tags",
         note = "Note",
+        counterparty = "Counterparty",
+        excludedFromStats = "Excluded from stats",
+        refund = "Refund",
         recurring = "Recurring",
     )
 
@@ -109,16 +112,17 @@ class TransactionCsvBuilderTest {
             typeLabels = typeLabels,
             labels = labels,
             separator = CsvSeparator.SEMICOLON,
-            recurringMark = "Yes",
+            yesMark = "Yes",
         )
 
         val rows = lines(csv)
         assertEquals(
             "Date;Type;Category;Description;Account;To account;Amount;Currency;" +
-                "Amount received;Currency received;Tags;Note;Recurring",
+                "Amount received;Currency received;Tags;Note;Counterparty;" +
+                "Excluded from stats;Refund;Recurring",
             rows[0],
         )
-        assertEquals("2026-07-08;Expense;Groceries;Pizza;Checking;;-12,50;EUR;;;;;", rows[1])
+        assertEquals("2026-07-08;Expense;Groceries;Pizza;Checking;;-12,50;EUR;;;;;;;;", rows[1])
     }
 
     @Test
@@ -129,10 +133,10 @@ class TransactionCsvBuilderTest {
             typeLabels = typeLabels,
             labels = labels,
             separator = CsvSeparator.COMMA,
-            recurringMark = "Yes",
+            yesMark = "Yes",
         )
 
-        assertEquals("2026-07-08,Expense,Groceries,Pizza,Checking,,-12.50,EUR,,,,,", lines(csv)[1])
+        assertEquals("2026-07-08,Expense,Groceries,Pizza,Checking,,-12.50,EUR,,,,,,,,", lines(csv)[1])
     }
 
     @Test
@@ -143,7 +147,7 @@ class TransactionCsvBuilderTest {
             typeLabels = typeLabels,
             labels = labels,
             separator = CsvSeparator.SEMICOLON,
-            recurringMark = "Yes",
+            yesMark = "Yes",
         )
 
         assertTrue(csv.startsWith("\uFEFF"))
@@ -162,7 +166,7 @@ class TransactionCsvBuilderTest {
             typeLabels = typeLabels,
             labels = labels,
             separator = CsvSeparator.SEMICOLON,
-            recurringMark = "Yes",
+            yesMark = "Yes",
         )
 
         assertTrue(csv.contains("\"Pizza; with \"\"friends\"\"\""))
@@ -177,7 +181,7 @@ class TransactionCsvBuilderTest {
             typeLabels = typeLabels,
             labels = labels,
             separator = CsvSeparator.SEMICOLON,
-            recurringMark = "Yes",
+            yesMark = "Yes",
         )
 
         assertTrue(lines(csv)[1].contains(";-1234,56;"))
@@ -204,10 +208,13 @@ class TransactionCsvBuilderTest {
             typeLabels = typeLabels,
             labels = labels,
             separator = CsvSeparator.COMMA,
-            recurringMark = "Yes",
+            yesMark = "Yes",
         )
 
-        assertEquals("2026-07-08,Transfer,,,Checking,Savings,-100.00,EUR,108.50,USD,,,", lines(csv)[1])
+        assertEquals(
+            "2026-07-08,Transfer,,,Checking,Savings,-100.00,EUR,108.50,USD,,,,,,",
+            lines(csv)[1],
+        )
     }
 
     @Test
@@ -220,7 +227,7 @@ class TransactionCsvBuilderTest {
             typeLabels = typeLabels,
             labels = labels,
             separator = CsvSeparator.SEMICOLON,
-            recurringMark = "Yes",
+            yesMark = "Yes",
         )
 
         // The description is prefixed with an apostrophe (and quoted for its quotes).
@@ -238,12 +245,86 @@ class TransactionCsvBuilderTest {
             typeLabels = typeLabels,
             labels = labels,
             separator = CsvSeparator.SEMICOLON,
-            recurringMark = "Yes",
+            yesMark = "Yes",
         )
 
         val rows = lines(csv)
         assertTrue(rows[1].endsWith(";")) // manual: trailing recurring field is empty
         assertTrue(rows[2].endsWith(";Yes"))
+    }
+
+    @Test
+    fun `a loan carries its counterparty and reads as excluded from the statistics`() {
+        val loan = expense(id = 3L, amount = "-50.00", description = "Anticipo")
+            .copy(counterparty = "Luca", isExcludedFromStats = true)
+
+        val csv = TransactionCsvBuilder.build(
+            items = listOf(item(loan, category = groceries)),
+            tagNames = emptyMap(),
+            typeLabels = typeLabels,
+            labels = labels,
+            separator = CsvSeparator.SEMICOLON,
+            yesMark = "Yes",
+        )
+
+        // Counterparty, excluded and refund are the last three before "recurring".
+        assertTrue(lines(csv)[1].endsWith(";Luca;Yes;;"))
+    }
+
+    @Test
+    fun `an ordinary movement leaves the counterparty and the flag columns empty`() {
+        val csv = TransactionCsvBuilder.build(
+            items = listOf(item(expense(), category = groceries)),
+            tagNames = emptyMap(),
+            typeLabels = typeLabels,
+            labels = labels,
+            separator = CsvSeparator.SEMICOLON,
+            yesMark = "Yes",
+        )
+
+        assertTrue(lines(csv)[1].endsWith(";;;;"))
+    }
+
+    @Test
+    fun `a refund is flagged on its own column`() {
+        val refund = Transaction(
+            id = 4L,
+            type = TransactionType.INCOME,
+            amount = BigDecimal("30.00"),
+            currency = eur,
+            accountId = checking.id,
+            timestamp = Instant.parse("2026-07-08T08:00:00Z"),
+            zoneOffset = ZoneOffset.ofHours(2),
+            description = "Reso",
+            isRefund = true,
+        )
+
+        val csv = TransactionCsvBuilder.build(
+            items = listOf(item(refund)),
+            tagNames = emptyMap(),
+            typeLabels = typeLabels,
+            labels = labels,
+            separator = CsvSeparator.SEMICOLON,
+            yesMark = "Yes",
+        )
+
+        assertTrue(lines(csv)[1].endsWith(";;;Yes;"))
+    }
+
+    @Test
+    fun `a counterparty that looks like a formula is prefixed against injection`() {
+        val evil = expense(id = 5L).copy(counterparty = "=cmd", isExcludedFromStats = true)
+
+        val csv = TransactionCsvBuilder.build(
+            items = listOf(item(evil, category = groceries)),
+            tagNames = emptyMap(),
+            typeLabels = typeLabels,
+            labels = labels,
+            separator = CsvSeparator.SEMICOLON,
+            yesMark = "Yes",
+        )
+
+        assertTrue(lines(csv)[1].contains(";'=cmd;"))
     }
 
     @Test
@@ -254,7 +335,7 @@ class TransactionCsvBuilderTest {
             typeLabels = typeLabels,
             labels = labels,
             separator = CsvSeparator.SEMICOLON,
-            recurringMark = "Yes",
+            yesMark = "Yes",
         )
 
         // The joined list contains no semicolon, so it needs no quoting.
@@ -274,7 +355,7 @@ class TransactionCsvBuilderTest {
             typeLabels = typeLabels,
             labels = labels,
             separator = CsvSeparator.COMMA,
-            recurringMark = "Yes",
+            yesMark = "Yes",
         )
 
         assertTrue(lines(csv)[1].startsWith("2026-07-09,"))

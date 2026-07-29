@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.feature.transactions.importer
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -104,6 +105,20 @@ class CsvFieldParsersTest {
         assertNull(CsvFieldParsers.parseCurrency("EURO"))
         assertNull(CsvFieldParsers.parseCurrency("$"))
     }
+
+    @Test
+    fun `a flag reads the localized yes in either language and a few common spellings`() {
+        listOf("Sì", "si", "SI", "Yes", "y", "TRUE", "vero", "x", "1").forEach {
+            assertTrue(CsvFieldParsers.parseFlag(it), "expected \"$it\" to read as true")
+        }
+    }
+
+    @Test
+    fun `a blank, a no and anything unrecognized read as false`() {
+        listOf("", "   ", "No", "false", "0", "boh").forEach {
+            assertFalse(CsvFieldParsers.parseFlag(it), "expected \"$it\" to read as false")
+        }
+    }
 }
 
 class CsvHeaderMapperTest {
@@ -127,6 +142,36 @@ class CsvHeaderMapperTest {
         val mapping = CsvHeaderMapper.map(listOf("date", "amount", "descrizione"), emptyMap())
         assertTrue(mapping != null)
         assertTrue(mapping!!.has(CsvField.DESCRIPTION))
+    }
+
+    @Test
+    fun `recognizes the counterparty and flag columns in both languages`() {
+        val italian = CsvHeaderMapper.map(
+            listOf("Data", "Importo", "Controparte", "Escluso dalle statistiche", "Rimborso"),
+            emptyMap(),
+        )
+        assertTrue(italian != null)
+        assertTrue(italian!!.has(CsvField.COUNTERPARTY))
+        assertTrue(italian.has(CsvField.EXCLUDED_FROM_STATS))
+        assertTrue(italian.has(CsvField.REFUND))
+
+        val english = CsvHeaderMapper.map(
+            listOf("date", "amount", "counterparty", "excluded from stats", "refund"),
+            emptyMap(),
+        )
+        assertTrue(english != null)
+        assertTrue(english!!.has(CsvField.COUNTERPARTY))
+        assertTrue(english.has(CsvField.EXCLUDED_FROM_STATS))
+        assertTrue(english.has(CsvField.REFUND))
+    }
+
+    @Test
+    fun `a file without the counterparty and flag columns still maps`() {
+        val mapping = CsvHeaderMapper.map(listOf("Data", "Importo", "Conto"), emptyMap())
+        assertTrue(mapping != null)
+        assertTrue(!mapping!!.has(CsvField.COUNTERPARTY))
+        assertTrue(!mapping.has(CsvField.EXCLUDED_FROM_STATS))
+        assertTrue(!mapping.has(CsvField.REFUND))
     }
 
     @Test

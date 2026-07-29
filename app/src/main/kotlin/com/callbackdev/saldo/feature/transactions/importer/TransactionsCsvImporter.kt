@@ -211,6 +211,9 @@ class TransactionsCsvImporter @Inject constructor(
             categoryId = movement.categoryName?.let { categoryIds[normalizeName(it)] },
             description = movement.description,
             note = movement.note,
+            isExcludedFromStats = movement.isExcludedFromStats,
+            isRefund = movement.isRefund,
+            counterparty = movement.counterparty,
         )
         val id = transactionRepository.upsert(transaction)
         val tags = movement.tagNames.mapNotNull { tagIds[normalizeName(it)] }
@@ -276,6 +279,9 @@ class TransactionsCsvImporter @Inject constructor(
         CsvField.RECEIVED_CURRENCY to context.getString(R.string.csv_header_received_currency),
         CsvField.TAGS to context.getString(R.string.csv_header_tags),
         CsvField.NOTE to context.getString(R.string.csv_header_note),
+        CsvField.COUNTERPARTY to context.getString(R.string.csv_header_counterparty),
+        CsvField.EXCLUDED_FROM_STATS to context.getString(R.string.csv_header_excluded_from_stats),
+        CsvField.REFUND to context.getString(R.string.csv_header_refund),
     )
 
     private fun typeLabels(): Map<TransactionType, String> = mapOf(

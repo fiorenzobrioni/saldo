@@ -9,6 +9,7 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.feature.transactions.importer.CsvFieldParsers.parseAmount
 import com.callbackdev.saldo.feature.transactions.importer.CsvFieldParsers.parseCurrency
 import com.callbackdev.saldo.feature.transactions.importer.CsvFieldParsers.parseDate
+import com.callbackdev.saldo.feature.transactions.importer.CsvFieldParsers.parseFlag
 import java.math.BigDecimal
 import java.text.Normalizer
 import java.time.LocalDate
@@ -38,7 +39,8 @@ data class ImportContext(
  * duplicate to skip, or an error with its reasons. It resolves accounts,
  * categories and tags by name against the existing data (scheduling the missing
  * ones for creation when allowed), normalizes amount signs to their movement
- * type, infers a missing type from the sign, and detects duplicates both
+ * type, infers a missing type from the sign, keeps the counterparty and the two
+ * flag columns within what the domain allows, and detects duplicates both
  * against the ledger and within the file. It is pure: no I/O, no Android.
  */
 class TransactionCsvAnalyzer @Inject constructor() {
@@ -100,6 +102,13 @@ class TransactionCsvAnalyzer @Inject constructor() {
 
     /** Kept tag names (existing plus newly created) and which of them are new. */
     private data class TagResolution(val kept: List<String>, val newNames: List<String>)
+
+    /** The counterparty and the two flags of a row, already normalized to the domain. */
+    private data class RowMarks(
+        val counterparty: String?,
+        val isExcludedFromStats: Boolean,
+        val isRefund: Boolean,
+    )
 
     /** Mutable state of a single [analyze] pass. */
     private inner class Run(
@@ -181,6 +190,7 @@ class TransactionCsvAnalyzer @Inject constructor() {
             val category = resolveCategory(row, shape.type, adjustments)
             val tags = resolveTags(row, adjustments)
             val description = textValue(row, CsvField.DESCRIPTION)
+            val marks = resolveMarks(row, shape.type, adjustments)
             val movement = PendingMovement(
                 type = shape.type,
                 date = shape.date,
@@ -194,6 +204,13 @@ class TransactionCsvAnalyzer @Inject constructor() {
                 description = description,
                 note = textValue(row, CsvField.NOTE),
                 tagNames = tags.kept,
+                counterparty = marks.counterparty,
+                isExcludedFromStats = marks.isExcludedFromStats,
+                isRefund = marks.isRefund,
+                // The signature deliberately ignores the three columns above: it
+                // keys what makes two movements "the same", and widening it would
+                // stop a file exported before they existed from matching the
+                // movements it came from, re-importing them as new ones.
                 signature = MovementSignature.of(
                     shape.date, shape.type, signed, shape.source.currency, shape.source.name, description,
                 ),
@@ -357,6 +374,38 @@ class TransactionCsvAnalyzer @Inject constructor() {
             if (dropped) adjustments += RowAdjustmentCode.TAGS_DROPPED
             return TagResolution(kept.distinct(), created.distinct())
         }
+
+        /**
+         * Reads the counterparty and the two flag columns under the same rules
+         * the editor applies. Only an expense or an income can name a
+         * counterparty, and naming one forces the exclusion from the statistics
+         * on (ADR 34): lending is not spending, whatever the file says.
+         *
+         * A counterparty on a transfer or an adjustment is dropped *and*
+         * reported, because a name really is lost. The two flags on those types
+         * are normalized away silently instead, since neither carries meaning
+         * there: transfers and adjustments are already out of the statistics by
+         * construction, and only an income can be a refund.
+         */
+        private fun resolveMarks(
+            row: List<String>,
+            type: TransactionType,
+            adjustments: MutableList<RowAdjustmentCode>,
+        ): RowMarks {
+            val named = textValue(row, CsvField.COUNTERPARTY)
+            val canLend = type == TransactionType.EXPENSE || type == TransactionType.INCOME
+            if (named != null && !canLend) adjustments += RowAdjustmentCode.COUNTERPARTY_DROPPED
+            val counterparty = named?.takeIf { canLend }
+            val excluded = flagValue(row, CsvField.EXCLUDED_FROM_STATS)
+            return RowMarks(
+                counterparty = counterparty,
+                isExcludedFromStats = canLend && (excluded || counterparty != null),
+                isRefund = type == TransactionType.INCOME && flagValue(row, CsvField.REFUND),
+            )
+        }
+
+        private fun flagValue(row: List<String>, field: CsvField): Boolean =
+            mapping.rawValue(row, field)?.let(::parseFlag) ?: false
 
         fun build(): CsvImportAnalysis = CsvImportAnalysis(
             rows = outcomes,

@@ -66,6 +66,12 @@ enum class RowAdjustmentCode {
 
     /** One or more tags were dropped because they do not exist and creation is off. */
     TAGS_DROPPED,
+
+    /**
+     * A counterparty was dropped because the row is not an expense or an income,
+     * the only two movements that can name one (ADR 34).
+     */
+    COUNTERPARTY_DROPPED,
 }
 
 /** Why a row is considered a duplicate. */
@@ -89,6 +95,10 @@ data class PendingMovement(
     val description: String?,
     val note: String?,
     val tagNames: List<String>,
+    /** The person this movement is a loan to or from; null on an ordinary one. */
+    val counterparty: String?,
+    val isExcludedFromStats: Boolean,
+    val isRefund: Boolean,
     /** Stable key used to detect duplicates against the ledger and the file. */
     val signature: String,
 )

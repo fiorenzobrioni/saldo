@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.feature.transactions.importer
 
 import java.math.BigDecimal
+import java.text.Normalizer
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Currency
@@ -88,6 +89,25 @@ object CsvFieldParsers {
         if (code.length != ISO_CODE_LENGTH) return null
         return runCatching { Currency.getInstance(code) }.getOrNull()
     }
+
+    /**
+     * Reads a flag column. The export writes the localized "yes" and leaves the
+     * field empty for false; files from elsewhere spell the same thing in a
+     * handful of ways, so a small set of tokens is accepted, accent- and
+     * case-insensitively. Anything unrecognized (including a blank) reads as
+     * false: an unexpected token must never turn a flag on by accident.
+     */
+    fun parseFlag(raw: String): Boolean = normalizeToken(raw) in TRUE_TOKENS
+
+    private fun normalizeToken(raw: String): String =
+        Normalizer.normalize(raw.trim().lowercase(Locale.ROOT), Normalizer.Form.NFD)
+            .replace(DIACRITICS, "")
+            .filter { it.isLetterOrDigit() }
+
+    private val DIACRITICS = "\\p{InCombiningDiacriticalMarks}+".toRegex()
+
+    /** Tokens read as "true" in a flag column, already normalized. */
+    private val TRUE_TOKENS = setOf("si", "s", "yes", "y", "true", "vero", "x", "1")
 
     private const val ISO_CODE_LENGTH = 3
 }
