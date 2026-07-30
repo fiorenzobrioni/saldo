@@ -20,7 +20,7 @@ Formato suggerito per ogni voce:
 
 **Decisioni:** punto di ingresso unico nella sheet rapida (l'editor completo non guadagna il campo: li tutto e gia a un tap); il vincolo di fase applicato fino in fondo, ogni caso conteso degrada a "nessuna proposta" (importo ambiguo lascia il tastierino aperto, due categorie candidate non ne propongono nessuna); un match sul nome di categoria consuma la parola dalla descrizione solo quando ne sarebbe l'unico contenuto.
 
-**Problemi:** nessuno bloccante. Verifica statica (nessun SDK locale): build, test e lint delegati alla CI sulla PR.
+**Problemi:** primo giro di CI fermato da detekt sul parser (due `SpreadOperator` per `trim(*charArray)` e una `ComplexCondition` sulla guardia delle migliaia a spazio): risolti nel codice (punteggiatura come `String` con `trim { it in ... }`, guardia estratta in `looksLikeSplitThousands`), nessuna deroga in detekt.yml. Verifica statica (nessun SDK locale): build, test e lint delegati alla CI sulla PR.
 
 **Prossimo:** verifica su device (checkbox residua della fase), poi secondo l'ordine della roadmap v2.0 restano la Fase 19 (rilevamento ricorrenze) e la Fase 22 (cifratura backup).
 

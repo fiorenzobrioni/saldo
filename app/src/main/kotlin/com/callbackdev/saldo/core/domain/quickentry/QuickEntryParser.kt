@@ -91,7 +91,7 @@ object QuickEntryParser {
 
         val rest = tokens.filterIndexed { index, _ -> !consumed[index] }
         val words = rest.asSequence()
-            .map { it.trim(*PUNCTUATION) }
+            .map { it.trim { char -> char in PUNCTUATION } }
             .map { SearchWord(typed = it, folded = SearchText.normalize(it)) }
             .filter { word ->
                 // A word must carry at least one letter: "2" or "13/13" are
@@ -134,12 +134,8 @@ object QuickEntryParser {
         // figure, so a bare integer followed by another number carrying a
         // separator is ambiguous, and ambiguous means no amount.
         val next = tokens.getOrNull(index + 1)?.let { stripMarkers(it, currencyMarkers) }
-        val bareIsInteger = !bare.contains('.') && !bare.contains(',')
-        if (bareIsInteger && next != null && NUMBER_SHAPE.matches(next) &&
-            (next.contains('.') || next.contains(','))
-        ) {
-            return null
-        }
+        val bareIsInteger = bare.none { it == '.' || it == ',' }
+        if (bareIsInteger && looksLikeSplitThousands(next)) return null
         consumed[index] = true
         if (index > 0 && isMarker(tokens[index - 1], currencyMarkers)) consumed[index - 1] = true
         if (index < tokens.lastIndex && isMarker(tokens[index + 1], currencyMarkers)) {
@@ -147,6 +143,10 @@ object QuickEntryParser {
         }
         return amount
     }
+
+    /** The decimal tail of a space-grouped number ("234,56" after a bare "1"). */
+    private fun looksLikeSplitThousands(next: String?): Boolean =
+        next != null && NUMBER_SHAPE.matches(next) && next.any { it == '.' || it == ',' }
 
     private fun isMarker(token: String, currencyMarkers: Set<String>): Boolean =
         SearchText.normalize(token) in currencyMarkers
@@ -261,7 +261,7 @@ object QuickEntryParser {
     }
 
     private fun readDate(token: String, vocabulary: QuickEntryVocabulary, today: LocalDate): LocalDate? {
-        val word = SearchText.normalize(token.trim(*PUNCTUATION))
+        val word = SearchText.normalize(token.trim { it in PUNCTUATION })
         val weekday = vocabulary.weekdayWords[word]
         return when {
             word in vocabulary.yesterdayWords -> today.minusDays(1)
@@ -284,5 +284,5 @@ object QuickEntryParser {
         return runCatching { LocalDate.of(today.year, month, day) }.getOrNull()
     }
 
-    private val PUNCTUATION = charArrayOf('.', ',', ';', ':', '!', '?', '(', ')', '"', '\'')
+    private const val PUNCTUATION = ".,;:!?()\"'"
 }
