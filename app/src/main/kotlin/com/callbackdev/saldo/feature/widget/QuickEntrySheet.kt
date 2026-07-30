@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.widget
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,10 +40,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
 import com.callbackdev.saldo.core.designsystem.component.AmountTarget
@@ -88,19 +93,31 @@ fun QuickEntrySheet(viewModel: QuickEntryViewModel, onDismiss: () -> Unit) {
         }
     }
 
+    val context = LocalContext.current
     ModalBottomSheet(
         onDismissRequest = { scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() } },
         sheetState = sheetState,
     ) {
         AnimatedContent(
-            targetState = state.isSaved,
+            targetState = state.step,
             transitionSpec = { (fadeIn() + scaleIn(initialScale = ConfirmationScaleIn)) togetherWith fadeOut() },
             label = "quick-entry-state",
-        ) { saved ->
-            if (saved) {
-                SavedConfirmation(state.savedAmount.orEmpty())
-            } else {
-                QuickEntryForm(
+        ) { step ->
+            when (step) {
+                QuickEntryStep.Saved -> SavedConfirmation(state.savedAmount.orEmpty())
+                QuickEntryStep.Setup -> SetupRedirect(
+                    onOpenApp = {
+                        // The sheet lives in its own empty-affinity task: the
+                        // flag sends MainActivity to the app's own task instead
+                        // of stacking the whole app over the launcher's sheet.
+                        context.startActivity(
+                            Intent(context, MainActivity::class.java)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                        )
+                        onDismiss()
+                    },
+                )
+                QuickEntryStep.Form -> QuickEntryForm(
                     state = state,
                     onAmountChanged = viewModel::onAmountChanged,
                     onSave = viewModel::save,
@@ -237,6 +254,34 @@ private fun QuickEntryHeader(
     }
 }
 
+/**
+ * First launch from the tile, nothing to save onto yet: a short explanation
+ * and a single way forward, into the app - the sheet's own version of the
+ * widget's NotReady face.
+ */
+@Composable
+private fun SetupRedirect(onOpenApp: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp)
+            .padding(top = 8.dp, bottom = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.widget_quick_entry_setup_message),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Button(onClick = onOpenApp) {
+            Text(text = stringResource(R.string.widget_quick_add_open))
+        }
+    }
+}
+
 /** The saved state: a checkmark and the amount, held just long enough to read. */
 @Composable
 private fun SavedConfirmation(savedAmount: String) {
@@ -268,6 +313,16 @@ private fun SavedConfirmation(savedAmount: String) {
         )
     }
 }
+
+/** The three faces of the sheet, in priority order. */
+private enum class QuickEntryStep { Saved, Setup, Form }
+
+private val QuickEntryUiState.step: QuickEntryStep
+    get() = when {
+        isSaved -> QuickEntryStep.Saved
+        needsSetup -> QuickEntryStep.Setup
+        else -> QuickEntryStep.Form
+    }
 
 private val AvatarSize = 44.dp
 private val AvatarGlyphSize = 24.dp

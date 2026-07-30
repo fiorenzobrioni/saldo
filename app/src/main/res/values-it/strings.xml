@@ -1134,6 +1134,8 @@
     <string name="widget_quick_entry_saved">Salvato</string>
     <string name="widget_quick_entry_change_category">Cambia categoria</string>
     <string name="widget_quick_entry_change_account">Cambia conto</string>
+    <string name="widget_quick_entry_setup_message">Per registrare una spesa servono un conto e una categoria: apri Saldo per completare la configurazione.</string>
+    <string name="tile_quick_add_label">Aggiungi spesa</string>
     <string name="widget_config_title">Widget aggiunta rapida</string>
     <string name="widget_config_update">Aggiorna il widget</string>
     <string name="widget_config_type">Parte da</string>

@@ -215,6 +215,45 @@ class QuickEntryViewModelTest {
         }
     }
 
+    /**
+     * The Quick Settings tile sends no extras at all (ADR 41): the sheet must
+     * resolve the account from the app's default chain and guess the category,
+     * exactly as it does when the single-row widget loses its account.
+     */
+    @Test
+    fun `the tile's empty route resolves the default account and the most used category`() = runTest {
+        val viewModel = viewModel(
+            route = QuickEntryRoute(TransactionType.EXPENSE, categoryId = null, accountId = null),
+            categories = listOf(groceries, transport),
+            defaultAccountId = cash.id,
+            mostUsed = listOf(transport.id),
+        )
+        viewModel.uiState.test {
+            val state = expectMostRecentItem()
+            assertEquals(cash.id, state.account?.account?.id)
+            assertEquals(transport, state.category)
+            assertFalse(state.needsSetup)
+        }
+    }
+
+    /**
+     * The widget never opens the sheet on an empty app (its NotReady face is
+     * the gate), but the tile has no gate: with no account the sheet must offer
+     * the way into the app instead of a form that cannot save.
+     */
+    @Test
+    fun `with no accounts at all the sheet asks for setup instead of showing a dead form`() = runTest {
+        val viewModel = viewModel(
+            route = QuickEntryRoute(TransactionType.EXPENSE, categoryId = null, accountId = null),
+            accounts = emptyList(),
+        )
+        viewModel.uiState.test {
+            val state = expectMostRecentItem()
+            assertTrue(state.needsSetup)
+            assertFalse(state.canSave)
+        }
+    }
+
     @Test
     fun `a category the widget did send is never overridden by the guess`() = runTest {
         val viewModel = viewModel(
