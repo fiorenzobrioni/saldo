@@ -275,6 +275,24 @@ internal fun FilteredTotalsBar(
                 }
             }
             totals.forEachIndexed { index, total ->
+                // Every additional currency repeats the first block's
+                // geometry (label left, net right, split underneath) instead
+                // of squeezing its net onto the split row, where a wide
+                // amount had nowhere to go but a mid-text wrap.
+                if (index > 0) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(top = 6.dp),
+                    ) {
+                        Text(
+                            text = total.currency.currencyCode,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        NetText(total = total)
+                    }
+                }
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -292,9 +310,6 @@ internal fun FilteredTotalsBar(
                         style = MaterialTheme.typography.bodySmall.tabularNumbers(),
                         color = MaterialTheme.moneyColors.income,
                     )
-                    if (index > 0) {
-                        NetText(total = total)
-                    }
                 }
             }
         }
@@ -315,6 +330,7 @@ private fun NetText(total: FilteredTotal, modifier: Modifier = Modifier) {
             net.signum() < 0 -> MaterialTheme.moneyColors.expense
             else -> MaterialTheme.moneyColors.neutral
         },
+        maxLines = 1,
         modifier = modifier,
     )
 }

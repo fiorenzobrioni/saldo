@@ -14,6 +14,12 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-30 - Fase 17, due fix dal secondo giro su device
+
+**Fatto:** (1) nell'header dei Movimenti il "Netto" delle valute aggiuntive stava sulla stessa riga di Spese/Entrate e con importi larghi andava a capo a meta testo: ogni valuta extra ripete ora la geometria del blocco principale (codice valuta a sinistra, Netto a destra, Spese/Entrate sotto), con `maxLines = 1` sul Netto. (2) Il controvalore per conto non compariva nella lista Conti: era collegato solo ad `AccountsCard` (sezione archiviati), mentre le righe attive passano da `AccountReorderableRow`, che ora riceve e mostra controvalore e valuta. Bump a versionCode 163, versionName 1.0.11.
+
+---
+
 ## 2026-07-30 - Fase 17, estensioni della schermata tassi richieste dall'utente
 
 **Fatto:** tre estensioni approvate dopo la verifica su device. (1) **Convertitore rapido** in testa alla schermata Tassi: importo digitato col tastierino dell'app (`HeroAmountField` + `AmountKeypadHost`, ADR 31), valuta sorgente a scelta con un menu fra tutte le valute scaricate, risultato "≈" nella valuta principale all'ultimo tasso noto e bottone di inversione; il default (valuta estera -> principale) e il caso d'uso in viaggio, un prezzo visto in negozio letto nella propria valuta. (2) **Dettaglio per valuta**: tap su una riga apre una sheet con grafico a 1 o 3 mesi (la finestra della query e passata da 21 a 92 giorni, un'unica query per board e dettaglio), minimo, massimo e variazione del periodo. (3) **Controvalore nell'editor movimento**: sotto l'importo di un movimento su conto in valuta estera compare "≈ X (tasso BCE del Y)" calcolato al tasso della data del movimento (regola dei flussi dell'ADR 40: retrodatare sposta la stima), mai sui trasferimenti perche il secondo campo porta gia l'importo ricevuto reale, e mai persistito. Unit test: `RateBoardTest` esteso (serie di dettaglio, dettaglio della base vuoto), test degli editor adeguati alla firma nuova. Bump a versionCode 162, versionName 1.0.10.

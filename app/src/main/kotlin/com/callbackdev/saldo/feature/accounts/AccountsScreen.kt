@@ -326,6 +326,8 @@ private fun AccountsList(
                         item = entry.item,
                         dueStatement = uiState.dueStatement(entry.item.account.id),
                         loanProgress = uiState.loanProgress(entry.item.account.id),
+                        countervalue = uiState.countervalues[entry.item.account.id],
+                        countervalueCurrency = uiState.primaryCurrency,
                         elevated = isDragging,
                         onClick = { onAccountClick(entry.item) },
                         onSettleStatement = { onSettleStatement(entry.item.account.id) },
@@ -412,11 +414,14 @@ private fun LaunchedActiveResync(
 }
 
 /** One active account as a card the drag handle can rearrange within its group. */
+@Suppress("LongParameterList") // One argument per row ingredient.
 @Composable
 private fun AccountReorderableRow(
     item: AccountWithBalance,
     dueStatement: DueStatement?,
     loanProgress: LoanProgress?,
+    countervalue: CurrencyConverter.Estimate?,
+    countervalueCurrency: Currency?,
     elevated: Boolean,
     onClick: () -> Unit,
     onSettleStatement: () -> Unit,
@@ -439,6 +444,8 @@ private fun AccountReorderableRow(
                 AccountRowContent(
                     item = item,
                     showType = false,
+                    countervalue = countervalue,
+                    countervalueCurrency = countervalueCurrency,
                     modifier = Modifier
                         .weight(1f)
                         .padding(vertical = SaldoDimens.rowPaddingVertical),
