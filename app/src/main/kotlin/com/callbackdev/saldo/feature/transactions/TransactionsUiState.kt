@@ -5,6 +5,9 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.Transaction
+import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -16,8 +19,25 @@ data class TransactionListItem(
     val account: Account?,
     val toAccount: Account?,
     val category: Category?,
+    /**
+     * Estimated countervalue of a foreign-currency amount in
+     * [countervalueCurrency], at the rate of the movement's own day (ADR 40);
+     * null when there is nothing to declare. Signed like the amount itself.
+     */
+    val countervalue: BigDecimal? = null,
+    val countervalueCurrency: Currency? = null,
 ) {
     val id: Long get() = transaction.id
+}
+
+/**
+ * Countervalue of a foreign flow at its own day's rate (ADR 40), for the list
+ * rows: null for same-currency movements, for transfers (both legs are
+ * already explicit) and when no rate covers the currency.
+ */
+internal fun Transaction.countervalueIn(primary: Currency, rates: RateTable): BigDecimal? {
+    if (type == TransactionType.TRANSFER || currency == primary) return null
+    return CurrencyConverter.convertOn(amount, currency, primary, localDate, rates)?.amount
 }
 
 /** Net of expenses and incomes of one day, per currency. */

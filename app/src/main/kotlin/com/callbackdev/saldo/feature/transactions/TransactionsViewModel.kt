@@ -11,12 +11,16 @@ import com.callbackdev.saldo.core.common.time.midnightTicker
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.Transaction
+import com.callbackdev.saldo.core.domain.model.primaryCurrency
+import com.callbackdev.saldo.core.domain.rates.ConversionState
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.CarryOverCalculator
 import com.callbackdev.saldo.core.domain.usecase.DeleteFilteredTransactionsUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.feature.transactions.export.TransactionsCsvExporter
 import com.callbackdev.saldo.feature.transactions.importer.CsvImportError
 import com.callbackdev.saldo.feature.transactions.importer.CsvImportOptions
@@ -41,7 +45,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.util.Currency
 import javax.inject.Inject
 
 @HiltViewModel
@@ -55,6 +61,7 @@ class TransactionsViewModel @Inject constructor(
     private val csvExporter: TransactionsCsvExporter,
     private val csvImporter: TransactionsCsvImporter,
     private val deleteFilteredTransactions: DeleteFilteredTransactionsUseCase,
+    observeConversionState: ObserveConversionStateUseCase,
     private val clock: Clock,
     @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -101,17 +108,30 @@ class TransactionsViewModel @Inject constructor(
         ::TagData,
     )
 
+    /** Everything the filtering pass needs besides the ledger, within combine's arity. */
+    private data class FilterInputs(
+        val filters: TransactionFilters,
+        val firstDayOfWeek: DayOfWeek,
+        val today: LocalDate,
+        val currencyOverride: Currency?,
+        val conversion: ConversionState,
+    )
+
     /**
      * Filters, the week-start setting and the current day, pre-combined to stay
      * within combine's arity. The midnight ticker re-anchors "today" so the
      * relative date presets ("This week", "This month") do not keep resolving
-     * against yesterday when the ledger is left open across midnight.
+     * against yesterday when the ledger is left open across midnight. The
+     * primary-currency override and the conversion state feed the per-row
+     * countervalues (ADR 40).
      */
     private val filterInputs = combine(
         filters,
         userPreferences.firstDayOfWeek,
         midnightTicker(clock),
-        ::Triple,
+        userPreferences.primaryCurrencyOverride,
+        observeConversionState(),
+        ::FilterInputs,
     )
 
     val uiState: StateFlow<TransactionsUiState> = combine(
@@ -120,12 +140,16 @@ class TransactionsViewModel @Inject constructor(
         categoryRepository.observeCategories(),
         tagData,
         filterInputs,
-    ) { transactions, accounts, categories, tags, (activeFilters, firstDayOfWeek, today) ->
+    ) { transactions, accounts, categories, tags, inputs ->
+        val activeFilters = inputs.filters
+        val today = inputs.today
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
+        val primary = primaryCurrency(accounts, inputs.currencyOverride)
+        val rates = if (inputs.conversion.active) inputs.conversion.rates else RateTable.EMPTY
         // Compiled once per pass: this loop runs over the whole ledger on
         // every keystroke of the search field.
-        val compiled = TransactionFilterEngine.compile(activeFilters, today, firstDayOfWeek)
+        val compiled = TransactionFilterEngine.compile(activeFilters, today, inputs.firstDayOfWeek)
         val matching = transactions.filter { transaction ->
             compiled.matches(
                 transaction = transaction,
@@ -139,6 +163,8 @@ class TransactionsViewModel @Inject constructor(
                 account = accountById[transaction.accountId],
                 toAccount = transaction.transferAccountId?.let { accountById[it] },
                 category = transaction.categoryId?.let { categoryById[it] },
+                countervalue = transaction.countervalueIn(primary, rates),
+                countervalueCurrency = primary,
             )
         }
         TransactionsUiState(

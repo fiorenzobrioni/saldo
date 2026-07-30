@@ -170,25 +170,29 @@ internal fun TransactionRowContent(
                     .size(16.dp),
             )
         }
-        if (dateLabel != null) {
-            Column(horizontalAlignment = Alignment.End) {
+        Column(horizontalAlignment = Alignment.End) {
+            Text(
+                text = itemAmountText(item),
+                style = MaterialTheme.typography.titleMedium.tabularNumbers(),
+                color = itemAmountColor(item),
+            )
+            // Countervalue of a foreign amount at its own day's rate (ADR 40),
+            // only on the rows that need declaring.
+            if (item.countervalue != null && item.countervalueCurrency != null) {
                 Text(
-                    text = itemAmountText(item),
-                    style = MaterialTheme.typography.titleMedium.tabularNumbers(),
-                    color = itemAmountColor(item),
+                    text = "≈ " + MoneyFormatter.format(item.countervalue, item.countervalueCurrency),
+                    style = MaterialTheme.typography.bodySmall.tabularNumbers(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
                 )
+            }
+            if (dateLabel != null) {
                 Text(
                     text = dateLabel,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        } else {
-            Text(
-                text = itemAmountText(item),
-                style = MaterialTheme.typography.titleMedium.tabularNumbers(),
-                color = itemAmountColor(item),
-            )
         }
     }
 }

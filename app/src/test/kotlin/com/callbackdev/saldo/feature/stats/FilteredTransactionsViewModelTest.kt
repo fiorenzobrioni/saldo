@@ -9,10 +9,12 @@ import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.rates.ConversionState
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.every
@@ -49,6 +51,7 @@ class FilteredTransactionsViewModelTest {
     private val categoryRepository = mockk<CategoryRepository>()
     private val tagRepository = mockk<TagRepository>()
     private val userPreferences = mockk<UserPreferencesRepository>()
+    private val observeConversionState = mockk<ObserveConversionStateUseCase>()
 
     private val checking = Account(
         id = 1L,
@@ -94,6 +97,7 @@ class FilteredTransactionsViewModelTest {
         every { categoryRepository.observeCategories() } returns flowOf(listOf(groceries))
         every { tagRepository.observeTagAssignments() } returns flowOf(emptyMap())
         every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
+        every { observeConversionState() } returns flowOf(ConversionState.INACTIVE)
         return FilteredTransactionsViewModel(
             route = route,
             transactionRepository = transactionRepository,
@@ -101,6 +105,7 @@ class FilteredTransactionsViewModelTest {
             categoryRepository = categoryRepository,
             tagRepository = tagRepository,
             userPreferences = userPreferences,
+            observeConversionState = observeConversionState,
             clock = clock,
             defaultDispatcher = UnconfinedTestDispatcher(),
         )

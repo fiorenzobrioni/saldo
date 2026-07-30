@@ -7,14 +7,17 @@ import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.feature.transactions.FilteredTotal
 import com.callbackdev.saldo.feature.transactions.TransactionDayGroup
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import com.callbackdev.saldo.feature.transactions.buildDayGroups
+import com.callbackdev.saldo.feature.transactions.countervalueIn
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilterEngine
 import com.callbackdev.saldo.feature.transactions.filter.TransactionFilters
@@ -73,6 +76,7 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
     categoryRepository: CategoryRepository,
     tagRepository: TagRepository,
     userPreferences: UserPreferencesRepository,
+    observeConversionState: ObserveConversionStateUseCase,
     private val clock: Clock,
     @DefaultDispatcher defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
@@ -104,6 +108,13 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
         counterparty = route.counterparty,
     )
 
+    /** Override and conversion state, pre-combined to stay within combine's arity. */
+    private val currencyInputs = combine(
+        userPreferences.primaryCurrencyOverride,
+        observeConversionState(),
+        ::Pair,
+    )
+
     val uiState: StateFlow<FilteredTransactionsUiState> = combine(
         // Windowed in SQL when there is a window; the whole confirmed ledger
         // otherwise, which is what a counterparty's history is.
@@ -116,12 +127,13 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
         tagRepository.observeTagAssignments(),
-        userPreferences.primaryCurrencyOverride,
-    ) { transactions, accounts, categories, tagAssignments, currencyOverride ->
+        currencyInputs,
+    ) { transactions, accounts, categories, tagAssignments, (currencyOverride, conversion) ->
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
         val today = LocalDate.now(clock)
         val currency = primaryCurrency(accounts, currencyOverride)
+        val rates = if (conversion.active) conversion.rates else RateTable.EMPTY
         // The preset here is always CUSTOM: the week start is unused.
         val compiled = TransactionFilterEngine.compile(filters, today, DayOfWeek.MONDAY)
         val filtered = transactions
@@ -139,6 +151,8 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
                     account = accountById[transaction.accountId],
                     toAccount = transaction.transferAccountId?.let { accountById[it] },
                     category = transaction.categoryId?.let { categoryById[it] },
+                    countervalue = transaction.countervalueIn(currency, rates),
+                    countervalueCurrency = currency,
                 )
             }
         FilteredTransactionsUiState(
