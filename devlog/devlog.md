@@ -14,6 +14,14 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-30 - Fase 32 verificata su device e chiusa
+
+**Fatto:** dopo il merge della PR #73 (CI verde al secondo giro, vedi la voce sotto), giro manuale sul device completato dall'utente: aggiunta della tile alla tendina, tap a schermo sbloccato e bloccato, chiusura della tendina, salvataggio. Tutto ok: la Fase 32 e chiusa.
+
+**Prossimo:** secondo l'ordine della roadmap v2.0, la Fase 19 (rilevamento automatico delle ricorrenze); poi la 33 (inserimento rapido testuale, che nella tile ha ora il suo punto d'ingresso naturale) e la 22 (cifratura del backup).
+
+---
+
 ## 2026-07-30 - Fase 32: tile delle Impostazioni rapide "Aggiungi spesa"
 
 **Fatto:** implementata la Fase 32 (ADR 41). `QuickAddTileService` in `feature/widget`: tile statica che apre `QuickEntryActivity` sempre sul tipo spesa con soli null nell'intent, perche la risoluzione di conto (catena `DefaultAccountResolver`) e categoria (piu usata) era gia tutta nel `QuickEntryViewModel`. Chiusura della tendina con `startActivityAndCollapse(PendingIntent)` su API 34+ (per i target 34+ la variante `Intent` lancia `UnsupportedOperationException` su quei device) e con la variante deprecata solo sul ramo API 33; sul keyguard `unlockAndRun` chiede prima lo sblocco. Costo a riposo zero (ADR 37): `onStartListening` scrive solo lo stato statico della tile, nessuna lettura del database in alcun callback, `onStopListening` non implementato. Icona monocromatica nuova (`ic_tile_quick_add`, stesso glifo della shortcut spesa su viewport 24). La sheet guadagna la faccia di setup (`needsSetup` su `QuickEntryUiState`: nessun conto o nessuna categoria del tipo) con messaggio e bottone verso `MainActivity` (`FLAG_ACTIVITY_NEW_TASK`, la sheet vive in un task ad affinity vuota): il widget quel caso lo copre a monte con `NotReady`, la tile non ha cancelli, quindi il controllo sta nella sheet e vale per ogni ingresso. Stringhe IT/EN (etichetta tile, messaggio setup; il bottone riusa "Apri Saldo"). Unit test in `QuickEntryViewModelTest`: route vuota della tile che risolve conto di default e categoria piu usata, stato setup senza conti con `canSave` spento. Bump a versionCode 166, versionName 1.0.14.

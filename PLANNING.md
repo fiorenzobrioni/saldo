@@ -763,7 +763,7 @@ Voci della v2.0 che non hanno una fase propria:
 - [x] Stato senza conti (app appena installata): la sheet stessa guadagna la faccia di setup (`needsSetup`: nessun conto o nessuna categoria del tipo) con messaggio e bottone che apre l'app, invece di un form che non puo salvare. Il widget non apre mai la sheet in quello stato (la copre `NotReady`), la tile non ha quel cancello: il controllo sta nella sheet e vale per ogni punto d'ingresso
 - [x] Deciso il 30 luglio 2026, col conteggio dei tap in mano e non per simmetria col widget: la tile porta **sempre a "spesa"**, nessuna scelta del tipo nella sheet (ADR 41). Un passaggio di scelta farebbe pagare un tap in piu al caso dominante per servire quello raro; un'eventuale tile per le entrate sarebbe una seconda `TileService` statica
 - [x] Stringhe IT/EN (etichetta della tile, messaggio di setup; il bottone riusa "Apri Saldo"); test JVM su cio che e nuovo: route vuota della tile che risolve conto di default e categoria piu usata, stato di setup senza conti con `canSave` spento
-- [ ] Verifica su device della tendina (non eseguibile in CI, ADR 26): aggiunta della tile, tap a schermo sbloccato e bloccato, chiusura della tendina, salvataggio, sheet di setup su un'installazione senza dati
+- [x] Verifica su device della tendina (non eseguibile in CI, ADR 26), completata il 30 luglio 2026: aggiunta della tile, tap a schermo sbloccato e bloccato, chiusura della tendina, salvataggio, sheet di setup su un'installazione senza dati
 
 ## Fase 33 - Inserimento rapido testuale
 
