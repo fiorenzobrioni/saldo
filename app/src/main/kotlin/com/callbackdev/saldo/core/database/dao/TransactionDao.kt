@@ -14,6 +14,7 @@ import com.callbackdev.saldo.core.database.relation.CounterpartyTotalRow
 import com.callbackdev.saldo.core.database.relation.DailyNetRow
 import com.callbackdev.saldo.core.database.relation.DashboardTotalsRow
 import com.callbackdev.saldo.core.database.relation.DailyActivityRow
+import com.callbackdev.saldo.core.database.relation.DescriptionUsageRow
 import com.callbackdev.saldo.core.database.relation.MonthlyNetRow
 import com.callbackdev.saldo.core.database.relation.MonthlyTotalRow
 import com.callbackdev.saldo.core.database.relation.StatsPeriodTotalsRow
@@ -217,6 +218,38 @@ interface TransactionDao {
         sinceMillis: Long,
         limit: Int,
     ): List<CategoryTotalRow>
+
+    /**
+     * Recent categorized movements of [type] whose description contains a
+     * word, for the quick text entry's category suggestion (ADR 42). The two
+     * LIKE arguments are the word as typed and its accent-folded form: `LIKE`
+     * only case-folds ASCII, so the byte-wise prefilter runs in SQL and the
+     * real whole-word, accent-insensitive match runs in Kotlin on this small
+     * result. Same habit-not-statistic rules as [mostUsedCategories], with a
+     * declared cap: window and LIMIT keep the cost flat as the ledger grows.
+     */
+    @Query(
+        """
+        SELECT description AS description, categoryId AS categoryId
+        FROM transactions
+        WHERE type = :type
+            AND isPending = 0
+            AND categoryId IS NOT NULL
+            AND description IS NOT NULL
+            AND timestampEpochMilli >= :sinceMillis
+            AND (description LIKE '%' || :typedWord || '%'
+                OR description LIKE '%' || :foldedWord || '%')
+        ORDER BY timestampEpochMilli DESC
+        LIMIT :limit
+        """,
+    )
+    suspend fun descriptionUsage(
+        type: String,
+        sinceMillis: Long,
+        typedWord: String,
+        foldedWord: String,
+        limit: Int,
+    ): List<DescriptionUsageRow>
 
     /**
      * Per-month expense and income totals in `[startMillis, endMillis)` for the

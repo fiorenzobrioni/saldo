@@ -2,8 +2,8 @@ package com.callbackdev.saldo.feature.transactions.filter
 
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.isRecurring
+import com.callbackdev.saldo.core.domain.search.SearchText
 import com.callbackdev.saldo.core.domain.transaction.CounterpartyNames
-import java.text.Normalizer
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -16,15 +16,11 @@ import java.time.temporal.TemporalAdjusters
  */
 object TransactionFilterEngine {
 
-    private val DIACRITICS = Regex("\\p{Mn}+")
     private const val LAST_90_DAYS_LENGTH = 90L
     private const val DAYS_PER_WEEK = 7L
 
-    /** Lowercases and strips diacritics, so "perche" matches "PERCHÉ". */
-    fun normalize(text: String): String =
-        Normalizer.normalize(text, Normalizer.Form.NFD)
-            .replace(DIACRITICS, "")
-            .lowercase()
+    /** The shared search normalization ([SearchText]), kept here for the callers. */
+    fun normalize(text: String): String = SearchText.normalize(text)
 
     /**
      * The inclusive local-date range selected by [filters], or null when the

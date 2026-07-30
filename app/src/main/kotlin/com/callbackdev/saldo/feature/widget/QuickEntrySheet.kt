@@ -14,18 +14,24 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -39,10 +45,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,6 +70,9 @@ import com.callbackdev.saldo.feature.transactions.AccountPickerSheet
 import com.callbackdev.saldo.feature.transactions.CategoryPickerSheet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 /**
  * The sheet the widget opens: the chosen category at the top, the amount in the
@@ -119,6 +132,7 @@ fun QuickEntrySheet(viewModel: QuickEntryViewModel, onDismiss: () -> Unit) {
                 )
                 QuickEntryStep.Form -> QuickEntryForm(
                     state = state,
+                    onQuickTextChanged = viewModel::onQuickTextChanged,
                     onAmountChanged = viewModel::onAmountChanged,
                     onSave = viewModel::save,
                     onPickAccount = { showAccountPicker = true },
@@ -157,6 +171,7 @@ fun QuickEntrySheet(viewModel: QuickEntryViewModel, onDismiss: () -> Unit) {
 @Composable
 private fun QuickEntryForm(
     state: QuickEntryUiState,
+    onQuickTextChanged: (String) -> Unit,
     onAmountChanged: (String) -> Unit,
     onSave: () -> Unit,
     onPickAccount: () -> Unit,
@@ -168,17 +183,28 @@ private fun QuickEntryForm(
         allowNegative = false,
         onValueChange = onAmountChanged,
     )
+    var quickFieldFocused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .navigationBarsPadding()
+            .imePadding()
             .padding(horizontal = 16.dp)
             .padding(bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        QuickTextField(
+            value = state.quickText,
+            onValueChange = onQuickTextChanged,
+            onFocusChanged = { quickFieldFocused = it },
+            onDone = { focusManager.clearFocus() },
+        )
         QuickEntryHeader(
             category = state.category,
             accountName = state.account?.account?.name,
+            parsedDate = state.parsedDate,
+            isCategorySuggested = state.isCategorySuggested,
             onPickCategory = onPickCategory,
             onPickAccount = onPickAccount,
         )
@@ -186,12 +212,13 @@ private fun QuickEntryForm(
             target = target,
             currencySymbol = state.currencySymbol,
             isError = false,
-            // Always active: there is nothing else on this sheet to type into,
-            // so an inactive state would only cost the user a tap.
-            isActive = true,
-            onActivate = {},
+            // The app keypad and the system keyboard never overlap (ADR 31):
+            // while the text line has focus the IME types, and tapping the
+            // amount takes the keypad back.
+            isActive = !quickFieldFocused,
+            onActivate = { focusManager.clearFocus() },
         )
-        AmountKeypadHost(target = target, compact = true)
+        AmountKeypadHost(target = if (quickFieldFocused) null else target, compact = true)
         EditorSaveButton(
             text = stringResource(R.string.action_save),
             onClick = onSave,
@@ -200,10 +227,49 @@ private fun QuickEntryForm(
     }
 }
 
+/**
+ * The one-line quick entry (ADR 42): "12,50 pizza ieri" typed on the system
+ * keyboard, parsed live into the fields below, everything still correctable
+ * by hand before Save.
+ */
+@Composable
+private fun QuickTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onFocusChanged: (Boolean) -> Unit,
+    onDone: () -> Unit,
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { onFocusChanged(it.isFocused) },
+        placeholder = { Text(text = stringResource(R.string.widget_quick_entry_text_hint)) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { onDone() }),
+        trailingIcon = if (value.isEmpty()) {
+            null
+        } else {
+            {
+                IconButton(onClick = { onValueChange("") }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = stringResource(R.string.widget_quick_entry_text_clear),
+                    )
+                }
+            }
+        },
+    )
+}
+
 @Composable
 private fun QuickEntryHeader(
     category: Category?,
     accountName: String?,
+    parsedDate: LocalDate?,
+    isCategorySuggested: Boolean,
     onPickCategory: () -> Unit,
     onPickAccount: () -> Unit,
 ) {
@@ -230,6 +296,16 @@ private fun QuickEntryHeader(
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.small)
+                    // The deduced field is highlighted, not just filled (ADR
+                    // 42): the container marks "read from your text" while it
+                    // stays one tap from being changed.
+                    .background(
+                        if (isCategorySuggested) {
+                            MaterialTheme.colorScheme.secondaryContainer
+                        } else {
+                            Color.Transparent
+                        },
+                    )
                     .clickable(
                         onClick = onPickCategory,
                         onClickLabel = stringResource(R.string.widget_quick_entry_change_category),
@@ -248,6 +324,18 @@ private fun QuickEntryHeader(
                             onClickLabel = stringResource(R.string.widget_quick_entry_change_account),
                         )
                         .padding(horizontal = 4.dp, vertical = 2.dp),
+                )
+            }
+            if (parsedDate != null) {
+                val formatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
+                Text(
+                    text = stringResource(
+                        R.string.widget_quick_entry_parsed_date,
+                        formatter.format(parsedDate),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
                 )
             }
         }

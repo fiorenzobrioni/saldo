@@ -27,6 +27,7 @@ import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
+import com.callbackdev.saldo.core.domain.quickentry.DescriptionUsage
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -255,6 +256,16 @@ class RoomTransactionRepository @Inject constructor(
     ): List<Long> =
         transactionDao.mostUsedCategories(type.name, since.toEpochMilli(), limit)
             .mapNotNull { it.categoryId }
+
+    override suspend fun descriptionUsage(
+        type: TransactionType,
+        since: Instant,
+        word: String,
+        foldedWord: String,
+        limit: Int,
+    ): List<DescriptionUsage> =
+        transactionDao.descriptionUsage(type.name, since.toEpochMilli(), word, foldedWord, limit)
+            .map { DescriptionUsage(description = it.description, categoryId = it.categoryId) }
 
     override fun observeCounterpartyTotals(): Flow<List<CounterpartyTotal>> =
         transactionDao.observeCounterpartyTotals().map { rows -> rows.map { it.toDomain() } }
