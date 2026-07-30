@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -45,13 +46,24 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -230,8 +242,8 @@ fun TransactionEditorScreen(
                 onTimeChipClick = { showTimePicker = true },
                 onAddTagClick = { activeSheet = EditorSheet.TAGS },
                 onShowAllCategories = { activeSheet = EditorSheet.CATEGORY },
-                // No scroll here: the form pins its top half and scrolls only
-                // the optional fields below the categories.
+                // No scroll here: the form pins the amount block and scrolls
+                // everything below it on its own.
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
@@ -362,10 +374,27 @@ private fun EditorForm(
     onShowAllCategories: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Two zones: what the typical expense needs (amount, account, date and the
-    // categories) is pinned above the keypad, and everything optional scrolls
-    // in whatever room is left. Nothing that decides a movement is ever below
-    // the fold.
+    // Two zones: the amount block (type selector and hero amounts, what the
+    // keypad is typing into) is pinned above the keypad, and the whole rest of
+    // the form scrolls in the room that is left. Account, date and categories
+    // sit at the top of the scrolling zone, so on any normal screen they are
+    // in view on open; on a short one they are a flick away, and that same
+    // flick collapses the keypad, buying the space back.
+    val scrollState = rememberScrollState()
+    val keypadOpen by rememberUpdatedState(activeAmount != null)
+    val closeKeypad by rememberUpdatedState(onCloseKeypad)
+    // Scrolling toward the fields below means the amount is done: the keypad
+    // gives its space back, the way the system IME hides on scroll.
+    val collapseKeypadOnScroll = remember {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                if (source == NestedScrollSource.UserInput && available.y < 0f && keypadOpen) {
+                    closeKeypad()
+                }
+                return Offset.Zero
+            }
+        }
+    }
     Column(modifier = modifier) {
         if (uiState.isRecurring) {
             Spacer(Modifier.height(12.dp))
@@ -442,24 +471,21 @@ private fun EditorForm(
             }
         }
         Spacer(Modifier.height(12.dp))
-        ContextChips(
-            uiState = uiState,
-            onAccountChipClick = onAccountChipClick,
-            onToAccountChipClick = onToAccountChipClick,
-            onDateChipClick = onDateChipClick,
-            onTimeChipClick = onTimeChipClick,
-            onSwapAccounts = viewModel::onSwapAccounts,
-        )
-        // The categories open the scrolling zone, so on any normal screen two
-        // rows sit right under the chips with nothing to scroll first. On a
-        // short one (or a large font scale) the zone scrolls instead of
-        // clipping: the grid is the flexible part of the form, never a
-        // cropped one.
         Column(
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState()),
+                .topEdgeFade(scrollState)
+                .nestedScroll(collapseKeypadOnScroll)
+                .verticalScroll(scrollState),
         ) {
+            ContextChips(
+                uiState = uiState,
+                onAccountChipClick = onAccountChipClick,
+                onToAccountChipClick = onToAccountChipClick,
+                onDateChipClick = onDateChipClick,
+                onTimeChipClick = onTimeChipClick,
+                onSwapAccounts = viewModel::onSwapAccounts,
+            )
             AnimatedSection(visible = uiState.hasCategorySection) {
                 CategorySection(
                     uiState = uiState,
@@ -1059,3 +1085,31 @@ private fun TagsRow(
 
 /** Categories the form's grid shows without scrolling: four per row, two rows. */
 private const val VISIBLE_CATEGORIES = 8
+
+/**
+ * Fades out the first dps of the scrolling zone once it has scrolled, so the
+ * content sliding under the pinned amount block reads as depth instead of a
+ * clipped edge. At rest (scroll at the top) nothing is drawn over the content.
+ */
+private fun Modifier.topEdgeFade(scrollState: ScrollState): Modifier = this
+    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val fadePx = ScrollFadeHeight.toPx()
+        // Eases in over the first fadePx of scroll, so the edge never pops.
+        val strength = (scrollState.value / fadePx).coerceIn(0f, 1f)
+        if (strength > 0f) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    0f to Color.Black.copy(alpha = 1f - strength),
+                    1f to Color.Black,
+                    endY = fadePx,
+                ),
+                size = Size(size.width, fadePx),
+                blendMode = BlendMode.DstIn,
+            )
+        }
+    }
+
+/** Depth of the fade under the pinned amount block. */
+private val ScrollFadeHeight = 24.dp
