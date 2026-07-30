@@ -20,7 +20,7 @@ Formato suggerito per ogni voce:
 
 **Decisioni:** la tile porta sempre a "spesa", nessuna scelta del tipo nella sheet (ADR 41): il conteggio dei tap premia il caso dominante, la scelta appartiene alla superficie d'ingresso come nell'ADR 32 e una tile di piattaforma fa una cosa sola dichiarata dall'etichetta; un'eventuale tile per le entrate sara una seconda `TileService` statica. Stato della tile fissato a `STATE_ACTIVE`: una tile azione e sempre pronta, il grigio di `STATE_INACTIVE` leggerebbe come spenta.
 
-**Problemi:** nessuno in implementazione. Verifica statica (nessun SDK locale): firme di `TileService` controllate sulla documentazione ufficiale, build/test/lint delegati alla CI sulla PR.
+**Problemi:** primo giro di CI fallito su lint: la variante `Intent` di `startActivityAndCollapse` sul ramo API 33 non e coperta da `@Suppress("DEPRECATION")` (che parla al compilatore Kotlin) perche lint ha un check dedicato, `StartActivityAndCollapseDeprecated`, che segnala la chiamata a prescindere dal guard su `SDK_INT`. Chiusa con `@SuppressLint("StartActivityAndCollapseDeprecated")` sul metodo: la chiamata e deliberata, su API 33 l'overload `PendingIntent` non esiste. Verifica statica (nessun SDK locale): firme di `TileService` controllate sulla documentazione ufficiale, build/test/lint delegati alla CI sulla PR.
 
 **Prossimo:** verifica su device della tendina (checkbox residua della fase): aggiunta della tile, tap a schermo sbloccato e bloccato, chiusura della tendina, salvataggio, sheet di setup su installazione senza dati.
 

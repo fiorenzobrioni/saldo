@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.widget
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.os.Build
 import android.service.quicksettings.Tile
@@ -41,6 +42,9 @@ class QuickAddTileService : TileService() {
         }
     }
 
+    // The lint check flags the deprecated Intent overload regardless of the
+    // SDK_INT guard around it; the call is deliberate, see the branch comment.
+    @SuppressLint("StartActivityAndCollapseDeprecated")
     private fun openSheet() {
         val intent = QuickEntryActivity.intent(
             context = this,
