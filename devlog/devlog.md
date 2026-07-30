@@ -14,6 +14,12 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-30 - Fase 17, fix di compilazione dei test strumentati
+
+**Fatto:** il workflow "Instrumented tests" lanciato dopo il merge della PR #69 falliva in `compileDebugAndroidTestKotlin`: `BalanceAdjustmentTest` costruisce `RoomTransactionRepository` a mano e il costruttore ha guadagnato `foreignFlowDao` con lo split del DAO. Aggiornata la costruzione con `database.foreignFlowDao()`. I test strumentati non compilano nella CI dei push (solo `assembleDebug testDebugUnitTest lint detekt`), per questo l'errore e emerso solo al lancio manuale del workflow: la verifica statica pre-push deve includere anche `androidTest` quando cambia la firma di una classe usata li. Nessun bump di versione: il fix non tocca l'APK dell'app.
+
+---
+
 ## 2026-07-30 - Fase 17, due fix dal secondo giro su device
 
 **Fatto:** (1) nell'header dei Movimenti il "Netto" delle valute aggiuntive stava sulla stessa riga di Spese/Entrate e con importi larghi andava a capo a meta testo: ogni valuta extra ripete ora la geometria del blocco principale (codice valuta a sinistra, Netto a destra, Spese/Entrate sotto), con `maxLines = 1` sul Netto. (2) Il controvalore per conto non compariva nella lista Conti: era collegato solo ad `AccountsCard` (sezione archiviati), mentre le righe attive passano da `AccountReorderableRow`, che ora riceve e mostra controvalore e valuta. Bump a versionCode 163, versionName 1.0.11.
