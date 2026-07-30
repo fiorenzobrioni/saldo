@@ -12,15 +12,23 @@ import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
+import com.callbackdev.saldo.core.domain.quickentry.CategorySuggester
+import com.callbackdev.saldo.core.domain.quickentry.CategorySuggestion
+import com.callbackdev.saldo.core.domain.quickentry.QuickEntryParser
+import com.callbackdev.saldo.core.domain.quickentry.SearchWord
+import com.callbackdev.saldo.core.domain.quickentry.SuggestionOrigin
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.search.SearchText
 import com.callbackdev.saldo.core.domain.transaction.QuickTransactionFactory
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -34,6 +42,7 @@ import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 /** What the quick entry sheet renders. */
 data class QuickEntryUiState(
@@ -47,6 +56,14 @@ data class QuickEntryUiState(
     val isSaved: Boolean = false,
     /** The saved amount, formatted, shown by the confirmation state. */
     val savedAmount: String? = null,
+    /** The quick text line, verbatim (ADR 42). */
+    val quickText: String = "",
+    /** Description proposed by the parser, saved with the movement. */
+    val description: String = "",
+    /** Date read from the text, or null for today. Shown when not null. */
+    val parsedDate: LocalDate? = null,
+    /** True when the current category came from the text, for the highlight. */
+    val isCategorySuggested: Boolean = false,
 ) {
     val fractionDigits: Int
         get() = account?.let { MoneyMapper.fractionDigits(it.account.currency) } ?: DEFAULT_FRACTION_DIGITS
@@ -85,10 +102,12 @@ sealed interface QuickEntryEvent {
 }
 
 /**
- * The widget's amount step. Deliberately a separate, much smaller view model
- * than the full editor: it only ever writes an expense or an income on today's
- * date, and everything else (transfers, tags, notes, another date) is one tap
- * away in the real editor.
+ * The quick entry step of widget and tile. Deliberately a separate, much
+ * smaller view model than the full editor: it only ever writes an expense or
+ * an income, and everything it does not cover (transfers, tags, notes) is one
+ * tap away in the real editor. The one-line quick text (ADR 42) feeds amount,
+ * description, a simple date and a category suggestion into the same form;
+ * the parser proposes, only Save writes.
  *
  * The movement itself is built by [QuickTransactionFactory], the same shared
  * rules the full editor uses, so the sign convention and the zone offset cannot
@@ -101,6 +120,7 @@ class QuickEntryViewModel @AssistedInject constructor(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val userPreferences: UserPreferencesRepository,
+    private val vocabularyProvider: QuickEntryVocabularyProvider,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -109,22 +129,42 @@ class QuickEntryViewModel @AssistedInject constructor(
         fun create(route: QuickEntryRoute): QuickEntryViewModel
     }
 
+    /** Who chose the current category: the parser only ever outranks a guess. */
+    private enum class CategorySource { BASELINE, TEXT, USER }
+
     private data class Form(
         val amountInput: String = "",
         val categoryId: Long? = null,
         val accountId: Long? = null,
         val isSaved: Boolean = false,
         val savedAmount: String? = null,
+        val quickText: String = "",
+        val description: String = "",
+        val date: LocalDate? = null,
+        /** The category to fall back to when a text suggestion goes away. */
+        val baselineCategoryId: Long? = null,
+        val categorySource: CategorySource = CategorySource.BASELINE,
+        /** Keypad edits win over the parser until the text is cleared. */
+        val amountEdited: Boolean = false,
     )
 
     private val form = MutableStateFlow(
-        Form(categoryId = route.categoryId, accountId = route.accountId),
+        Form(
+            categoryId = route.categoryId,
+            baselineCategoryId = route.categoryId,
+            accountId = route.accountId,
+        ),
     )
 
     private val _events = Channel<QuickEntryEvent>(Channel.BUFFERED)
     val events: Flow<QuickEntryEvent> = _events.receiveAsFlow()
 
     private var isSaving = false
+
+    private var historyJob: Job? = null
+
+    /** Per-word usage rows, fetched once per sheet lifetime. */
+    private val usageCache = mutableMapOf<String, List<Long>>()
 
     private val categoryType = when (route.type) {
         TransactionType.INCOME -> CategoryType.INCOME
@@ -150,6 +190,10 @@ class QuickEntryViewModel @AssistedInject constructor(
             accounts = pickable,
             isSaved = current.isSaved,
             savedAmount = current.savedAmount,
+            quickText = current.quickText,
+            description = current.description,
+            parsedDate = current.date,
+            isCategorySuggested = current.categorySource == CategorySource.TEXT,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -170,15 +214,138 @@ class QuickEntryViewModel @AssistedInject constructor(
     }
 
     fun onAmountChanged(value: String) {
-        form.update { it.copy(amountInput = value) }
+        // A keypad edit while quick text is present detaches the amount from
+        // the parser: the figure the user just corrected must not be clobbered
+        // by the next keystroke of text.
+        form.update { it.copy(amountInput = value, amountEdited = it.quickText.isNotBlank()) }
     }
 
     fun onCategorySelected(categoryId: Long) {
-        form.update { it.copy(categoryId = categoryId) }
+        form.update { it.copy(categoryId = categoryId, categorySource = CategorySource.USER) }
+    }
+
+    /**
+     * Live parse of the quick text line (ADR 42). Amount, date and description
+     * are pure and instant; the category-name stage is pure too and applies on
+     * the same keystroke, while the history stage costs a query and runs
+     * debounced in [suggestFromHistory].
+     */
+    fun onQuickTextChanged(value: String) {
+        val state = uiState.value
+        val fractionDigits = state.fractionDigits
+        val parsed = QuickEntryParser.parse(
+            text = value,
+            fractionDigits = fractionDigits,
+            currencyMarkers = state.account?.account?.currency
+                ?.let(vocabularyProvider::currencyMarkers)
+                .orEmpty(),
+            vocabulary = vocabularyProvider.vocabulary,
+            today = LocalDate.now(clock),
+        )
+        val byName = CategorySuggester.byName(parsed.searchWords.map { it.folded }, state.categories)
+        form.update { current ->
+            val keepEdited = current.amountEdited && value.isNotBlank()
+            current.copy(
+                quickText = value,
+                amountInput = if (keepEdited) {
+                    current.amountInput
+                } else {
+                    parsed.amount
+                        ?.let { MoneyInput.sanitize(it, fractionDigits, allowNegative = false) }
+                        .orEmpty()
+                },
+                amountEdited = keepEdited,
+                description = consumeNameWord(parsed.description, byName),
+                date = parsed.date,
+            )
+        }
+        if (byName != null) {
+            historyJob?.cancel()
+            applySuggestion(byName)
+        } else {
+            suggestFromHistory(parsed.searchWords)
+        }
     }
 
     fun onAccountSelected(accountId: Long) {
         form.update { it.copy(accountId = accountId) }
+    }
+
+    /**
+     * The debounced history stage of the category suggestion. Each word costs
+     * at most one capped query per sheet lifetime (the per-word result is
+     * cached); a weak or contested signal applies nothing (ADR 42).
+     */
+    private fun suggestFromHistory(words: List<SearchWord>) {
+        historyJob?.cancel()
+        if (words.isEmpty()) {
+            applySuggestion(null)
+            return
+        }
+        historyJob = viewModelScope.launch {
+            delay(SUGGESTION_DEBOUNCE_MILLIS)
+            val usage = words.associate { word -> word.folded to usageFor(word) }
+            val suggestion = CategorySuggester.suggest(
+                words = words.map { it.folded },
+                categories = uiState.value.categories,
+                usage = usage,
+            )
+            applySuggestion(suggestion)
+        }
+    }
+
+    private suspend fun usageFor(word: SearchWord): List<Long> =
+        usageCache.getOrPut(word.folded) {
+            val since = LocalDate.now(clock)
+                .minusMonths(USAGE_WINDOW_MONTHS)
+                .atStartOfDay(clock.zone)
+                .toInstant()
+            runCatching {
+                transactionRepository.descriptionUsage(
+                    type = route.type,
+                    since = since,
+                    word = word.typed,
+                    foldedWord = word.folded,
+                    limit = USAGE_ROW_LIMIT,
+                )
+            }.getOrDefault(emptyList())
+                .filter { CategorySuggester.matches(word.folded, it.description) }
+                .map { it.categoryId }
+        }
+
+    /**
+     * A suggestion never outranks the user's own pick; losing the suggestion
+     * falls back to the baseline guess, never to an empty category out of the
+     * blue (the baseline itself can be empty on a fresh install, and then
+     * empty is the honest answer).
+     */
+    private fun applySuggestion(suggestion: CategorySuggestion?) {
+        form.update { current ->
+            when {
+                current.categorySource == CategorySource.USER -> current
+                suggestion != null -> current.copy(
+                    categoryId = suggestion.categoryId,
+                    categorySource = CategorySource.TEXT,
+                )
+                current.categorySource == CategorySource.TEXT -> current.copy(
+                    categoryId = current.baselineCategoryId,
+                    categorySource = CategorySource.BASELINE,
+                )
+                else -> current
+            }
+        }
+    }
+
+    /**
+     * "12 benzina" with a "Benzina" category: the word IS the category, so a
+     * description that would only repeat it is dropped. Anything more than
+     * that single word stays untouched.
+     */
+    private fun consumeNameWord(description: String, byName: CategorySuggestion?): String {
+        if (byName == null || byName.origin != SuggestionOrigin.CATEGORY_NAME) return description
+        val words = description.split(WHITESPACE).filter { it.isNotEmpty() }
+        val only = words.singleOrNull() ?: return description
+        return if (SearchText.normalize(only.trim { !it.isLetterOrDigit() }) == byName.word) "" else description
     }
 
     fun save() {
@@ -194,8 +361,11 @@ class QuickEntryViewModel @AssistedInject constructor(
             amount = amount,
             account = account,
             categoryId = state.category?.id,
-            dateTime = LocalDateTime.now(clock),
+            // A date read from the text keeps the current time of day: the
+            // day is the information, the hour is just "when it was written".
+            dateTime = state.parsedDate?.atTime(LocalTime.now(clock)) ?: LocalDateTime.now(clock),
             zone = clock.zone,
+            description = state.description.trim().ifEmpty { null },
         )
         viewModelScope.launch {
             val result = suspendRunCatching {
@@ -226,7 +396,16 @@ class QuickEntryViewModel @AssistedInject constructor(
                 transactionRepository.mostUsedCategoryIds(route.type, since, 1).firstOrNull()
             }.getOrNull()
             val chosen = available.firstOrNull { it.id == mostUsed } ?: available.first()
-            form.update { if (it.categoryId == null) it.copy(categoryId = chosen.id) else it }
+            form.update { current ->
+                // The guess is also the baseline a lost text suggestion falls
+                // back to, even when the parser got there first.
+                val baseline = current.baselineCategoryId ?: chosen.id
+                if (current.categoryId == null) {
+                    current.copy(categoryId = chosen.id, baselineCategoryId = baseline)
+                } else {
+                    current.copy(baselineCategoryId = baseline)
+                }
+            }
         }
     }
 
@@ -248,6 +427,18 @@ class QuickEntryViewModel @AssistedInject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+
+        /** Fast enough to feel live, slow enough to skip mid-word queries. */
+        const val SUGGESTION_DEBOUNCE_MILLIS = 250L
+
+        /**
+         * Declared caps of the history stage (ADR 42): how far back a word's
+         * habit is read, and how many rows one word may ever cost.
+         */
+        const val USAGE_WINDOW_MONTHS = 24L
+        const val USAGE_ROW_LIMIT = 200
+
+        val WHITESPACE = Regex("\\s+")
 
         /**
          * Two months of history: long enough to be stable, short enough to

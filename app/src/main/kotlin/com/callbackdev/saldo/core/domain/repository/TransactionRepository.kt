@@ -19,6 +19,7 @@ import com.callbackdev.saldo.core.domain.model.SpendDayTotal
 import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.quickentry.DescriptionUsage
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.time.Instant
@@ -242,6 +243,21 @@ interface TransactionRepository {
         since: Instant,
         limit: Int,
     ): List<Long>
+
+    /**
+     * Recent categorized movements of [type] since [since] whose description
+     * contains [word] (byte-wise SQL prefilter on the typed and accent-folded
+     * forms; the caller does the real whole-word match). Capped at [limit]
+     * rows, most recent first: the quick text entry's category suggestion
+     * reads habits, not the whole ledger (ADR 42).
+     */
+    suspend fun descriptionUsage(
+        type: TransactionType,
+        since: Instant,
+        word: String,
+        foldedWord: String,
+        limit: Int,
+    ): List<DescriptionUsage>
 
     suspend fun getTransaction(id: Long): Transaction?
 

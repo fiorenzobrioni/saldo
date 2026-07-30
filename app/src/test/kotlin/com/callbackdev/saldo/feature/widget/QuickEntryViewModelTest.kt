@@ -9,6 +9,8 @@ import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.quickentry.DescriptionUsage
+import com.callbackdev.saldo.core.domain.quickentry.QuickEntryVocabulary
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -20,15 +22,18 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Currency
 
@@ -45,6 +50,18 @@ class QuickEntryViewModelTest {
     private val accountRepository = mockk<AccountRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true)
+
+    private val vocabularyProvider = mockk<QuickEntryVocabularyProvider> {
+        every { vocabulary } returns QuickEntryVocabulary(
+            groupingSeparator = '.',
+            yesterdayWords = setOf("ieri"),
+            todayWords = setOf("oggi"),
+            tomorrowWords = setOf("domani"),
+            weekdayWords = emptyMap(),
+            dayBeforeMonth = true,
+        )
+        every { currencyMarkers(any()) } returns setOf("€", "eur")
+    }
 
     private fun account(id: Long, archived: Boolean = false) = Account(
         id = id,
@@ -88,12 +105,16 @@ class QuickEntryViewModelTest {
         every { userPreferences.lastUsedAccountId } returns flowOf(lastUsedAccountId)
         coEvery { transactionRepository.upsert(any()) } returns SAVED_ID
         coEvery { transactionRepository.mostUsedCategoryIds(any(), any(), any()) } returns mostUsed
+        coEvery {
+            transactionRepository.descriptionUsage(any(), any(), any(), any(), any())
+        } returns emptyList()
         return QuickEntryViewModel(
             route = route,
             transactionRepository = transactionRepository,
             accountRepository = accountRepository,
             categoryRepository = categoryRepository,
             userPreferences = userPreferences,
+            vocabularyProvider = vocabularyProvider,
             clock = clock,
         )
     }
@@ -264,6 +285,110 @@ class QuickEntryViewModelTest {
         viewModel.uiState.test {
             assertEquals(groceries, expectMostRecentItem().category)
         }
+    }
+
+    @Test
+    fun `the quick text line fills amount, description and date`() = runTest {
+        val viewModel = viewModel()
+        viewModel.uiState.test {
+            expectMostRecentItem()
+            viewModel.onQuickTextChanged("12,50 pizza ieri")
+            val state = expectMostRecentItem()
+            assertEquals("12.50", state.amountInput)
+            assertEquals("pizza", state.description)
+            // The clock is fixed at 2026-07-08 in Rome.
+            assertEquals(LocalDate.of(2026, 7, 7), state.parsedDate)
+            assertTrue(state.canSave)
+        }
+    }
+
+    @Test
+    fun `a word that is a category name suggests it and drops the redundant description`() = runTest {
+        val viewModel = viewModel(categories = listOf(groceries, transport))
+        viewModel.uiState.test {
+            expectMostRecentItem()
+            viewModel.onQuickTextChanged("12 transport")
+            val state = expectMostRecentItem()
+            assertEquals(transport, state.category)
+            assertTrue(state.isCategorySuggested)
+            assertEquals("", state.description)
+        }
+    }
+
+    @Test
+    fun `a category picked by hand is never overridden by the text`() = runTest {
+        val viewModel = viewModel(categories = listOf(groceries, transport))
+        viewModel.uiState.test {
+            expectMostRecentItem()
+            viewModel.onCategorySelected(groceries.id)
+            viewModel.onQuickTextChanged("12 transport")
+            val state = expectMostRecentItem()
+            assertEquals(groceries, state.category)
+            assertFalse(state.isCategorySuggested)
+        }
+    }
+
+    @Test
+    fun `the history stage suggests the habitual category after the debounce`() = runTest {
+        val viewModel = viewModel(categories = listOf(groceries, transport))
+        coEvery {
+            transactionRepository.descriptionUsage(any(), any(), any(), any(), any())
+        } returns List(3) { DescriptionUsage("pizza da mario", transport.id) }
+        viewModel.uiState.test {
+            expectMostRecentItem()
+            viewModel.onQuickTextChanged("12,50 pizza")
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+            assertEquals(transport, state.category)
+            assertTrue(state.isCategorySuggested)
+            // A history match never eats the word: the description keeps it.
+            assertEquals("pizza", state.description)
+        }
+    }
+
+    @Test
+    fun `clearing the text restores the baseline category, date and description`() = runTest {
+        val viewModel = viewModel(categories = listOf(groceries, transport))
+        viewModel.uiState.test {
+            expectMostRecentItem()
+            viewModel.onQuickTextChanged("12 transport ieri")
+            assertEquals(transport, expectMostRecentItem().category)
+            viewModel.onQuickTextChanged("")
+            advanceUntilIdle()
+            val state = expectMostRecentItem()
+            assertEquals(groceries, state.category)
+            assertFalse(state.isCategorySuggested)
+            assertNull(state.parsedDate)
+            assertEquals("", state.description)
+            assertEquals("", state.amountInput)
+        }
+    }
+
+    @Test
+    fun `a keypad edit wins over the parser until the text is cleared`() = runTest {
+        val viewModel = viewModel()
+        viewModel.uiState.test {
+            expectMostRecentItem()
+            viewModel.onQuickTextChanged("12,50 pizza")
+            viewModel.onAmountChanged("20")
+            viewModel.onQuickTextChanged("12,50 pizza sera")
+            assertEquals("20", expectMostRecentItem().amountInput)
+        }
+    }
+
+    @Test
+    fun `saving carries the parsed description and date`() = runTest {
+        val viewModel = viewModel()
+        viewModel.uiState.test { expectMostRecentItem() }
+        viewModel.onQuickTextChanged("12,50 pizza ieri")
+        viewModel.save()
+
+        val saved = slot<Transaction>()
+        coVerify { transactionRepository.upsert(capture(saved)) }
+        assertEquals("pizza", saved.captured.description)
+        assertEquals(BigDecimal("-12.50"), saved.captured.amount)
+        val savedDate = saved.captured.timestamp.atOffset(saved.captured.zoneOffset).toLocalDate()
+        assertEquals(LocalDate.of(2026, 7, 7), savedDate)
     }
 
     private companion object {
