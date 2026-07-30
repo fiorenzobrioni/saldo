@@ -14,6 +14,14 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-30 - Fase 17 verificata: MigrationsTest verde e giro su device completato
+
+**Fatto:** dopo il merge delle PR #69 e #70, `com.callbackdev.saldo.core.database.MigrationsTest` verde sul workflow "Instrumented tests" (valida la catena 1 -> 4 contro gli schemi esportati e l'apertura via Room). La migration 3 -> 4 e passata anche sul device reale con dati veri: i giri di review sono stati aggiornamenti in place dalla 1.0.7 alla 1.0.11, e il giro manuale multi-valuta ha coperto backfill, controvalori su tutte le superfici, schermata Tassi di cambio (board, convertitore, dettaglio) e controvalore nell'editor. Restano due controlli puntuali (disattivazione della preferenza e comportamento offline), annotati come checkbox residua in PLANNING.
+
+**Prossimo:** i due controlli puntuali di cui sopra, poi la Fase 17 e chiusa del tutto; a seguire, secondo la roadmap v2.0, la Fase 19 (rilevamento automatico delle ricorrenze) o la Fase 32 (tile delle Impostazioni rapide).
+
+---
+
 ## 2026-07-30 - Fase 17, fix di compilazione dei test strumentati
 
 **Fatto:** il workflow "Instrumented tests" lanciato dopo il merge della PR #69 falliva in `compileDebugAndroidTestKotlin`: `BalanceAdjustmentTest` costruisce `RoomTransactionRepository` a mano e il costruttore ha guadagnato `foreignFlowDao` con lo split del DAO. Aggiornata la costruzione con `database.foreignFlowDao()`. I test strumentati non compilano nella CI dei push (solo `assembleDebug testDebugUnitTest lint detekt`), per questo l'errore e emerso solo al lancio manuale del workflow: la verifica statica pre-push deve includere anche `androidTest` quando cambia la firma di una classe usata li. Nessun bump di versione: il fix non tocca l'APK dell'app.
