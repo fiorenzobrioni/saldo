@@ -498,16 +498,7 @@ class DashboardViewModel @Inject constructor(
 
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = sources.categories.associateBy { it.id }
-        val recent = sources.recent.map { transaction ->
-            TransactionListItem(
-                transaction = transaction,
-                account = accountById[transaction.accountId],
-                toAccount = transaction.transferAccountId?.let { accountById[it] },
-                category = transaction.categoryId?.let { categoryById[it] },
-                countervalue = transaction.countervalueIn(primary, rates),
-                countervalueCurrency = primary,
-            )
-        }
+        val recent = recentItems(sources.recent, accountById, categoryById, primary, rates)
 
         return DashboardUiState(
             isLoading = false,
@@ -572,6 +563,24 @@ class DashboardViewModel @Inject constructor(
             date = today,
             greetingBand = greetingBand,
             greetingRoll = greetingRoll,
+        )
+    }
+
+    /** The latest movements resolved for display, countervalues included (ADR 40). */
+    private fun recentItems(
+        transactions: List<Transaction>,
+        accountById: Map<Long, Account>,
+        categoryById: Map<Long, Category>,
+        primary: Currency,
+        rates: RateTable,
+    ): List<TransactionListItem> = transactions.map { transaction ->
+        TransactionListItem(
+            transaction = transaction,
+            account = accountById[transaction.accountId],
+            toAccount = transaction.transferAccountId?.let { accountById[it] },
+            category = transaction.categoryId?.let { categoryById[it] },
+            countervalue = transaction.countervalueIn(primary, rates),
+            countervalueCurrency = primary,
         )
     }
 
