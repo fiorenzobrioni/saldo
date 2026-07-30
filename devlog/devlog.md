@@ -14,6 +14,14 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-30 - Editor movimento: zona scorrevole unica sotto il blocco importo
+
+**Fatto:** segnalazione utente con screenshot: nell'editor movimento la zona fissa (selettore tipo, importo, conto/conti, data/ora) più il tastierino aperto riducevano la zona scorrevole a una fessura, con le categorie decapitate a metà riga; nel caso trasferimento (due righe conto) era ancora peggio e su schermi piccoli la fessura rischiava di sparire. Ridisegnata la geometria di `EditorForm` (`TransactionEditorScreen.kt`): resta fisso solo il blocco importo (selettore tipo, importo hero, secondo importo cross-currency, controvalore), tutto il resto (chip conto e data/ora comprese) scorre in un'unica zona. Due accorgimenti a corredo: (1) una `NestedScrollConnection` sulla zona scorrevole chiude il tastierino al primo scroll verso il basso (`NestedScrollSource.UserInput`, delta negativo), come la IME di sistema con scroll-to-dismiss, così scorrere restituisce subito lo spazio del tastierino; (2) un fade di 24dp (`topEdgeFade`: `CompositingStrategy.Offscreen` + `drawRect` con `BlendMode.DstIn`, intensità proporzionale allo scroll) sul bordo superiore della zona, così il contenuto che scivola sotto l'importo legge come profondità e non come taglio. Flusso tipico invariato: importo, tocco sulla categoria, salva, zero tap in più. Verifica statica (nessun SDK locale): build e lint delegati alla CI, giro su device dell'utente. Bump a versionCode 165, versionName 1.0.13.
+
+**Decisioni:** conto e data non hanno bisogno di visibilità permanente: i default (ultimo conto usato, oggi) sono quasi sempre giusti e stanno comunque in cima alla zona scorrevole, visibili all'apertura. Scartata l'alternativa a due step (schermata importo a tutto schermo, poi il form): aggiunge un passaggio all'inserimento rapido, che è il caso d'uso principale.
+
+---
+
 ## 2026-07-30 - Fase 17: controvalore sulle righe dei movimenti
 
 **Fatto:** confermati dall'utente i due controlli residui (disattivazione della preferenza e comportamento offline): la Fase 17 e chiusa. Su richiesta, aggiunto il controvalore alle righe dei movimenti in valuta estera: `TransactionListItem` porta `countervalue`/`countervalueCurrency` (calcolati nei ViewModel con `Transaction.countervalueIn`, helper puro in `TransactionsUiState.kt`: tasso del giorno del movimento, mai sui trasferimenti, null senza tassi) e `TransactionRowContent` mostra la seconda riga muta "≈ ..." sotto l'importo, solo sulle righe che ne hanno bisogno. Copre elenco Movimenti, drill-down filtrati (incluso "Altre valute" dalle statistiche, dove l'informazione mancava di piu) e recenti della Dashboard; la data del tasso resta dichiarata nell'editor. Unit test: `TransactionCountervalueTest` (segno conservato, stessa valuta, trasferimenti, senza tassi). Bump a versionCode 164, versionName 1.0.12.
