@@ -77,6 +77,7 @@ import java.math.RoundingMode
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Currency
 import java.util.Locale
 
 /**
@@ -656,7 +657,7 @@ private fun RatesEmptyState(modifier: Modifier = Modifier) {
 }
 
 /** "dollaro statunitense" with a leading capital, in the UI locale. */
-private fun java.util.Currency.displayNameIn(locale: Locale): String =
+private fun Currency.displayNameIn(locale: Locale): String =
     getDisplayName(locale).replaceFirstChar {
         if (it.isLowerCase()) it.titlecase(locale) else it.toString()
     }
