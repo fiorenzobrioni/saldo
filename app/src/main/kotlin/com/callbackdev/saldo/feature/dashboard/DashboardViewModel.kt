@@ -290,8 +290,11 @@ class DashboardViewModel @Inject constructor(
         observeConversionState(),
         ::Inputs,
     )
-        .flatMapLatest { (accounts, currencyOverride, today, conversion) ->
-            val primary = primaryCurrency(accounts, currencyOverride)
+        .flatMapLatest { inputs ->
+            val accounts = inputs.accounts
+            val today = inputs.today
+            val conversion = inputs.conversion
+            val primary = primaryCurrency(accounts, inputs.currencyOverride)
             val rates = if (conversion.active) conversion.rates else RateTable.EMPTY
             val windows = DashboardWindows.around(today, clock.zone)
             // The base totals and their foreign residue collapse into one

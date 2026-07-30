@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.core.database.repository
 
+import com.callbackdev.saldo.core.database.dao.ForeignFlowDao
 import com.callbackdev.saldo.core.database.dao.TransactionDao
 import com.callbackdev.saldo.core.database.mapper.toDomain
 import com.callbackdev.saldo.core.database.mapper.toEntity
@@ -38,6 +39,7 @@ import javax.inject.Inject
 @Suppress("TooManyFunctions") // A data-access implementation naturally has many queries.
 class RoomTransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
+    private val foreignFlowDao: ForeignFlowDao,
 ) : TransactionRepository {
 
     override fun observeTransactions(): Flow<List<Transaction>> =
@@ -323,7 +325,7 @@ class RoomTransactionRepository @Inject constructor(
         windows: DashboardWindows,
         currency: Currency,
     ): Flow<List<ForeignDashboardDayFlows>> =
-        transactionDao.observeForeignDashboardFlows(
+        foreignFlowDao.observeForeignDashboardFlows(
             todayStart = windows.todayStart.toEpochMilli(),
             todayEnd = windows.todayEnd.toEpochMilli(),
             monthStart = windows.monthStart.toEpochMilli(),
@@ -363,7 +365,7 @@ class RoomTransactionRepository @Inject constructor(
         end: Instant,
         currency: Currency,
     ): Flow<List<ForeignCategoryDayTotal>> =
-        transactionDao.observeForeignCategoryTotals(
+        foreignFlowDao.observeForeignCategoryTotals(
             start.toEpochMilli(),
             end.toEpochMilli(),
             currency.currencyCode,
@@ -385,7 +387,7 @@ class RoomTransactionRepository @Inject constructor(
         end: Instant,
         currency: Currency,
     ): Flow<List<ForeignAccountDayTotal>> =
-        transactionDao.observeForeignAccountSpendTotals(
+        foreignFlowDao.observeForeignAccountSpendTotals(
             start.toEpochMilli(),
             end.toEpochMilli(),
             currency.currencyCode,
@@ -407,7 +409,7 @@ class RoomTransactionRepository @Inject constructor(
         end: Instant,
         currency: Currency,
     ): Flow<List<ForeignMonthlyDayTotal>> =
-        transactionDao.observeForeignMonthlyTotals(
+        foreignFlowDao.observeForeignMonthlyTotals(
             start.toEpochMilli(),
             end.toEpochMilli(),
             currency.currencyCode,
@@ -428,7 +430,7 @@ class RoomTransactionRepository @Inject constructor(
         end: Instant,
         currency: Currency,
     ): Flow<List<CurrencyMovementCount>> =
-        transactionDao.observeOtherCurrencyCounts(
+        foreignFlowDao.observeOtherCurrencyCounts(
             start.toEpochMilli(),
             end.toEpochMilli(),
             currency.currencyCode,
@@ -438,28 +440,28 @@ class RoomTransactionRepository @Inject constructor(
         start: Instant,
         end: Instant,
     ): Flow<List<SpendDayTotal>> =
-        transactionDao.observeSpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
+        foreignFlowDao.observeSpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
             .map { rows -> rows.mapNotNull { it.toDomainOrNull() } }
 
     override suspend fun getSpendByCurrencyDay(
         start: Instant,
         end: Instant,
     ): List<SpendDayTotal> =
-        transactionDao.getSpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
+        foreignFlowDao.getSpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
             .mapNotNull { it.toDomainOrNull() }
 
     override fun observeCategorySpendByCurrencyDay(
         start: Instant,
         end: Instant,
     ): Flow<List<CategorySpendDayTotal>> =
-        transactionDao.observeCategorySpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
+        foreignFlowDao.observeCategorySpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
             .map { rows -> rows.mapNotNull { it.toDomainOrNull() } }
 
     override suspend fun getCategorySpendByCurrencyDay(
         start: Instant,
         end: Instant,
     ): List<CategorySpendDayTotal> =
-        transactionDao.getCategorySpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
+        foreignFlowDao.getCategorySpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
             .mapNotNull { it.toDomainOrNull() }
 
     private fun SpendCurrencyDayRow.toDomainOrNull(): SpendDayTotal? {

@@ -37,26 +37,33 @@ object EcbRateFeed {
      * position.
      */
     fun parseCsv(body: String): List<ExchangeRate> {
-        val lines = body.lineSequence().filter { it.isNotBlank() }.iterator()
-        if (!lines.hasNext()) return emptyList()
-        val header = lines.next().split(',').map { it.trim() }
-        val currencyIndex = header.indexOf(COLUMN_CURRENCY)
-        val dayIndex = header.indexOf(COLUMN_DAY)
-        val rateIndex = header.indexOf(COLUMN_RATE)
-        if (currencyIndex < 0 || dayIndex < 0 || rateIndex < 0) return emptyList()
+        val lines = body.lineSequence().filter { it.isNotBlank() }.toList()
+        val header = lines.firstOrNull()?.split(',')?.map { it.trim() } ?: return emptyList()
+        val columns = Columns(
+            currency = header.indexOf(COLUMN_CURRENCY),
+            day = header.indexOf(COLUMN_DAY),
+            rate = header.indexOf(COLUMN_RATE),
+        )
+        if (columns.currency < 0 || columns.day < 0 || columns.rate < 0) return emptyList()
+        return lines.drop(1).mapNotNull { line -> parseRow(line, columns) }
+    }
 
-        val rates = mutableListOf<ExchangeRate>()
-        while (lines.hasNext()) {
-            val fields = lines.next().split(',')
-            val maxIndex = maxOf(currencyIndex, dayIndex, rateIndex)
-            if (fields.size <= maxIndex) continue
-            val currency = fields[currencyIndex].trim()
-            if (currency.isEmpty()) continue
-            val day = runCatching { LocalDate.parse(fields[dayIndex].trim()) }.getOrNull() ?: continue
-            val rate = runCatching { BigDecimal(fields[rateIndex].trim()) }.getOrNull() ?: continue
-            if (rate.signum() <= 0) continue
-            rates += ExchangeRate(currency = currency, day = day, perEuro = rate)
-        }
-        return rates
+    /** Where each needed field sits in this body's rows. */
+    private class Columns(val currency: Int, val day: Int, val rate: Int) {
+        val max: Int get() = maxOf(currency, day, rate)
+    }
+
+    /** One row to one rate; any unreadable field drops the row. */
+    private fun parseRow(line: String, columns: Columns): ExchangeRate? {
+        val fields = line.split(',')
+        if (fields.size <= columns.max) return null
+        val currency = fields[columns.currency].trim()
+        if (currency.isEmpty()) return null
+        val day = runCatching { LocalDate.parse(fields[columns.day].trim()) }.getOrNull()
+            ?: return null
+        val rate = runCatching { BigDecimal(fields[columns.rate].trim()) }.getOrNull()
+            ?: return null
+        if (rate.signum() <= 0) return null
+        return ExchangeRate(currency = currency, day = day, perEuro = rate)
     }
 }
