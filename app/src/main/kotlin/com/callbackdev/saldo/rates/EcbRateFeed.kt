@@ -53,17 +53,17 @@ object EcbRateFeed {
         val max: Int get() = maxOf(currency, day, rate)
     }
 
-    /** One row to one rate; any unreadable field drops the row. */
+    /** One row to one rate; any unreadable field drops the row (guard chain). */
     private fun parseRow(line: String, columns: Columns): ExchangeRate? {
         val fields = line.split(',')
         if (fields.size <= columns.max) return null
-        val currency = fields[columns.currency].trim()
+        val currency = fields[columns.currency].trim().takeIf { it.isNotEmpty() }
+            ?: return null
         val day = runCatching { LocalDate.parse(fields[columns.day].trim()) }.getOrNull()
+            ?: return null
         val rate = runCatching { BigDecimal(fields[columns.rate].trim()) }.getOrNull()
-        return if (currency.isEmpty() || day == null || rate == null || rate.signum() <= 0) {
-            null
-        } else {
-            ExchangeRate(currency = currency, day = day, perEuro = rate)
-        }
+            ?.takeIf { it.signum() > 0 }
+            ?: return null
+        return ExchangeRate(currency = currency, day = day, perEuro = rate)
     }
 }
