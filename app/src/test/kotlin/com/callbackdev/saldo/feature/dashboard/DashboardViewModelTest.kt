@@ -24,6 +24,8 @@ import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
 import com.callbackdev.saldo.core.domain.model.CounterpartyLedger
 import com.callbackdev.saldo.core.domain.model.DailyBalance
 import com.callbackdev.saldo.core.domain.model.SavingsGoalProgress
+import com.callbackdev.saldo.core.domain.rates.ConversionState
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDailyBalanceHistoryUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveSafeToSpendUseCase
@@ -74,6 +76,7 @@ class DashboardViewModelTest {
     private val observeSavingsGoalsProgress = mockk<ObserveSavingsGoalsProgressUseCase>()
     private val observeCounterpartyBalances = mockk<ObserveCounterpartyBalancesUseCase>()
     private val observeDailyBalanceHistory = mockk<ObserveDailyBalanceHistoryUseCase>()
+    private val observeConversionState = mockk<ObserveConversionStateUseCase>()
 
     private fun account(
         id: Long,
@@ -146,17 +149,21 @@ class DashboardViewModelTest {
         every { transactionRepository.observePendingTransactions() } returns flowOf(emptyList<Transaction>())
         every { categoryRepository.observeCategories() } returns flowOf(categories)
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
-        every { observeBudgetProgress(any()) } returns flowOf(budgets)
-        every { observeSafeToSpend(any()) } returns flowOf(safeToSpend)
+        every { observeBudgetProgress(any(), any()) } returns flowOf(budgets)
+        every { observeSafeToSpend(any(), any()) } returns flowOf(safeToSpend)
         every { observeDueStatements() } returns flowOf(emptyList())
         every { observeSavingsGoalsProgress() } returns flowOf(savingsGoals)
         every { observeCounterpartyBalances() } returns flowOf(counterparties)
-        every { observeDailyBalanceHistory(any(), any()) } returns flowOf(balanceHistory)
+        every {
+            observeDailyBalanceHistory(any(), any(), any(), any())
+        } returns flowOf(balanceHistory)
+        every { observeConversionState() } returns flowOf(ConversionState.INACTIVE)
         every { transactionRepository.observeTransactionsFrom(any()) } returns flowOf(upcoming)
         val observeUpcomingMovements = ObserveUpcomingMovementsUseCase(
             transactionRepository,
             accountRepository,
             userPreferences,
+            observeConversionState,
             clock,
         )
         return DashboardViewModel(
@@ -172,6 +179,7 @@ class DashboardViewModelTest {
             observeCounterpartyBalances,
             observeDailyBalanceHistory,
             observeUpcomingMovements,
+            observeConversionState,
             clock,
         )
     }
@@ -235,7 +243,9 @@ class DashboardViewModelTest {
         )
         // Stubbed after the helper so this capture wins over its any() stub.
         val days = slot<List<LocalDate>>()
-        every { observeDailyBalanceHistory(eur, capture(days)) } returns flowOf(emptyList())
+        every {
+            observeDailyBalanceHistory(eur, capture(days), any(), any())
+        } returns flowOf(emptyList())
 
         viewModel.uiState.test {
             awaitLoaded()
@@ -559,17 +569,21 @@ class DashboardViewModelTest {
         every { transactionRepository.observePendingTransactions() } returns flowOf(emptyList())
         every { categoryRepository.observeCategories() } returns flowOf(emptyList())
         every { recurringRuleRepository.observeRules() } returns flowOf(emptyList())
-        every { observeBudgetProgress(any()) } returns flowOf(emptyList())
-        every { observeSafeToSpend(any()) } returns flowOf(null)
+        every { observeBudgetProgress(any(), any()) } returns flowOf(emptyList())
+        every { observeSafeToSpend(any(), any()) } returns flowOf(null)
         every { observeDueStatements() } returns flowOf(emptyList())
         every { observeSavingsGoalsProgress() } returns flowOf(emptyList())
         every { observeCounterpartyBalances() } returns flowOf(CounterpartyLedger())
-        every { observeDailyBalanceHistory(any(), any()) } returns flowOf(emptyList())
+        every {
+            observeDailyBalanceHistory(any(), any(), any(), any())
+        } returns flowOf(emptyList())
+        every { observeConversionState() } returns flowOf(ConversionState.INACTIVE)
         every { transactionRepository.observeTransactionsFrom(any()) } returns flowOf(emptyList())
         val observeUpcomingMovements = ObserveUpcomingMovementsUseCase(
             transactionRepository,
             accountRepository,
             userPreferences,
+            observeConversionState,
             clock,
         )
         val viewModel = DashboardViewModel(
@@ -585,6 +599,7 @@ class DashboardViewModelTest {
             observeCounterpartyBalances,
             observeDailyBalanceHistory,
             observeUpcomingMovements,
+            observeConversionState,
             clock,
         )
 

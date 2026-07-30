@@ -7,6 +7,7 @@ import com.callbackdev.saldo.core.database.converter.Converters
 import com.callbackdev.saldo.core.database.dao.AccountDao
 import com.callbackdev.saldo.core.database.dao.BudgetDao
 import com.callbackdev.saldo.core.database.dao.CategoryDao
+import com.callbackdev.saldo.core.database.dao.ExchangeRateDao
 import com.callbackdev.saldo.core.database.dao.RecurringRuleDao
 import com.callbackdev.saldo.core.database.dao.SavingsGoalDao
 import com.callbackdev.saldo.core.database.dao.TagDao
@@ -14,6 +15,7 @@ import com.callbackdev.saldo.core.database.dao.TransactionDao
 import com.callbackdev.saldo.core.database.entity.AccountEntity
 import com.callbackdev.saldo.core.database.entity.BudgetEntity
 import com.callbackdev.saldo.core.database.entity.CategoryEntity
+import com.callbackdev.saldo.core.database.entity.ExchangeRateEntity
 import com.callbackdev.saldo.core.database.entity.RecurringRuleEntity
 import com.callbackdev.saldo.core.database.entity.SavingsGoalEntity
 import com.callbackdev.saldo.core.database.entity.TagEntity
@@ -30,7 +32,7 @@ import com.callbackdev.saldo.core.database.entity.TransactionTagCrossRef
  * a migration (a reset that forces a reinstall on the test device), but that is
  * a deliberate exception, not the default.
  */
-const val SALDO_DATABASE_VERSION = 3
+const val SALDO_DATABASE_VERSION = 4
 
 @Database(
     entities = [
@@ -42,6 +44,7 @@ const val SALDO_DATABASE_VERSION = 3
         RecurringRuleEntity::class,
         BudgetEntity::class,
         SavingsGoalEntity::class,
+        ExchangeRateEntity::class,
     ],
     version = SALDO_DATABASE_VERSION,
     exportSchema = true,
@@ -55,6 +58,7 @@ abstract class SaldoDatabase : RoomDatabase() {
     abstract fun recurringRuleDao(): RecurringRuleDao
     abstract fun budgetDao(): BudgetDao
     abstract fun savingsGoalDao(): SavingsGoalDao
+    abstract fun exchangeRateDao(): ExchangeRateDao
 
     companion object {
         const val NAME = "saldo.db"

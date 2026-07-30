@@ -109,6 +109,7 @@ fun SettingsScreen(
     val balanceAccountsExpandedDefault by viewModel.balanceAccountsExpandedByDefault
         .collectAsStateWithLifecycle()
     val primaryCurrency by viewModel.primaryCurrencyOverride.collectAsStateWithLifecycle()
+    val currencyConversionEnabled by viewModel.currencyConversionEnabled.collectAsStateWithLifecycle()
     val activeAccounts by viewModel.activeAccounts.collectAsStateWithLifecycle()
     val defaultAccountId by viewModel.defaultAccountId.collectAsStateWithLifecycle()
     val firstDayOfWeek by viewModel.firstDayOfWeek.collectAsStateWithLifecycle()
@@ -138,6 +139,15 @@ fun SettingsScreen(
                         ?: stringResource(R.string.settings_primary_currency_auto),
                     icon = Icons.Outlined.Payments,
                     onClick = { showCurrencyDialog = true },
+                )
+                // The switch is also where the app declares its only network
+                // use outside backup/export (ADR 40): the hint says what
+                // travels and what never does.
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_currency_conversion),
+                    hint = stringResource(R.string.settings_currency_conversion_hint),
+                    checked = currencyConversionEnabled,
+                    onCheckedChange = viewModel::onCurrencyConversionChanged,
                 )
                 SettingsEntry(
                     title = stringResource(R.string.settings_default_account),

@@ -1,14 +1,21 @@
 package com.callbackdev.saldo.core.domain.repository
 
 import com.callbackdev.saldo.core.domain.model.AccountTotal
+import com.callbackdev.saldo.core.domain.model.CategorySpendDayTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
 import com.callbackdev.saldo.core.domain.model.CounterpartyTotal
+import com.callbackdev.saldo.core.domain.model.CurrencyMovementCount
 import com.callbackdev.saldo.core.domain.model.DailyActivity
 import com.callbackdev.saldo.core.domain.model.DailyNet
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
+import com.callbackdev.saldo.core.domain.model.ForeignAccountDayTotal
+import com.callbackdev.saldo.core.domain.model.ForeignCategoryDayTotal
+import com.callbackdev.saldo.core.domain.model.ForeignDashboardDayFlows
+import com.callbackdev.saldo.core.domain.model.ForeignMonthlyDayTotal
 import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
+import com.callbackdev.saldo.core.domain.model.SpendDayTotal
 import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -292,4 +299,68 @@ interface TransactionRepository {
      * the removals and the adjustments commit together.
      */
     suspend fun deleteAndInsert(ids: List<Long>, inserts: List<Transaction>): List<Long>
+
+    /*
+     * Foreign residue aggregates (ADR 40): what the single-currency queries
+     * above leave out, per (currency, local day of the movement), so the
+     * domain can convert each bucket at the rate of its own date. Rows whose
+     * stored currency code is not a valid ISO 4217 code are dropped by the
+     * implementation.
+     */
+
+    /** Foreign twin of [observeDashboardTotals], per (currency, local day). */
+    fun observeForeignDashboardFlows(
+        windows: DashboardWindows,
+        currency: Currency,
+    ): Flow<List<ForeignDashboardDayFlows>>
+
+    /** Foreign twin of [observeCategoryTotals], per (category, currency, local day). */
+    fun observeForeignCategoryTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<ForeignCategoryDayTotal>>
+
+    /** Foreign twin of [observeAccountSpendTotals], per (account, currency, local day). */
+    fun observeForeignAccountSpendTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<ForeignAccountDayTotal>>
+
+    /** Foreign twin of [observeMonthlyTotals], per (currency, local day). */
+    fun observeForeignMonthlyTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<ForeignMonthlyDayTotal>>
+
+    /** [observeOtherCurrencyCount] broken down per currency. */
+    fun observeOtherCurrencyCounts(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<CurrencyMovementCount>>
+
+    /**
+     * Budget-relevant spend per (currency, local day), every currency
+     * included: one subscription serves every budget whatever its currency.
+     * Same filters as [observeStatsSpendTotal].
+     */
+    fun observeSpendByCurrencyDay(start: Instant, end: Instant): Flow<List<SpendDayTotal>>
+
+    /** One-shot variant of [observeSpendByCurrencyDay] for the budget threshold check. */
+    suspend fun getSpendByCurrencyDay(start: Instant, end: Instant): List<SpendDayTotal>
+
+    /** Per-category twin of [observeSpendByCurrencyDay]. */
+    fun observeCategorySpendByCurrencyDay(
+        start: Instant,
+        end: Instant,
+    ): Flow<List<CategorySpendDayTotal>>
+
+    /** One-shot variant of [observeCategorySpendByCurrencyDay]. */
+    suspend fun getCategorySpendByCurrencyDay(
+        start: Instant,
+        end: Instant,
+    ): List<CategorySpendDayTotal>
 }

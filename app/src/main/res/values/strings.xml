@@ -23,6 +23,7 @@
     <!-- Dashboard (Phase 5) -->
     <string name="dashboard_balance_total">Total balance</string>
     <string name="dashboard_balance_as_of_today">%1$s as of today</string>
+    <string name="dashboard_balance_estimated_rates">Includes countervalues estimated at the ECB rates of %1$s</string>
     <string name="dashboard_sparkline_caption">Last 30 days</string>
     <string name="dashboard_sparkline_a11y_up">Balance trend over the last 30 days: from %1$s to %2$s, rising</string>
     <string name="dashboard_sparkline_a11y_down">Balance trend over the last 30 days: from %1$s to %2$s, falling</string>
@@ -201,6 +202,8 @@
     <string name="account_editor_section_type">Type</string>
     <string name="account_editor_currency">Currency</string>
     <string name="account_editor_currency_locked">Cannot be changed: the account already has transactions</string>
+    <string name="account_editor_conversion_on_banner">This account\'s balance will join the totals as a countervalue in %1$s, estimated with the ECB rates (marked with ≈). Rates are downloaded over the internet; you can turn conversion off in Settings.</string>
+    <string name="account_editor_conversion_off_banner">Automatic conversion is off: this account will stay out of the totals in %1$s. You can turn it on in Settings.</string>
     <string name="account_editor_initial_balance">Initial balance</string>
     <string name="account_editor_initial_balance_hint">The current balance is computed from here</string>
     <string name="account_editor_initial_balance_hint_loan">Today\'s remaining debt, with a minus sign</string>
@@ -362,6 +365,10 @@
     <plurals name="stats_other_currencies_notice">
         <item quantity="one">%1$d transaction in another currency is not counted here: these figures are in %2$s only.</item>
         <item quantity="other">%1$d transactions in other currencies are not counted here: these figures are in %2$s only.</item>
+    </plurals>
+    <plurals name="stats_converted_currencies_notice">
+        <item quantity="one">%1$d transaction in another currency is included, converted to %2$s at the ECB rate of its own day (estimated).</item>
+        <item quantity="other">%1$d transactions in other currencies are included, converted to %2$s at the ECB rate of their own day (estimated).</item>
     </plurals>
     <string name="stats_view_movements">View transactions for %1$s</string>
     <!-- Chart summaries for screen readers (the charts draw on a silent canvas). -->
@@ -666,6 +673,8 @@
     <string name="settings_section_preferences">Preferences</string>
     <string name="settings_primary_currency">Main currency</string>
     <string name="settings_primary_currency_auto">Automatic (based on your accounts)</string>
+    <string name="settings_currency_conversion">Automatic conversion</string>
+    <string name="settings_currency_conversion_hint">Counts accounts and transactions in other currencies as countervalues estimated with the ECB reference rates, always marked with ≈. Rates are downloaded over the internet when needed: the request carries no data of yours, and nothing is downloaded if everything is in one currency. Off, foreign currencies stay out of the totals and the app makes no network requests.</string>
     <string name="settings_default_account">Default account</string>
     <string name="settings_default_account_auto">Automatic (last used)</string>
     <string name="settings_first_day_of_week">First day of the week</string>
@@ -834,6 +843,8 @@
     <string name="about_author">Developed by Callback Dev</string>
     <!-- Author line: a name and a year, identical in every language. -->
     <string name="about_copyright" translatable="false">© 2026 Fiorenzo Brioni</string>
+    <string name="about_privacy_title">Privacy and network</string>
+    <string name="about_privacy_body">Your data lives only on this device. Reading the ECB exchange rates for the currency conversion is the app\'s only network traffic besides the optional backup and export, and it sends none of your data: only the request for the rates leaves the device. Conversion can be turned off in Settings.</string>
     <string name="about_license_title">License</string>
     <string name="about_license_body">Saldo is free software, released under the GNU GPL-3.0 license.</string>
     <string name="about_libraries_title">Open source libraries</string>
@@ -989,6 +1000,7 @@
     <string name="savings_summary_title">Total saved</string>
     <string name="savings_saved_of">%1$s of %2$s</string>
     <string name="savings_other_currencies">Goals in other currencies are listed below, out of this total.</string>
+    <string name="savings_converted_currencies">Includes goals in other currencies, converted at the latest ECB rate (estimated).</string>
     <string name="savings_reached">Goal reached</string>
     <string name="savings_by_date">By %1$s</string>
     <string name="savings_by_date_suggestion">By %1$s · set aside %2$s/month</string>
@@ -1186,6 +1198,7 @@
     <string name="upcoming_tap_to_confirm">To confirm</string>
     <string name="upcoming_reminder_badge">Reminder set</string>
     <string name="upcoming_other_currencies">The totals only count the main currency; the list shows every movement.</string>
+    <string name="upcoming_converted_currencies">The totals include movements in other currencies, converted at the latest ECB rate (estimated).</string>
     <string name="upcoming_empty_title">Nothing ahead</string>
     <string name="upcoming_empty_body">Movements dated in the future and occurrences to confirm show up here, so you can see what is coming before it happens.</string>
     <string name="recurrences_upcoming_hint">The next occurrences and the movements dated ahead</string>

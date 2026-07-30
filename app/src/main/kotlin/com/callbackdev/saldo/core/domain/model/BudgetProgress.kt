@@ -42,4 +42,10 @@ data class BudgetProgress(
     val spent: BigDecimal,
     val fraction: Float,
     val level: BudgetLevel,
+    /**
+     * True when [spent] includes movements converted from other currencies at
+     * the rate of their own day (ADR 40): the figure is an estimate and the
+     * UI declares it.
+     */
+    val includesConvertedSpend: Boolean = false,
 )

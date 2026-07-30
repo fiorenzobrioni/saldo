@@ -73,10 +73,19 @@ data class StatsUiState(
     val hasData: Boolean = false,
     /**
      * Movements of the selected period the charts leave out for the sole
-     * reason of being in another currency ([currency] is the only one every
-     * figure here is scoped to). Zero in the ordinary single-currency case.
+     * reason of being in another currency: every foreign movement with
+     * conversion off, only the ones without a usable rate with it on
+     * (ADR 40). Zero in the ordinary single-currency case.
      */
     val otherCurrencyCount: Int = 0,
+    /**
+     * Foreign movements of the selected period converted into [currency] at
+     * the rate of their own day and included in the charts (ADR 40). Feeds
+     * the "estimated" notice; zero when conversion is off.
+     */
+    val convertedCurrencyCount: Int = 0,
+    /** Whether conversion is on with at least one usable rate (ADR 40). */
+    val conversionActive: Boolean = false,
 ) {
     /** The whole screen's first-run empty state. */
     val isEmpty: Boolean get() = !isLoading && !hasData
@@ -88,6 +97,12 @@ data class StatsUiState(
      * version of this.
      */
     val showsOtherCurrencyNotice: Boolean get() = !isLoading && otherCurrencyCount > 0
+
+    /**
+     * Whether to declare that some figures are estimates built on converted
+     * foreign movements (ADR 40: a countervalue is always declared).
+     */
+    val showsConvertedNotice: Boolean get() = !isLoading && convertedCurrencyCount > 0
 
     /** True when the last 12 months hold nothing for the trend charts. */
     val isTrendEmpty: Boolean

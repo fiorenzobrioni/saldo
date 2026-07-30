@@ -6,22 +6,29 @@ import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
+import com.callbackdev.saldo.core.domain.model.CurrencyMovementCount
 import com.callbackdev.saldo.core.domain.model.MonthlyBalance
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.common.time.midnightTicker
+import com.callbackdev.saldo.core.domain.rates.ConversionState
+import com.callbackdev.saldo.core.domain.rates.ConvertedAggregates
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.ObserveBalanceHistoryUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -38,6 +45,7 @@ class StatsViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val observeBalanceHistory: ObserveBalanceHistoryUseCase,
+    private val observeConversionState: ObserveConversionStateUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -47,19 +55,20 @@ class StatsViewModel @Inject constructor(
 
     /** Everything the stats screen combines besides accounts and period. */
     private data class Sources(
-        val categoryTotals: List<CategoryTotal>,
-        val accountTotals: List<AccountTotal>,
-        val monthlyTotals: List<MonthlyTotal>,
+        val categoryTotals: ConvertedAggregates.Merged<List<CategoryTotal>>,
+        val accountTotals: ConvertedAggregates.Merged<List<AccountTotal>>,
+        val monthlyTotals: ConvertedAggregates.Merged<List<MonthlyTotal>>,
         val balances: List<MonthlyBalance>,
         val categories: List<Category>,
     )
 
-    /** Everything upstream of the SQL windows: accounts, period, override, today. */
+    /** Everything upstream of the SQL windows: accounts, period, override, today, conversion. */
     private data class Inputs(
         val accounts: List<AccountWithBalance>,
         val period: StatsPeriod,
         val currencyOverride: Currency?,
         val today: LocalDate,
+        val conversion: ConversionState,
     )
 
     /**
@@ -76,10 +85,13 @@ class StatsViewModel @Inject constructor(
         period,
         userPreferences.primaryCurrencyOverride,
         midnightTicker(clock),
+        observeConversionState(),
         ::Inputs,
     )
         .flatMapLatest { inputs ->
             val currency = primaryCurrency(inputs.accounts, inputs.currencyOverride)
+            val conversion = inputs.conversion
+            val rates = if (conversion.active) conversion.rates else RateTable.EMPTY
             val zone = clock.zone
             val range = inputs.period.dateRange(inputs.today)
             val periodStart = range.start.atStartOfDay(zone).toInstant()
@@ -87,17 +99,57 @@ class StatsViewModel @Inject constructor(
             val months = trailingMonths(YearMonth.from(inputs.today))
             val trendStart = months.first().atDay(1).atStartOfDay(zone).toInstant()
             val trendEnd = months.last().plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
-            val sources = combine(
+            // Every aggregate collapses with its foreign residue right away
+            // (ADR 40); with conversion off the residues are constants and
+            // each merge is the identity, i.e. the pre-conversion figures.
+            val categoryTotals = combine(
                 transactionRepository.observeCategoryTotals(periodStart, periodEnd, currency),
+                foreignOrEmpty(conversion) {
+                    transactionRepository.observeForeignCategoryTotals(periodStart, periodEnd, currency)
+                },
+            ) { base, foreign ->
+                ConvertedAggregates.mergeCategoryTotals(base, foreign, currency, rates)
+            }
+            val accountTotals = combine(
                 transactionRepository.observeAccountSpendTotals(periodStart, periodEnd, currency),
+                foreignOrEmpty(conversion) {
+                    transactionRepository.observeForeignAccountSpendTotals(periodStart, periodEnd, currency)
+                },
+            ) { base, foreign ->
+                ConvertedAggregates.mergeAccountTotals(base, foreign, currency, rates)
+            }
+            val monthlyTotals = combine(
                 transactionRepository.observeMonthlyTotals(trendStart, trendEnd, currency),
-                observeBalanceHistory(currency, months),
+                foreignOrEmpty(conversion) {
+                    transactionRepository.observeForeignMonthlyTotals(trendStart, trendEnd, currency)
+                },
+            ) { base, foreign ->
+                ConvertedAggregates.mergeMonthlyTotals(base, foreign, currency, rates)
+            }
+            // Foreign currencies whose included accounts enter the balance
+            // trend as converted stocks; empty when conversion is off.
+            val balanceForeign = if (conversion.active) {
+                inputs.accounts
+                    .filter {
+                        !it.account.isArchived && it.account.isIncludedInTotal &&
+                            it.account.currency != currency
+                    }
+                    .map { it.account.currency }
+                    .distinct()
+            } else {
+                emptyList()
+            }
+            val sources = combine(
+                categoryTotals,
+                accountTotals,
+                monthlyTotals,
+                observeBalanceHistory(currency, months, balanceForeign, rates),
                 categoryRepository.observeCategories(),
-            ) { categoryTotals, accountTotals, monthlyTotals, balances, categories ->
+            ) { category, account, monthly, balances, categories ->
                 Sources(
-                    categoryTotals = categoryTotals,
-                    accountTotals = accountTotals,
-                    monthlyTotals = monthlyTotals,
+                    categoryTotals = category,
+                    accountTotals = account,
+                    monthlyTotals = monthly,
                     balances = balances,
                     categories = categories,
                 )
@@ -106,16 +158,17 @@ class StatsViewModel @Inject constructor(
             // at five flows.
             combine(
                 sources,
-                transactionRepository.observeOtherCurrencyCount(periodStart, periodEnd, currency),
-            ) { collapsed, otherCurrencyCount ->
+                transactionRepository.observeOtherCurrencyCounts(periodStart, periodEnd, currency),
+            ) { collapsed, otherCurrencyCounts ->
                 buildState(
                     accounts = inputs.accounts,
                     activePeriod = inputs.period,
                     currency = currency,
+                    conversion = conversion,
                     today = inputs.today,
                     months = months,
                     sources = collapsed,
-                    otherCurrencyCount = otherCurrencyCount,
+                    otherCurrencyCounts = otherCurrencyCounts,
                 )
             }
         }
@@ -156,31 +209,47 @@ class StatsViewModel @Inject constructor(
         period.value = period.value.shifted(+1) ?: return
     }
 
+    /** The residue flow only when conversion is on; a cheap constant otherwise. */
+    private fun <T> foreignOrEmpty(
+        conversion: ConversionState,
+        flow: () -> Flow<List<T>>,
+    ): Flow<List<T>> = if (conversion.active) flow() else flowOf(emptyList())
+
     @Suppress("LongParameterList") // One value per figure family on the screen.
     private fun buildState(
         accounts: List<AccountWithBalance>,
         activePeriod: StatsPeriod,
         currency: Currency,
+        conversion: ConversionState,
         today: LocalDate,
         months: List<YearMonth>,
         sources: Sources,
-        otherCurrencyCount: Int,
+        otherCurrencyCounts: List<CurrencyMovementCount>,
     ): StatsUiState {
-        val slices = categorySlices(sources.categoryTotals, sources.categories)
+        val slices = categorySlices(sources.categoryTotals.value, sources.categories)
+        // What the charts still leave out: every foreign movement when
+        // conversion is off, only the ones without a usable rate when it is
+        // on. The rest is converted and declared as an estimate.
+        val excludedCount = otherCurrencyCounts
+            .filter { !conversion.active || !conversion.rates.covers(it.currencyCode) }
+            .sumOf { it.count }
+        val convertedCount = otherCurrencyCounts.sumOf { it.count } - excludedCount
         return StatsUiState(
             isLoading = false,
             period = activePeriod,
             today = today,
             currency = currency,
-            otherCurrencyCount = otherCurrencyCount,
+            conversionActive = conversion.active,
+            otherCurrencyCount = excludedCount,
+            convertedCurrencyCount = convertedCount,
             slices = slices,
             periodSpendTotal = slices.fold(BigDecimal.ZERO) { acc, slice -> acc.add(slice.amount) },
-            accountSpends = accountSpends(sources.accountTotals, accounts),
-            monthlyTotals = monthlyPoints(months, sources.monthlyTotals),
+            accountSpends = accountSpends(sources.accountTotals.value, accounts),
+            monthlyTotals = monthlyPoints(months, sources.monthlyTotals.value),
             balanceHistory = sources.balances,
-            hasData = sources.monthlyTotals.isNotEmpty() ||
-                sources.categoryTotals.isNotEmpty() ||
-                sources.accountTotals.isNotEmpty(),
+            hasData = sources.monthlyTotals.value.isNotEmpty() ||
+                sources.categoryTotals.value.isNotEmpty() ||
+                sources.accountTotals.value.isNotEmpty(),
         )
     }
 

@@ -219,6 +219,7 @@ private fun UpcomingSummaryCard(ledger: UpcomingLedger, modifier: Modifier = Mod
                     currency = ledger.currency,
                     color = MaterialTheme.moneyColors.expense,
                     modifier = Modifier.weight(1f),
+                    estimated = ledger.includesEstimates,
                 )
                 VerticalDivider(
                     color = MaterialTheme.colorScheme.outlineVariant,
@@ -230,6 +231,7 @@ private fun UpcomingSummaryCard(ledger: UpcomingLedger, modifier: Modifier = Mod
                     currency = ledger.currency,
                     color = MaterialTheme.moneyColors.income,
                     modifier = Modifier.weight(1f),
+                    estimated = ledger.includesEstimates,
                 )
             }
             // A figure still to confirm is not a promise: say so, instead of
@@ -242,6 +244,9 @@ private fun UpcomingSummaryCard(ledger: UpcomingLedger, modifier: Modifier = Mod
                         ledger.pendingCount,
                     ),
                 )
+            }
+            if (ledger.includesEstimates) {
+                SummaryNote(text = stringResource(R.string.upcoming_converted_currencies))
             }
             if (ledger.hasOtherCurrencies) {
                 SummaryNote(text = stringResource(R.string.upcoming_other_currencies))
@@ -257,6 +262,7 @@ private fun SummaryHalf(
     currency: Currency,
     color: Color,
     modifier: Modifier = Modifier,
+    estimated: Boolean = false,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -269,7 +275,8 @@ private fun SummaryHalf(
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = MoneyFormatter.format(amount, currency),
+            // "≈" when foreign movements enter as converted estimates (ADR 40).
+            text = (if (estimated) "≈ " else "") + MoneyFormatter.format(amount, currency),
             style = MaterialTheme.typography.headlineSmall.tabularNumbers(),
             fontWeight = FontWeight.SemiBold,
             // A zero total is not news: it stays quiet instead of shouting a color.

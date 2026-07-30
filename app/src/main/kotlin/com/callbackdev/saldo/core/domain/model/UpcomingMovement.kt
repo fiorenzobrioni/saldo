@@ -64,11 +64,18 @@ data class UpcomingLedger(
     /** How many of [items] are waiting for a confirmation. */
     val pendingCount: Int = 0,
     /**
-     * True when a movement in another currency is in the list: the totals only
-     * count [currency], so they would otherwise under-report in silence (the
-     * same notice the statistics carry since Phase 10.16).
+     * True when a movement in another currency stays out of the totals: every
+     * foreign movement with conversion off, only the ones without a usable
+     * rate with it on (ADR 40). The totals would otherwise under-report in
+     * silence (the same notice the statistics carry since Phase 10.16).
      */
     val hasOtherCurrencies: Boolean = false,
+    /**
+     * True when the totals include foreign movements converted at the rate of
+     * their own (future) day, i.e. the latest known one (ADR 40): the figures
+     * are estimates and the UI declares it.
+     */
+    val includesEstimates: Boolean = false,
 ) {
     val isEmpty: Boolean get() = items.isEmpty()
 }

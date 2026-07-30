@@ -9,6 +9,7 @@ import com.callbackdev.saldo.core.common.applock.AppLockLifecycleObserver
 import com.callbackdev.saldo.core.common.di.ApplicationScope
 import com.callbackdev.saldo.creditcard.CreditCardNotifier
 import com.callbackdev.saldo.feature.widget.WidgetRefreshWatcher
+import com.callbackdev.saldo.rates.RateSyncManager
 import com.callbackdev.saldo.recurring.RecurringNotifier
 import com.callbackdev.saldo.recurring.RecurringWorkScheduler
 import dagger.hilt.android.HiltAndroidApp
@@ -40,6 +41,9 @@ class SaldoApplication : Application(), Configuration.Provider {
     lateinit var appLockLifecycleObserver: AppLockLifecycleObserver
 
     @Inject
+    lateinit var rateSyncManager: RateSyncManager
+
+    @Inject
     @ApplicationScope
     lateinit var applicationScope: CoroutineScope
 
@@ -57,6 +61,10 @@ class SaldoApplication : Application(), Configuration.Provider {
         creditCardNotifier.createChannel()
         budgetThresholdWatcher.start(applicationScope)
         widgetRefreshWatcher.start(applicationScope)
+        // Reacts to the first foreign account or a re-enabled conversion by
+        // starting the rate backfill right away (ADR 40); its gates make it
+        // a no-op for single-currency ledgers.
+        rateSyncManager.start(applicationScope)
         // Feeds the app lock's re-lock timer across every activity (ADR 39).
         registerActivityLifecycleCallbacks(appLockLifecycleObserver)
         RecurringWorkScheduler.schedule(this)

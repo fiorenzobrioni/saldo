@@ -1,9 +1,14 @@
 package com.callbackdev.saldo.core.domain.usecase
 
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
+import com.callbackdev.saldo.core.domain.model.SpendDayTotal
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.model.localDate
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
+import com.callbackdev.saldo.core.domain.rates.ConversionState
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import com.callbackdev.saldo.core.domain.recurrence.UpcomingChargesCalculator
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.BudgetRepository
@@ -11,6 +16,7 @@ import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Clock
@@ -35,6 +41,11 @@ data class SafeToSpend(
     val upcomingRecurring: BigDecimal,
     /** Days of the month left, today included. */
     val daysLeft: Int,
+    /**
+     * True when any leg includes amounts converted from other currencies
+     * (ADR 40): the figure is an estimate and the UI declares it.
+     */
+    val includesEstimates: Boolean = false,
 )
 
 /**
@@ -63,16 +74,31 @@ class ObserveSafeToSpendUseCase @Inject constructor(
     private val clock: Clock,
 ) {
 
-    operator fun invoke(currency: Currency): Flow<SafeToSpend?> {
+    operator fun invoke(
+        currency: Currency,
+        conversion: ConversionState = ConversionState.INACTIVE,
+    ): Flow<SafeToSpend?> {
         val today = LocalDate.now(clock)
         val windows = DashboardWindows.around(today, clock.zone)
+        val rates = if (conversion.active) conversion.rates else RateTable.EMPTY
+        // The spend leg mirrors the budget card: single-currency total when
+        // conversion is off, per-(currency, day) rows converted at the rate
+        // of their own day when it is on (ADR 40).
+        val spendLeg: Flow<Pair<BigDecimal, Boolean>> = if (conversion.active) {
+            transactionRepository.observeSpendByCurrencyDay(windows.monthStart, windows.monthEnd)
+                .map { rows -> spendInto(currency, rows, rates) }
+        } else {
+            transactionRepository
+                .observeStatsSpendTotal(windows.monthStart, windows.monthEnd, currency)
+                .map { it to false }
+        }
         return combine(
             budgetRepository.observeBudgets(),
-            transactionRepository.observeStatsSpendTotal(windows.monthStart, windows.monthEnd, currency),
+            spendLeg,
             transactionRepository.observePendingTransactions(),
             recurringRuleRepository.observeRules(),
             accountRepository.observeAccountsWithBalance(),
-        ) { budgets, totalSpend, pending, rules, accounts ->
+        ) { budgets, (totalSpend, spendConverted), pending, rules, accounts ->
             val overall = budgets.firstOrNull { it.isOverall && it.currency == currency }
                 ?: return@combine null
             val budgetExcludedAccountIds = accounts
@@ -80,9 +106,12 @@ class ObserveSafeToSpendUseCase @Inject constructor(
                 .map { it.account.id }
                 .toSet()
             val spent = totalSpend.negate().max(BigDecimal.ZERO)
-            val pendingCommitted = pendingCommitted(pending, windows, currency, budgetExcludedAccountIds)
+            val (pendingCommitted, pendingConverted) =
+                pendingCommitted(pending, windows, currency, budgetExcludedAccountIds, rates)
             val budgetedRules = rules.filterNot { it.accountId in budgetExcludedAccountIds }
-            val upcoming = UpcomingChargesCalculator.remainingExpenseChargesInMonth(budgetedRules, today, currency)
+            val foreignRules = budgetedRules.any { it.currency != currency }
+            val upcoming = UpcomingChargesCalculator
+                .remainingExpenseChargesInMonth(budgetedRules, today, currency, rates)
             val remaining = overall.amount
                 .subtract(spent)
                 .subtract(pendingCommitted)
@@ -96,30 +125,69 @@ class ObserveSafeToSpendUseCase @Inject constructor(
                 pendingCommitted = pendingCommitted,
                 upcomingRecurring = upcoming,
                 daysLeft = daysLeft,
+                includesEstimates = spendConverted || pendingConverted ||
+                    (conversion.active && foreignRules),
             )
         }
     }
 
+    /** Same fold the budget progress uses: exact for [currency], estimated for the rest. */
+    private fun spendInto(
+        currency: Currency,
+        rows: List<SpendDayTotal>,
+        rates: RateTable,
+    ): Pair<BigDecimal, Boolean> {
+        var total = BigDecimal.ZERO
+        var converted = false
+        rows.forEach { row ->
+            if (row.currency == currency) {
+                total = total.add(row.total)
+            } else {
+                CurrencyConverter.convertOn(row.total, row.currency, currency, row.day, rates)
+                    ?.let {
+                        total = total.add(it.amount)
+                        converted = true
+                    }
+            }
+        }
+        return total to converted
+    }
+
     /**
-     * The month's pending expenses in [currency], as a positive magnitude,
-     * excluding those charged to accounts left out of the budget.
+     * The month's pending expenses as a positive magnitude, excluding those
+     * charged to accounts left out of the budget. Foreign ones enter at the
+     * rate of their own day (ADR 40) or stay out without rates.
      */
     private fun pendingCommitted(
         pending: List<Transaction>,
         windows: DashboardWindows,
         currency: Currency,
         budgetExcludedAccountIds: Set<Long>,
-    ): BigDecimal = pending
-        .filter { transaction ->
-            transaction.type == TransactionType.EXPENSE &&
-                transaction.currency == currency &&
-                transaction.accountId !in budgetExcludedAccountIds &&
-                transaction.timestamp >= windows.monthStart &&
-                transaction.timestamp < windows.monthEnd
-        }
-        // Signed convention: pending expenses are negative, like confirmed ones.
-        .fold(BigDecimal.ZERO) { acc, transaction -> acc.subtract(transaction.amount) }
-        .max(BigDecimal.ZERO)
+        rates: RateTable,
+    ): Pair<BigDecimal, Boolean> {
+        var converted = false
+        val committed = pending
+            .filter { transaction ->
+                transaction.type == TransactionType.EXPENSE &&
+                    transaction.accountId !in budgetExcludedAccountIds &&
+                    transaction.timestamp >= windows.monthStart &&
+                    transaction.timestamp < windows.monthEnd
+            }
+            // Signed convention: pending expenses are negative, like confirmed ones.
+            .fold(BigDecimal.ZERO) { acc, transaction ->
+                if (transaction.currency == currency) {
+                    acc.subtract(transaction.amount)
+                } else {
+                    val estimate = CurrencyConverter
+                        .convertOn(transaction.amount, transaction.currency, currency, transaction.localDate, rates)
+                        ?: return@fold acc
+                    converted = true
+                    acc.subtract(estimate.amount)
+                }
+            }
+            .max(BigDecimal.ZERO)
+        return committed to converted
+    }
 
     private fun perDay(remaining: BigDecimal, daysLeft: Int, currency: Currency): BigDecimal? {
         if (remaining.signum() <= 0 || daysLeft <= 0) return null

@@ -21,6 +21,7 @@
     <!-- Dashboard (Fase 5) -->
     <string name="dashboard_balance_total">Saldo totale</string>
     <string name="dashboard_balance_as_of_today">%1$s ad oggi</string>
+    <string name="dashboard_balance_estimated_rates">Include controvalori stimati ai tassi BCE del %1$s</string>
     <string name="dashboard_sparkline_caption">Ultimi 30 giorni</string>
     <string name="dashboard_sparkline_a11y_up">Andamento del saldo negli ultimi 30 giorni: da %1$s a %2$s, in aumento</string>
     <string name="dashboard_sparkline_a11y_down">Andamento del saldo negli ultimi 30 giorni: da %1$s a %2$s, in calo</string>
@@ -203,6 +204,8 @@
     <string name="account_editor_section_type">Tipo</string>
     <string name="account_editor_currency">Valuta</string>
     <string name="account_editor_currency_locked">Non modificabile: il conto ha già dei movimenti</string>
+    <string name="account_editor_conversion_on_banner">Il saldo di questo conto entrerà nei totali come controvalore in %1$s, stimato con i tassi BCE (indicato con ≈). I tassi vengono scaricati da internet; puoi disattivare la conversione nelle Impostazioni.</string>
+    <string name="account_editor_conversion_off_banner">La conversione automatica è disattivata: questo conto resterà fuori dai totali in %1$s. Puoi attivarla nelle Impostazioni.</string>
     <string name="account_editor_initial_balance">Saldo iniziale</string>
     <string name="account_editor_initial_balance_hint">Il saldo corrente è calcolato a partire da qui</string>
     <string name="account_editor_initial_balance_hint_loan">Il debito residuo di oggi, con il segno meno</string>
@@ -369,6 +372,11 @@
         <item quantity="one">%1$d movimento in un\'altra valuta non è conteggiato qui: questi dati sono solo in %2$s.</item>
         <item quantity="many">%1$d movimenti in altre valute non sono conteggiati qui: questi dati sono solo in %2$s.</item>
         <item quantity="other">%1$d movimenti in altre valute non sono conteggiati qui: questi dati sono solo in %2$s.</item>
+    </plurals>
+    <plurals name="stats_converted_currencies_notice">
+        <item quantity="one">%1$d movimento in un\'altra valuta è incluso, convertito in %2$s al tasso BCE del suo giorno (stima).</item>
+        <item quantity="many">%1$d movimenti in altre valute sono inclusi, convertiti in %2$s al tasso BCE del loro giorno (stima).</item>
+        <item quantity="other">%1$d movimenti in altre valute sono inclusi, convertiti in %2$s al tasso BCE del loro giorno (stima).</item>
     </plurals>
     <string name="stats_view_movements">Vedi i movimenti di %1$s</string>
     <!-- Riassunti dei grafici per gli screen reader (i grafici disegnano su un canvas muto). -->
@@ -683,6 +691,8 @@
     <string name="settings_section_preferences">Preferenze</string>
     <string name="settings_primary_currency">Valuta principale</string>
     <string name="settings_primary_currency_auto">Automatica (in base ai tuoi conti)</string>
+    <string name="settings_currency_conversion">Conversione automatica</string>
+    <string name="settings_currency_conversion_hint">Conta conti e movimenti in altre valute come controvalori stimati con i tassi di riferimento BCE, sempre indicati con ≈. I tassi vengono scaricati da internet quando serve: la richiesta non contiene alcun tuo dato, e se tutto è in una sola valuta non viene scaricato nulla. Da spenta, le altre valute restano fuori dai totali e l\'app non fa alcuna richiesta di rete.</string>
     <string name="settings_default_account">Conto predefinito</string>
     <string name="settings_default_account_auto">Automatico (ultimo usato)</string>
     <string name="settings_first_day_of_week">Primo giorno della settimana</string>
@@ -851,6 +861,8 @@
     <string name="about_version">Versione %1$s</string>
     <string name="about_tagline">Capire dove vanno i soldi, in modo chiaro e immediato.</string>
     <string name="about_author">Sviluppata da Callback Dev</string>
+    <string name="about_privacy_title">Privacy e rete</string>
+    <string name="about_privacy_body">I tuoi dati vivono solo su questo dispositivo. La lettura dei cambi BCE per la conversione delle valute è l\'unico traffico di rete dell\'app oltre a backup ed export opzionali, e non porta fuori alcun tuo dato: dal dispositivo esce solo la richiesta dei tassi. La conversione si può disattivare nelle Impostazioni.</string>
     <string name="about_license_title">Licenza</string>
     <string name="about_license_body">Saldo è software libero, rilasciato con licenza GNU GPL-3.0.</string>
     <string name="about_libraries_title">Librerie open source</string>
@@ -1004,6 +1016,7 @@
     <string name="savings_summary_title">Totale risparmiato</string>
     <string name="savings_saved_of">%1$s su %2$s</string>
     <string name="savings_other_currencies">Gli obiettivi in altre valute sono elencati sotto, fuori da questo totale.</string>
+    <string name="savings_converted_currencies">Include obiettivi in altre valute, convertiti all\'ultimo tasso BCE (stima).</string>
     <string name="savings_reached">Obiettivo raggiunto</string>
     <string name="savings_by_date">Entro %1$s</string>
     <string name="savings_by_date_suggestion">Entro %1$s · metti da parte %2$s/mese</string>
@@ -1200,6 +1213,7 @@
     <string name="upcoming_tap_to_confirm">Da confermare</string>
     <string name="upcoming_reminder_badge">Promemoria attivo</string>
     <string name="upcoming_other_currencies">I totali contano solo la valuta principale; l\'elenco mostra tutti i movimenti.</string>
+    <string name="upcoming_converted_currencies">I totali includono movimenti in altre valute, convertiti all\'ultimo tasso BCE (stima).</string>
     <string name="upcoming_empty_title">Non c\'è niente in arrivo</string>
     <string name="upcoming_empty_body">Qui compaiono i movimenti con una data futura e le occorrenze da confermare, così vedi cosa sta per succedere prima che succeda.</string>
     <string name="recurrences_upcoming_hint">Le prossime occorrenze e i movimenti con data futura</string>

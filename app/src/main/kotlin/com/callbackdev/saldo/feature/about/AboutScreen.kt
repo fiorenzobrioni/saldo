@@ -80,6 +80,8 @@ fun AboutScreen(
             Spacer(Modifier.height(24.dp))
             AppIdentity()
             Spacer(Modifier.height(28.dp))
+            PrivacyCard(modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(SaldoDimens.cardSpacing))
             LicenseCard(modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(SaldoDimens.cardSpacing))
             LibrariesCard(modifier = Modifier.fillMaxWidth())
@@ -143,6 +145,28 @@ private fun AppLogo(modifier: Modifier = Modifier) {
             painter = painterResource(R.drawable.ic_launcher_foreground),
             contentDescription = null,
             modifier = Modifier.requiredSize(LOGO_SIZE * LOGO_CANVAS_OVER_VISIBLE),
+        )
+    }
+}
+
+/**
+ * What travels over the network and what never does (ADR 40): reading the ECB
+ * exchange rates is the app's only network traffic outside the optional
+ * backup and export, and it carries no user data. Privacy-first means writing
+ * it where the user can read it.
+ */
+@Composable
+private fun PrivacyCard(modifier: Modifier = Modifier) {
+    AboutCard(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.about_privacy_title),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = stringResource(R.string.about_privacy_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

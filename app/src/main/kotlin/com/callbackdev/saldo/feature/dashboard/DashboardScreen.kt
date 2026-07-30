@@ -192,6 +192,9 @@ private fun DashboardContent(
                 onToggleAccounts = onToggleAccounts,
                 onManageAccounts = onManageAccounts,
                 onAccountClick = onAccountClick,
+                estimated = uiState.totalBalanceEstimated,
+                rateDay = uiState.totalBalanceRateDay,
+                countervalues = uiState.accountCountervalues,
             )
         }
         uiState.safeToSpend?.takeIf { uiState.cardPrefs.showSafeToSpend }?.let { safeToSpend ->
@@ -211,6 +214,7 @@ private fun DashboardContent(
                 today = uiState.today,
                 month = uiState.month,
                 currency = uiState.primaryCurrency,
+                estimated = uiState.periodTotalsEstimated,
                 onTodayClick = {
                     onNavigateToFiltered(
                         FilteredTransactionsRoute(

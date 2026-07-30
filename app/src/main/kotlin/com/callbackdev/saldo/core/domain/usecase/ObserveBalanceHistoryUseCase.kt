@@ -1,10 +1,13 @@
 package com.callbackdev.saldo.core.domain.usecase
 
 import com.callbackdev.saldo.core.domain.model.MonthlyBalance
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import java.math.BigDecimal
 import java.time.YearMonth
 import java.util.Currency
@@ -19,6 +22,12 @@ import javax.inject.Inject
  * Like the dashboard total, the series is a cash figure over today's account
  * set: archiving an account or excluding it from the total rewrites history
  * retroactively, which keeps the two figures consistent with each other.
+ *
+ * With conversion on (ADR 40) the walk also runs per foreign currency of the
+ * included accounts, each month-end balance converting at the rate in force
+ * on that month's last day (a stock is valued at the rate of the day it
+ * refers to; the current month naturally resolves to the latest known rate).
+ * A currency without rates contributes nothing, as before the feature.
  */
 class ObserveBalanceHistoryUseCase @Inject constructor(
     private val accountRepository: AccountRepository,
@@ -29,11 +38,41 @@ class ObserveBalanceHistoryUseCase @Inject constructor(
     operator fun invoke(
         currency: Currency,
         months: List<YearMonth>,
+        foreignCurrencies: List<Currency> = emptyList(),
+        rates: RateTable = RateTable.EMPTY,
+    ): Flow<List<MonthlyBalance>> {
+        if (months.isEmpty()) return flowOf(emptyList())
+        val primary = seriesIn(currency, months)
+        val foreign = foreignCurrencies.distinct().filter { it != currency }
+        if (foreign.isEmpty()) return primary
+        val series = listOf(primary) + foreign.map { seriesIn(it, months) }
+        return combine(series) { walked ->
+            months.mapIndexed { index, month ->
+                var total = walked[0][index].balance
+                foreign.forEachIndexed { c, foreignCurrency ->
+                    val balance = walked[c + 1][index].balance
+                    val estimate = CurrencyConverter.convertOn(
+                        balance,
+                        foreignCurrency,
+                        currency,
+                        month.atEndOfMonth(),
+                        rates,
+                    )
+                    if (estimate != null) total = total.add(estimate.amount)
+                }
+                MonthlyBalance(month, total)
+            }
+        }
+    }
+
+    /** The plain single-currency walk the pre-conversion statistics ran. */
+    private fun seriesIn(
+        currency: Currency,
+        months: List<YearMonth>,
     ): Flow<List<MonthlyBalance>> = combine(
         accountRepository.observeInitialBalanceTotal(currency),
         transactionRepository.observeMonthlyNetChanges(currency),
     ) { initialTotal, changes ->
-        if (months.isEmpty()) return@combine emptyList()
         val netByMonth = changes.associate { it.month to it.net }
         val first = months.first()
         var running = changes

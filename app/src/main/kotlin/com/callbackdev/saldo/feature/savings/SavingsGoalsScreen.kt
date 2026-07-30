@@ -173,7 +173,9 @@ private fun SavingsSummaryCard(uiState: SavingsGoalsUiState, modifier: Modifier 
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                text = MoneyFormatter.format(uiState.totalSaved, currency),
+                // "≈" when foreign goals enter as converted estimates (ADR 40).
+                text = (if (uiState.totalsEstimated) "≈ " else "") +
+                    MoneyFormatter.format(uiState.totalSaved, currency),
                 style = MaterialTheme.typography.headlineMedium.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.moneyColors.income,
@@ -194,6 +196,14 @@ private fun SavingsSummaryCard(uiState: SavingsGoalsUiState, modifier: Modifier 
                 style = MaterialTheme.typography.bodySmall.tabularNumbers(),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (uiState.totalsEstimated) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.savings_converted_currencies),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             if (uiState.hasOtherCurrencies) {
                 Spacer(Modifier.height(4.dp))
                 Text(

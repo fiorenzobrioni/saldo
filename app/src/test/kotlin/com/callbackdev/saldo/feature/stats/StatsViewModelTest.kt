@@ -9,12 +9,15 @@ import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
 import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.domain.model.CurrencyMovementCount
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.rates.ConversionState
 import com.callbackdev.saldo.core.domain.usecase.ObserveBalanceHistoryUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.every
 import io.mockk.mockk
@@ -47,6 +50,7 @@ class StatsViewModelTest {
     private val transactionRepository = mockk<TransactionRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
     private val balanceHistory = mockk<ObserveBalanceHistoryUseCase>()
+    private val observeConversionState = mockk<ObserveConversionStateUseCase>()
 
     private val checking = Account(
         id = 1L,
@@ -81,8 +85,15 @@ class StatsViewModelTest {
         otherCurrencyCount: Int = 0,
     ): StatsViewModel {
         every {
-            transactionRepository.observeOtherCurrencyCount(any(), any(), expectedCurrency)
-        } returns flowOf(otherCurrencyCount)
+            transactionRepository.observeOtherCurrencyCounts(any(), any(), expectedCurrency)
+        } returns flowOf(
+            if (otherCurrencyCount > 0) {
+                listOf(CurrencyMovementCount("USD", otherCurrencyCount))
+            } else {
+                emptyList()
+            },
+        )
+        every { observeConversionState() } returns flowOf(ConversionState.INACTIVE)
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
@@ -92,7 +103,7 @@ class StatsViewModelTest {
             flowOf(accountTotals)
         every { transactionRepository.observeMonthlyTotals(any(), any(), expectedCurrency) } returns
             flowOf(monthlyTotals)
-        every { balanceHistory(expectedCurrency, any()) } returns flowOf(emptyList())
+        every { balanceHistory(expectedCurrency, any(), any(), any()) } returns flowOf(emptyList())
         every { categoryRepository.observeCategories() } returns
             flowOf(listOf(groceries, transport))
         return StatsViewModel(
@@ -101,6 +112,7 @@ class StatsViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             observeBalanceHistory = balanceHistory,
+            observeConversionState = observeConversionState,
             clock = clock,
         )
     }
