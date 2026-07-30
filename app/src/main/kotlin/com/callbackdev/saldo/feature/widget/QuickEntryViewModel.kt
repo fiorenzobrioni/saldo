@@ -57,6 +57,15 @@ data class QuickEntryUiState(
         get() = MoneyInput.parse(amountInput)?.let { it.signum() > 0 } == true
 
     /**
+     * Nothing to save onto yet: no account, or no category of this type. The
+     * widget never opens the sheet in this state (its NotReady face covers it),
+     * but the Quick Settings tile has no such gate, so the sheet itself turns
+     * into a door to the app instead of a form that cannot save.
+     */
+    val needsSetup: Boolean
+        get() = !isLoading && (accounts.isEmpty() || categories.isEmpty())
+
+    /**
      * [isSaved] closes the door for good: the sheet holds its confirmation for
      * a beat before it dismisses, and a second tap in that window must not
      * write the movement twice.

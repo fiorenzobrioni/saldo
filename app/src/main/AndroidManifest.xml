@@ -95,6 +95,23 @@
             </intent-filter>
         </activity>
 
+        <!--
+            "Add expense" Quick Settings tile (ADR 41): a second static entry
+            point to the quick entry sheet above. Exported because the system
+            binds it; the BIND permission keeps everyone else out. The tile
+            never shows data, so there is nothing to refresh (ADR 37).
+        -->
+        <service
+            android:name=".feature.widget.QuickAddTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile_quick_add"
+            android:label="@string/tile_quick_add_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- Shares CSV exports from the cache directory via the system Share Sheet. -->
         <provider
             android:name="androidx.core.content.FileProvider"
