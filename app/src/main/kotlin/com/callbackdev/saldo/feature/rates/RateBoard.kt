@@ -119,4 +119,24 @@ internal object RateBoard {
         }
         return quotedPerEuro.divide(basePerEuro, VALUE_SCALE, RoundingMode.HALF_UP)
     }
+
+    /**
+     * The full published series of [code] against [base] over the given
+     * window, for the detail chart. Empty when the base cannot quote, when
+     * [code] is the base itself or when the cache holds nothing for it.
+     */
+    fun detailSeries(
+        rates: List<ExchangeRate>,
+        base: Currency,
+        code: String,
+    ): List<RatePoint> {
+        if (rates.isEmpty()) return emptyList()
+        val table = RateTable.of(rates)
+        val baseCode = base.currencyCode
+        if (baseCode != EUR_CODE && !table.covers(baseCode)) return emptyList()
+        if (code == baseCode) return emptyList()
+        val byCurrency = rates.groupBy { it.currency }
+        return sampleDaysOf(code, byCurrency, baseCode)
+            .map { day -> RatePoint(day, perBaseOn(code, day, baseCode, table)) }
+    }
 }

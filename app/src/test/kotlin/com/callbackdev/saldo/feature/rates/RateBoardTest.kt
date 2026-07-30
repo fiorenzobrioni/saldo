@@ -89,6 +89,23 @@ class RateBoardTest {
     }
 
     @Test
+    fun `the detail series walks every published sample of the window`() {
+        val rates = usdRates() + ExchangeRate("USD", tuesday.plusDays(1), BigDecimal("1.14"))
+
+        val points = RateBoard.detailSeries(rates, base = eur, code = "USD")
+
+        assertEquals(3, points.size)
+        assertEquals(monday, points.first().day)
+        assertEquals(BigDecimal("1.1000"), points.first().value)
+        assertEquals(BigDecimal("1.1400"), points.last().value)
+    }
+
+    @Test
+    fun `the detail series of the base itself is empty`() {
+        assertTrue(RateBoard.detailSeries(usdRates(), base = eur, code = "EUR").isEmpty())
+    }
+
+    @Test
     fun `the history is capped to the newest samples`() {
         val rates = (0 until 10).map { offset ->
             ExchangeRate("USD", monday.plusDays(offset.toLong()), BigDecimal("1.10"))

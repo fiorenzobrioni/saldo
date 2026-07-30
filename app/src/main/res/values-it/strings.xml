@@ -1229,6 +1229,16 @@
     <string name="accounts_countervalues_note">Controvalori (≈) stimati ai tassi BCE del %1$s</string>
     <string name="settings_exchange_rates">Tassi di cambio</string>
     <string name="settings_exchange_rates_hint">Tutte le valute BCE scaricate, con l\'andamento recente</string>
+    <string name="rates_converter_title">Convertitore rapido</string>
+    <string name="rates_converter_swap">Inverti la direzione di conversione</string>
+    <string name="rates_converter_pick_currency">Scegli la valuta</string>
+    <string name="rates_detail_subtitle">1 %1$s = %2$s %3$s</string>
+    <string name="rates_detail_1m">1 mese</string>
+    <string name="rates_detail_3m">3 mesi</string>
+    <string name="rates_detail_min">Minimo</string>
+    <string name="rates_detail_max">Massimo</string>
+    <string name="rates_detail_change">Variazione nel periodo</string>
+    <string name="transaction_editor_countervalue">%1$s (tasso BCE del %2$s)</string>
     <string name="upcoming_empty_title">Non c\'è niente in arrivo</string>
     <string name="upcoming_empty_body">Qui compaiono i movimenti con una data futura e le occorrenze da confermare, così vedi cosa sta per succedere prima che succeda.</string>
     <string name="recurrences_upcoming_hint">Le prossime occorrenze e i movimenti con data futura</string>

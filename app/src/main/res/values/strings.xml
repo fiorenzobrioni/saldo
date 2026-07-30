@@ -1214,6 +1214,16 @@
     <string name="accounts_countervalues_note">Countervalues (≈) estimated at the ECB rates of %1$s</string>
     <string name="settings_exchange_rates">Exchange rates</string>
     <string name="settings_exchange_rates_hint">Every downloaded ECB currency, with its recent trend</string>
+    <string name="rates_converter_title">Quick converter</string>
+    <string name="rates_converter_swap">Swap the conversion direction</string>
+    <string name="rates_converter_pick_currency">Choose the currency</string>
+    <string name="rates_detail_subtitle">1 %1$s = %2$s %3$s</string>
+    <string name="rates_detail_1m">1 month</string>
+    <string name="rates_detail_3m">3 months</string>
+    <string name="rates_detail_min">Lowest</string>
+    <string name="rates_detail_max">Highest</string>
+    <string name="rates_detail_change">Change over the period</string>
+    <string name="transaction_editor_countervalue">%1$s (ECB rate of %2$s)</string>
     <string name="upcoming_empty_title">Nothing ahead</string>
     <string name="upcoming_empty_body">Movements dated in the future and occurrences to confirm show up here, so you can see what is coming before it happens.</string>
     <string name="recurrences_upcoming_hint">The next occurrences and the movements dated ahead</string>

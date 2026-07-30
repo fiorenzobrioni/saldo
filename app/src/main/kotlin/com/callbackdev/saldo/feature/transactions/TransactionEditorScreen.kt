@@ -54,11 +54,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.AmountKeypadHost
 import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.designsystem.component.AnimatedSection
@@ -72,9 +74,12 @@ import com.callbackdev.saldo.core.designsystem.component.SaldoDatePickerDialog
 import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
 import com.callbackdev.saldo.core.designsystem.component.rememberUnsavedChangesGuard
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.navigation.TransactionEditorRoute
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -106,6 +111,7 @@ fun TransactionEditorScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsStateWithLifecycle()
     val remindersEnabled by viewModel.remindersEnabled.collectAsStateWithLifecycle()
+    val amountCountervalue by viewModel.amountCountervalue.collectAsStateWithLifecycle()
     val guard = rememberUnsavedChangesGuard(hasUnsavedChanges, onNavigateBack)
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -212,6 +218,7 @@ fun TransactionEditorScreen(
                 uiState = uiState,
                 viewModel = viewModel,
                 remindersEnabled = remindersEnabled,
+                amountCountervalue = amountCountervalue,
                 primaryAmount = primaryAmount,
                 secondaryAmount = secondaryAmount,
                 activeAmount = activeAmount,
@@ -341,6 +348,7 @@ private fun EditorForm(
     uiState: TransactionEditorUiState,
     viewModel: TransactionEditorViewModel,
     remindersEnabled: Boolean,
+    amountCountervalue: TransactionEditorViewModel.AmountCountervalue?,
     primaryAmount: AmountTarget,
     secondaryAmount: AmountTarget,
     activeAmount: AmountField?,
@@ -402,6 +410,15 @@ private fun EditorForm(
                 null
             },
         )
+        // Countervalue of a foreign-currency amount in the primary one, at
+        // the rate of the movement's own date (ADR 40): backdating the
+        // movement moves the estimate with it.
+        if (amountCountervalue != null) {
+            CountervalueLabel(
+                countervalue = amountCountervalue,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         AnimatedSection(visible = uiState.isCrossCurrency) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -661,6 +678,30 @@ private fun ImpliedRateLabel(uiState: TransactionEditorUiState, modifier: Modifi
         ),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier,
+    )
+}
+
+/** "≈ 109,87 € (tasso BCE del 29/07)", centered under the hero amount (ADR 40). */
+@Composable
+private fun CountervalueLabel(
+    countervalue: TransactionEditorViewModel.AmountCountervalue,
+    modifier: Modifier = Modifier,
+) {
+    val approx = MoneyFormatter.formatApprox(countervalue.amount, countervalue.currency)
+    val text = countervalue.rateDay?.let { day ->
+        stringResource(
+            R.string.transaction_editor_countervalue,
+            approx,
+            day.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)),
+        )
+    } ?: approx
+    Spacer(Modifier.height(4.dp))
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall.tabularNumbers(),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
         modifier = modifier,
     )
 }
