@@ -58,12 +58,12 @@ object EcbRateFeed {
         val fields = line.split(',')
         if (fields.size <= columns.max) return null
         val currency = fields[columns.currency].trim()
-        if (currency.isEmpty()) return null
         val day = runCatching { LocalDate.parse(fields[columns.day].trim()) }.getOrNull()
-            ?: return null
         val rate = runCatching { BigDecimal(fields[columns.rate].trim()) }.getOrNull()
-            ?: return null
-        if (rate.signum() <= 0) return null
-        return ExchangeRate(currency = currency, day = day, perEuro = rate)
+        return if (currency.isEmpty() || day == null || rate == null || rate.signum() <= 0) {
+            null
+        } else {
+            ExchangeRate(currency = currency, day = day, perEuro = rate)
+        }
     }
 }
