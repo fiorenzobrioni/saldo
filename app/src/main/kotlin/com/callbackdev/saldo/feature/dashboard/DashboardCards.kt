@@ -640,7 +640,9 @@ private fun EstimatedRatesLabel(rateDay: LocalDate, modifier: Modifier = Modifie
             text = label,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
+            // Free to wrap: the rate's date is the whole point of the line
+            // (ADR 40) and an ellipsis would swallow exactly that.
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
     }

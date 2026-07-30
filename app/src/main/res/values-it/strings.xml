@@ -21,7 +21,7 @@
     <!-- Dashboard (Fase 5) -->
     <string name="dashboard_balance_total">Saldo totale</string>
     <string name="dashboard_balance_as_of_today">%1$s ad oggi</string>
-    <string name="dashboard_balance_estimated_rates">Include controvalori stimati ai tassi BCE del %1$s</string>
+    <string name="dashboard_balance_estimated_rates">Controvalori stimati ai tassi BCE del %1$s</string>
     <string name="dashboard_sparkline_caption">Ultimi 30 giorni</string>
     <string name="dashboard_sparkline_a11y_up">Andamento del saldo negli ultimi 30 giorni: da %1$s a %2$s, in aumento</string>
     <string name="dashboard_sparkline_a11y_down">Andamento del saldo negli ultimi 30 giorni: da %1$s a %2$s, in calo</string>
