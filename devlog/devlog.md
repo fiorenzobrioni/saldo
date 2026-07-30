@@ -14,6 +14,14 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-30 - Fase 33 verificata su device e chiusa
+
+**Fatto:** dopo il merge della PR #74 (CI verde al secondo giro, vedi la voce sotto), giro manuale sul device completato dall'utente: riga di testo dalla sheet di widget e tile, scambio di focus IME/tastierino, suggerimenti di categoria, salvataggio con data relativa. Tutto ok: la Fase 33 e chiusa.
+
+**Prossimo:** secondo l'ordine della roadmap v2.0 restano la Fase 19 (rilevamento automatico delle ricorrenze) e la Fase 22 (cifratura del backup con passphrase), poi la Fase 23 (release v2.0).
+
+---
+
 ## 2026-07-30 - Fase 33: inserimento rapido testuale nella sheet di widget e tile
 
 **Fatto:** implementata la Fase 33 (ADR 42). Riga di testo in cima alla sheet rapida: "12,50 pizza ieri" viene scomposta live in importo, data e descrizione, con la categoria suggerita in due stadi. Nel dominio (`core/domain/quickentry`): `QuickEntryParser` puro (regole dichiarate sui separatori: virgola e punto accettati come decimale, migliaia validate a gruppi di tre, il caso conteso "1.234" deciso dal separatore di migliaia della locale, ambiguo = nessun importo; date "ieri/oggi/domani", giorno della settimana piu recente, "3/7" nell'ordine della locale; descrizione con maiuscole e ordine intatti) e `CategorySuggester` (stadio nomi con ambiguita = silenzio, stadio storia con soglie 3 occorrenze e 2/3 di maggioranza su query `descriptionUsage` con finestra 24 mesi e tetto 200 righe per parola, match parola-intera in Kotlin). Normalizzazione estratta in `SearchText` (`core/domain/search`), delegata dal motore filtri: una sola definizione di "stessa parola". Vocabolario del parser da dati di piattaforma (`QuickEntryVocabularyProvider`: ICU/CLDR per le parole relative, `java.time` per i giorni, pattern corto della locale per l'ordine di "3/7"), iniettato: nessuna parola chiave cablata, parser testabile su JVM. Nel ViewModel: parse a ogni keystroke (puro), stadio nomi immediato, stadio storia debounced (250ms) con cache per parola; precedenze esplicite (scelta manuale > testo > preselezione; il tastierino vince sul parser finche il testo non si svuota); salvataggio con descrizione e data del testo. UI: campo sopra il tastierino con focus IME/tastierino mutuamente esclusivi (ADR 31), categoria suggerita evidenziata, riga con la data dedotta, `imePadding`. Unit test: `QuickEntryParserTest` (18 casi), `CategorySuggesterTest` (12 casi), 7 test nuovi sul ViewModel. Bump a versionCode 167, versionName 1.0.15.
