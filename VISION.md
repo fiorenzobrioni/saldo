@@ -177,7 +177,7 @@ Regole:
 - non compare **mai** nelle statistiche di spesa/entrata
 - è un singolo record con `fromAccountId` e `toAccountId` (non due movimenti separati: evita disallineamenti)
 - eventuale **commissione di trasferimento** (es. prelievo ATM con fee): l'utente registra la fee come spesa a parte. Modellarla dentro l'operazione è una funzione da valutare, non pianificata (Fase 18 in PLANNING.md)
-- trasferimenti tra account in valute diverse: nel MVP l'utente inserisce entrambi gli importi (quanto esce e quanto entra); la conversione automatica è una feature futura
+- trasferimenti tra account in valute diverse: l'utente inserisce entrambi gli importi (quanto esce e quanto entra). Il tasso implicito che ne risulta è il dato reale dell'operazione e la conversione automatica (ADR 40) non lo tocca: i tassi BCE servono ai controvalori stimati degli aggregati, mai a riscrivere un movimento
 
 Questo richiede supporto architetturale già in fase iniziale (è nel data model dal giorno 1).
 
@@ -425,11 +425,14 @@ Supporto completo dal MVP a livello di **dato**: ogni movimento conserva importo
 
 - valuta principale dell'app scelta nell'onboarding (default dalla locale)
 - nel MVP: gli account in valuta diversa mostrano il saldo nella loro valuta; il saldo totale somma solo gli account nella valuta principale (gli altri sono elencati a parte)
-- **Conversione automatica (FUTURE, v2.0)**: tassi di cambio aggiornati (con cache offline e indicazione "stimato"), controvalore nella valuta principale ovunque:
+- **Conversione automatica (consegnata, ADR 40)**: tassi di riferimento BCE con cache offline, controvalore stimato nella valuta principale in ogni aggregato, sempre indicato con "≈" e con la data del tasso:
 
 ```text
 125,00 USD ≈ 115,30 € (tasso del 02/07, stimato)
 ```
+
+- i flussi (spese, statistiche, budget) si convertono al tasso del giorno del movimento, così un mese concluso resta stabile; i saldi al tasso più recente, perché uno stock vale quanto vale oggi; nessun controvalore viene mai salvato
+- attiva di default e disattivabile dalle Impostazioni: senza dati in valuta estera non parte alcuna richiesta di rete
 
 ---
 
@@ -512,6 +515,7 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 # Sicurezza e privacy
 
 - dati solo in locale; nessuna telemetria di terze parti nel MVP (eventuali crash report solo opt-in)
+- la lettura dei cambi BCE per la conversione multi-valuta (ADR 40) è l'unico traffico di rete dell'app oltre a backup ed export opzionali: traffico in entrata, nessun account, nessun dato dell'utente in uscita (esce solo la richiesta dei tassi, cioè un IP e il fatto che qualcuno ha chiesto i cambi). Con la conversione disattivata, o senza dati in valuta estera, l'app non fa alcuna richiesta di rete
 - **PIN lock** (consegnato, PIN a 6 cifre opzionale)
 - **sblocco biometrico** via `BiometricPrompt` (consegnato)
 - oscuramento del contenuto nelle app recenti (`FLAG_SECURE`, opzionale) - consegnato; la stessa protezione blocca anche gli screenshot

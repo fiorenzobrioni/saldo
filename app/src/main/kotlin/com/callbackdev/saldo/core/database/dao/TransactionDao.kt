@@ -793,4 +793,5 @@ interface TransactionDao {
         """,
     )
     suspend fun sumOwnMovementsInWindow(accountId: Long, startMilli: Long, endMilli: Long): Long
+
 }

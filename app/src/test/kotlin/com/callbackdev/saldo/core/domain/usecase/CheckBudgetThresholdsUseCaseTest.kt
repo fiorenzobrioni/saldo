@@ -5,12 +5,16 @@ import com.callbackdev.saldo.core.domain.model.BudgetLevel
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
 import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.BudgetRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
+import com.callbackdev.saldo.core.domain.repository.ExchangeRateRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -32,6 +36,8 @@ class CheckBudgetThresholdsUseCaseTest {
     private val budgetRepository = mockk<BudgetRepository>()
     private val transactionRepository = mockk<TransactionRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
+    private val userPreferences = mockk<UserPreferencesRepository>()
+    private val exchangeRateRepository = mockk<ExchangeRateRepository>()
 
     private val marked80 = mutableListOf<Pair<Long, YearMonth>>()
     private val marked100 = mutableListOf<Pair<Long, YearMonth>>()
@@ -61,10 +67,14 @@ class CheckBudgetThresholdsUseCaseTest {
             color = 0x66BB6A,
             icon = "cart",
         )
+        // Conversion off: the single-currency path these tests were written for.
+        every { userPreferences.currencyConversionEnabled } returns flowOf(false)
         return CheckBudgetThresholdsUseCase(
             budgetRepository = budgetRepository,
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
+            userPreferences = userPreferences,
+            exchangeRateRepository = exchangeRateRepository,
             clock = clock,
         )
     }

@@ -36,6 +36,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.MoneyOff
@@ -90,6 +91,7 @@ import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.DailyBalance
 import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
 import com.callbackdev.saldo.feature.recap.recapMonthTitle
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
 import com.callbackdev.saldo.feature.transactions.TransactionRowContent
@@ -99,6 +101,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Currency
 
 /**
@@ -197,6 +200,7 @@ private fun fullWeekdayDate(date: LocalDate): String {
  * ([onAccountClick]), and every other part of the card opens account management
  * ([onManageAccounts], the spoken affordance of the card itself).
  */
+@Suppress("LongParameterList") // One argument per card ingredient, all owned by the ViewModel.
 @Composable
 internal fun BalanceCard(
     totalBalance: BigDecimal,
@@ -211,6 +215,10 @@ internal fun BalanceCard(
     onManageAccounts: () -> Unit,
     onAccountClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    estimated: Boolean = false,
+    rateDay: LocalDate? = null,
+    countervalues: Map<Long, CurrencyConverter.Estimate> = emptyMap(),
+    onOpenRates: (() -> Unit)? = null,
 ) {
     val manageAccountsLabel = stringResource(R.string.dashboard_manage_accounts)
     SaldoCard(
@@ -258,7 +266,10 @@ internal fun BalanceCard(
             )
             Spacer(Modifier.height(BALANCE_AMOUNT_TOP_GAP))
             Text(
-                text = animatedBalanceText(totalBalance, currency),
+                // The "≈" is the app-wide estimate marker (ADR 40): the total
+                // carries converted foreign balances, so it never prints as an
+                // exact figure.
+                text = (if (estimated) "≈ " else "") + animatedBalanceText(totalBalance, currency),
                 style = MaterialTheme.typography.headlineMedium.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
                 color = if (totalBalance.signum() < 0) {
@@ -273,6 +284,10 @@ internal fun BalanceCard(
             if (balanceAsOfToday != null) {
                 Spacer(Modifier.height(BALANCE_AMOUNT_TOP_GAP))
                 BalanceAsOfTodayLabel(amount = balanceAsOfToday, currency = currency)
+            }
+            if (estimated && rateDay != null) {
+                Spacer(Modifier.height(BALANCE_AMOUNT_TOP_GAP))
+                EstimatedRatesLabel(rateDay = rateDay, onClick = onOpenRates)
             }
             if (history.size > 1) {
                 Spacer(Modifier.height(BALANCE_SPARKLINE_TOP_GAP))
@@ -292,6 +307,7 @@ internal fun BalanceCard(
             AccountsBreakdownSection(
                 accounts = accounts,
                 primaryCurrency = currency,
+                countervalues = countervalues,
                 expanded = accountsExpanded,
                 onAccountClick = onAccountClick,
                 onShowAll = onManageAccounts,
@@ -351,10 +367,12 @@ private fun BalanceAsOfTodayLabel(
  * to the full accounts list. The reveal/hide is animated (expand + fade) so the
  * hero card grows and shrinks smoothly around it.
  */
+@Suppress("LongParameterList") // One argument per breakdown ingredient.
 @Composable
 private fun AccountsBreakdownSection(
     accounts: List<AccountWithBalance>,
     primaryCurrency: Currency,
+    countervalues: Map<Long, CurrencyConverter.Estimate>,
     expanded: Boolean,
     onAccountClick: (Long) -> Unit,
     onShowAll: () -> Unit,
@@ -373,11 +391,14 @@ private fun AccountsBreakdownSection(
             // Reserve the second amount line for the whole list only when at
             // least one account diverges, so every row stays the same height (no
             // ragged list, no jump) while the common case keeps its compact rows.
-            val reserveTodayLine = accounts.any { it.balanceAsOfToday != null }
+            val reserveTodayLine = accounts.any {
+                it.balanceAsOfToday != null || countervalues.containsKey(it.account.id)
+            }
             accounts.take(ACCOUNT_EXPANDED_MAX).forEach { item ->
                 AccountBreakdownRow(
                     item = item,
                     primaryCurrency = primaryCurrency,
+                    countervalue = countervalues[item.account.id],
                     reserveTodayLine = reserveTodayLine,
                     onClick = { onAccountClick(item.account.id) },
                 )
@@ -517,12 +538,16 @@ private fun AccountBreakdownRow(
     primaryCurrency: Currency,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    countervalue: CurrencyConverter.Estimate? = null,
     reserveTodayLine: Boolean = false,
 ) {
     val account = item.account
     val color = AccountVisuals.color(account.color)
     val nonPrimaryCurrency = account.currency != primaryCurrency
-    val contributesToTotal = account.isIncludedInTotal && !nonPrimaryCurrency
+    // With a countervalue available a foreign account does feed the headline
+    // total (ADR 40), so its row is no longer muted.
+    val contributesToTotal =
+        account.isIncludedInTotal && (!nonPrimaryCurrency || countervalue != null)
     val openLabel = stringResource(R.string.dashboard_account_open, account.name)
     Row(
         modifier = modifier
@@ -557,7 +582,10 @@ private fun AccountBreakdownRow(
         )
         AccountBreakdownMarkers(
             currency = account.currency,
-            showCurrencyCode = nonPrimaryCurrency,
+            // With a countervalue on show the ISO code is already in the
+            // amount itself; the pill stays only while it is the one thing
+            // explaining why the row is out of the total.
+            showCurrencyCode = nonPrimaryCurrency && countervalue == null,
             excludedFromTotal = !account.isIncludedInTotal && !nonPrimaryCurrency,
             excludedFromBudget = !account.isIncludedInBudget,
         )
@@ -578,7 +606,67 @@ private fun AccountBreakdownRow(
                 // Same compact calendar-glyph treatment as the accounts screen.
                 AsOfTodayAmount(amount = today, currency = account.currency)
             }
+            if (item.balanceAsOfToday == null && countervalue != null) {
+                Text(
+                    text = MoneyFormatter.formatApprox(countervalue.amount, primaryCurrency),
+                    style = MaterialTheme.typography.bodySmall.tabularNumbers(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
         }
+    }
+}
+
+/**
+ * Muted line declaring that the headline total leans on converted foreign
+ * balances, naming the day of the stalest ECB rate involved (ADR 40: an
+ * estimate always says it is one, and when its rate is from). With [onClick]
+ * it opens the exchange-rates board: the line that names the rates is the
+ * natural way in.
+ */
+@Composable
+private fun EstimatedRatesLabel(
+    rateDay: LocalDate,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
+    val label = stringResource(
+        R.string.dashboard_balance_estimated_rates,
+        rateDay.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)),
+    )
+    val openLabel = stringResource(R.string.dashboard_open_rates)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clip(MaterialTheme.shapes.small)
+            .then(
+                if (onClick != null) {
+                    Modifier
+                        .clickable(onClick = onClick)
+                        .semantics { onClick(label = openLabel, action = null) }
+                } else {
+                    Modifier
+                },
+            )
+            .semantics(mergeDescendants = true) { contentDescription = label },
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.CurrencyExchange,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(BALANCE_TODAY_ICON),
+        )
+        Spacer(Modifier.width(BALANCE_TODAY_ICON_GAP))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            // Free to wrap: the rate's date is the whole point of the line
+            // (ADR 40) and an ellipsis would swallow exactly that.
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
@@ -721,6 +809,7 @@ private fun CurrencyMarker(currency: Currency) {
  * opens the filtered-transactions drill-down for its own window: the natural
  * question behind the aggregate is "which movements make it up".
  */
+@Suppress("LongParameterList") // One argument per card ingredient.
 @Composable
 internal fun PeriodCardsRow(
     date: LocalDate,
@@ -730,6 +819,7 @@ internal fun PeriodCardsRow(
     onTodayClick: () -> Unit,
     onMonthClick: () -> Unit,
     modifier: Modifier = Modifier,
+    estimated: Boolean = false,
 ) {
     val locale = LocalConfiguration.current.locales[0]
     val monthTitle = remember(date, locale) {
@@ -747,6 +837,7 @@ internal fun PeriodCardsRow(
             icon = Icons.Outlined.Today,
             flow = today,
             currency = currency,
+            estimated = estimated,
             onClick = onTodayClick,
             modifier = Modifier
                 .weight(1f)
@@ -757,6 +848,7 @@ internal fun PeriodCardsRow(
             icon = Icons.Outlined.CalendarMonth,
             flow = month,
             currency = currency,
+            estimated = estimated,
             onClick = onMonthClick,
             modifier = Modifier
                 .weight(1f)
@@ -765,12 +857,14 @@ internal fun PeriodCardsRow(
     }
 }
 
+@Suppress("LongParameterList") // One argument per card ingredient.
 @Composable
 private fun PeriodCompactCard(
     title: String,
     icon: ImageVector,
     flow: PeriodTotals,
     currency: Currency,
+    estimated: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -789,7 +883,8 @@ private fun PeriodCompactCard(
             DashboardCardHeader(icon = icon, title = title)
             Spacer(Modifier.height(4.dp))
             Text(
-                text = MoneyFormatter.formatSigned(flow.net, currency),
+                // "≈" when the figure carries converted foreign movements (ADR 40).
+                text = (if (estimated) "≈ " else "") + MoneyFormatter.formatSigned(flow.net, currency),
                 style = MaterialTheme.typography.titleLarge.tabularNumbers(),
                 fontWeight = FontWeight.SemiBold,
                 color = netColor(flow.net),

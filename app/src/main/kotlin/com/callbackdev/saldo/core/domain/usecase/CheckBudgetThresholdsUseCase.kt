@@ -1,16 +1,23 @@
 package com.callbackdev.saldo.core.domain.usecase
 
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Budget
 import com.callbackdev.saldo.core.domain.model.BudgetLevel
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
+import com.callbackdev.saldo.core.domain.model.SpendDayTotal
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import com.callbackdev.saldo.core.domain.repository.BudgetRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
+import com.callbackdev.saldo.core.domain.repository.ExchangeRateRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.time.YearMonth
+import java.util.Currency
 import javax.inject.Inject
 
 /**
@@ -43,6 +50,8 @@ class CheckBudgetThresholdsUseCase @Inject constructor(
     private val budgetRepository: BudgetRepository,
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
+    private val userPreferences: UserPreferencesRepository,
+    private val exchangeRateRepository: ExchangeRateRepository,
     private val clock: Clock,
 ) {
 
@@ -52,24 +61,86 @@ class CheckBudgetThresholdsUseCase @Inject constructor(
         val today = LocalDate.now(clock)
         val month = YearMonth.from(today)
         val windows = DashboardWindows.around(today, clock.zone)
-        return budgets.groupBy { it.currency }.flatMap { (currency, group) ->
-            val totalSpend = if (group.any { it.isOverall }) {
-                transactionRepository.getStatsSpendTotal(windows.monthStart, windows.monthEnd, currency)
+        // The alert must agree with the budget card (ADR 40): with conversion
+        // on, each budget's spend converts every movement into the budget's
+        // currency at the rate of its own day, exactly like the progress join.
+        val rates = if (userPreferences.currencyConversionEnabled.first()) {
+            exchangeRateRepository.observeRateTable().first()
+        } else {
+            RateTable.EMPTY
+        }
+        return if (!rates.isEmpty) {
+            convertedAlerts(budgets, windows, month, rates)
+        } else {
+            singleCurrencyAlerts(budgets, windows, month)
+        }
+    }
+
+    private suspend fun singleCurrencyAlerts(
+        budgets: List<Budget>,
+        windows: DashboardWindows,
+        month: YearMonth,
+    ): List<BudgetAlert> = budgets.groupBy { it.currency }.flatMap { (currency, group) ->
+        val totalSpend = if (group.any { it.isOverall }) {
+            transactionRepository.getStatsSpendTotal(windows.monthStart, windows.monthEnd, currency)
+        } else {
+            BigDecimal.ZERO
+        }
+        val spendByCategory = if (group.any { !it.isOverall }) {
+            transactionRepository
+                .getCategorySpendTotals(windows.monthStart, windows.monthEnd, currency)
+                .associate { it.categoryId to it.total }
+        } else {
+            emptyMap()
+        }
+        group.mapNotNull { budget ->
+            val signedSpend =
+                if (budget.isOverall) totalSpend else spendByCategory[budget.categoryId] ?: BigDecimal.ZERO
+            alertFor(budget, signedSpend, month)
+        }
+    }
+
+    private suspend fun convertedAlerts(
+        budgets: List<Budget>,
+        windows: DashboardWindows,
+        month: YearMonth,
+        rates: RateTable,
+    ): List<BudgetAlert> {
+        val spendRows = if (budgets.any { it.isOverall }) {
+            transactionRepository.getSpendByCurrencyDay(windows.monthStart, windows.monthEnd)
+        } else {
+            emptyList()
+        }
+        val categoryRows = if (budgets.any { !it.isOverall }) {
+            transactionRepository
+                .getCategorySpendByCurrencyDay(windows.monthStart, windows.monthEnd)
+                .groupBy { it.categoryId }
+        } else {
+            emptyMap()
+        }
+        return budgets.mapNotNull { budget ->
+            val rows = if (budget.isOverall) {
+                spendRows
             } else {
-                BigDecimal.ZERO
+                categoryRows[budget.categoryId].orEmpty()
+                    .map { SpendDayTotal(it.currency, it.day, it.total) }
             }
-            val spendByCategory = if (group.any { !it.isOverall }) {
-                transactionRepository
-                    .getCategorySpendTotals(windows.monthStart, windows.monthEnd, currency)
-                    .associate { it.categoryId to it.total }
-            } else {
-                emptyMap()
-            }
-            group.mapNotNull { budget ->
-                val signedSpend =
-                    if (budget.isOverall) totalSpend else spendByCategory[budget.categoryId] ?: BigDecimal.ZERO
-                alertFor(budget, signedSpend, month)
-            }
+            alertFor(budget, spendInto(budget.currency, rows, rates), month)
+        }
+    }
+
+    /** Same fold the budget progress uses: exact for the budget's currency, estimated for the rest. */
+    private fun spendInto(
+        target: Currency,
+        rows: List<SpendDayTotal>,
+        rates: RateTable,
+    ): BigDecimal = rows.fold(BigDecimal.ZERO) { acc, row ->
+        if (row.currency == target) {
+            acc.add(row.total)
+        } else {
+            CurrencyConverter.convertOn(row.total, row.currency, target, row.day, rates)
+                ?.let { acc.add(it.amount) }
+                ?: acc
         }
     }
 

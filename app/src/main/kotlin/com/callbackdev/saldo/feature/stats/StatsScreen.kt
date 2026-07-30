@@ -168,6 +168,27 @@ fun StatsScreen(
                         )
                     }
                 }
+                // Foreign movements converted into the charts (ADR 40): the
+                // figures are estimates and the row says at which rate. Same
+                // drill-down as the excluded notice, so the underlying
+                // movements stay one tap away.
+                if (uiState.showsConvertedNotice) {
+                    item {
+                        ConvertedCurrencyNotice(
+                            count = uiState.convertedCurrencyCount,
+                            currency = uiState.currency,
+                            onClick = {
+                                onNavigateToFiltered(
+                                    periodRoute(
+                                        uiState.period,
+                                        uiState.today,
+                                        otherCurrenciesOnly = true,
+                                    ),
+                                )
+                            },
+                        )
+                    }
+                }
                 item {
                     CategorySharesCard(
                         slices = uiState.slices,
@@ -436,6 +457,57 @@ private fun OtherCurrencyNotice(
             Text(
                 text = pluralStringResource(
                     R.plurals.stats_other_currencies_notice,
+                    count,
+                    count,
+                    currency.currencyCode,
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+/**
+ * Twin of [OtherCurrencyNotice] for the movements the charts now include as
+ * estimates: converted into the primary currency at the ECB rate of each
+ * movement's own day (ADR 40, third condition: the estimate is declared).
+ */
+@Composable
+private fun ConvertedCurrencyNotice(
+    count: Int,
+    currency: Currency,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.CurrencyExchange,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = pluralStringResource(
+                    R.plurals.stats_converted_currencies_notice,
                     count,
                     count,
                     currency.currencyCode,

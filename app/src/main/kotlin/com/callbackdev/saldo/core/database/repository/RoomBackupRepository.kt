@@ -3,6 +3,7 @@ package com.callbackdev.saldo.core.database.repository
 import com.callbackdev.saldo.core.database.dao.AccountDao
 import com.callbackdev.saldo.core.database.dao.BudgetDao
 import com.callbackdev.saldo.core.database.dao.CategoryDao
+import com.callbackdev.saldo.core.database.dao.ExchangeRateDao
 import com.callbackdev.saldo.core.database.dao.RecurringRuleDao
 import com.callbackdev.saldo.core.database.dao.SavingsGoalDao
 import com.callbackdev.saldo.core.database.dao.TagDao
@@ -40,6 +41,7 @@ class RoomBackupRepository @Inject constructor(
     private val transactionDao: TransactionDao,
     private val budgetDao: BudgetDao,
     private val savingsGoalDao: SavingsGoalDao,
+    private val exchangeRateDao: ExchangeRateDao,
     private val transactionRunner: TransactionRunner,
 ) : BackupRepository {
 
@@ -63,6 +65,11 @@ class RoomBackupRepository @Inject constructor(
             // defaults are replanted here: a wipe must land on the same state a
             // fresh install starts from, not on an app without categories.
             categoryDao.insertAll(DefaultCategories.build(context))
+            // The rate cache is not user data and stays out of the backup
+            // (ADR 40), but a fresh install starts without one, so the wipe
+            // clears it here rather than in deleteEverything: a restore keeps
+            // the cache, which is still valid for the restored ledger.
+            exchangeRateDao.deleteAll()
         }
     }
 

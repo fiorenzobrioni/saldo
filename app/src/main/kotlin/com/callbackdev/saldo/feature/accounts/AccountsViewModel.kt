@@ -4,14 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.money.MoneyInput
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.common.time.midnightTicker
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
+import com.callbackdev.saldo.core.domain.rates.ConversionState
+import com.callbackdev.saldo.core.domain.rates.ConvertedAggregates
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.AdjustBalanceUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveLoanProgressUseCase
 import com.callbackdev.saldo.core.domain.usecase.SettleCreditCardStatementUseCase
@@ -30,6 +36,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.math.RoundingMode
 import java.time.Clock
+import java.util.Currency
 import javax.inject.Inject
 
 @HiltViewModel
@@ -42,11 +49,20 @@ class AccountsViewModel @Inject constructor(
     private val observeDueStatements: ObserveDueStatementsUseCase,
     private val observeLoanProgress: ObserveLoanProgressUseCase,
     private val settleStatement: SettleCreditCardStatementUseCase,
+    userPreferences: UserPreferencesRepository,
+    observeConversionState: ObserveConversionStateUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
     private val dialog = MutableStateFlow<AccountsDialog?>(null)
     private val selectedAccountId = MutableStateFlow<Long?>(null)
+
+    /** Accounts plus what the countervalues need: primary currency and rates. */
+    private data class AccountsInputs(
+        val accounts: List<AccountWithBalance>,
+        val primary: Currency,
+        val conversion: ConversionState,
+    )
 
     // Re-anchors "today" at local midnight so the per-account "as of today"
     // line stays correct while the screen is open.
@@ -55,16 +71,34 @@ class AccountsViewModel @Inject constructor(
         accountRepository.observeAccountsWithBalanceAsOfToday(today.plusDays(1).toEpochDay())
     }
 
-    val uiState: StateFlow<AccountsUiState> = combine(
+    // Collapsed upstream so the main combine stays within the typed arity.
+    private val accountsInputs = combine(
         accountsWithBalance,
+        userPreferences.primaryCurrencyOverride,
+        observeConversionState(),
+    ) { accounts, override, conversion ->
+        AccountsInputs(accounts, primaryCurrency(accounts, override), conversion)
+    }
+
+    val uiState: StateFlow<AccountsUiState> = combine(
+        accountsInputs,
         dialog,
         selectedAccountId,
         observeDueStatements(),
         observeLoanProgress(),
-    ) { accounts, currentDialog, selectedId, due, loans ->
+    ) { inputs, currentDialog, selectedId, due, loans ->
+        val accounts = inputs.accounts
+        val rates = if (inputs.conversion.active) inputs.conversion.rates else RateTable.EMPTY
+        // Same fold as the dashboard hero (ADR 40): per-account countervalues
+        // plus the day of the stalest rate, for the screen-level notice.
+        val balance = ConvertedAggregates.convertTotalBalance(accounts, inputs.primary, rates)
         AccountsUiState(
             isLoading = false,
-            activeGroups = buildAccountTypeGroups(accounts.filter { !it.account.isArchived }),
+            activeGroups = buildAccountTypeGroups(
+                items = accounts.filter { !it.account.isArchived },
+                primary = inputs.primary,
+                rates = rates,
+            ),
             archived = accounts.filter { it.account.isArchived }.sortedByTypeThenName(),
             selected = accounts.firstOrNull { it.account.id == selectedId },
             dialog = currentDialog,
@@ -74,6 +108,9 @@ class AccountsViewModel @Inject constructor(
             dueStatements = due.groupBy { it.accountId }
                 .mapValues { (_, statements) -> statements.first() },
             loanProgressById = loans,
+            countervalues = balance.countervalues,
+            primaryCurrency = inputs.primary,
+            ratesDay = balance.countervalues.values.mapNotNull { it.rateDay }.minOrNull(),
         )
     }.stateIn(
         scope = viewModelScope,

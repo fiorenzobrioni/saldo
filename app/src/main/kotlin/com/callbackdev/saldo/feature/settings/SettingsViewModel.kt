@@ -104,9 +104,25 @@ class SettingsViewModel @Inject constructor(
                 initialValue = true,
             )
 
+    /**
+     * Whether foreign accounts and movements enter the aggregates as
+     * estimated countervalues (ADR 40). On by default.
+     */
+    val currencyConversionEnabled: StateFlow<Boolean> = userPreferences.currencyConversionEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = true,
+        )
+
     /** Persists the primary-currency choice; null returns to automatic. */
     fun onPrimaryCurrencySelected(currency: Currency?) {
         viewModelScope.launch { userPreferences.setPrimaryCurrencyOverride(currency) }
+    }
+
+    /** Turns the automatic currency conversion (and its only network use) on or off. */
+    fun onCurrencyConversionChanged(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setCurrencyConversionEnabled(enabled) }
     }
 
     /** Persists the default-account choice; null returns to automatic (last used). */

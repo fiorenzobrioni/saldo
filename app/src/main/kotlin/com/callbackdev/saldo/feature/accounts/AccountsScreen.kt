@@ -11,16 +11,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.DragHandle
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
@@ -58,6 +61,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -82,8 +88,13 @@ import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.LoanProgress
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import kotlinx.coroutines.flow.first
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Currency
 
 /**
  * Account list: active accounts with their computed balance, a collapsible
@@ -96,6 +107,7 @@ fun AccountsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToNewAccount: () -> Unit,
     onNavigateToEditAccount: (Long) -> Unit,
+    onNavigateToRates: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AccountsViewModel = hiltViewModel(),
 ) {
@@ -187,6 +199,7 @@ fun AccountsScreen(
                 onAccountClick = { viewModel.onAccountSelected(it.account.id) },
                 onSettleStatement = viewModel::settleStatement,
                 onReorder = viewModel::persistOrder,
+                onRatesClick = onNavigateToRates,
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             )
         }
@@ -231,6 +244,7 @@ private fun AccountsList(
     onAccountClick: (AccountWithBalance) -> Unit,
     onSettleStatement: (Long) -> Unit,
     onReorder: (List<Long>) -> Unit,
+    onRatesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var archivedExpanded by rememberSaveable { mutableStateOf(false) }
@@ -261,6 +275,17 @@ private fun AccountsList(
         if (uiState.activeGroups.any { it.accounts.size >= 2 }) {
             InfoBanner(
                 text = stringResource(R.string.accounts_reorder_info),
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+            )
+        }
+        // Where the countervalues come from (ADR 40): one line for the whole
+        // screen, since every estimate leans on the same latest rates. Tap
+        // opens the exchange-rates board.
+        val ratesDay = uiState.ratesDay
+        if (uiState.countervalues.isNotEmpty() && ratesDay != null) {
+            CountervaluesNote(
+                rateDay = ratesDay,
+                onClick = onRatesClick,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
             )
         }
@@ -301,6 +326,8 @@ private fun AccountsList(
                         item = entry.item,
                         dueStatement = uiState.dueStatement(entry.item.account.id),
                         loanProgress = uiState.loanProgress(entry.item.account.id),
+                        countervalue = uiState.countervalues[entry.item.account.id],
+                        countervalueCurrency = uiState.primaryCurrency,
                         elevated = isDragging,
                         onClick = { onAccountClick(entry.item) },
                         onSettleStatement = { onSettleStatement(entry.item.account.id) },
@@ -387,11 +414,14 @@ private fun LaunchedActiveResync(
 }
 
 /** One active account as a card the drag handle can rearrange within its group. */
+@Suppress("LongParameterList") // One argument per row ingredient.
 @Composable
 private fun AccountReorderableRow(
     item: AccountWithBalance,
     dueStatement: DueStatement?,
     loanProgress: LoanProgress?,
+    countervalue: CurrencyConverter.Estimate?,
+    countervalueCurrency: Currency?,
     elevated: Boolean,
     onClick: () -> Unit,
     onSettleStatement: () -> Unit,
@@ -414,6 +444,8 @@ private fun AccountReorderableRow(
                 AccountRowContent(
                     item = item,
                     showType = false,
+                    countervalue = countervalue,
+                    countervalueCurrency = countervalueCurrency,
                     modifier = Modifier
                         .weight(1f)
                         .padding(vertical = SaldoDimens.rowPaddingVertical),
@@ -473,7 +505,10 @@ private fun AccountTypeHeader(
         if (subtotal != null && currency != null) {
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = MoneyFormatter.format(subtotal, currency),
+                    // "≈" when the group mixes currencies converted at the
+                    // latest rate (ADR 40).
+                    text = (if (group.subtotalEstimated) "≈ " else "") +
+                        MoneyFormatter.format(subtotal, currency),
                     style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
                     color = if (subtotal.signum() < 0) {
                         MaterialTheme.moneyColors.negative
@@ -518,6 +553,8 @@ private fun AccountsCard(
                         AccountRowContent(
                             item = item,
                             showType = showType,
+                            countervalue = uiState.countervalues[item.account.id],
+                            countervalueCurrency = uiState.primaryCurrency,
                             modifier = Modifier.padding(
                                 horizontal = SaldoDimens.rowPaddingHorizontal,
                                 vertical = SaldoDimens.rowPaddingVertical,
@@ -572,6 +609,8 @@ internal fun AccountRowContent(
     item: AccountWithBalance,
     modifier: Modifier = Modifier,
     showType: Boolean = true,
+    countervalue: CurrencyConverter.Estimate? = null,
+    countervalueCurrency: Currency? = null,
 ) {
     val account = item.account
     Row(
@@ -619,7 +658,62 @@ internal fun AccountRowContent(
             item.balanceAsOfToday?.let { today ->
                 AsOfTodayAmount(amount = today, currency = account.currency)
             }
+            // The full countervalue picture lives here, on the accounts
+            // screen (ADR 40): the dashboard breakdown shows one line only.
+            if (countervalue != null && countervalueCurrency != null) {
+                Text(
+                    text = MoneyFormatter.formatApprox(countervalue.amount, countervalueCurrency),
+                    style = MaterialTheme.typography.bodySmall.tabularNumbers(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
         }
+    }
+}
+
+/**
+ * Screen-level declaration of the countervalues (ADR 40): every estimate on
+ * this list leans on the latest known rates, so one line with their day
+ * covers them all. Tapping it opens the exchange-rates board.
+ */
+@Composable
+private fun CountervaluesNote(
+    rateDay: LocalDate,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = stringResource(
+        R.string.accounts_countervalues_note,
+        rateDay.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)),
+    )
+    val openLabel = stringResource(R.string.dashboard_open_rates)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.small)
+            .clickable(onClick = onClick)
+            .semantics(mergeDescendants = true) {
+                contentDescription = label
+                onClick(label = openLabel, action = null)
+            }
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+    ) {
+        Icon(
+            imageVector = Icons.Outlined.CurrencyExchange,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

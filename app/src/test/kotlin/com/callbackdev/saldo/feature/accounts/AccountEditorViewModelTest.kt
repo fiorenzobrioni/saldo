@@ -47,6 +47,7 @@ class AccountEditorViewModelTest {
     ): AccountEditorViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
+        every { userPreferences.currencyConversionEnabled } returns flowOf(true)
         coEvery { accountRepository.nextSortOrder(any()) } returns 0
         return AccountEditorViewModel(
             route,

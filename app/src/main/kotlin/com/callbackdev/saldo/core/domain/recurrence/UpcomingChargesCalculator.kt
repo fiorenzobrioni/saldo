@@ -2,6 +2,8 @@ package com.callbackdev.saldo.core.domain.recurrence
 
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.util.Currency
@@ -27,21 +29,31 @@ object UpcomingChargesCalculator {
         rules: List<RecurringRule>,
         today: LocalDate,
         currency: Currency,
+        rates: RateTable = RateTable.EMPTY,
     ): BigDecimal {
         val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
         return rules
             .filter { rule ->
                 rule.type == TransactionType.EXPENSE &&
-                    rule.currency == currency &&
                     !rule.isVariableAmount &&
                     rule.amount != null
             }
             .fold(BigDecimal.ZERO) { acc, rule ->
+                // A future charge has no historical rate: foreign rules enter
+                // at the latest known one (ADR 40) or stay out without rates,
+                // exactly as they did before conversion existed.
+                val amount = when (rule.currency) {
+                    currency -> rule.amount!!
+                    else -> CurrencyConverter
+                        .convertAtLatest(rule.amount!!, rule.currency, currency, rates)
+                        ?.amount
+                        ?: return@fold acc
+                }
                 val floor = rule.lastGeneratedDate?.plusDays(1)?.takeIf { it > today } ?: today
                 if (floor > endOfMonth) return@fold acc
                 val occurrences = RecurrenceCalculator.occurrencesInClosedRange(rule, floor, endOfMonth)
                 if (occurrences.isEmpty()) return@fold acc
-                acc.add(rule.amount!!.multiply(BigDecimal(occurrences.size)))
+                acc.add(amount.multiply(BigDecimal(occurrences.size)))
             }
     }
 }

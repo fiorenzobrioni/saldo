@@ -3,10 +3,13 @@ package com.callbackdev.saldo.feature.accounts
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.rates.ExchangeRate
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.Currency
 
 class AccountsGroupingTest {
@@ -163,4 +166,58 @@ class AccountsGroupingTest {
 
         assertNull(buildAccountTypeGroups(items).single().subtotalAsOfToday)
     }
+
+    @Test
+    fun `a mixed-currency group has no subtotal without rates`() {
+        val items = listOf(
+            item(1, "A", AccountType.CHECKING, balance = BigDecimal("100.00")),
+            item(2, "B", AccountType.CHECKING, balance = BigDecimal("50.00"), currency = usd),
+        )
+
+        val group = buildAccountTypeGroups(items, primary = eur).single()
+
+        assertNull(group.subtotal)
+        assertEquals(false, group.subtotalEstimated)
+    }
+
+    @Test
+    fun `a mixed-currency group sums as an estimate when rates cover it`() {
+        // 1 EUR = 2 USD: the 50 USD account is worth 25 EUR.
+        val rates = RateTable.of(
+            listOf(ExchangeRate("USD", LocalDate.of(2026, 7, 20), BigDecimal("2"))),
+        )
+        val items = listOf(
+            item(1, "A", AccountType.CHECKING, balance = BigDecimal("100.00")),
+            item(2, "B", AccountType.CHECKING, balance = BigDecimal("50.00"), currency = usd),
+        )
+
+        val group = buildAccountTypeGroups(items, primary = eur, rates = rates).single()
+
+        assertEquals(BigDecimal("125.00"), group.subtotal)
+        assertEquals(eur, group.currency)
+        assertEquals(true, group.subtotalEstimated)
+        assertNull(group.subtotalAsOfToday)
+    }
+
+    @Test
+    fun `a mixed group with an unconvertible currency shows no partial figure`() {
+        val rates = RateTable.of(
+            listOf(ExchangeRate("USD", LocalDate.of(2026, 7, 20), BigDecimal("2"))),
+        )
+        val items = listOf(
+            item(1, "A", AccountType.CHECKING, balance = BigDecimal("100.00")),
+            item(2, "B", AccountType.CHECKING, balance = BigDecimal("50.00"), currency = usd),
+            item(
+                3, "C", AccountType.CHECKING,
+                balance = BigDecimal("10.00"),
+                currency = Currency.getInstance("CHF"),
+            ),
+        )
+
+        val group = buildAccountTypeGroups(items, primary = eur, rates = rates).single()
+
+        assertNull(group.subtotal)
+    }
+
+    private val usd = Currency.getInstance("USD")
 }

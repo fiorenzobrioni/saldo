@@ -32,6 +32,7 @@ import com.callbackdev.saldo.core.domain.usecase.ProcessDueCreditCardStatementsU
 import com.callbackdev.saldo.feature.applock.AppLockGate
 import com.callbackdev.saldo.feature.onboarding.OnboardingScreen
 import com.callbackdev.saldo.navigation.SaldoApp
+import com.callbackdev.saldo.rates.RateSyncManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +61,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var appLockRepository: AppLockRepository
 
+    @Inject
+    lateinit var rateSyncManager: RateSyncManager
+
     private val mainViewModel: MainViewModel by viewModels()
 
     /**
@@ -69,6 +73,16 @@ class MainActivity : ComponentActivity() {
      * warm started, and so a configuration change never re-fires it.
      */
     private val pendingQuickAction = MutableStateFlow<TransactionType?>(null)
+
+    override fun onStart() {
+        super.onStart()
+        // Staleness check for the ECB rate cache on every return to the
+        // foreground (ADR 40): the manager's own gates and throttle decide
+        // whether anything actually happens, so this is free for everyone
+        // without foreign currencies. Application scope: leaving the screen
+        // must not cancel a fetch mid-write.
+        rateSyncManager.onAppForeground(applicationScope)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

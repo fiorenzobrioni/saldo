@@ -1,17 +1,28 @@
 package com.callbackdev.saldo.core.database.repository
 
+import com.callbackdev.saldo.core.database.dao.ForeignFlowDao
 import com.callbackdev.saldo.core.database.dao.TransactionDao
 import com.callbackdev.saldo.core.database.mapper.toDomain
 import com.callbackdev.saldo.core.database.mapper.toEntity
+import com.callbackdev.saldo.core.database.relation.CategorySpendCurrencyDayRow
+import com.callbackdev.saldo.core.database.relation.SpendCurrencyDayRow
 import com.callbackdev.saldo.core.domain.model.AccountTotal
+import com.callbackdev.saldo.core.domain.model.CategorySpendDayTotal
 import com.callbackdev.saldo.core.domain.model.CategoryTotal
 import com.callbackdev.saldo.core.domain.model.CounterpartyTotal
+import com.callbackdev.saldo.core.domain.model.CurrencyMovementCount
 import com.callbackdev.saldo.core.domain.model.DailyActivity
 import com.callbackdev.saldo.core.domain.model.DailyNet
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
+import com.callbackdev.saldo.core.domain.model.ForeignAccountDayTotal
+import com.callbackdev.saldo.core.domain.model.ForeignCategoryDayTotal
+import com.callbackdev.saldo.core.domain.model.ForeignDashboardDayFlows
+import com.callbackdev.saldo.core.domain.model.ForeignMonthlyDayTotal
 import com.callbackdev.saldo.core.domain.model.MonthlyNet
 import com.callbackdev.saldo.core.domain.model.MonthlyTotal
+import com.callbackdev.saldo.core.domain.model.PeriodTotals
+import com.callbackdev.saldo.core.domain.model.SpendDayTotal
 import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -28,6 +39,7 @@ import javax.inject.Inject
 @Suppress("TooManyFunctions") // A data-access implementation naturally has many queries.
 class RoomTransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
+    private val foreignFlowDao: ForeignFlowDao,
 ) : TransactionRepository {
 
     override fun observeTransactions(): Flow<List<Transaction>> =
@@ -308,4 +320,170 @@ class RoomTransactionRepository @Inject constructor(
         ids: List<Long>,
         inserts: List<Transaction>,
     ): List<Long> = transactionDao.deleteAndInsert(ids, inserts.map { it.toEntity() })
+
+    override fun observeForeignDashboardFlows(
+        windows: DashboardWindows,
+        currency: Currency,
+    ): Flow<List<ForeignDashboardDayFlows>> =
+        foreignFlowDao.observeForeignDashboardFlows(
+            todayStart = windows.todayStart.toEpochMilli(),
+            todayEnd = windows.todayEnd.toEpochMilli(),
+            monthStart = windows.monthStart.toEpochMilli(),
+            monthEnd = windows.monthEnd.toEpochMilli(),
+            previousStart = windows.previousStart.toEpochMilli(),
+            previousToDateEnd = windows.previousToDateEnd.toEpochMilli(),
+            currency = currency.currencyCode,
+        ).map { rows ->
+            rows.mapNotNull { row ->
+                val rowCurrency = currencyOf(row.currency) ?: return@mapNotNull null
+                ForeignDashboardDayFlows(
+                    currency = rowCurrency,
+                    day = LocalDate.ofEpochDay(row.epochDay),
+                    today = PeriodTotals(
+                        spend = MoneyMapper.toAmount(row.todaySpendMinor ?: 0L, rowCurrency),
+                        income = MoneyMapper.toAmount(row.todayIncomeMinor ?: 0L, rowCurrency),
+                    ),
+                    month = PeriodTotals(
+                        spend = MoneyMapper.toAmount(row.monthSpendMinor ?: 0L, rowCurrency),
+                        income = MoneyMapper.toAmount(row.monthIncomeMinor ?: 0L, rowCurrency),
+                    ),
+                    monthToDateSpend = MoneyMapper
+                        .toAmount(row.monthToDateSpendMinor ?: 0L, rowCurrency)
+                        .negate(),
+                    monthToDateNonRecurringSpend = MoneyMapper
+                        .toAmount(row.monthToDateNonRecurringSpendMinor ?: 0L, rowCurrency)
+                        .negate(),
+                    previousToDateSpend = MoneyMapper
+                        .toAmount(row.previousToDateSpendMinor ?: 0L, rowCurrency)
+                        .negate(),
+                )
+            }
+        }
+
+    override fun observeForeignCategoryTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<ForeignCategoryDayTotal>> =
+        foreignFlowDao.observeForeignCategoryTotals(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { rows ->
+            rows.mapNotNull { row ->
+                val rowCurrency = currencyOf(row.currency) ?: return@mapNotNull null
+                ForeignCategoryDayTotal(
+                    categoryId = row.categoryId,
+                    currency = rowCurrency,
+                    day = LocalDate.ofEpochDay(row.epochDay),
+                    total = MoneyMapper.toAmount(row.totalMinor, rowCurrency),
+                    count = row.count,
+                )
+            }
+        }
+
+    override fun observeForeignAccountSpendTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<ForeignAccountDayTotal>> =
+        foreignFlowDao.observeForeignAccountSpendTotals(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { rows ->
+            rows.mapNotNull { row ->
+                val rowCurrency = currencyOf(row.currency) ?: return@mapNotNull null
+                ForeignAccountDayTotal(
+                    accountId = row.accountId,
+                    currency = rowCurrency,
+                    day = LocalDate.ofEpochDay(row.epochDay),
+                    total = MoneyMapper.toAmount(row.totalMinor, rowCurrency),
+                    count = row.count,
+                )
+            }
+        }
+
+    override fun observeForeignMonthlyTotals(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<ForeignMonthlyDayTotal>> =
+        foreignFlowDao.observeForeignMonthlyTotals(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { rows ->
+            rows.mapNotNull { row ->
+                val rowCurrency = currencyOf(row.currency) ?: return@mapNotNull null
+                ForeignMonthlyDayTotal(
+                    currency = rowCurrency,
+                    day = LocalDate.ofEpochDay(row.epochDay),
+                    expense = MoneyMapper.toAmount(row.expenseMinor ?: 0L, rowCurrency),
+                    income = MoneyMapper.toAmount(row.incomeMinor ?: 0L, rowCurrency),
+                )
+            }
+        }
+
+    override fun observeOtherCurrencyCounts(
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): Flow<List<CurrencyMovementCount>> =
+        foreignFlowDao.observeOtherCurrencyCounts(
+            start.toEpochMilli(),
+            end.toEpochMilli(),
+            currency.currencyCode,
+        ).map { rows -> rows.map { CurrencyMovementCount(it.currency, it.count) } }
+
+    override fun observeSpendByCurrencyDay(
+        start: Instant,
+        end: Instant,
+    ): Flow<List<SpendDayTotal>> =
+        foreignFlowDao.observeSpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
+            .map { rows -> rows.mapNotNull { it.toDomainOrNull() } }
+
+    override suspend fun getSpendByCurrencyDay(
+        start: Instant,
+        end: Instant,
+    ): List<SpendDayTotal> =
+        foreignFlowDao.getSpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
+            .mapNotNull { it.toDomainOrNull() }
+
+    override fun observeCategorySpendByCurrencyDay(
+        start: Instant,
+        end: Instant,
+    ): Flow<List<CategorySpendDayTotal>> =
+        foreignFlowDao.observeCategorySpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
+            .map { rows -> rows.mapNotNull { it.toDomainOrNull() } }
+
+    override suspend fun getCategorySpendByCurrencyDay(
+        start: Instant,
+        end: Instant,
+    ): List<CategorySpendDayTotal> =
+        foreignFlowDao.getCategorySpendByCurrencyDay(start.toEpochMilli(), end.toEpochMilli())
+            .mapNotNull { it.toDomainOrNull() }
+
+    private fun SpendCurrencyDayRow.toDomainOrNull(): SpendDayTotal? {
+        val rowCurrency = currencyOf(currency) ?: return null
+        return SpendDayTotal(
+            currency = rowCurrency,
+            day = LocalDate.ofEpochDay(epochDay),
+            total = MoneyMapper.toAmount(totalMinor, rowCurrency),
+        )
+    }
+
+    private fun CategorySpendCurrencyDayRow.toDomainOrNull(): CategorySpendDayTotal? {
+        val rowCurrency = currencyOf(currency) ?: return null
+        return CategorySpendDayTotal(
+            categoryId = categoryId,
+            currency = rowCurrency,
+            day = LocalDate.ofEpochDay(epochDay),
+            total = MoneyMapper.toAmount(totalMinor, rowCurrency),
+        )
+    }
+
+    /** A stored code that is not ISO 4217 cannot be scaled; its rows are dropped. */
+    private fun currencyOf(code: String): Currency? =
+        runCatching { Currency.getInstance(code) }.getOrNull()
 }

@@ -161,6 +161,35 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+    /**
+     * Whether foreign-currency accounts and movements enter the aggregates as
+     * estimated countervalues in the primary currency (ADR 40). On by
+     * default: the feature exists to fix a wrong headline figure, and with no
+     * foreign data the default costs nothing because no fetch ever starts.
+     * Off returns every surface to the strict single-currency behavior and
+     * stops the only network traffic of the app outside backup and export.
+     */
+    val currencyConversionEnabled: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[CURRENCY_CONVERSION_ENABLED] ?: true }
+            .distinctUntilChanged()
+
+    suspend fun setCurrencyConversionEnabled(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[CURRENCY_CONVERSION_ENABLED] = enabled }
+    }
+
+    /**
+     * Instant of the last ECB rate sync attempt (epoch millis), successful or
+     * not; null if never tried. The sync policy throttles on it, so a feed
+     * outage does not turn every app open into a network call.
+     */
+    val lastRateSyncAttemptEpochMilli: Flow<Long?> =
+        dataStore.data.map { preferences -> preferences[LAST_RATE_SYNC_ATTEMPT_EPOCH_MILLI] }
+            .distinctUntilChanged()
+
+    suspend fun setLastRateSyncAttempt(epochMilli: Long) {
+        dataStore.edit { preferences -> preferences[LAST_RATE_SYNC_ATTEMPT_EPOCH_MILLI] = epochMilli }
+    }
+
     val themePreferences: Flow<ThemePreferences> = dataStore.data.map { preferences ->
         ThemePreferences(
             mode = preferences[THEME_MODE]
@@ -334,6 +363,9 @@ class UserPreferencesRepository @Inject constructor(
         val LAST_USED_ACCOUNT_ID = longPreferencesKey("last_used_account_id")
         val DEFAULT_ACCOUNT_ID = longPreferencesKey("default_account_id")
         val PRIMARY_CURRENCY_CODE = stringPreferencesKey("primary_currency_code")
+        val CURRENCY_CONVERSION_ENABLED = booleanPreferencesKey("currency_conversion_enabled")
+        val LAST_RATE_SYNC_ATTEMPT_EPOCH_MILLI =
+            longPreferencesKey("last_rate_sync_attempt_epoch_milli")
         val THEME_MODE = stringPreferencesKey("theme_mode")
         val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         val RENEWAL_REMINDER_ENABLED = booleanPreferencesKey("renewal_reminder_enabled")

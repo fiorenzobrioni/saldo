@@ -87,6 +87,7 @@ fun AccountEditorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val linkedCandidates by viewModel.linkedAccountCandidates.collectAsStateWithLifecycle()
+    val conversionContext by viewModel.conversionContext.collectAsStateWithLifecycle()
     val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsStateWithLifecycle()
     val guard = rememberUnsavedChangesGuard(hasUnsavedChanges, onNavigateBack)
     val snackbarHostState = remember { SnackbarHostState() }
@@ -179,6 +180,7 @@ fun AccountEditorScreen(
             EditorForm(
                 uiState = uiState,
                 currencies = viewModel.currencies,
+                conversionContext = conversionContext,
                 linkedCandidates = linkedCandidates,
                 onNameChanged = viewModel::onNameChanged,
                 onTypeChanged = viewModel::onTypeChanged,
@@ -210,6 +212,7 @@ fun AccountEditorScreen(
 private fun EditorForm(
     uiState: AccountEditorUiState,
     currencies: List<Currency>,
+    conversionContext: AccountEditorViewModel.ConversionContext?,
     linkedCandidates: List<Account>,
     onNameChanged: (String) -> Unit,
     onTypeChanged: (AccountType) -> Unit,
@@ -250,6 +253,24 @@ private fun EditorForm(
             locked = uiState.isCurrencyLocked,
             onCurrencyChanged = onCurrencyChanged,
         )
+        // Contextual notice for a currency other than the primary one
+        // (ADR 40), right where the choice is made: with conversion on it
+        // says the balance will enter the totals as an estimated ECB
+        // countervalue (and that rates travel over the network); with it off,
+        // that this account will stay out of the totals.
+        if (conversionContext != null && uiState.currency != conversionContext.primaryCurrency) {
+            Spacer(Modifier.height(12.dp))
+            InfoBanner(
+                stringResource(
+                    if (conversionContext.conversionEnabled) {
+                        R.string.account_editor_conversion_on_banner
+                    } else {
+                        R.string.account_editor_conversion_off_banner
+                    },
+                    conversionContext.primaryCurrency.currencyCode,
+                ),
+            )
+        }
         Spacer(Modifier.height(16.dp))
         // A credit card has no initial balance: it always starts at zero and
         // pre-existing debt is entered via a balance adjustment (see the

@@ -3,6 +3,8 @@ package com.callbackdev.saldo.feature.transactions
 import app.cash.turbine.test
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.domain.rates.ConversionState
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
@@ -69,6 +71,7 @@ class TransactionEditorViewModelTest {
     private val recurringRuleRepository = mockk<RecurringRuleRepository>(relaxUnitFun = true)
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true)
     private val undoCoordinator = UndoDeleteCoordinator()
+    private val observeConversionState = mockk<ObserveConversionStateUseCase>()
 
     private fun account(
         id: Long,
@@ -125,6 +128,8 @@ class TransactionEditorViewModelTest {
         )
         coEvery { transactionRepository.upsert(any()) } returns SAVED_ID
         coEvery { tagRepository.upsert(any()) } returns NEW_TAG_ID
+        every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
+        every { observeConversionState() } returns flowOf(ConversionState.INACTIVE)
         return TransactionEditorViewModel(
             route = route,
             transactionRepository = transactionRepository,
@@ -134,6 +139,7 @@ class TransactionEditorViewModelTest {
             recurringRuleRepository = recurringRuleRepository,
             userPreferences = userPreferences,
             undoCoordinator = undoCoordinator,
+            observeConversionState = observeConversionState,
             clock = clock,
         )
     }

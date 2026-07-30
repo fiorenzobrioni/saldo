@@ -5,6 +5,10 @@
     <!-- Informative/confirmation notifications for generated recurring movements. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Reading ECB exchange rates, the only network traffic outside optional
+         backup/export (ADR 40): inbound data, no account, no user data sent. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!-- Biometric unlock of the optional app lock (normal permission, no prompt). -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 

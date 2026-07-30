@@ -60,7 +60,6 @@ import com.callbackdev.saldo.core.domain.model.BudgetLevel
 import com.callbackdev.saldo.core.domain.model.BudgetProgress
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
-import java.util.Currency
 import kotlin.math.roundToInt
 
 /**
@@ -149,6 +148,15 @@ private fun BudgetsContent(
                 SetOverallBudgetCard(onClick = onCreate)
             }
         }
+        // Overall budgets in other currencies (ADR 40): visible with
+        // conversion on instead of vanishing when the primary changes.
+        items(uiState.otherOverall, key = { "overall-${it.budget.id}" }) { progress ->
+            OverallBudgetCard(
+                progress = progress,
+                month = uiState.month,
+                onClick = { onEdit(progress) },
+            )
+        }
         if (uiState.categoryBudgets.isNotEmpty()) {
             item(key = "categories-header") {
                 Text(
@@ -161,7 +169,6 @@ private fun BudgetsContent(
             items(uiState.categoryBudgets, key = { it.budget.id }) { progress ->
                 CategoryBudgetCard(
                     progress = progress,
-                    currency = uiState.currency,
                     onClick = { onEdit(progress) },
                 )
             }
@@ -243,7 +250,9 @@ private fun OverallBudgetCard(
                 Text(
                     text = stringResource(
                         R.string.budgets_spent_of,
-                        MoneyFormatter.format(progress.spent, currency),
+                        // "≈" when the spend carries converted foreign movements (ADR 40).
+                        (if (progress.includesConvertedSpend) "≈ " else "") +
+                            MoneyFormatter.format(progress.spent, currency),
                         MoneyFormatter.format(progress.budget.amount, currency),
                     ),
                     style = MaterialTheme.typography.bodySmall.tabularNumbers(),
@@ -293,11 +302,13 @@ private fun SetOverallBudgetCard(onClick: () -> Unit, modifier: Modifier = Modif
 @Composable
 private fun CategoryBudgetCard(
     progress: BudgetProgress,
-    currency: Currency,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val category = progress.category ?: return
+    // The budget's own currency: with conversion on the list can hold
+    // budgets in currencies other than the primary one (ADR 40).
+    val currency = progress.budget.currency
     SaldoCard(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
@@ -341,7 +352,9 @@ private fun CategoryBudgetCard(
                 Text(
                     text = stringResource(
                         R.string.budgets_spent_of,
-                        MoneyFormatter.format(progress.spent, currency),
+                        // "≈" when the spend carries converted foreign movements (ADR 40).
+                        (if (progress.includesConvertedSpend) "≈ " else "") +
+                            MoneyFormatter.format(progress.spent, currency),
                         MoneyFormatter.format(progress.budget.amount, currency),
                     ),
                     style = MaterialTheme.typography.bodySmall.tabularNumbers(),

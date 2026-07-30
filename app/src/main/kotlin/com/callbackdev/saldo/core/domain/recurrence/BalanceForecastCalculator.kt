@@ -5,6 +5,8 @@ import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.model.UpcomingMovement
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDate
@@ -64,6 +66,7 @@ object BalanceForecastCalculator {
      * future-dated movements and the pending occurrences, already reduced to
      * their signed effect on that same total by [upcomingNetByDay].
      */
+    @Suppress("LongParameterList") // One argument per forecast ingredient, all required.
     fun projectToEndOfMonth(
         balanceAsOfToday: BigDecimal,
         today: LocalDate,
@@ -72,6 +75,7 @@ object BalanceForecastCalculator {
         upcoming: Map<LocalDate, BigDecimal>,
         materializedOccurrences: Set<RuleOccurrence>,
         currency: Currency,
+        rates: RateTable = RateTable.EMPTY,
     ): List<DailyBalance> {
         val endOfMonth = today.withDayOfMonth(today.lengthOfMonth())
         if (today >= endOfMonth) return emptyList()
@@ -81,7 +85,8 @@ object BalanceForecastCalculator {
             MoneyMapper.fractionDigits(currency),
             RoundingMode.HALF_UP,
         )
-        val netByDay = recurringNetByDay(rules, today, endOfMonth, materializedOccurrences, currency)
+        val netByDay =
+            recurringNetByDay(rules, today, endOfMonth, materializedOccurrences, currency, rates)
 
         var running = balanceAsOfToday
         return generateSequence(today.plusDays(1)) { it.plusDays(1) }
@@ -112,26 +117,42 @@ object BalanceForecastCalculator {
      * from earlier in the month is committed money that no balance carries yet,
      * and dropping it would make the tail optimistic by exactly its amount.
      */
+    @Suppress("LongParameterList") // The three conversion arguments default to "no conversion".
     fun upcomingNetByDay(
         movements: List<UpcomingMovement>,
         includedAccountIds: Set<Long>,
         firstForecastDay: LocalDate,
         lastForecastDay: LocalDate,
+        currencyByAccountId: Map<Long, Currency> = emptyMap(),
+        target: Currency? = null,
+        rates: RateTable = RateTable.EMPTY,
     ): Map<LocalDate, BigDecimal> {
         if (firstForecastDay > lastForecastDay) return emptyMap()
+        // A future flow has no historical rate by definition, so a foreign
+        // amount is valued at the latest known rate (ADR 40, stock rule): the
+        // tail is an estimate and says so. No rate at all -> the movement
+        // stays out, like its account stays out of the total.
+        fun contribution(amount: BigDecimal, accountId: Long): BigDecimal? {
+            val from = currencyByAccountId[accountId]
+            if (target == null || from == null || from == target) return amount
+            return CurrencyConverter.convertAtLatest(amount, from, target, rates)?.amount
+        }
+
         val net = mutableMapOf<LocalDate, BigDecimal>()
         movements.forEach { movement ->
             val day = movement.date.coerceAtLeast(firstForecastDay)
             if (day > lastForecastDay) return@forEach
             val transaction = movement.transaction
             if (transaction.accountId in includedAccountIds) {
-                net.merge(day, transaction.amount, BigDecimal::add)
+                contribution(transaction.amount, transaction.accountId)
+                    ?.let { net.merge(day, it, BigDecimal::add) }
             }
             val destination = transaction.transferAccountId
                 ?.takeIf { transaction.type == TransactionType.TRANSFER && it in includedAccountIds }
             val received = transaction.transferAmount
             if (destination != null && received != null) {
-                net.merge(day, received, BigDecimal::add)
+                contribution(received, destination)
+                    ?.let { net.merge(day, it, BigDecimal::add) }
             }
         }
         return net
@@ -145,26 +166,37 @@ object BalanceForecastCalculator {
      * any occurrence already materialized by an upcoming movement is skipped:
      * the row itself is counted, the schedule that produced it is not.
      */
+    @Suppress("LongParameterList") // Same ingredient list as the public entry point.
     private fun recurringNetByDay(
         rules: List<RecurringRule>,
         today: LocalDate,
         endOfMonth: LocalDate,
         materializedOccurrences: Set<RuleOccurrence>,
         currency: Currency,
+        rates: RateTable,
     ): Map<LocalDate, BigDecimal> {
         val tomorrow = today.plusDays(1)
         val net = mutableMapOf<LocalDate, BigDecimal>()
         rules
             .filter { rule ->
                 (rule.type == TransactionType.EXPENSE || rule.type == TransactionType.INCOME) &&
-                    rule.currency == currency &&
                     !rule.isVariableAmount &&
                     rule.amount != null
             }
             .forEach { rule ->
                 val floor = rule.lastGeneratedDate?.plusDays(1)?.takeIf { it > tomorrow } ?: tomorrow
                 if (floor > endOfMonth) return@forEach
-                val signed = if (rule.type == TransactionType.EXPENSE) rule.amount!!.negate() else rule.amount!!
+                // Foreign rules enter at the latest known rate (a future flow
+                // has no historical rate); without one they stay out, as they
+                // always did before conversion existed.
+                val amount = when (rule.currency) {
+                    currency -> rule.amount!!
+                    else -> CurrencyConverter
+                        .convertAtLatest(rule.amount!!, rule.currency, currency, rates)
+                        ?.amount
+                        ?: return@forEach
+                }
+                val signed = if (rule.type == TransactionType.EXPENSE) amount.negate() else amount
                 RecurrenceCalculator.occurrencesInClosedRange(rule, floor, endOfMonth)
                     .filterNot { date -> RuleOccurrence(rule.id, date) in materializedOccurrences }
                     .forEach { date -> net.merge(date, signed, BigDecimal::add) }

@@ -246,7 +246,9 @@ private fun SafeToSpendContent(
 ) {
     Column(modifier = modifier) {
         Text(
-            text = MoneyFormatter.format(checkNotNull(safeToSpend.perDay), currency),
+            // "≈" when a leg carries converted foreign amounts (ADR 40).
+            text = (if (safeToSpend.includesEstimates) "≈ " else "") +
+                MoneyFormatter.format(checkNotNull(safeToSpend.perDay), currency),
             style = MaterialTheme.typography.headlineMedium.tabularNumbers(),
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
@@ -415,7 +417,9 @@ private fun OverallBudgetSummary(progress: BudgetProgress, modifier: Modifier = 
             Text(
                 text = stringResource(
                     R.string.budgets_spent_of,
-                    MoneyFormatter.format(progress.spent, currency),
+                    // "≈" when the spend carries converted foreign movements (ADR 40).
+                    (if (progress.includesConvertedSpend) "≈ " else "") +
+                        MoneyFormatter.format(progress.spent, currency),
                     MoneyFormatter.format(progress.budget.amount, currency),
                 ),
                 style = MaterialTheme.typography.bodySmall.tabularNumbers(),

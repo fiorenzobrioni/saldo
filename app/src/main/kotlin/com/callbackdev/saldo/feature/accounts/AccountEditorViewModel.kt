@@ -112,6 +112,29 @@ class AccountEditorViewModel @AssistedInject constructor(
     val currencies: List<Currency> = CurrencyCatalog.supportedCurrencies
 
     /**
+     * What the contextual banner under the currency picker needs (ADR 40):
+     * the app's primary currency and whether conversion is on. Null until
+     * the first emission, which simply keeps the banner away.
+     */
+    val conversionContext: StateFlow<ConversionContext?> = combine(
+        accountRepository.observeAccountsWithBalance(),
+        userPreferences.primaryCurrencyOverride,
+        userPreferences.currencyConversionEnabled,
+    ) { accounts, override, enabled ->
+        ConversionContext(primaryCurrency(accounts, override), enabled)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+        initialValue = null,
+    )
+
+    /** See [conversionContext]. */
+    data class ConversionContext(
+        val primaryCurrency: Currency,
+        val conversionEnabled: Boolean,
+    )
+
+    /**
      * The type a new account starts on, from the route (the savings goal
      * "create account" shortcut passes SAVINGS). Falls back to [AccountType.CHECKING];
      * ignored in edit mode, where [loadAccount] sets the persisted type.

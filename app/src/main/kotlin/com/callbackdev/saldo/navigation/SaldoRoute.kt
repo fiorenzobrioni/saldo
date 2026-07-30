@@ -41,6 +41,14 @@ data class AccountEditorRoute(
 data object CategoriesRoute : NavKey
 
 /**
+ * Exchange-rates board (ADR 40): every downloaded ECB currency against the
+ * primary one. Reached from Settings, from the Dashboard's estimated-rates
+ * line and from the accounts list's countervalues note.
+ */
+@Serializable
+data object ExchangeRatesRoute : NavKey
+
+/**
  * Tag management (rename, merge, delete), reached from Settings. Tags are
  * still created inline in the movement editor; this screen only curates them.
  */

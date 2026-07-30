@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
 import com.callbackdev.saldo.core.common.money.MoneyInput
+import com.callbackdev.saldo.core.domain.model.primaryCurrency
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
@@ -48,6 +51,7 @@ import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.util.Currency
 
 /**
  * Form state holder for the transaction editor. One callback per field is the
@@ -65,6 +69,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
     private val recurringRuleRepository: RecurringRuleRepository,
     private val userPreferences: UserPreferencesRepository,
     private val undoCoordinator: UndoDeleteCoordinator,
+    observeConversionState: ObserveConversionStateUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -148,6 +153,44 @@ class TransactionEditorViewModel @AssistedInject constructor(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
         initialValue = TransactionEditorUiState(),
+    )
+
+    /** What the countervalue line under the amount shows (ADR 40). */
+    data class AmountCountervalue(
+        val amount: BigDecimal,
+        /** The primary currency the countervalue is expressed in. */
+        val currency: Currency,
+        /** Publication day of the rate used (the movement's own day, resolved). */
+        val rateDay: LocalDate?,
+    )
+
+    /**
+     * Estimated countervalue of the typed amount in the primary currency, at
+     * the rate of the movement's own date (ADR 40: a flow converts at its
+     * day's rate, so backdating the movement moves the estimate too). Null
+     * when there is nothing to declare: same currency, conversion off, no
+     * usable rate, unparsable amount, or a transfer (its second field already
+     * carries the real received amount).
+     */
+    val amountCountervalue: StateFlow<AmountCountervalue?> = combine(
+        form,
+        accountRepository.observeAccountsWithBalance(),
+        userPreferences.primaryCurrencyOverride,
+        observeConversionState(),
+    ) { current, accounts, override, conversion ->
+        if (!conversion.active) return@combine null
+        if (current.type == TransactionType.TRANSFER) return@combine null
+        val account = accounts.firstOrNull { it.account.id == current.accountId }?.account
+            ?: return@combine null
+        val primary = primaryCurrency(accounts, override)
+        if (account.currency == primary) return@combine null
+        val amount = MoneyInput.parse(current.amountInput) ?: return@combine null
+        CurrencyConverter.convertOn(amount, account.currency, primary, current.date, conversion.rates)
+            ?.let { AmountCountervalue(it.amount, primary, it.rateDay) }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+        initialValue = null,
     )
 
     private val _events = Channel<TransactionEditorEvent>(Channel.BUFFERED)

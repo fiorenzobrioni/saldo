@@ -2,9 +2,11 @@ package com.callbackdev.saldo.feature.accounts
 
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.rates.ConversionState
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -12,6 +14,7 @@ import com.callbackdev.saldo.core.domain.creditcard.BillingCycle
 import com.callbackdev.saldo.core.domain.usecase.AdjustBalanceUseCase
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveLoanProgressUseCase
 import com.callbackdev.saldo.core.domain.usecase.SettleCreditCardStatementUseCase
 import com.callbackdev.saldo.testing.MainDispatcherExtension
@@ -44,6 +47,8 @@ class AccountsViewModelTest {
     private val observeDueStatements = mockk<ObserveDueStatementsUseCase>()
     private val observeLoanProgress = mockk<ObserveLoanProgressUseCase>()
     private val settleStatement = mockk<SettleCreditCardStatementUseCase>()
+    private val userPreferences = mockk<UserPreferencesRepository>()
+    private val observeConversionState = mockk<ObserveConversionStateUseCase>()
     private val clock: Clock = Clock.fixed(Instant.parse("2026-07-21T10:00:00Z"), ZoneId.of("Europe/Rome"))
 
     private fun account(
@@ -68,6 +73,8 @@ class AccountsViewModelTest {
         coEvery { recurringRuleRepository.countForAccount(any()) } returns 0
         every { observeDueStatements() } returns flowOf(dueStatements)
         every { observeLoanProgress() } returns flowOf(emptyMap())
+        every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
+        every { observeConversionState() } returns flowOf(ConversionState.INACTIVE)
         return AccountsViewModel(
             accountRepository,
             transactionRepository,
@@ -76,6 +83,8 @@ class AccountsViewModelTest {
             observeDueStatements,
             observeLoanProgress,
             settleStatement,
+            userPreferences,
+            observeConversionState,
             clock,
         )
     }

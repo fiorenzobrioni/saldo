@@ -8,6 +8,9 @@ import com.callbackdev.saldo.core.domain.model.UpcomingMovement
 import com.callbackdev.saldo.core.domain.model.UpcomingOrigin
 import com.callbackdev.saldo.core.domain.model.localDate
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
+import com.callbackdev.saldo.core.domain.rates.ConversionState
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +39,7 @@ class ObserveUpcomingMovementsUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val userPreferences: UserPreferencesRepository,
+    private val observeConversionState: ObserveConversionStateUseCase,
     private val clock: Clock,
 ) {
 
@@ -48,8 +52,9 @@ class ObserveUpcomingMovementsUseCase @Inject constructor(
         movements(today),
         accountRepository.observeAccountsWithBalance(),
         userPreferences.primaryCurrencyOverride,
-    ) { items, accounts, override ->
-        ledgerOf(items, primaryCurrency(accounts, override))
+        observeConversionState(),
+    ) { items, accounts, override, conversion ->
+        ledgerOf(items, primaryCurrency(accounts, override), conversion)
     }
 
     /**
@@ -67,17 +72,48 @@ class ObserveUpcomingMovementsUseCase @Inject constructor(
             .sortedWith(compareBy({ it.date }, { it.transaction.timestamp }, { it.id }))
     }
 
-    private fun ledgerOf(items: List<UpcomingMovement>, currency: Currency): UpcomingLedger =
-        UpcomingLedger(
+    private fun ledgerOf(
+        items: List<UpcomingMovement>,
+        currency: Currency,
+        conversion: ConversionState,
+    ): UpcomingLedger {
+        val rates = if (conversion.active) conversion.rates else RateTable.EMPTY
+        var converted = false
+        var leftOut = false
+        // Foreign flows enter at the rate of their own (future) day, which
+        // resolves to the latest known one (ADR 40); no rate means the
+        // movement stays out of the totals and the notice says so.
+        fun magnitudeOf(type: TransactionType): BigDecimal = items
+            .filter { it.transaction.type == type }
+            .fold(BigDecimal.ZERO) { acc, item ->
+                val transaction = item.transaction
+                if (transaction.currency == currency) {
+                    acc.add(item.amount.abs())
+                } else {
+                    val estimate = CurrencyConverter
+                        .convertOn(item.amount.abs(), transaction.currency, currency, item.date, rates)
+                    if (estimate == null) {
+                        leftOut = true
+                        acc
+                    } else {
+                        converted = true
+                        acc.add(estimate.amount)
+                    }
+                }
+            }
+
+        val outgoing = magnitudeOf(TransactionType.EXPENSE)
+        val incoming = magnitudeOf(TransactionType.INCOME)
+        return UpcomingLedger(
             items = items,
-            outgoing = items.magnitudeOf(TransactionType.EXPENSE, currency),
-            incoming = items.magnitudeOf(TransactionType.INCOME, currency),
+            outgoing = outgoing,
+            incoming = incoming,
             currency = currency,
             pendingCount = items.count { it.isPending },
-            hasOtherCurrencies = items.any {
-                it.transaction.type != TransactionType.TRANSFER && it.transaction.currency != currency
-            },
+            hasOtherCurrencies = leftOut,
+            includesEstimates = converted,
         )
+    }
 
     private fun Transaction.upcoming(): UpcomingMovement = UpcomingMovement(
         transaction = this,

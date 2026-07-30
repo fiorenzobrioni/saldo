@@ -11,6 +11,7 @@ import com.callbackdev.saldo.core.domain.model.CounterpartyLedger
 import com.callbackdev.saldo.core.domain.model.DailyBalance
 import com.callbackdev.saldo.core.domain.model.DashboardTotals
 import com.callbackdev.saldo.core.domain.model.DashboardWindows
+import com.callbackdev.saldo.core.domain.model.ForeignDashboardDayFlows
 import com.callbackdev.saldo.core.domain.model.PeriodTotals
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.SavingsGoalProgress
@@ -21,6 +22,10 @@ import com.callbackdev.saldo.core.domain.model.hasEndedBy
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.model.runsInMonthOf
 import com.callbackdev.saldo.core.domain.model.UpcomingMovement
+import com.callbackdev.saldo.core.domain.rates.ConversionState
+import com.callbackdev.saldo.core.domain.rates.ConvertedAggregates
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
+import com.callbackdev.saldo.core.domain.rates.RateTable
 import com.callbackdev.saldo.core.domain.recurrence.BalanceForecastCalculator
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
 import com.callbackdev.saldo.core.domain.recurrence.RuleOccurrence
@@ -33,6 +38,7 @@ import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import com.callbackdev.saldo.core.domain.usecase.ObserveBudgetProgressUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveCounterpartyBalancesUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDailyBalanceHistoryUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveDueStatementsUseCase
@@ -136,6 +142,16 @@ data class DashboardUiState(
     val hasAccounts: Boolean = false,
     val primaryCurrency: Currency = fallbackCurrency,
     val totalBalance: BigDecimal = BigDecimal.ZERO,
+    /** Whether conversion is on with at least one usable rate (ADR 40). */
+    val conversionActive: Boolean = false,
+    /** True when [totalBalance] includes converted foreign balances: shown with "≈". */
+    val totalBalanceEstimated: Boolean = false,
+    /** Publication day of the stalest rate [totalBalance] leans on; null when exact. */
+    val totalBalanceRateDay: LocalDate? = null,
+    /** Estimated countervalue per foreign account id, for the breakdown rows. */
+    val accountCountervalues: Map<Long, CurrencyConverter.Estimate> = emptyMap(),
+    /** True when the Today/Month figures include converted foreign movements. */
+    val periodTotalsEstimated: Boolean = false,
     /**
      * Balance as of today (movements dated up to today), i.e. the sparkline's
      * today point. Non-null only when it differs from [totalBalance], which
@@ -221,6 +237,7 @@ class DashboardViewModel @Inject constructor(
     private val observeCounterpartyBalances: ObserveCounterpartyBalancesUseCase,
     private val observeDailyBalanceHistory: ObserveDailyBalanceHistoryUseCase,
     private val observeUpcomingMovements: ObserveUpcomingMovementsUseCase,
+    private val observeConversionState: ObserveConversionStateUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -232,11 +249,19 @@ class DashboardViewModel @Inject constructor(
 
     /** Everything the dashboard combines besides the accounts themselves. */
     private data class Sources(
-        val totals: DashboardTotals,
+        val totals: ConvertedAggregates.Merged<DashboardTotals>,
         val recent: List<Transaction>,
         val categories: List<Category>,
         val rules: List<RecurringRule>,
         val upcoming: List<UpcomingMovement>,
+    )
+
+    /** Everything upstream of the SQL windows: accounts, override, today, conversion. */
+    private data class Inputs(
+        val accounts: List<AccountWithBalance>,
+        val currencyOverride: Currency?,
+        val today: LocalDate,
+        val conversion: ConversionState,
     )
 
     /** The budget/goal figures that join on top of the core [Sources]. */
@@ -262,31 +287,48 @@ class DashboardViewModel @Inject constructor(
         accountRepository.observeAccountsWithBalance(),
         userPreferences.primaryCurrencyOverride,
         midnightTicker(clock),
-        ::Triple,
+        observeConversionState(),
+        ::Inputs,
     )
-        .flatMapLatest { (accounts, currencyOverride, today) ->
-            val primary = primaryCurrency(accounts, currencyOverride)
+        .flatMapLatest { inputs ->
+            val accounts = inputs.accounts
+            val today = inputs.today
+            val conversion = inputs.conversion
+            val primary = primaryCurrency(accounts, inputs.currencyOverride)
+            val rates = if (conversion.active) conversion.rates else RateTable.EMPTY
+            val windows = DashboardWindows.around(today, clock.zone)
+            // The base totals and their foreign residue collapse into one
+            // merged figure right away (ADR 40): downstream nobody needs to
+            // know there were two queries. With conversion off the residue
+            // flow is a constant and the merge is the identity.
+            val totals = combine(
+                transactionRepository.observeDashboardTotals(windows, primary),
+                if (conversion.active) {
+                    transactionRepository.observeForeignDashboardFlows(windows, primary)
+                } else {
+                    flowOf(emptyList<ForeignDashboardDayFlows>())
+                },
+            ) { base, foreign ->
+                ConvertedAggregates.mergeDashboardTotals(base, foreign, primary, rates)
+            }
             // The typed combine overloads stop at five flows, so the core
             // sources collapse first and the budget figures join on top.
             val sources = combine(
-                transactionRepository.observeDashboardTotals(
-                    windows = DashboardWindows.around(today, clock.zone),
-                    currency = primary,
-                ),
+                totals,
                 transactionRepository.observeRecentTransactions(RECENT_COUNT),
                 categoryRepository.observeCategories(),
                 recurringRuleRepository.observeRules(),
                 // Future-dated movements and pending occurrences in one flow:
                 // the forecast walks them and the card previews them.
                 observeUpcomingMovements.movements(today),
-            ) { totals, recent, categories, rules, upcoming ->
-                Sources(totals, recent, categories, rules, upcoming)
+            ) { mergedTotals, recent, categories, rules, upcoming ->
+                Sources(mergedTotals, recent, categories, rules, upcoming)
             }
             // Budget/goal figures collapse into one bundle so the whole dashboard
             // stays within the typed combine arity.
             val extras = combine(
-                observeBudgetProgress(primary),
-                observeSafeToSpend(primary),
+                observeBudgetProgress(primary, conversion),
+                observeSafeToSpend(primary, conversion),
                 userPreferences.dashboardCardPreferences,
                 observeDueStatements(),
                 // The typed combine stops at five flows, so the two "who holds
@@ -296,10 +338,23 @@ class DashboardViewModel @Inject constructor(
                 Extras(budgets, safeToSpend, cardPrefs, dueStatements, savingsGoals, counterparties)
             }
             val sparklineDays = List(SPARKLINE_DAYS) { today.minusDays(SPARKLINE_DAYS - 1L - it) }
+            // Foreign currencies whose included accounts should enter the
+            // sparkline as converted stocks; empty when conversion is off.
+            val sparklineForeign = if (conversion.active) {
+                accounts
+                    .filter {
+                        !it.account.isArchived && it.account.isIncludedInTotal &&
+                            it.account.currency != primary
+                    }
+                    .map { it.account.currency }
+                    .distinct()
+            } else {
+                emptyList()
+            }
             combine(
                 sources,
                 extras,
-                observeDailyBalanceHistory(primary, sparklineDays),
+                observeDailyBalanceHistory(primary, sparklineDays, sparklineForeign, rates),
                 recapTeaserMonth(today, primary),
                 // Accounts enriched with their per-account "as of today" balance,
                 // so a diverging account can show it in the breakdown.
@@ -308,6 +363,7 @@ class DashboardViewModel @Inject constructor(
                 buildState(
                     accounts = accountsToday,
                     primary = primary,
+                    conversion = conversion,
                     today = today,
                     sources = collapsed,
                     balanceHistory = balanceHistory,
@@ -316,7 +372,12 @@ class DashboardViewModel @Inject constructor(
                     safeToSpend = bundle.safeToSpend,
                     cardPrefs = bundle.cardPrefs,
                     dueStatements = bundle.dueStatements.filter { it.currency == primary },
-                    savingsGoals = bundle.savingsGoals.filter { it.goal.currency == primary },
+                    // With conversion on, a goal in another currency is no
+                    // longer hidden from the card (ADR 40): its figures stay
+                    // in its own currency, which the row already shows.
+                    savingsGoals = bundle.savingsGoals.filter {
+                        conversion.active || it.goal.currency == primary
+                    },
                     counterparties = bundle.counterparties,
                 )
             }
@@ -402,6 +463,7 @@ class DashboardViewModel @Inject constructor(
     private fun buildState(
         accounts: List<AccountWithBalance>,
         primary: Currency,
+        conversion: ConversionState,
         today: LocalDate,
         sources: Sources,
         balanceHistory: List<DailyBalance>,
@@ -414,9 +476,11 @@ class DashboardViewModel @Inject constructor(
         counterparties: CounterpartyLedger,
     ): DashboardUiState {
         val active = accounts.filter { !it.account.isArchived }
-        val totalBalance = active
-            .filter { it.account.isIncludedInTotal && it.account.currency == primary }
-            .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.balance) }
+        val rates = if (conversion.active) conversion.rates else RateTable.EMPTY
+        // With conversion off (or nothing cached) the empty table converts
+        // nothing and this is exactly the old primary-only sum (ADR 40).
+        val balance = ConvertedAggregates.convertTotalBalance(accounts, primary, rates)
+        val totalBalance = balance.total
 
         // The sparkline's today point is the balance dated up to today; it lags
         // [totalBalance] when future-dated confirmed movements are already
@@ -425,7 +489,7 @@ class DashboardViewModel @Inject constructor(
         val todayBalance = balanceHistory.lastOrNull()?.balance ?: totalBalance
         val balanceAsOfToday = todayBalance.takeIf { it.compareTo(totalBalance) != 0 }
 
-        val totals = sources.totals
+        val totals = sources.totals.value
         val previousReference = totals.previousMonthToDateSpend.takeIf { it.signum() > 0 }
         val comparison = previousReference?.let { totals.monthToDateSpend.subtract(it) }
         // Meaningful only when a baseline exists, like the two figures above.
@@ -447,6 +511,11 @@ class DashboardViewModel @Inject constructor(
             hasAccounts = active.isNotEmpty(),
             primaryCurrency = primary,
             totalBalance = totalBalance,
+            conversionActive = conversion.active,
+            totalBalanceEstimated = balance.convertedCount > 0,
+            totalBalanceRateDay = balance.rateDay,
+            accountCountervalues = balance.countervalues,
+            periodTotalsEstimated = sources.totals.includesEstimates,
             balanceAsOfToday = balanceAsOfToday,
             // Same order as the Accounts screen (type declaration order, then
             // name) so the total-balance breakdown and the full list agree.
@@ -463,12 +532,18 @@ class DashboardViewModel @Inject constructor(
                     rules = sources.rules,
                     upcoming = BalanceForecastCalculator.upcomingNetByDay(
                         movements = sources.upcoming,
-                        includedAccountIds = totalAccountIds(active, primary),
+                        includedAccountIds = totalAccountIds(active, primary, rates),
                         firstForecastDay = today.plusDays(1),
                         lastForecastDay = today.withDayOfMonth(today.lengthOfMonth()),
+                        currencyByAccountId = active.associate {
+                            it.account.id to it.account.currency
+                        },
+                        target = primary,
+                        rates = rates,
                     ),
                     materializedOccurrences = materializedOccurrences(sources.upcoming),
                     currency = primary,
+                    rates = rates,
                 )
             } else {
                 emptyList()
@@ -499,14 +574,21 @@ class DashboardViewModel @Inject constructor(
 
     /**
      * Ids of the accounts that count toward the total balance in [primary]:
-     * the same set the balance query filters on, so the forecast applies a
-     * future movement exactly when the balance eventually will.
+     * the same set the balance sum covers, so the forecast applies a future
+     * movement exactly when the balance eventually will. With conversion on
+     * that includes foreign accounts whose currency has rates (ADR 40).
      */
-    private fun totalAccountIds(accounts: List<AccountWithBalance>, primary: Currency): Set<Long> =
-        accounts
-            .filter { it.account.isIncludedInTotal && it.account.currency == primary }
-            .map { it.account.id }
-            .toSet()
+    private fun totalAccountIds(
+        accounts: List<AccountWithBalance>,
+        primary: Currency,
+        rates: RateTable,
+    ): Set<Long> = accounts
+        .filter {
+            it.account.isIncludedInTotal &&
+                (it.account.currency == primary || rates.covers(it.account.currency.currencyCode))
+        }
+        .map { it.account.id }
+        .toSet()
 
     /**
      * The rule occurrences already filled by an upcoming movement. Those slots

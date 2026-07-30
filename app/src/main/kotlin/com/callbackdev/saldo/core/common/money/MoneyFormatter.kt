@@ -23,6 +23,18 @@ object MoneyFormatter {
     ): String = currencyFormat(currency, locale).format(amount)
 
     /**
+     * An estimated countervalue, e.g. `≈ 115,30 €` (ADR 40). The `≈` is the
+     * app-wide estimate marker (the forecast pill uses the same language):
+     * every converted amount goes through here so no estimate can print as an
+     * exact figure.
+     */
+    fun formatApprox(
+        amount: BigDecimal,
+        currency: Currency,
+        locale: Locale = Locale.getDefault(),
+    ): String = "≈ ${format(amount, currency, locale)}"
+
+    /**
      * Like [format] but with an explicit leading `+` for positive amounts, for
      * places where the direction of the movement matters (e.g. adjustments).
      */

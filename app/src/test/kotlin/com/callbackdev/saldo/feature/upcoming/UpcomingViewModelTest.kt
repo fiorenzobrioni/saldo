@@ -14,6 +14,8 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
+import com.callbackdev.saldo.core.domain.rates.ConversionState
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveUpcomingMovementsUseCase
 import com.callbackdev.saldo.navigation.UpcomingRoute
 import com.callbackdev.saldo.testing.MainDispatcherExtension
@@ -52,6 +54,7 @@ class UpcomingViewModelTest {
     private val accountRepository = mockk<AccountRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
     private val userPreferences = mockk<UserPreferencesRepository>()
+    private val observeConversionState = mockk<ObserveConversionStateUseCase>()
 
     private fun account(id: Long, currency: Currency = eur) = AccountWithBalance(
         account = Account(
@@ -100,12 +103,14 @@ class UpcomingViewModelTest {
         every { categoryRepository.observeCategories() } returns flowOf(emptyList<Category>())
         every { recurringRuleRepository.observeRules() } returns flowOf(emptyList<RecurringRule>())
         every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
+        every { observeConversionState() } returns flowOf(ConversionState.INACTIVE)
         return UpcomingViewModel(
             route,
             ObserveUpcomingMovementsUseCase(
                 transactionRepository,
                 accountRepository,
                 userPreferences,
+                observeConversionState,
                 clock,
             ),
             transactionRepository,

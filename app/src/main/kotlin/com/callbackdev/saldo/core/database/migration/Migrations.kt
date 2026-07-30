@@ -58,4 +58,29 @@ private val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+/**
+ * Adds the `exchange_rates` cache of ECB reference rates (ADR 40): one row per
+ * (day, currency) with the rate kept as the exact decimal string the feed
+ * published. A brand new table, so `CREATE TABLE` carries the composite
+ * primary key directly; the index matches what Room generates for
+ * `Index("currency", "dateEpochDay")`, the shape of the "most recent rate on
+ * or before day X" lookup. No data to move: the cache starts empty and fills
+ * on the first sync.
+ */
+private val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `exchange_rates` (" +
+                "`dateEpochDay` INTEGER NOT NULL, " +
+                "`currency` TEXT NOT NULL, " +
+                "`rate` TEXT NOT NULL, " +
+                "PRIMARY KEY(`dateEpochDay`, `currency`))",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_exchange_rates_currency_dateEpochDay` " +
+                "ON `exchange_rates` (`currency`, `dateEpochDay`)",
+        )
+    }
+}
+
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
