@@ -4,8 +4,10 @@ import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.LoanProgress
+import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
 import java.math.BigDecimal
+import java.time.LocalDate
 import java.util.Currency
 
 /**
@@ -23,6 +25,11 @@ data class AccountTypeGroup(
     val subtotal: BigDecimal? = null,
     val currency: Currency? = null,
     val subtotalAsOfToday: BigDecimal? = null,
+    /**
+     * True when [subtotal] mixes currencies converted at the latest known
+     * rate (ADR 40): the header shows it with the "≈" estimate marker.
+     */
+    val subtotalEstimated: Boolean = false,
 )
 
 /** Immutable UI state for the accounts list screen. */
@@ -39,6 +46,12 @@ data class AccountsUiState(
     val dueStatements: Map<Long, DueStatement> = emptyMap(),
     /** Repayment state of the active loan accounts, keyed by account id. */
     val loanProgressById: Map<Long, LoanProgress> = emptyMap(),
+    /** Estimated countervalue per foreign account id (ADR 40); empty with conversion off. */
+    val countervalues: Map<Long, CurrencyConverter.Estimate> = emptyMap(),
+    /** The primary currency the countervalues are expressed in. */
+    val primaryCurrency: Currency? = null,
+    /** Publication day of the stalest rate the countervalues lean on. */
+    val ratesDay: LocalDate? = null,
 ) {
     val isEmpty: Boolean get() = !isLoading && activeGroups.isEmpty() && archived.isEmpty()
 

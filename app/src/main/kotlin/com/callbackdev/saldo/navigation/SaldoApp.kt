@@ -46,6 +46,7 @@ import com.callbackdev.saldo.feature.categories.CategoriesScreen
 import com.callbackdev.saldo.feature.counterparties.CounterpartiesScreen
 import com.callbackdev.saldo.feature.categories.CategoryEditorScreen
 import com.callbackdev.saldo.feature.dashboard.DashboardScreen
+import com.callbackdev.saldo.feature.rates.ExchangeRatesScreen
 import com.callbackdev.saldo.feature.recap.MonthlyRecapScreen
 import com.callbackdev.saldo.feature.recurring.RecurringRuleEditorScreen
 import com.callbackdev.saldo.feature.recurring.RecurrencesScreen
@@ -162,6 +163,7 @@ fun SaldoApp(
                 onNavigateToRecap = { month ->
                     nav.navigate(MonthlyRecapRoute(month.year, month.monthValue))
                 },
+                onNavigateToRates = { nav.navigate(ExchangeRatesRoute) },
             )
         }
         entry<TransactionsRoute> {
@@ -196,6 +198,7 @@ fun SaldoApp(
                 onNavigateToSecurity = { nav.navigate(SecurityRoute) },
                 onNavigateToBackup = { nav.navigate(BackupRoute) },
                 onNavigateToAbout = { nav.navigate(AboutRoute) },
+                onNavigateToRates = { nav.navigate(ExchangeRatesRoute) },
             )
         }
         entry<AccountsRoute> {
@@ -203,6 +206,7 @@ fun SaldoApp(
                 onNavigateBack = { nav.goBack() },
                 onNavigateToNewAccount = { nav.navigate(AccountEditorRoute()) },
                 onNavigateToEditAccount = { id -> nav.navigate(AccountEditorRoute(id)) },
+                onNavigateToRates = { nav.navigate(ExchangeRatesRoute) },
             )
         }
         entry<AccountEditorRoute> { route ->
@@ -230,6 +234,9 @@ fun SaldoApp(
         }
         entry<TagsRoute> {
             TagsScreen(onNavigateBack = { nav.goBack() })
+        }
+        entry<ExchangeRatesRoute> {
+            ExchangeRatesScreen(onNavigateBack = { nav.goBack() })
         }
         entry<TransactionEditorRoute> { route ->
             TransactionEditorScreen(

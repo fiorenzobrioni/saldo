@@ -218,6 +218,7 @@ internal fun BalanceCard(
     estimated: Boolean = false,
     rateDay: LocalDate? = null,
     countervalues: Map<Long, CurrencyConverter.Estimate> = emptyMap(),
+    onOpenRates: (() -> Unit)? = null,
 ) {
     val manageAccountsLabel = stringResource(R.string.dashboard_manage_accounts)
     SaldoCard(
@@ -286,7 +287,7 @@ internal fun BalanceCard(
             }
             if (estimated && rateDay != null) {
                 Spacer(Modifier.height(BALANCE_AMOUNT_TOP_GAP))
-                EstimatedRatesLabel(rateDay = rateDay)
+                EstimatedRatesLabel(rateDay = rateDay, onClick = onOpenRates)
             }
             if (history.size > 1) {
                 Spacer(Modifier.height(BALANCE_SPARKLINE_TOP_GAP))
@@ -581,7 +582,10 @@ private fun AccountBreakdownRow(
         )
         AccountBreakdownMarkers(
             currency = account.currency,
-            showCurrencyCode = nonPrimaryCurrency,
+            // With a countervalue on show the ISO code is already in the
+            // amount itself; the pill stays only while it is the one thing
+            // explaining why the row is out of the total.
+            showCurrencyCode = nonPrimaryCurrency && countervalue == null,
             excludedFromTotal = !account.isIncludedInTotal && !nonPrimaryCurrency,
             excludedFromBudget = !account.isIncludedInBudget,
         )
@@ -617,17 +621,35 @@ private fun AccountBreakdownRow(
 /**
  * Muted line declaring that the headline total leans on converted foreign
  * balances, naming the day of the stalest ECB rate involved (ADR 40: an
- * estimate always says it is one, and when its rate is from).
+ * estimate always says it is one, and when its rate is from). With [onClick]
+ * it opens the exchange-rates board: the line that names the rates is the
+ * natural way in.
  */
 @Composable
-private fun EstimatedRatesLabel(rateDay: LocalDate, modifier: Modifier = Modifier) {
+private fun EstimatedRatesLabel(
+    rateDay: LocalDate,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+) {
     val label = stringResource(
         R.string.dashboard_balance_estimated_rates,
         rateDay.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)),
     )
+    val openLabel = stringResource(R.string.dashboard_open_rates)
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.semantics(mergeDescendants = true) { contentDescription = label },
+        modifier = modifier
+            .clip(MaterialTheme.shapes.small)
+            .then(
+                if (onClick != null) {
+                    Modifier
+                        .clickable(onClick = onClick)
+                        .semantics { onClick(label = openLabel, action = null) }
+                } else {
+                    Modifier
+                },
+            )
+            .semantics(mergeDescendants = true) { contentDescription = label },
     ) {
         Icon(
             imageVector = Icons.Outlined.CurrencyExchange,

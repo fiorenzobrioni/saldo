@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.CurrencyExchange
 import androidx.compose.material.icons.outlined.EventRepeat
 import androidx.compose.material.icons.outlined.Flag
 import androidx.compose.material.icons.outlined.Handshake
@@ -100,6 +101,7 @@ fun SettingsScreen(
     onNavigateToSecurity: () -> Unit,
     onNavigateToBackup: () -> Unit,
     onNavigateToAbout: () -> Unit,
+    onNavigateToRates: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -148,6 +150,12 @@ fun SettingsScreen(
                     hint = stringResource(R.string.settings_currency_conversion_hint),
                     checked = currencyConversionEnabled,
                     onCheckedChange = viewModel::onCurrencyConversionChanged,
+                )
+                SettingsEntry(
+                    title = stringResource(R.string.settings_exchange_rates),
+                    hint = stringResource(R.string.settings_exchange_rates_hint),
+                    icon = Icons.Outlined.CurrencyExchange,
+                    onClick = onNavigateToRates,
                 )
                 SettingsEntry(
                     title = stringResource(R.string.settings_default_account),

@@ -34,6 +34,10 @@ class RoomExchangeRateRepository @Inject constructor(
     override fun observeLedgerCurrencies(): Flow<List<String>> =
         exchangeRateDao.observeLedgerCurrencies().distinctUntilChanged()
 
+    override fun observeRatesSince(from: LocalDate): Flow<List<ExchangeRate>> =
+        exchangeRateDao.observeRatesSince(from.toEpochDay())
+            .map { rows -> rows.mapNotNull { it.toDomain() } }
+
     override suspend fun latestCachedDay(): LocalDate? =
         exchangeRateDao.latestDay()?.let(LocalDate::ofEpochDay)
 

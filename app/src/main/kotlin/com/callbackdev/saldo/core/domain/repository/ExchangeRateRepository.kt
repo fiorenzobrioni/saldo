@@ -22,6 +22,12 @@ interface ExchangeRateRepository {
      */
     fun observeLedgerCurrencies(): Flow<List<String>>
 
+    /**
+     * Every cached rate from [from] on, whole basket, oldest first per
+     * currency. Feeds the exchange-rates screen.
+     */
+    fun observeRatesSince(from: LocalDate): Flow<List<ExchangeRate>>
+
     /** Most recent cached day across all currencies; null when the cache is empty. */
     suspend fun latestCachedDay(): LocalDate?
 

@@ -61,6 +61,7 @@ fun DashboardScreen(
     onNavigateToCounterparties: () -> Unit,
     onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
     onNavigateToRecap: (YearMonth) -> Unit,
+    onNavigateToRates: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -122,6 +123,7 @@ fun DashboardScreen(
                     onNavigateToFiltered = onNavigateToFiltered,
                     onRecapClick = onNavigateToRecap,
                     onRecapDismiss = viewModel::dismissRecapTeaser,
+                    onRatesClick = onNavigateToRates,
                 )
             }
 
@@ -165,6 +167,7 @@ private fun DashboardContent(
     onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
     onRecapClick: (YearMonth) -> Unit,
     onRecapDismiss: () -> Unit,
+    onRatesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -195,6 +198,7 @@ private fun DashboardContent(
                 estimated = uiState.totalBalanceEstimated,
                 rateDay = uiState.totalBalanceRateDay,
                 countervalues = uiState.accountCountervalues,
+                onOpenRates = onRatesClick,
             )
         }
         uiState.safeToSpend?.takeIf { uiState.cardPrefs.showSafeToSpend }?.let { safeToSpend ->

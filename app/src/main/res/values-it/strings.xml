@@ -1214,6 +1214,21 @@
     <string name="upcoming_reminder_badge">Promemoria attivo</string>
     <string name="upcoming_other_currencies">I totali contano solo la valuta principale; l\'elenco mostra tutti i movimenti.</string>
     <string name="upcoming_converted_currencies">I totali includono movimenti in altre valute, convertiti all\'ultimo tasso BCE (stima).</string>
+
+    <!-- Schermata tassi di cambio (Fase 17, ADR 40) -->
+    <string name="rates_title">Tassi di cambio</string>
+    <string name="rates_header">Valore di 1 %1$s</string>
+    <string name="rates_updated">Tassi BCE del %1$s</string>
+    <string name="rates_section_yours">Le tue valute</string>
+    <string name="rates_section_others">Altre valute BCE</string>
+    <string name="rates_footer">Tassi di riferimento BCE, pubblicati nei giorni lavorativi. L\'app li usa per i controvalori stimati (≈); ogni grafico mostra le ultime pubblicazioni.</string>
+    <string name="rates_conversion_off_note">La conversione automatica è disattivata: i tassi restano consultabili qui, ma i totali non includono controvalori.</string>
+    <string name="rates_empty_title">Nessun tasso scaricato</string>
+    <string name="rates_empty_body">I tassi BCE si scaricano automaticamente quando un conto o un movimento usa una valuta diversa da quella principale e la conversione è attiva.</string>
+    <string name="dashboard_open_rates">Apri i tassi di cambio</string>
+    <string name="accounts_countervalues_note">Controvalori (≈) stimati ai tassi BCE del %1$s</string>
+    <string name="settings_exchange_rates">Tassi di cambio</string>
+    <string name="settings_exchange_rates_hint">Tutte le valute BCE scaricate, con l\'andamento recente</string>
     <string name="upcoming_empty_title">Non c\'è niente in arrivo</string>
     <string name="upcoming_empty_body">Qui compaiono i movimenti con una data futura e le occorrenze da confermare, così vedi cosa sta per succedere prima che succeda.</string>
     <string name="recurrences_upcoming_hint">Le prossime occorrenze e i movimenti con data futura</string>

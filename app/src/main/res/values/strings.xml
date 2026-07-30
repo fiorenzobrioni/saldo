@@ -1199,6 +1199,21 @@
     <string name="upcoming_reminder_badge">Reminder set</string>
     <string name="upcoming_other_currencies">The totals only count the main currency; the list shows every movement.</string>
     <string name="upcoming_converted_currencies">The totals include movements in other currencies, converted at the latest ECB rate (estimated).</string>
+
+    <!-- Exchange-rates board (Phase 17, ADR 40) -->
+    <string name="rates_title">Exchange rates</string>
+    <string name="rates_header">Value of 1 %1$s</string>
+    <string name="rates_updated">ECB rates of %1$s</string>
+    <string name="rates_section_yours">Your currencies</string>
+    <string name="rates_section_others">Other ECB currencies</string>
+    <string name="rates_footer">ECB reference rates, published on working days. The app uses them for the estimated countervalues (≈); each chart shows the latest publications.</string>
+    <string name="rates_conversion_off_note">Automatic conversion is off: the rates stay available here, but the totals include no countervalues.</string>
+    <string name="rates_empty_title">No rates downloaded yet</string>
+    <string name="rates_empty_body">ECB rates download automatically when an account or a movement uses a currency other than the main one and conversion is on.</string>
+    <string name="dashboard_open_rates">Open the exchange rates</string>
+    <string name="accounts_countervalues_note">Countervalues (≈) estimated at the ECB rates of %1$s</string>
+    <string name="settings_exchange_rates">Exchange rates</string>
+    <string name="settings_exchange_rates_hint">Every downloaded ECB currency, with its recent trend</string>
     <string name="upcoming_empty_title">Nothing ahead</string>
     <string name="upcoming_empty_body">Movements dated in the future and occurrences to confirm show up here, so you can see what is coming before it happens.</string>
     <string name="recurrences_upcoming_hint">The next occurrences and the movements dated ahead</string>

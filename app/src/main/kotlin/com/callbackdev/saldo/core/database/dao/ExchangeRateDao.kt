@@ -33,6 +33,20 @@ interface ExchangeRateDao {
     )
     fun observeRates(currencies: List<String>): Flow<List<ExchangeRateEntity>>
 
+    /**
+     * Every cached rate from [fromEpochDay] on, for the whole basket, oldest
+     * first. Feeds the exchange-rates screen, which shows every downloaded
+     * currency rather than only the ledger's.
+     */
+    @Query(
+        """
+        SELECT * FROM exchange_rates
+        WHERE dateEpochDay >= :fromEpochDay
+        ORDER BY currency ASC, dateEpochDay ASC
+        """,
+    )
+    fun observeRatesSince(fromEpochDay: Long): Flow<List<ExchangeRateEntity>>
+
     /** Most recent day with at least one cached rate; null when the cache is empty. */
     @Query("SELECT MAX(dateEpochDay) FROM exchange_rates")
     suspend fun latestDay(): Long?
