@@ -11,11 +11,13 @@ import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.Tag
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.rates.ConversionState
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.TagRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.DeleteFilteredTransactionsUseCase
+import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.feature.transactions.export.TransactionsCsvExporter
 import com.callbackdev.saldo.feature.transactions.importer.TransactionsCsvImporter
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
@@ -65,7 +67,9 @@ class TransactionsViewModelTest {
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true) {
         every { csvSeparator } returns flowOf(CsvSeparator.SEMICOLON)
         every { firstDayOfWeek } returns flowOf(DayOfWeek.MONDAY)
+        every { primaryCurrencyOverride } returns flowOf(null)
     }
+    private val observeConversionState = mockk<ObserveConversionStateUseCase>()
     private val csvExporter = mockk<TransactionsCsvExporter>()
     private val csvImporter = mockk<TransactionsCsvImporter>()
 
@@ -121,6 +125,7 @@ class TransactionsViewModelTest {
         every { categoryRepository.observeCategories() } returns flowOf(listOf(groceries))
         every { tagRepository.observeTags() } returns (tagsFlow ?: flowOf(tags))
         every { tagRepository.observeTagAssignments() } returns flowOf(tagAssignments)
+        every { observeConversionState() } returns flowOf(ConversionState.INACTIVE)
         return TransactionsViewModel(
             transactionRepository = transactionRepository,
             accountRepository = accountRepository,
@@ -133,6 +138,7 @@ class TransactionsViewModelTest {
                 accountRepository = accountRepository,
                 transactionRepository = transactionRepository,
             ),
+            observeConversionState = observeConversionState,
             clock = clock,
             defaultDispatcher = UnconfinedTestDispatcher(),
         )

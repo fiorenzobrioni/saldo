@@ -14,6 +14,12 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-30 - Fase 17: controvalore sulle righe dei movimenti
+
+**Fatto:** confermati dall'utente i due controlli residui (disattivazione della preferenza e comportamento offline): la Fase 17 e chiusa. Su richiesta, aggiunto il controvalore alle righe dei movimenti in valuta estera: `TransactionListItem` porta `countervalue`/`countervalueCurrency` (calcolati nei ViewModel con `Transaction.countervalueIn`, helper puro in `TransactionsUiState.kt`: tasso del giorno del movimento, mai sui trasferimenti, null senza tassi) e `TransactionRowContent` mostra la seconda riga muta "≈ ..." sotto l'importo, solo sulle righe che ne hanno bisogno. Copre elenco Movimenti, drill-down filtrati (incluso "Altre valute" dalle statistiche, dove l'informazione mancava di piu) e recenti della Dashboard; la data del tasso resta dichiarata nell'editor. Unit test: `TransactionCountervalueTest` (segno conservato, stessa valuta, trasferimenti, senza tassi). Bump a versionCode 164, versionName 1.0.12.
+
+---
+
 ## 2026-07-30 - Fase 17 verificata: MigrationsTest verde e giro su device completato
 
 **Fatto:** dopo il merge delle PR #69 e #70, `com.callbackdev.saldo.core.database.MigrationsTest` verde sul workflow "Instrumented tests" (valida la catena 1 -> 4 contro gli schemi esportati e l'apertura via Room). La migration 3 -> 4 e passata anche sul device reale con dati veri: i giri di review sono stati aggiornamenti in place dalla 1.0.7 alla 1.0.11, e il giro manuale multi-valuta ha coperto backfill, controvalori su tutte le superfici, schermata Tassi di cambio (board, convertitore, dettaglio) e controvalore nell'editor. Restano due controlli puntuali (disattivazione della preferenza e comportamento offline), annotati come checkbox residua in PLANNING.

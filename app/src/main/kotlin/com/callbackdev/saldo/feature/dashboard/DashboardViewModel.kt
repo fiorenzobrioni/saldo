@@ -48,6 +48,7 @@ import com.callbackdev.saldo.core.domain.usecase.ObserveUpcomingMovementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.SafeToSpend
 import com.callbackdev.saldo.feature.accounts.sortedByTypeThenName
 import com.callbackdev.saldo.feature.transactions.TransactionListItem
+import com.callbackdev.saldo.feature.transactions.countervalueIn
 import com.callbackdev.saldo.feature.upcoming.UpcomingItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -503,6 +504,8 @@ class DashboardViewModel @Inject constructor(
                 account = accountById[transaction.accountId],
                 toAccount = transaction.transferAccountId?.let { accountById[it] },
                 category = transaction.categoryId?.let { categoryById[it] },
+                countervalue = transaction.countervalueIn(primary, rates),
+                countervalueCurrency = primary,
             )
         }
 
