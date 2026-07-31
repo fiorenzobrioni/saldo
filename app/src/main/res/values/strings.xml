@@ -734,10 +734,14 @@
     <string name="backup_hero_title">Your data stays yours</string>
     <string name="backup_hero_body">Saldo works entirely offline. A backup is a single JSON file saved where you choose: no account, no cloud.</string>
     <string name="backup_export_title">Export backup</string>
-    <string name="backup_export_body">Saves accounts, transactions, categories, recurring rules and tags to a file.</string>
+    <string name="backup_export_body">Saves accounts, transactions, categories, recurring rules, tags and your settings to a file.</string>
     <string name="backup_last_backup">Last backup: %1$s</string>
     <string name="backup_last_backup_never">No backup yet</string>
     <string name="backup_export_action">Export backup</string>
+    <string name="backup_export_action_encrypted">Encrypt and export</string>
+    <string name="backup_encryption_title">Protect with a passphrase</string>
+    <string name="backup_encryption_hint">The file is encrypted with AES-256. Only your passphrase opens it.</string>
+    <string name="backup_encrypted_note">The file will be encrypted with the passphrase you type at export. There is no way to recover it: lose it and that backup can no longer be restored.</string>
     <string name="backup_unencrypted_warning">The file is not encrypted: it contains your data in plain text. Keep it somewhere safe.</string>
     <string name="backup_restore_title">Restore</string>
     <string name="backup_restore_body">Imports a Saldo backup file, replacing the data currently in the app.</string>
@@ -746,6 +750,8 @@
     <string name="backup_restore_dialog_metadata">Backup from %1$s</string>
     <string name="backup_restore_dialog_metadata_versioned">Backup from %1$s (Saldo %2$s)</string>
     <string name="backup_restore_dialog_counts">Accounts: %1$d\nTransactions: %2$d\nCategories: %3$d\nRecurring rules: %4$d\nTags: %5$d\nBudgets: %6$d\nSavings goals: %7$d</string>
+    <string name="backup_restore_dialog_settings">Settings included: they replace the ones on this device.</string>
+    <string name="backup_restore_dialog_encrypted">Encrypted file, opened with your passphrase.</string>
     <string name="backup_restore_dialog_warning">All current data will be replaced. This cannot be undone.</string>
     <string name="backup_restore_confirm">Restore</string>
     <string name="backup_snackbar_exported">Backup saved (%1$d transactions)</string>
@@ -755,6 +761,21 @@
     <string name="backup_error_not_a_backup">This file is not a Saldo backup.</string>
     <string name="backup_error_unsupported_version">This backup comes from a newer version of Saldo. Update the app to restore it.</string>
     <string name="backup_error_corrupted">The backup file is damaged and cannot be read.</string>
+    <string name="backup_error_wrong_passphrase">Wrong passphrase: this backup cannot be opened.</string>
+    <string name="backup_error_unsupported_container">This encrypted backup comes from a newer version of Saldo. Update the app to restore it.</string>
+    <string name="backup_passphrase_dialog_title">Choose a passphrase</string>
+    <string name="backup_passphrase_dialog_body">It protects this file and nothing else, and it is never saved anywhere: if you lose it, this backup can no longer be restored. The data on this device is not affected.</string>
+    <string name="backup_passphrase_label">Passphrase</string>
+    <string name="backup_passphrase_confirm_label">Repeat the passphrase</string>
+    <string name="backup_passphrase_min_length">At least %1$d characters</string>
+    <string name="backup_passphrase_mismatch">The two passphrases are different</string>
+    <string name="backup_passphrase_show">Show the passphrase</string>
+    <string name="backup_passphrase_hide">Hide the passphrase</string>
+    <string name="backup_passphrase_confirm_action">Encrypt and export</string>
+    <string name="backup_unlock_dialog_title">Encrypted backup</string>
+    <string name="backup_unlock_dialog_body">Type the passphrase used when this file was exported. Nothing is replaced until you confirm what the file contains.</string>
+    <string name="backup_unlock_error">Wrong passphrase. Try again.</string>
+    <string name="backup_unlock_action">Unlock</string>
     <string name="backup_csv_hint">To export transactions as CSV, use the share icon in the Transactions screen.</string>
 
     <string name="backup_erase_title">Erase all data</string>
@@ -889,7 +910,7 @@
     <string name="onboarding_welcome_body">Your money, finally clear. Expenses, income, budgets and savings goals under control in a few taps — no bank logins, no sign-up, no fuss.</string>
     <string name="onboarding_welcome_cta">Let\'s get started</string>
     <string name="onboarding_privacy_title">Your data stays with you</string>
-    <string name="onboarding_privacy_body">Everything lives on your phone and nowhere else. No cloud, no tracking — Saldo works even in airplane mode. Want a copy? You can export a backup whenever you like.</string>
+    <string name="onboarding_privacy_body">Everything lives on your phone and nowhere else: no cloud, no account, no tracking. Saldo works even in airplane mode — the only thing it ever downloads is exchange rates, and only if you keep accounts in a foreign currency: that request carries none of your data. Want a copy? You can export a backup whenever you like, protected by a passphrase if you want.</string>
     <string name="onboarding_privacy_cta">Sounds good</string>
     <string name="onboarding_currency_title">Pick your currency</string>
     <string name="onboarding_currency_body">The one you use every day. You can change it anytime in Settings — promise.</string>
@@ -908,8 +929,9 @@
     <string name="onboarding_restore_confirm">Restore everything</string>
     <string name="onboarding_restore_cancel">Not this file</string>
     <string name="onboarding_restore_done">All set — everything is back where it was.</string>
+    <string name="onboarding_restore_settings">Your settings are in the file too: they will be applied as they were.</string>
     <string name="onboarding_notifications_title">A nudge at the right time</string>
-    <string name="onboarding_notifications_body">Saldo can remind you before a subscription renews and when a recurring transaction is waiting for your OK. Only useful stuff — no spam, ever.</string>
+    <string name="onboarding_notifications_body">Saldo can warn you before a subscription renews, when a recurring transaction is waiting for your OK, when a due date you flagged is coming up and when a budget is about to run out. Only useful stuff — no spam, ever.</string>
     <string name="onboarding_notifications_cta">Turn on notifications</string>
     <string name="onboarding_notifications_skip">Maybe later</string>
     <string name="onboarding_step_of">Step %1$d of %2$d</string>

@@ -6,6 +6,7 @@ import android.net.Uri
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.backup.BackupFile
 import com.callbackdev.saldo.core.domain.backup.BackupSummary
+import com.callbackdev.saldo.core.domain.backup.EncryptedBackup
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
@@ -17,6 +18,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -61,6 +63,7 @@ class OnboardingViewModelTest {
         generateRecurringMovements = generateRecurringMovements,
         clock = clock,
         ioDispatcher = UnconfinedTestDispatcher(),
+        defaultDispatcher = UnconfinedTestDispatcher(),
     )
 
     private val summary = BackupSummary(
@@ -195,6 +198,52 @@ class OnboardingViewModelTest {
         // Confirming after a dismissal must not restore a stale file.
         viewModel.onRestoreConfirmed()
         coVerify(exactly = 0) { importBackup.restore(any()) }
+    }
+
+    @Test
+    fun `an encrypted file asks for its passphrase, and a wrong one keeps asking`() = runTest {
+        val envelope = mockk<EncryptedBackup>()
+        val file = mockk<BackupFile>()
+        every { contentResolver.openInputStream(any()) } returns
+            ByteArrayInputStream("container".toByteArray())
+        every { importBackup.inspect(any()) } returns
+            ImportBackupUseCase.Inspection.Locked(envelope)
+        every { importBackup.unlock(envelope, any()) } returns
+            ImportBackupUseCase.Inspection.Invalid(ImportBackupUseCase.Error.WRONG_PASSPHRASE)
+        val viewModel = viewModel()
+
+        viewModel.onRestoreFilePicked(mockk<Uri>())
+        assertNotNull(viewModel.uiState.value.unlockRequest)
+        assertNull(viewModel.uiState.value.pendingRestore)
+
+        viewModel.onUnlockPassphraseSubmitted("sbagliata")
+        assertTrue(viewModel.uiState.value.unlockRequest?.failed == true)
+        assertNull(viewModel.uiState.value.pendingRestore)
+
+        // The right one gets through to the same confirmation gate as a plain file.
+        every { importBackup.unlock(envelope, any()) } returns
+            ImportBackupUseCase.Inspection.Valid(file, summary)
+        viewModel.onUnlockPassphraseSubmitted("giusta")
+
+        assertNull(viewModel.uiState.value.unlockRequest)
+        assertNotNull(viewModel.uiState.value.pendingRestore)
+    }
+
+    @Test
+    fun `dismissing the passphrase dialog forgets the container`() = runTest {
+        val envelope = mockk<EncryptedBackup>()
+        every { contentResolver.openInputStream(any()) } returns
+            ByteArrayInputStream("container".toByteArray())
+        every { importBackup.inspect(any()) } returns
+            ImportBackupUseCase.Inspection.Locked(envelope)
+        val viewModel = viewModel()
+
+        viewModel.onRestoreFilePicked(mockk<Uri>())
+        viewModel.onUnlockDismissed()
+
+        assertNull(viewModel.uiState.value.unlockRequest)
+        viewModel.onUnlockPassphraseSubmitted("qualunque")
+        verify(exactly = 0) { importBackup.unlock(any(), any()) }
     }
 
     @Test

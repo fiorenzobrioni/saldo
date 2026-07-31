@@ -6,12 +6,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
+import com.callbackdev.saldo.core.common.di.DefaultDispatcher
 import com.callbackdev.saldo.core.common.di.IoDispatcher
 import com.callbackdev.saldo.core.common.money.MoneyInput
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.backup.BackupFile
 import com.callbackdev.saldo.core.domain.backup.BackupSummary
+import com.callbackdev.saldo.core.domain.backup.EncryptedBackup
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.fallbackCurrency
@@ -19,6 +21,7 @@ import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ImportBackupUseCase
+import com.callbackdev.saldo.feature.backup.UnlockRequest
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -50,6 +53,13 @@ data class OnboardingUiState(
     val balanceInput: String = "",
     /** A validated backup awaiting the user's confirmation, or null. */
     val pendingRestore: BackupSummary? = null,
+    /**
+     * Set while a picked encrypted backup waits for its passphrase (Fase 22).
+     * The onboarding needs this as much as the Backup screen does: restoring on
+     * a new phone is exactly when an encrypted file gets picked, and without it
+     * the guided flow would be the one place that cannot read it.
+     */
+    val unlockRequest: UnlockRequest? = null,
     /** True while a write or restore is running (CTAs are disabled). */
     val isWorking: Boolean = false,
 ) {
@@ -82,6 +92,7 @@ class OnboardingViewModel @Inject constructor(
     private val generateRecurringMovements: GenerateRecurringMovementsUseCase,
     private val clock: Clock,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
@@ -92,6 +103,9 @@ class OnboardingViewModel @Inject constructor(
 
     /** A validated file held between inspection and confirmation. */
     private var pendingFile: BackupFile? = null
+
+    /** The container of a picked file, held while its passphrase is asked. */
+    private var lockedEnvelope: EncryptedBackup? = null
 
     /** Guards against a double-tap creating two accounts; reset on failure. */
     private var isSaving = false
@@ -187,26 +201,67 @@ class OnboardingViewModel @Inject constructor(
         _uiState.update { it.copy(page = OnboardingPage.NOTIFICATIONS) }
     }
 
-    /** Validates the picked backup and, if readable, asks for confirmation. */
+    /**
+     * Validates the picked backup: a plain file goes to the confirmation step, an
+     * encrypted one asks for its passphrase first.
+     */
     fun onRestoreFilePicked(uri: Uri) {
         if (_uiState.value.isWorking) return
         _uiState.update { it.copy(isWorking = true) }
         viewModelScope.launch {
-            val inspection = suspendRunCatching { importBackup.inspect(readDocument(uri)) }
+            val inspection = suspendRunCatching {
+                val content = readDocument(uri)
+                withContext(defaultDispatcher) { importBackup.inspect(content) }
+            }
             _uiState.update { it.copy(isWorking = false) }
             inspection
-                .onSuccess { outcome ->
-                    when (outcome) {
-                        is ImportBackupUseCase.Inspection.Valid -> {
-                            pendingFile = outcome.file
-                            _uiState.update { it.copy(pendingRestore = outcome.summary) }
-                        }
-
-                        is ImportBackupUseCase.Inspection.Invalid ->
-                            _events.send(OnboardingEvent.RestoreInvalid(outcome.error))
-                    }
-                }
+                .onSuccess { outcome -> onInspected(outcome) }
                 .onFailure { _events.send(OnboardingEvent.RestoreFailed) }
+        }
+    }
+
+    /** Opens the picked container; a rejected passphrase keeps the dialog open. */
+    fun onUnlockPassphraseSubmitted(passphrase: String) {
+        val envelope = lockedEnvelope ?: return
+        if (_uiState.value.unlockRequest?.isUnlocking == true) return
+        _uiState.update { it.copy(unlockRequest = UnlockRequest(isUnlocking = true)) }
+        viewModelScope.launch {
+            val characters = passphrase.toCharArray()
+            val inspection = withContext(defaultDispatcher) {
+                importBackup.unlock(envelope, characters)
+            }
+            characters.fill('\u0000')
+            if (inspection is ImportBackupUseCase.Inspection.Invalid &&
+                inspection.error == ImportBackupUseCase.Error.WRONG_PASSPHRASE
+            ) {
+                _uiState.update { it.copy(unlockRequest = UnlockRequest(failed = true)) }
+            } else {
+                lockedEnvelope = null
+                _uiState.update { it.copy(unlockRequest = null) }
+                onInspected(inspection)
+            }
+        }
+    }
+
+    fun onUnlockDismissed() {
+        lockedEnvelope = null
+        _uiState.update { it.copy(unlockRequest = null) }
+    }
+
+    private suspend fun onInspected(inspection: ImportBackupUseCase.Inspection) {
+        when (inspection) {
+            is ImportBackupUseCase.Inspection.Valid -> {
+                pendingFile = inspection.file
+                _uiState.update { it.copy(pendingRestore = inspection.summary) }
+            }
+
+            is ImportBackupUseCase.Inspection.Locked -> {
+                lockedEnvelope = inspection.envelope
+                _uiState.update { it.copy(unlockRequest = UnlockRequest()) }
+            }
+
+            is ImportBackupUseCase.Inspection.Invalid ->
+                _events.send(OnboardingEvent.RestoreInvalid(inspection.error))
         }
     }
 

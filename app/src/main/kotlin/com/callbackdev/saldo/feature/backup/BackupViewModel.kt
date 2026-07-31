@@ -6,10 +6,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.BuildConfig
 import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
+import com.callbackdev.saldo.core.common.di.DefaultDispatcher
 import com.callbackdev.saldo.core.common.di.IoDispatcher
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.backup.BackupFile
 import com.callbackdev.saldo.core.domain.backup.BackupSummary
+import com.callbackdev.saldo.core.domain.backup.EncryptedBackup
 import com.callbackdev.saldo.core.domain.usecase.EraseAllDataUseCase
 import com.callbackdev.saldo.core.domain.usecase.ExportBackupUseCase
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -33,25 +36,45 @@ import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
 
+/** The passphrase dialog of the restore, and what the last attempt did. */
+data class UnlockRequest(
+    val isUnlocking: Boolean = false,
+    /** True after a rejected attempt, so the dialog can say so in place. */
+    val failed: Boolean = false,
+)
+
 /** Screen state of the backup screen; the restore confirmation is a step in it. */
 data class BackupUiState(
     /** When the last backup was exported successfully; null if never. */
     val lastBackupAt: Instant? = null,
     /** True while an export or restore is running (buttons are disabled). */
     val isWorking: Boolean = false,
+    /** Whether the export encrypts the file with a passphrase (Fase 22). */
+    val isEncryptionEnabled: Boolean = false,
+    /** True while the export is asking for a new passphrase. */
+    val isAskingExportPassphrase: Boolean = false,
+    /** Set while a picked file waits for its passphrase; null otherwise. */
+    val unlockRequest: UnlockRequest? = null,
     /** A validated backup awaiting the user's confirmation, or null. */
     val pendingRestore: BackupSummary? = null,
     /** True while the erase-everything confirmation is on screen. */
     val isConfirmingErase: Boolean = false,
 )
 
-/** One-shot outcomes surfaced as snackbars. */
+/** One-shot outcomes surfaced as snackbars, plus the picker hand-offs. */
 sealed interface BackupEvent {
     data class ExportCompleted(val summary: BackupSummary) : BackupEvent
     data object ExportFailed : BackupEvent
     data class RestoreCompleted(val summary: BackupSummary) : BackupEvent
     data object RestoreFailed : BackupEvent
     data class InvalidBackupFile(val error: ImportBackupUseCase.Error) : BackupEvent
+
+    /**
+     * The export is ready to write and needs a destination. It is an event and
+     * not a state because the SAF picker belongs to the screen: with encryption
+     * on, it is only sent once the passphrase has been confirmed.
+     */
+    data class LaunchExportPicker(val encrypted: Boolean) : BackupEvent
 
     /**
      * The erase failed and nothing was touched. There is no success twin: a
@@ -68,9 +91,19 @@ sealed interface BackupEvent {
  * Restore is a two-step flow: the picked file is validated and summarized
  * first ([BackupUiState.pendingRestore]), and only an explicit confirmation
  * replaces the data.
+ *
+ * With encryption on (Fase 22) each side gains one step before that: the export
+ * asks for a passphrase before the destination picker, and a picked container
+ * asks for one before it can even be summarized. Serialization, key derivation
+ * and encryption run on the CPU dispatcher: the derivation alone is half a
+ * second by design, and none of it belongs on the main thread.
+ *
+ * The passphrase never reaches a field of the UI state and is never persisted.
+ * It is held in a [CharArray] only for the round trip through the SAF picker and
+ * wiped as soon as it has been used - or as soon as the user backs out.
  */
 @HiltViewModel
-@Suppress("LongParameterList") // Hilt wiring: one dependency per concern.
+@Suppress("LongParameterList", "TooManyFunctions") // Hilt wiring; one handler per user action.
 class BackupViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val exportBackup: ExportBackupUseCase,
@@ -80,24 +113,37 @@ class BackupViewModel @Inject constructor(
     private val userPreferences: UserPreferencesRepository,
     private val clock: Clock,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    @DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
     private val working = MutableStateFlow(false)
+    private val askingExportPassphrase = MutableStateFlow(false)
+    private val unlockRequest = MutableStateFlow<UnlockRequest?>(null)
     private val pendingRestore = MutableStateFlow<PendingRestore?>(null)
     private val confirmingErase = MutableStateFlow(false)
 
     /** A validated file held between inspection and confirmation. */
     private data class PendingRestore(val file: BackupFile, val summary: BackupSummary)
 
+    /** The container of a picked file, held while its passphrase is asked. */
+    private var lockedEnvelope: EncryptedBackup? = null
+
+    /** The export passphrase, alive only across the destination picker. */
+    private var exportPassphrase: CharArray? = null
+
     val uiState: StateFlow<BackupUiState> = combine(
         userPreferences.lastBackupAtEpochMilli.map { it?.let(Instant::ofEpochMilli) },
-        working,
+        userPreferences.backupEncryptionEnabled,
+        combine(working, askingExportPassphrase, unlockRequest, ::Triple),
         pendingRestore,
         confirmingErase,
-    ) { lastBackupAt, isWorking, pending, isConfirmingErase ->
+    ) { lastBackupAt, isEncryptionEnabled, (isWorking, isAsking, unlock), pending, isConfirmingErase ->
         BackupUiState(
             lastBackupAt = lastBackupAt,
             isWorking = isWorking,
+            isEncryptionEnabled = isEncryptionEnabled,
+            isAskingExportPassphrase = isAsking,
+            unlockRequest = unlock,
             pendingRestore = pending?.summary,
             isConfirmingErase = isConfirmingErase,
         )
@@ -110,16 +156,60 @@ class BackupViewModel @Inject constructor(
     private val _events = Channel<BackupEvent>(Channel.BUFFERED)
     val events: Flow<BackupEvent> = _events.receiveAsFlow()
 
+    fun onEncryptionEnabledChanged(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setBackupEncryptionEnabled(enabled) }
+    }
+
+    /**
+     * Starts an export: with encryption on it asks for the passphrase first, so
+     * the user is never sent to the file picker for a file that then cannot be
+     * written.
+     */
+    fun onExportRequested() {
+        if (working.value) return
+        viewModelScope.launch {
+            // Read the preference rather than the UI state: the state flow only
+            // holds a value while the screen is collecting it.
+            if (userPreferences.backupEncryptionEnabled.first()) {
+                askingExportPassphrase.value = true
+            } else {
+                _events.send(BackupEvent.LaunchExportPicker(encrypted = false))
+            }
+        }
+    }
+
+    fun onExportPassphraseConfirmed(passphrase: String) {
+        exportPassphrase?.fill(NUL)
+        exportPassphrase = passphrase.toCharArray()
+        askingExportPassphrase.value = false
+        viewModelScope.launch { _events.send(BackupEvent.LaunchExportPicker(encrypted = true)) }
+    }
+
+    fun onExportPassphraseDismissed() {
+        askingExportPassphrase.value = false
+        clearExportPassphrase()
+    }
+
+    /** The user backed out of the destination picker: the passphrase goes with it. */
+    fun onExportCancelled() {
+        clearExportPassphrase()
+    }
+
     /** Exports the whole database to the document the user just created. */
     fun onExportDestinationPicked(uri: Uri) {
         if (!working.compareAndSet(expect = false, update = true)) return
+        val passphrase = exportPassphrase
+        exportPassphrase = null
         viewModelScope.launch {
             val result = suspendRunCatching {
-                val export = exportBackup(appVersion = BuildConfig.VERSION_NAME)
-                writeDocument(uri, export.json)
+                val export = withContext(defaultDispatcher) {
+                    exportBackup(appVersion = BuildConfig.VERSION_NAME, passphrase = passphrase)
+                }
+                writeDocument(uri, export.content)
                 userPreferences.setLastBackupAt(clock.millis())
                 export.summary
             }
+            passphrase?.fill(NUL)
             working.value = false
             result
                 .onSuccess { summary -> _events.send(BackupEvent.ExportCompleted(summary)) }
@@ -127,24 +217,52 @@ class BackupViewModel @Inject constructor(
         }
     }
 
-    /** Validates the picked file and, if readable, asks for confirmation. */
+    /**
+     * Validates the picked file: a plain backup goes straight to the
+     * confirmation step, a container asks for its passphrase first.
+     */
     fun onRestoreFilePicked(uri: Uri) {
         if (!working.compareAndSet(expect = false, update = true)) return
         viewModelScope.launch {
-            val inspection = suspendRunCatching { importBackup.inspect(readDocument(uri)) }
+            val inspection = suspendRunCatching {
+                val content = readDocument(uri)
+                withContext(defaultDispatcher) { importBackup.inspect(content) }
+            }
             working.value = false
             inspection
-                .onSuccess { outcome ->
-                    when (outcome) {
-                        is ImportBackupUseCase.Inspection.Valid ->
-                            pendingRestore.value = PendingRestore(outcome.file, outcome.summary)
-
-                        is ImportBackupUseCase.Inspection.Invalid ->
-                            _events.send(BackupEvent.InvalidBackupFile(outcome.error))
-                    }
-                }
+                .onSuccess { outcome -> onInspected(outcome) }
                 .onFailure { _events.send(BackupEvent.RestoreFailed) }
         }
+    }
+
+    /** Opens the picked container; a rejected passphrase keeps the dialog open. */
+    fun onUnlockPassphraseSubmitted(passphrase: String) {
+        val envelope = lockedEnvelope ?: return
+        if (unlockRequest.value?.isUnlocking == true) return
+        unlockRequest.value = UnlockRequest(isUnlocking = true)
+        viewModelScope.launch {
+            val characters = passphrase.toCharArray()
+            val inspection = withContext(defaultDispatcher) {
+                importBackup.unlock(envelope, characters)
+            }
+            characters.fill(NUL)
+            if (inspection is ImportBackupUseCase.Inspection.Invalid &&
+                inspection.error == ImportBackupUseCase.Error.WRONG_PASSPHRASE
+            ) {
+                // Only this one failure keeps the dialog open: it is the only one
+                // the user can fix by typing again.
+                unlockRequest.value = UnlockRequest(failed = true)
+            } else {
+                unlockRequest.value = null
+                lockedEnvelope = null
+                onInspected(inspection)
+            }
+        }
+    }
+
+    fun onUnlockDismissed() {
+        unlockRequest.value = null
+        lockedEnvelope = null
     }
 
     /** Replaces every table with the confirmed backup; rolled back on failure. */
@@ -192,6 +310,31 @@ class BackupViewModel @Inject constructor(
         }
     }
 
+    override fun onCleared() {
+        clearExportPassphrase()
+        super.onCleared()
+    }
+
+    private suspend fun onInspected(inspection: ImportBackupUseCase.Inspection) {
+        when (inspection) {
+            is ImportBackupUseCase.Inspection.Valid ->
+                pendingRestore.value = PendingRestore(inspection.file, inspection.summary)
+
+            is ImportBackupUseCase.Inspection.Locked -> {
+                lockedEnvelope = inspection.envelope
+                unlockRequest.value = UnlockRequest()
+            }
+
+            is ImportBackupUseCase.Inspection.Invalid ->
+                _events.send(BackupEvent.InvalidBackupFile(inspection.error))
+        }
+    }
+
+    private fun clearExportPassphrase() {
+        exportPassphrase?.fill(NUL)
+        exportPassphrase = null
+    }
+
     private suspend fun writeDocument(uri: Uri, content: String) {
         withContext(ioDispatcher) {
             // "wt" truncates an existing document: re-exporting over an old
@@ -211,5 +354,8 @@ class BackupViewModel @Inject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+
+        /** What a wiped passphrase character looks like. */
+        const val NUL = '\u0000'
     }
 }

@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.callbackdev.saldo.core.domain.repository.SettingsBackupRepository
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,4 +26,12 @@ object PreferencesModule {
     fun provideUserPreferencesDataStore(
         @ApplicationContext context: Context,
     ): DataStore<Preferences> = context.userPreferencesStore
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class SettingsBackupModule {
+
+    @Binds
+    abstract fun bindSettingsBackupRepository(impl: SettingsBackupStore): SettingsBackupRepository
 }

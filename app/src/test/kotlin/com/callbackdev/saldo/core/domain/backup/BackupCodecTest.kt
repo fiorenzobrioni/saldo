@@ -1,6 +1,8 @@
 package com.callbackdev.saldo.core.domain.backup
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -203,8 +205,60 @@ class BackupCodecTest {
         assertEquals(1, summary.tags)
         assertEquals(2, summary.budgets)
         assertEquals("1.2.3", summary.appVersion)
+        assertTrue(summary.hasSettings)
+    }
+
+    @Test
+    fun `a file written before settings existed decodes with none`() {
+        val json = """
+            {"format": "saldo-backup", "version": 1, "exportedAtEpochMilli": 1000, "data": {}}
+        """.trimIndent()
+
+        val decoded = BackupCodec.decode(json)
+
+        assertNull(decoded.data.settings)
+        assertFalse(decoded.summary().hasSettings)
+    }
+
+    @Test
+    fun `read recognises the encrypted container from its marker`() {
+        val envelope = BackupCrypto.seal(
+            json = BackupCodec.encode(fullyPopulatedBackupFile()),
+            passphrase = "correct horse battery".toCharArray(),
+            iterations = TEST_ITERATIONS,
+        )
+
+        val content = BackupCodec.read(BackupCodec.encode(envelope))
+
+        assertTrue(content is BackupContent.Encrypted)
+        assertEquals(envelope, (content as BackupContent.Encrypted).envelope)
+    }
+
+    @Test
+    fun `read recognises a plain document as plain`() {
+        val content = BackupCodec.read(BackupCodec.encode(fullyPopulatedBackupFile()))
+
+        assertTrue(content is BackupContent.Plain)
+    }
+
+    @Test
+    fun `decode refuses a container, because at that point the payload is expected`() {
+        val encoded = BackupCodec.encode(
+            BackupCrypto.seal(
+                json = """{"format": "saldo-backup", "version": 1, "exportedAtEpochMilli": 0, "data": {}}""",
+                passphrase = "correct horse battery".toCharArray(),
+                iterations = TEST_ITERATIONS,
+            ),
+        )
+
+        assertThrows(BackupDecodeException.NotABackup::class.java) {
+            BackupCodec.decode(encoded)
+        }
     }
 }
+
+/** Fast but still accepted work factor; the default is asserted in BackupCryptoTest. */
+private const val TEST_ITERATIONS = 100_000
 
 /** A backup exercising every field, shared by the codec and round-trip tests. */
 @Suppress("LongMethod") // Deliberately exhaustive fixture: every schema field appears once.
@@ -348,5 +402,28 @@ internal fun fullyPopulatedBackupFile(): BackupFile = BackupFile(
                 sortOrder = 0,
             ),
         ),
+        settings = fullyPopulatedSettings(),
     ),
+)
+
+/** Every backed-up setting with a non-default value, so nothing hides behind a default. */
+internal fun fullyPopulatedSettings(): SettingsBackup = SettingsBackup(
+    defaultAccountId = 2L,
+    primaryCurrencyCode = "CHF",
+    currencyConversionEnabled = false,
+    themeMode = "DARK",
+    useDynamicColor = true,
+    renewalReminderEnabled = true,
+    renewalReminderLeadDays = 7,
+    firstDayOfWeek = "SUNDAY",
+    csvSeparator = "COMMA",
+    backupEncryptionEnabled = true,
+    dashboardShowBudget = false,
+    dashboardShowSafeToSpend = false,
+    dashboardShowRecentTransactions = false,
+    dashboardShowSavingsGoals = false,
+    dashboardShowCounterparties = false,
+    dashboardShowUpcoming = false,
+    dashboardShowRecapTeaser = false,
+    balanceAccountsExpandedByDefault = false,
 )

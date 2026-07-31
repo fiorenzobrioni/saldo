@@ -49,6 +49,58 @@ data class BackupData(
     val budgets: List<BudgetBackup> = emptyList(),
     /** Added with the savings goals feature; older files simply restore none. */
     val savingsGoals: List<SavingsGoalBackup> = emptyList(),
+    /**
+     * The user's own settings, added when the file became a complete picture of
+     * the app and not only of its database. Null on files written before that,
+     * which restore their data and leave the settings of this install alone.
+     */
+    val settings: SettingsBackup? = null,
+)
+
+/**
+ * Every setting the user chose (ADR 45), so a restore on a new device does not
+ * ask them to configure the app from scratch. Each field is nullable and null means
+ * "never set", which is not the same as the default value: a null
+ * [firstDayOfWeek] keeps following the device locale, while a stored `MONDAY`
+ * pins it regardless of locale.
+ *
+ * Deliberately **not** here, each for its own reason:
+ * - the app-lock PIN and its options (ADR 39): a 6-digit hash in an exported
+ *   file is brute-forced offline in seconds, and encrypting the export is the
+ *   user's option, not a guarantee the format can rely on;
+ * - the exchange rate cache (ADR 40) and the recurrence scan result (ADR 43):
+ *   derived data, rebuilt on demand, never the user's own;
+ * - the per-instance widget configuration: it belongs to widgets placed on
+ *   *this* launcher, and their ids mean nothing on another device;
+ * - device history and session state (last used account, last backup instant,
+ *   onboarding flag, rate sync watermark, dismissed recap month): facts about
+ *   this install, which a restore must not overwrite with another one's.
+ */
+@Serializable
+data class SettingsBackup(
+    val defaultAccountId: Long? = null,
+    /** ISO 4217 code; null means the automatic primary currency. */
+    val primaryCurrencyCode: String? = null,
+    val currencyConversionEnabled: Boolean? = null,
+    /** [com.callbackdev.saldo.core.common.prefs.ThemeMode] name. */
+    val themeMode: String? = null,
+    val useDynamicColor: Boolean? = null,
+    val renewalReminderEnabled: Boolean? = null,
+    val renewalReminderLeadDays: Int? = null,
+    /** [java.time.DayOfWeek] name; null keeps following the locale. */
+    val firstDayOfWeek: String? = null,
+    /** [com.callbackdev.saldo.core.common.prefs.CsvSeparator] name. */
+    val csvSeparator: String? = null,
+    /** Whether the export asks for a passphrase and encrypts the file. */
+    val backupEncryptionEnabled: Boolean? = null,
+    val dashboardShowBudget: Boolean? = null,
+    val dashboardShowSafeToSpend: Boolean? = null,
+    val dashboardShowRecentTransactions: Boolean? = null,
+    val dashboardShowSavingsGoals: Boolean? = null,
+    val dashboardShowCounterparties: Boolean? = null,
+    val dashboardShowUpcoming: Boolean? = null,
+    val dashboardShowRecapTeaser: Boolean? = null,
+    val balanceAccountsExpandedByDefault: Boolean? = null,
 )
 
 @Serializable
@@ -208,9 +260,13 @@ data class BackupSummary(
     val tags: Int,
     val budgets: Int = 0,
     val savingsGoals: Int = 0,
+    /** Whether the file carries the settings too, stated in the restore gate. */
+    val hasSettings: Boolean = false,
+    /** Whether the file was read out of an encrypted container (Fase 22). */
+    val isEncrypted: Boolean = false,
 )
 
-fun BackupFile.summary(): BackupSummary = BackupSummary(
+fun BackupFile.summary(isEncrypted: Boolean = false): BackupSummary = BackupSummary(
     exportedAt = Instant.ofEpochMilli(exportedAtEpochMilli),
     appVersion = appVersion,
     accounts = data.accounts.size,
@@ -220,4 +276,6 @@ fun BackupFile.summary(): BackupSummary = BackupSummary(
     tags = data.tags.size,
     budgets = data.budgets.size,
     savingsGoals = data.savingsGoals.size,
+    hasSettings = data.settings != null,
+    isEncrypted = isEncrypted,
 )
