@@ -60,7 +60,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 
 ### Roadmap futura
 
-Le funzionalità della roadmap v2.0 sono implementate e verificate su device: resta la release. Una roadmap v3.0 raccoglie le estensioni successive (budget con periodo personalizzato e riporto, acquisti a rate, spesa divisa su più categorie). Restano da valutare, fuori dal piano: foto dello scontrino allegate ai movimenti, rimborsi collegati alla spesa originale, commissioni sui trasferimenti, analisi avanzate, export PDF/Excel/Google Sheets, pagamento parziale dell'estratto carta, arrotondamento degli spiccioli, riepilogo settimanale e backup automatico su Google Drive. Roadmap completa in [PLANNING.md](./PLANNING.md).
+Le funzionalità della roadmap v2.0 sono implementate e verificate su device: resta la release. Una roadmap v3.0 raccoglie le estensioni successive (budget con periodo personalizzato e riporto, acquisti a rate, spesa divisa su più categorie, ricerca con suggerimenti). Restano da valutare, fuori dal piano: foto dello scontrino allegate ai movimenti, rimborsi collegati alla spesa originale, commissioni sui trasferimenti, analisi avanzate, export PDF/Excel/Google Sheets, pagamento parziale dell'estratto carta, arrotondamento degli spiccioli, riepilogo settimanale e backup automatico su Google Drive. Roadmap completa in [PLANNING.md](./PLANNING.md).
 
 ## Installazione
 

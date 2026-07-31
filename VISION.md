@@ -634,7 +634,7 @@ Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, sp
 - Aggiunta rapida dalla tendina delle impostazioni rapide, e inserimento rapido testuale ("12,50 pizza")
 - Cifratura backup (opzionale, con passphrase) e backup che include anche le impostazioni
 - Miglioramenti UX dal feedback della v1.0
-- Non entrata nel perimetro consegnato, da riassegnare a una roadmap successiva: la **ricerca con suggerimenti** (chip di categorie, tag e descrizioni frequenti sotto il campo di ricerca del registro)
+- Spostata alla roadmap v3.0 il 31 luglio 2026, per decisione esplicita alla preparazione del rilascio: la **ricerca con suggerimenti** (chip di categorie, tag e descrizioni frequenti sotto il campo di ricerca del registro), che non era stata implementata e non blocca nulla di quanto consegnato
 - Da valutare, fuori dal piano: allegati fotografici ai movimenti, rimborsi collegati alla spesa originale, commissioni sui trasferimenti, analisi avanzate, export PDF/Excel/Google Sheets, pagamento parziale dell'estratto carta, arrotondamento degli spiccioli, riepilogo settimanale, backup automatico su Google Drive
 
 ---

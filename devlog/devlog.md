@@ -20,9 +20,9 @@ Formato suggerito per ogni voce:
 
 **Decisioni:** le note di rilascio dedicano una sezione al permesso `INTERNET`, che la 1.0 dichiarava esplicitamente di **non** avere: una modifica del genere si annuncia in evidenza, non si lascia scoprire da chi legge il manifest. La pagina di guida sul multi-valuta e stata scritta per prima fra le tre perche e quella dove un utente puo fraintendere una cifra (le due regole della conversione, il "≈", la data del tasso); tag e aggiunta rapida sono descrittive e rischiano meno. Ripulita anche la tipografia di VISION e PLANNING dai trattini lunghi e dai punti mediani rimasti da prima della regola in CLAUDE.md.
 
-**Problemi:** trovata una voce della roadmap v2.0 ancora aperta, che non e una fase e per questo era sfuggita al conteggio: la **ricerca potenziata con suggerimenti** (chip di categorie, tag e descrizioni frequenti sotto il campo di ricerca del registro). Non blocca niente di consegnato, ma va deciso prima del tag se implementarla o spostarla dichiaratamente alla roadmap v3.0: la nota e ora sulla voce in PLANNING, in modo che la decisione sia esplicita e non implicita.
+**Problemi:** trovata una voce della roadmap v2.0 ancora aperta, che non e una fase e per questo era sfuggita al conteggio: la **ricerca potenziata con suggerimenti** (chip di categorie, tag e descrizioni frequenti sotto il campo di ricerca del registro). Portata all'utente e **spostata alla roadmap v3.0** lo stesso giorno, come Fase 34: non era implementata, non blocca nulla di quanto consegnato e non valeva farla entrare a ridosso di un tag. Chiusa nello stesso giro l'altra voce senza fase della v2.0, i "miglioramenti UX dal feedback della v1.0": non era lavoro pendente ma un intento, assorbito dalle rifiniture di ogni fase (giri su device delle Fasi 12, 13, 16 e 17, review dell'onboarding della Fase 22.1).
 
-**Prossimo:** decisione sulla ricerca con suggerimenti; poi baseline profile, giro di QA con la checklist, migration test strumentati dalla v1, bump a 2.0.0, tag e release.
+**Prossimo:** baseline profile, giro di QA con la checklist, migration test strumentati dalla v1, bump a 2.0.0, tag e release.
 
 ---
 
