@@ -9,6 +9,7 @@ import com.callbackdev.saldo.core.database.dao.BudgetDao
 import com.callbackdev.saldo.core.database.dao.CategoryDao
 import com.callbackdev.saldo.core.database.dao.ExchangeRateDao
 import com.callbackdev.saldo.core.database.dao.ForeignFlowDao
+import com.callbackdev.saldo.core.database.dao.RecurrenceCandidateDao
 import com.callbackdev.saldo.core.database.dao.RecurringRuleDao
 import com.callbackdev.saldo.core.database.dao.SavingsGoalDao
 import com.callbackdev.saldo.core.database.dao.TagDao
@@ -61,6 +62,7 @@ abstract class SaldoDatabase : RoomDatabase() {
     abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun exchangeRateDao(): ExchangeRateDao
     abstract fun foreignFlowDao(): ForeignFlowDao
+    abstract fun recurrenceCandidateDao(): RecurrenceCandidateDao
 
     companion object {
         const val NAME = "saldo.db"

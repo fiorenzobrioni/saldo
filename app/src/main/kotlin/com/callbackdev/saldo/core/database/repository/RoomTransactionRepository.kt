@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.core.database.repository
 
 import com.callbackdev.saldo.core.database.dao.ForeignFlowDao
+import com.callbackdev.saldo.core.database.dao.RecurrenceCandidateDao
 import com.callbackdev.saldo.core.database.dao.TransactionDao
 import com.callbackdev.saldo.core.database.mapper.toDomain
 import com.callbackdev.saldo.core.database.mapper.toEntity
@@ -45,6 +46,7 @@ import javax.inject.Inject
 class RoomTransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
     private val foreignFlowDao: ForeignFlowDao,
+    private val recurrenceCandidateDao: RecurrenceCandidateDao,
 ) : TransactionRepository {
 
     override fun observeTransactions(): Flow<List<Transaction>> =
@@ -276,7 +278,7 @@ class RoomTransactionRepository @Inject constructor(
         minOccurrences: Int,
         limit: Int,
     ): List<RecurrenceAmountGroup> =
-        transactionDao.recurrenceAmountGroups(since.toEpochMilli(), minOccurrences, limit)
+        recurrenceCandidateDao.recurrenceAmountGroups(since.toEpochMilli(), minOccurrences, limit)
             .mapNotNull { row ->
                 val currency = runCatching { Currency.getInstance(row.currency) }.getOrNull()
                     ?: return@mapNotNull null
@@ -295,7 +297,7 @@ class RoomTransactionRepository @Inject constructor(
         minOccurrences: Int,
         limit: Int,
     ): List<RecurrenceDescriptionGroup> =
-        transactionDao.recurrenceDescriptionGroups(since.toEpochMilli(), minOccurrences, limit)
+        recurrenceCandidateDao.recurrenceDescriptionGroups(since.toEpochMilli(), minOccurrences, limit)
             .mapNotNull { row ->
                 val currency = runCatching { Currency.getInstance(row.currency) }.getOrNull()
                     ?: return@mapNotNull null
@@ -314,7 +316,7 @@ class RoomTransactionRepository @Inject constructor(
         since: Instant,
         limit: Int,
     ): List<CandidateOccurrence> =
-        transactionDao.recurrenceAmountGroupOccurrences(
+        recurrenceCandidateDao.recurrenceAmountGroupOccurrences(
             type = group.type.name,
             accountId = group.accountId,
             categoryId = group.categoryId,
@@ -329,7 +331,7 @@ class RoomTransactionRepository @Inject constructor(
         since: Instant,
         limit: Int,
     ): List<CandidateOccurrence> =
-        transactionDao.recurrenceDescriptionGroupOccurrences(
+        recurrenceCandidateDao.recurrenceDescriptionGroupOccurrences(
             type = group.type.name,
             accountId = group.accountId,
             categoryId = group.categoryId,
