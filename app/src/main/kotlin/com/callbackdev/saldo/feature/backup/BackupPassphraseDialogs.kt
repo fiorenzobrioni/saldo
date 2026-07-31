@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -159,7 +158,7 @@ internal fun UnlockPassphraseDialog(
     AlertDialog(
         modifier = modifier,
         onDismissRequest = { if (!request.isUnlocking) onDismiss() },
-        icon = { Icon(imageVector = Icons.Outlined.LockOpen, contentDescription = null) },
+        icon = { Icon(imageVector = Icons.Outlined.Lock, contentDescription = null) },
         title = { Text(stringResource(R.string.backup_unlock_dialog_title)) },
         text = {
             Column {

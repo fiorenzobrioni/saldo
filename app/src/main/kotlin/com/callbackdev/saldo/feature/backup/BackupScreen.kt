@@ -24,7 +24,7 @@ import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -487,7 +487,7 @@ private fun ExportCard(
             ) {
                 Icon(
                     imageVector = if (isEncryptionEnabled) {
-                        Icons.Outlined.Shield
+                        Icons.Outlined.VerifiedUser
                     } else {
                         Icons.Outlined.WarningAmber
                     },

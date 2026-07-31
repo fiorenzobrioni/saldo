@@ -78,14 +78,7 @@ object BackupCrypto {
         val salt = envelope.saltBase64.decodeBase64OrCorrupted()
         val iv = envelope.ivBase64.decodeBase64OrCorrupted()
         val payload = envelope.payloadBase64.decodeBase64OrCorrupted()
-        // A payload no longer than the tag cannot be something this app sealed:
-        // that is a damaged file, and calling it a wrong passphrase would send
-        // the user hunting for a passphrase that was never the problem.
-        if (envelope.iterations !in SUPPORTED_ITERATIONS ||
-            salt.isEmpty() ||
-            iv.size != IV_BYTES ||
-            payload.size <= TAG_BITS / Byte.SIZE_BITS
-        ) {
+        if (!envelope.declaresPlausibleWork() || !hasContainerShape(salt, iv, payload)) {
             throw BackupCryptoException.Corrupted()
         }
         // No export can produce an empty passphrase (the UI asks for at least a
@@ -128,6 +121,24 @@ object BackupCrypto {
     }
 
     /**
+     * Whether the declared work factor is one this app is willing to spend time
+     * on. The floor keeps a downgraded file from passing as protected; the
+     * ceiling keeps a crafted header from turning a restore into an endless
+     * derivation.
+     */
+    private fun EncryptedBackup.declaresPlausibleWork(): Boolean =
+        iterations in SUPPORTED_ITERATIONS
+
+    /**
+     * Whether the decoded bytes have the shape of a container this app produced.
+     * A payload no longer than the tag is the telling case: it cannot hold any
+     * ciphertext, so it is a damaged file, and calling it a wrong passphrase
+     * would send the user hunting for a passphrase that was never the problem.
+     */
+    private fun hasContainerShape(salt: ByteArray, iv: ByteArray, payload: ByteArray): Boolean =
+        salt.isNotEmpty() && iv.size == IV_BYTES && payload.size > TAG_BYTES
+
+    /**
      * The header fields bound to the ciphertext. Everything that changes how the
      * payload is read is in here, so tampering with any of it breaks the tag.
      */
@@ -148,6 +159,7 @@ object BackupCrypto {
     /** 96 bits, the size GCM is specified for. */
     private const val IV_BYTES = 12
     private const val TAG_BITS = 128
+    private const val TAG_BYTES = TAG_BITS / Byte.SIZE_BITS
     private const val KEY_BITS = 256
 
     /**
@@ -158,10 +170,6 @@ object BackupCrypto {
      */
     const val DEFAULT_ITERATIONS = 600_000
 
-    /**
-     * Iteration counts this app will spend time on. The floor keeps a
-     * downgraded file from passing as protected; the ceiling keeps a crafted
-     * header from turning a restore into an endless derivation.
-     */
+    /** The accepted work factors; the reasoning is on [declaresPlausibleWork]. */
     private val SUPPORTED_ITERATIONS = 100_000..2_000_000
 }
