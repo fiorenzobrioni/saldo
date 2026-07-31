@@ -542,6 +542,30 @@
     <string name="transfers_empty_body">Pianifica uno spostamento mensile tra conti, ad esempio per accantonare nel conto di risparmio.</string>
     <string name="transfers_planned_savings">Risparmio pianificato</string>
     <string name="transfers_planned_savings_amount">%1$s / mese</string>
+    <!-- Ricerca ricorrenze e suggerimenti (Fase 19, ADR 43). La ricerca parte solo dalla riga nell'hub, mai da sola. -->
+    <string name="recurrences_scan_title">Cerca ricorrenze non registrate</string>
+    <string name="recurrences_scan_hint">Analizza gli ultimi 12 mesi in cerca di spese ed entrate regolari</string>
+    <string name="recurrences_scan_running">Analisi dei movimenti in corso…</string>
+    <!-- %1$s è una data breve, es. "30 lug". -->
+    <string name="recurrences_scan_last">Ultima ricerca: %1$s</string>
+    <string name="recurrences_scan_last_empty">Ultima ricerca: %1$s · nessuna ricorrenza trovata</string>
+    <string name="recurrences_scan_failed">La ricerca non è riuscita. Riprova.</string>
+    <string name="recurrences_scan_truncated">Risultato parziale: la ricerca ha raggiunto il suo tetto dichiarato. Crea o scarta i suggerimenti, poi ripetila.</string>
+    <string name="recurrences_suggestions_header">Suggerimenti</string>
+    <!-- %1$s è un importo formattato, es. "12,99 €". -->
+    <string name="recurrences_suggestion_cadence_weekly">%1$s ogni settimana</string>
+    <string name="recurrences_suggestion_cadence_monthly">%1$s ogni mese</string>
+    <string name="recurrences_suggestion_cadence_annual">%1$s ogni anno</string>
+    <!-- %1$s è una data breve, es. "28 ago". -->
+    <string name="recurrences_suggestion_next">prossima il %1$s</string>
+    <plurals name="recurrences_suggestion_count">
+        <item quantity="one">Trovata %1$d volta negli ultimi 12 mesi</item>
+        <item quantity="many">Trovata %1$d volte negli ultimi 12 mesi</item>
+        <item quantity="other">Trovata %1$d volte negli ultimi 12 mesi</item>
+    </plurals>
+    <string name="recurrences_suggestion_dismiss">Scarta suggerimento</string>
+    <string name="recurrences_suggestion_fallback_expense">Spesa ricorrente</string>
+    <string name="recurrences_suggestion_fallback_income">Entrata ricorrente</string>
     <string name="subscription_editor_title_new">Nuova uscita ricorrente</string>
     <string name="subscription_editor_title_edit">Modifica uscita ricorrente</string>
     <string name="subscription_editor_save">Salva uscita ricorrente</string>

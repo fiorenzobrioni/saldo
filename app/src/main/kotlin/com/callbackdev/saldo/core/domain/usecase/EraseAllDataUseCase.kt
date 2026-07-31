@@ -2,6 +2,7 @@ package com.callbackdev.saldo.core.domain.usecase
 
 import com.callbackdev.saldo.core.common.applock.AppLockRepository
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.common.recurrencescan.RecurrenceScanStore
 import com.callbackdev.saldo.core.domain.repository.BackupRepository
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -46,6 +47,7 @@ class EraseAllDataUseCase @Inject constructor(
     private val backupRepository: BackupRepository,
     private val userPreferences: UserPreferencesRepository,
     private val appLockRepository: AppLockRepository,
+    private val recurrenceScanStore: RecurrenceScanStore,
     private val resetCoordinator: AppResetCoordinator,
 ) {
 
@@ -57,6 +59,8 @@ class EraseAllDataUseCase @Inject constructor(
         // reset removes it on purpose - back to a fresh install, and whoever
         // triggers this is already past the lock.
         appLockRepository.clear()
+        // The scan result describes movements that no longer exist (ADR 43).
+        recurrenceScanStore.clear()
         resetCoordinator.publish()
     }
 }

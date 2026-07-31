@@ -3,6 +3,7 @@ package com.callbackdev.saldo.core.domain.usecase
 import app.cash.turbine.test
 import com.callbackdev.saldo.core.common.applock.AppLockRepository
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.common.recurrencescan.RecurrenceScanStore
 import com.callbackdev.saldo.core.domain.repository.BackupRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -17,12 +18,14 @@ class EraseAllDataUseCaseTest {
     private val backupRepository = mockk<BackupRepository>(relaxUnitFun = true)
     private val userPreferences = mockk<UserPreferencesRepository>(relaxUnitFun = true)
     private val appLockRepository = mockk<AppLockRepository>(relaxUnitFun = true)
+    private val recurrenceScanStore = mockk<RecurrenceScanStore>(relaxUnitFun = true)
     private val resetCoordinator = AppResetCoordinator()
 
     private val useCase = EraseAllDataUseCase(
         backupRepository,
         userPreferences,
         appLockRepository,
+        recurrenceScanStore,
         resetCoordinator,
     )
 
@@ -37,6 +40,8 @@ class EraseAllDataUseCaseTest {
             backupRepository.eraseAll()
             userPreferences.clear()
             appLockRepository.clear()
+            // The scan result describes movements that no longer exist (ADR 43).
+            recurrenceScanStore.clear()
         }
         resetCoordinator.events.test {
             awaitItem()
@@ -54,5 +59,6 @@ class EraseAllDataUseCaseTest {
         // its currency, theme and default account: worse than not erasing at all.
         coVerify(exactly = 0) { userPreferences.clear() }
         coVerify(exactly = 0) { appLockRepository.clear() }
+        coVerify(exactly = 0) { recurrenceScanStore.clear() }
     }
 }

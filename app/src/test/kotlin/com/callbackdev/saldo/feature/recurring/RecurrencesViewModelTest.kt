@@ -2,6 +2,8 @@ package com.callbackdev.saldo.feature.recurring
 
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
+import com.callbackdev.saldo.core.common.recurrencescan.RecurrenceScanSnapshot
+import com.callbackdev.saldo.core.common.recurrencescan.RecurrenceScanStore
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
@@ -10,15 +12,22 @@ import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import com.callbackdev.saldo.core.domain.model.RecurringRule
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.domain.recurrence.RecurrenceScanResult
+import com.callbackdev.saldo.core.domain.recurrence.RecurrenceSuggestion
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
+import com.callbackdev.saldo.core.domain.usecase.DetectRecurrenceSuggestionsUseCase
 import com.callbackdev.saldo.testing.MainDispatcherExtension
+import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.math.BigDecimal
@@ -38,6 +47,12 @@ class RecurrencesViewModelTest {
     private val accountRepository = mockk<AccountRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
     private val userPreferences = mockk<UserPreferencesRepository>()
+    private val detectRecurrences = mockk<DetectRecurrenceSuggestionsUseCase>()
+    private val scanStore = mockk<RecurrenceScanStore>()
+
+    /** In-memory stand-ins for the scan store's persistence, like AppLockManagerTest does. */
+    private val storedSnapshot = MutableStateFlow<RecurrenceScanSnapshot?>(null)
+    private val storedDismissals = MutableStateFlow<Set<String>>(emptySet())
 
     private fun rule(
         id: Long,
@@ -121,12 +136,51 @@ class RecurrencesViewModelTest {
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
         every { categoryRepository.observeCategories() } returns flowOf(emptyList<Category>())
         every { userPreferences.primaryCurrencyOverride } returns flowOf(currencyOverride)
+        every { scanStore.snapshot } returns storedSnapshot
+        every { scanStore.dismissedKeys } returns storedDismissals
+        coEvery { scanStore.saveResult(any(), any()) } coAnswers {
+            storedSnapshot.value = RecurrenceScanSnapshot(secondArg(), firstArg())
+        }
+        coEvery { scanStore.dismiss(any()) } coAnswers {
+            storedDismissals.value = storedDismissals.value + firstArg<String>()
+        }
         return RecurrencesViewModel(
             recurringRuleRepository,
             accountRepository,
             categoryRepository,
             userPreferences,
+            detectRecurrences,
+            scanStore,
             clock,
+        )
+    }
+
+    private fun suggestion(
+        key: String = "amount:EXPENSE:1:none:EUR:1299",
+        amountMinor: Long = 1299L,
+        accountId: Long = 1L,
+        frequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY,
+        name: String? = "Netflix",
+    ) = RecurrenceSuggestion(
+        key = key,
+        type = TransactionType.EXPENSE,
+        name = name,
+        amountMinor = amountMinor,
+        isVariableAmount = false,
+        currency = eur,
+        frequency = frequency,
+        accountId = accountId,
+        categoryId = null,
+        occurrenceCount = 4,
+        lastOccurrence = LocalDate.of(2026, 6, 15),
+        nextOccurrence = LocalDate.of(2026, 7, 15),
+        dayOfReference = 15,
+    )
+
+    private fun storedScan(vararg suggestions: RecurrenceSuggestion, truncated: Boolean = false) {
+        storedSnapshot.value = RecurrenceScanSnapshot(
+            scannedOn = LocalDate.of(2026, 7, 8),
+            result = RecurrenceScanResult(suggestions.toList(), truncated),
         )
     }
 
@@ -338,6 +392,99 @@ class RecurrencesViewModelTest {
                 listOf("Assicurazione", "Netflix", "Spotify"),
                 state.expenses.items.map { it.rule.name },
             )
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `the persisted scan result is re-presented without running a scan`() = runTest {
+        storedScan(suggestion(), truncated = true)
+        val viewModel = viewModel(listOf(spotify), accounts = listOf(account(1L, AccountType.CHECKING)))
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(listOf("Netflix"), state.suggestions.map { it.suggestion.name })
+            assertEquals(LocalDate.of(2026, 7, 8), state.scan.lastScan)
+            assertTrue(state.scan.truncated)
+            cancelAndIgnoreRemainingEvents()
+        }
+        // The one promise of ADR 43: opening the hub never runs the detection.
+        coVerify(exactly = 0) { detectRecurrences(any()) }
+    }
+
+    @Test
+    fun `tapping the scan row runs the pass once and persists the outcome with its date`() = runTest {
+        val found = RecurrenceScanResult(listOf(suggestion()), truncated = false)
+        coEvery { detectRecurrences(any()) } returns found
+        val viewModel = viewModel(listOf(spotify), accounts = listOf(account(1L, AccountType.CHECKING)))
+
+        viewModel.uiState.test {
+            awaitLoaded()
+            viewModel.onScanClick()
+            var state = awaitItem()
+            while (state.suggestions.isEmpty()) state = awaitItem()
+            assertEquals(listOf("Netflix"), state.suggestions.map { it.suggestion.name })
+            assertEquals(BigDecimal("12.99"), state.suggestions.single().amount)
+            // Today from the fixed clock: the declared "last search" date.
+            assertEquals(LocalDate.of(2026, 7, 9), state.scan.lastScan)
+            cancelAndIgnoreRemainingEvents()
+        }
+        coVerify(exactly = 1) { detectRecurrences(LocalDate.of(2026, 7, 9)) }
+        coVerify(exactly = 1) { scanStore.saveResult(found, LocalDate.of(2026, 7, 9)) }
+    }
+
+    @Test
+    fun `a dismissed suggestion stays hidden`() = runTest {
+        storedScan(suggestion())
+        val viewModel = viewModel(listOf(spotify), accounts = listOf(account(1L, AccountType.CHECKING)))
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            viewModel.onSuggestionDismissed(state.suggestions.single())
+            var next = awaitItem()
+            while (next.suggestions.isNotEmpty()) next = awaitItem()
+            assertTrue(next.suggestions.isEmpty())
+            // The result itself is still there, only the suggestion is gone.
+            assertEquals(LocalDate.of(2026, 7, 8), next.scan.lastScan)
+            cancelAndIgnoreRemainingEvents()
+        }
+        coVerify { scanStore.dismiss(suggestion().key) }
+    }
+
+    @Test
+    fun `a suggestion covered by an existing rule disappears by construction`() = runTest {
+        // Netflix the rule and Netflix the suggestion: same account, category,
+        // frequency and amount. Creating the rule is what hides the suggestion.
+        storedScan(suggestion())
+        val viewModel = viewModel(listOf(netflix), accounts = listOf(account(1L, AccountType.CHECKING)))
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertTrue(state.suggestions.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a suggestion pointing at a missing account is not shown`() = runTest {
+        storedScan(suggestion(accountId = 99L))
+        val viewModel = viewModel(listOf(spotify), accounts = listOf(account(1L, AccountType.CHECKING)))
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertTrue(state.suggestions.isEmpty())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a failed scan reports the failure instead of silently doing nothing`() = runTest {
+        coEvery { detectRecurrences(any()) } throws IllegalStateException("boom")
+        val viewModel = viewModel(listOf(spotify), accounts = listOf(account(1L, AccountType.CHECKING)))
+
+        viewModel.events.test {
+            viewModel.onScanClick()
+            assertEquals(RecurrencesEvent.ScanFailed, awaitItem())
             cancelAndIgnoreRemainingEvents()
         }
     }

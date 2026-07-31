@@ -8,6 +8,7 @@ import com.callbackdev.saldo.core.database.dao.BudgetDao
 import com.callbackdev.saldo.core.database.dao.CategoryDao
 import com.callbackdev.saldo.core.database.dao.ExchangeRateDao
 import com.callbackdev.saldo.core.database.dao.ForeignFlowDao
+import com.callbackdev.saldo.core.database.dao.RecurrenceCandidateDao
 import com.callbackdev.saldo.core.database.dao.RecurringRuleDao
 import com.callbackdev.saldo.core.database.dao.SavingsGoalDao
 import com.callbackdev.saldo.core.database.dao.TagDao
@@ -67,6 +68,10 @@ object DatabaseModule {
     @Provides
     fun provideForeignFlowDao(database: SaldoDatabase): ForeignFlowDao =
         database.foreignFlowDao()
+
+    @Provides
+    fun provideRecurrenceCandidateDao(database: SaldoDatabase): RecurrenceCandidateDao =
+        database.recurrenceCandidateDao()
 
     @Provides
     fun provideTransactionRunner(database: SaldoDatabase): TransactionRunner =

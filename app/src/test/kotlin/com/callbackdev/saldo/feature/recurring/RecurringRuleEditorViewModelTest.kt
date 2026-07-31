@@ -497,4 +497,79 @@ class RecurringRuleEditorViewModelTest {
         assertEquals(3L, saved.captured.accountId)
         assertEquals(BigDecimal("35.00"), saved.captured.amount)
     }
+
+    @Test
+    fun `a suggestion prefill seeds every field and saving never back-fills history`() = runTest {
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 1L
+        // The suggestion's next expected occurrence is in the future (ADR 43).
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(
+                initialTypeName = "EXPENSE",
+                initialName = "Netflix",
+                initialAmountInput = "12.99",
+                initialFrequencyName = "MONTHLY",
+                initialStartDateEpochDay = LocalDate.of(2026, 8, 15).toEpochDay(),
+                initialAccountId = 2L,
+                initialCategoryId = 10L,
+            ),
+        )
+
+        with(viewModel.uiState.value) {
+            assertTrue(isNew)
+            assertEquals("Netflix", name)
+            // Rescaled to the prefilled account's currency: JPY has no decimals.
+            assertEquals("13", amountInput)
+            assertEquals(RecurrenceFrequency.MONTHLY, frequency)
+            assertEquals(LocalDate.of(2026, 8, 15), startDate)
+            assertEquals(2L, accountId)
+            assertEquals(10L, categoryId)
+        }
+        // A prefill is a starting point, not an edit: backing out loses nothing.
+        assertFalse(viewModel.hasUnsavedChanges.value)
+
+        viewModel.save()
+
+        assertEquals(LocalDate.of(2026, 8, 15), saved.captured.startDate)
+        assertEquals(15, saved.captured.dayOfReference)
+        // The start date is after today, so there is no past occurrence to
+        // back-fill: the seeded watermark is empty and the history untouched.
+        assertNull(saved.captured.lastGeneratedDate)
+    }
+
+    @Test
+    fun `a prefill pointing at deleted ids falls back to the create defaults`() = runTest {
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(
+                initialTypeName = "EXPENSE",
+                initialAccountId = 99L,
+                initialCategoryId = 88L,
+            ),
+        )
+
+        with(viewModel.uiState.value) {
+            // The dropped ids resolve to the plain defaults: first account,
+            // seeded subscriptions category.
+            assertEquals(1L, accountId)
+            assertEquals(10L, categoryId)
+        }
+    }
+
+    @Test
+    fun `a variable-amount prefill forces confirm mode like the toggle does`() = runTest {
+        val viewModel = viewModel(
+            route = RecurringRuleEditorRoute(
+                initialTypeName = "EXPENSE",
+                initialName = "Bolletta luce",
+                initialAmountInput = "45.30",
+                initialVariableAmount = true,
+                initialFrequencyName = "MONTHLY",
+            ),
+        )
+
+        with(viewModel.uiState.value) {
+            assertTrue(isVariableAmount)
+            assertEquals(RecurrenceMode.CONFIRM, mode)
+        }
+    }
 }
