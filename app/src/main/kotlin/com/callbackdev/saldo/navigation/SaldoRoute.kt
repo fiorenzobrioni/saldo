@@ -98,11 +98,26 @@ data object RecurrencesRoute : NavKey
  * Recurring-rule editor: create mode when [ruleId] is null, edit mode otherwise.
  * [initialTypeName] preselects the rule type on creation (the tab the editor was
  * opened from); it is a [com.callbackdev.saldo.core.domain.model.TransactionType] name.
+ *
+ * The remaining `initial*` fields prefill a new rule from a recurrence
+ * suggestion (Fase 19, ADR 43): name, amount as a plain decimal string
+ * (sanitized to the account's currency by the editor, like
+ * [TransactionEditorRoute.initialAmountInput]), frequency by enum name, start
+ * date as epoch day (the suggestion's next expected occurrence), account and
+ * category by id (silently dropped when they no longer exist). A prefill is a
+ * starting point the user confirms, never a silent write.
  */
 @Serializable
 data class RecurringRuleEditorRoute(
     val ruleId: Long? = null,
     val initialTypeName: String? = null,
+    val initialName: String? = null,
+    val initialAmountInput: String? = null,
+    val initialVariableAmount: Boolean = false,
+    val initialFrequencyName: String? = null,
+    val initialStartDateEpochDay: Long? = null,
+    val initialAccountId: Long? = null,
+    val initialCategoryId: Long? = null,
 ) : NavKey
 
 /**

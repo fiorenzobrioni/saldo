@@ -198,23 +198,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
 
         val ruleId = route.ruleId
         if (ruleId == null) {
-            val categories = allCategories.forRuleType(initialType)
-            val defaultAccountId = accounts.firstOrNull()?.id
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    accounts = accounts,
-                    accountId = defaultAccountId,
-                    // Seed a distinct destination so a new transfer is valid out of the box.
-                    transferAccountId = if (initialType == TransactionType.TRANSFER) {
-                        accounts.firstOrNull { account -> account.id != defaultAccountId }?.id
-                    } else {
-                        null
-                    },
-                    categories = categories,
-                    categoryId = defaultCategoryId(categories, initialType),
-                )
-            }
+            seedCreateForm(accounts, allCategories.forRuleType(initialType))
             captureBaseline()
             return
         }
@@ -255,6 +239,66 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
             )
         }
         captureBaseline()
+    }
+
+    /**
+     * Seeds the create form: the plain defaults, overridden by the suggestion
+     * prefill when the route carries one (ADR 43). An account or category id
+     * deleted since the scan no longer resolves, is dropped, and the plain
+     * default stands.
+     */
+    private fun seedCreateForm(accounts: List<Account>, categories: List<Category>) {
+        val defaultAccountId = route.initialAccountId
+            ?.takeIf { id -> accounts.any { it.id == id } }
+            ?: accounts.firstOrNull()?.id
+        val prefillDigits = accounts.firstOrNull { it.id == defaultAccountId }
+            ?.currency?.let(MoneyMapper::fractionDigits)
+            ?: RecurringRuleEditorUiState.DEFAULT_FRACTION_DIGITS
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                accounts = accounts,
+                accountId = defaultAccountId,
+                // Seed a distinct destination so a new transfer is valid out of the box.
+                transferAccountId = if (initialType == TransactionType.TRANSFER) {
+                    accounts.firstOrNull { account -> account.id != defaultAccountId }?.id
+                } else {
+                    null
+                },
+                categories = categories,
+                categoryId = route.initialCategoryId
+                    ?.takeIf { id -> categories.any { category -> category.id == id } }
+                    ?: defaultCategoryId(categories, initialType),
+                name = route.initialName ?: it.name,
+                amountInput = route.initialAmountInput
+                    ?.let { raw -> prefillAmountInput(raw, prefillDigits) }
+                    ?: it.amountInput,
+                isVariableAmount = route.initialVariableAmount,
+                // Variable amount implies confirm mode, like the toggle does.
+                mode = if (route.initialVariableAmount) RecurrenceMode.CONFIRM else it.mode,
+                frequency = route.initialFrequencyName
+                    ?.let { name -> RecurrenceFrequency.entries.firstOrNull { f -> f.name == name } }
+                    ?: it.frequency,
+                startDate = route.initialStartDateEpochDay
+                    ?.let(LocalDate::ofEpochDay)
+                    ?: it.startDate,
+            )
+        }
+    }
+
+    /**
+     * A prefilled amount rescaled to the chosen account's currency, like
+     * [onAccountSelected] does for a typed one (a plain sanitize would drop
+     * the separator and read "12.99" as 1299 on a zero-decimal currency).
+     * Unparseable or non-positive input degrades to an empty field.
+     */
+    private fun prefillAmountInput(raw: String, digits: Int): String {
+        val parsed = MoneyInput.parse(raw)?.takeIf { it.signum() > 0 } ?: return ""
+        return if (parsed.scale() > digits) {
+            parsed.setScale(digits, RoundingMode.HALF_UP).toPlainString()
+        } else {
+            parsed.toPlainString()
+        }
     }
 
     /** Categories a rule of [type] can be filed under (its own type, plus "both"). */

@@ -20,6 +20,9 @@ import com.callbackdev.saldo.core.domain.model.StatsPeriodTotals
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.quickentry.DescriptionUsage
+import com.callbackdev.saldo.core.domain.recurrence.CandidateOccurrence
+import com.callbackdev.saldo.core.domain.recurrence.RecurrenceAmountGroup
+import com.callbackdev.saldo.core.domain.recurrence.RecurrenceDescriptionGroup
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.time.Instant
@@ -258,6 +261,41 @@ interface TransactionRepository {
         foldedWord: String,
         limit: Int,
     ): List<DescriptionUsage>
+
+    /*
+     * Recurrence-scan candidates (Fase 19, ADR 43). Aggregate selection runs
+     * in SQL with declared caps; the per-group reads are capped too. All
+     * one-shot on purpose: the scan runs only on the explicit user action in
+     * the Recurrences hub, never from an observer.
+     */
+
+    /** Fixed-amount candidate groups since [since], at least [minOccurrences] rows each, capped at [limit]. */
+    suspend fun recurrenceAmountGroups(
+        since: Instant,
+        minOccurrences: Int,
+        limit: Int,
+    ): List<RecurrenceAmountGroup>
+
+    /** Description-keyed candidate groups; the variable-bill twin of [recurrenceAmountGroups]. */
+    suspend fun recurrenceDescriptionGroups(
+        since: Instant,
+        minOccurrences: Int,
+        limit: Int,
+    ): List<RecurrenceDescriptionGroup>
+
+    /** The movements of one fixed-amount candidate group, most recent first, capped at [limit]. */
+    suspend fun recurrenceAmountGroupOccurrences(
+        group: RecurrenceAmountGroup,
+        since: Instant,
+        limit: Int,
+    ): List<CandidateOccurrence>
+
+    /** The movements of one description-keyed candidate group, most recent first, capped at [limit]. */
+    suspend fun recurrenceDescriptionGroupOccurrences(
+        group: RecurrenceDescriptionGroup,
+        since: Instant,
+        limit: Int,
+    ): List<CandidateOccurrence>
 
     suspend fun getTransaction(id: Long): Transaction?
 

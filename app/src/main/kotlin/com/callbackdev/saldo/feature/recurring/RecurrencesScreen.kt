@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
@@ -35,12 +36,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
@@ -83,10 +88,23 @@ fun RecurrencesScreen(
     onNavigateToNewRule: (TransactionType) -> Unit,
     onNavigateToEditRule: (Long) -> Unit,
     onNavigateToUpcoming: () -> Unit,
+    onNavigateToSuggestedRule: (RecurrenceSuggestionItem) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecurrencesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val resources = LocalResources.current
+    LaunchedEffect(viewModel, resources) {
+        viewModel.events.collect { event ->
+            when (event) {
+                RecurrencesEvent.ScanFailed -> snackbarHostState.showSnackbar(
+                    message = resources.getString(R.string.recurrences_scan_failed),
+                )
+            }
+        }
+    }
 
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     val tabType = when (selectedTab) {
@@ -130,6 +148,7 @@ fun RecurrencesScreen(
                 )
             }
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             PrimaryTabRow(selectedTabIndex = selectedTab) {
@@ -153,10 +172,15 @@ fun RecurrencesScreen(
             when {
                 uiState.isLoading -> LoadingState()
 
-                section.isEmpty -> RecurrencesEmptyState(
+                section.isEmpty -> RecurrencesEmptyContent(
                     type = tabType,
                     actionLabel = newRuleLabel,
                     onCreate = { onNavigateToNewRule(tabType) },
+                    suggestions = uiState.suggestionsFor(tabType),
+                    scan = uiState.scan,
+                    onScanClick = viewModel::onScanClick,
+                    onSuggestionClick = onNavigateToSuggestedRule,
+                    onSuggestionDismiss = viewModel::onSuggestionDismissed,
                     modifier = Modifier.fillMaxSize(),
                 )
 
@@ -167,9 +191,14 @@ fun RecurrencesScreen(
                     today = uiState.today,
                     plannedSavings = uiState.plannedMonthlySavings,
                     savingsCurrency = uiState.savingsCurrency,
+                    suggestions = uiState.suggestionsFor(tabType),
+                    scan = uiState.scan,
                     onSortSelected = viewModel::onSortSelected,
                     onItemClick = onNavigateToEditRule,
                     onUpcomingClick = onNavigateToUpcoming,
+                    onScanClick = viewModel::onScanClick,
+                    onSuggestionClick = onNavigateToSuggestedRule,
+                    onSuggestionDismiss = viewModel::onSuggestionDismissed,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -185,59 +214,41 @@ private fun RecurrencesContent(
     today: java.time.LocalDate,
     plannedSavings: BigDecimal,
     savingsCurrency: Currency,
+    suggestions: List<RecurrenceSuggestionItem>,
+    scan: RecurrenceScanUi,
     onSortSelected: (SubscriptionSort) -> Unit,
     onItemClick: (Long) -> Unit,
     onUpcomingClick: () -> Unit,
+    onScanClick: () -> Unit,
+    onSuggestionClick: (RecurrenceSuggestionItem) -> Unit,
+    onSuggestionDismiss: (RecurrenceSuggestionItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isIncome = type == TransactionType.INCOME
     val isTransfer = type == TransactionType.TRANSFER
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
-        item {
-            MonthlyTotalCard(
-                total = section.monthlyTotal,
-                currency = section.currency,
-                activeCount = section.activeCount,
-                titleRes = when {
-                    isTransfer -> R.string.transfers_this_month
-                    else -> R.string.subscriptions_this_month
-                },
-                countRes = when {
-                    isTransfer -> R.plurals.transfers_active_count
-                    isIncome -> R.plurals.incomes_active_count
-                    else -> R.plurals.subscriptions_active_count
-                },
-            )
-        }
-        if (isTransfer) {
-            // Highlight the portion flowing into savings accounts: the seed of
-            // Savings Goals (v2.0). Only shown when there is planned saving.
-            if (plannedSavings.signum() > 0) {
-                item {
-                    PlannedSavingsCard(amount = plannedSavings, currency = savingsCurrency)
-                }
-            }
-        } else {
-            item {
-                AnnualProjectionCard(
-                    annual = section.annualProjection,
-                    currency = section.currency,
-                    // The trending pair mirrors the tabs: down for expenses, up for
-                    // incomes (same visual language as the dashboard comparison).
-                    icon = if (isIncome) {
-                        Icons.AutoMirrored.Outlined.TrendingUp
-                    } else {
-                        Icons.AutoMirrored.Outlined.TrendingDown
-                    },
-                )
-            }
-        }
+        summaryItems(
+            section = section,
+            type = type,
+            plannedSavings = plannedSavings,
+            savingsCurrency = savingsCurrency,
+        )
         item {
             UpcomingLinkRow(onClick = onUpcomingClick)
+        }
+        // The recurrence scan (ADR 43) only proposes expenses and incomes:
+        // its surface stays off the transfers tab.
+        if (!isTransfer) {
+            recurrenceSuggestionItems(
+                suggestions = suggestions,
+                scan = scan,
+                onScanClick = onScanClick,
+                onSuggestionClick = onSuggestionClick,
+                onSuggestionDismiss = onSuggestionDismiss,
+            )
         }
         item {
             SortHeader(
@@ -258,8 +269,58 @@ private fun RecurrencesContent(
             FooterNote(
                 textRes = when {
                     isTransfer -> R.string.transfers_prorated_note
-                    isIncome -> R.string.incomes_prorated_note
+                    type == TransactionType.INCOME -> R.string.incomes_prorated_note
                     else -> R.string.subscriptions_prorated_note
+                },
+            )
+        }
+    }
+}
+
+/** The summary cards heading every tab: monthly total plus its per-type companion. */
+private fun LazyListScope.summaryItems(
+    section: RecurrenceSection,
+    type: TransactionType,
+    plannedSavings: BigDecimal,
+    savingsCurrency: Currency,
+) {
+    val isIncome = type == TransactionType.INCOME
+    val isTransfer = type == TransactionType.TRANSFER
+    item {
+        MonthlyTotalCard(
+            total = section.monthlyTotal,
+            currency = section.currency,
+            activeCount = section.activeCount,
+            titleRes = when {
+                isTransfer -> R.string.transfers_this_month
+                else -> R.string.subscriptions_this_month
+            },
+            countRes = when {
+                isTransfer -> R.plurals.transfers_active_count
+                isIncome -> R.plurals.incomes_active_count
+                else -> R.plurals.subscriptions_active_count
+            },
+        )
+    }
+    if (isTransfer) {
+        // Highlight the portion flowing into savings accounts: the seed of
+        // Savings Goals (v2.0). Only shown when there is planned saving.
+        if (plannedSavings.signum() > 0) {
+            item {
+                PlannedSavingsCard(amount = plannedSavings, currency = savingsCurrency)
+            }
+        }
+    } else {
+        item {
+            AnnualProjectionCard(
+                annual = section.annualProjection,
+                currency = section.currency,
+                // The trending pair mirrors the tabs: down for expenses, up for
+                // incomes (same visual language as the dashboard comparison).
+                icon = if (isIncome) {
+                    Icons.AutoMirrored.Outlined.TrendingUp
+                } else {
+                    Icons.AutoMirrored.Outlined.TrendingDown
                 },
             )
         }
@@ -528,6 +589,59 @@ private fun FooterNote(@StringRes textRes: Int, modifier: Modifier = Modifier) {
             text = stringResource(textRes),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/**
+ * The empty tab. On expenses and incomes the scan surface (ADR 43) stays
+ * reachable below the invitation: an empty hub is exactly where "search for
+ * unregistered recurrences" earns its keep, proposing the first rules from
+ * the movements already in the ledger. The transfers tab keeps the plain
+ * centered empty state (transfers are never suggested).
+ */
+@Composable
+private fun RecurrencesEmptyContent(
+    type: TransactionType,
+    actionLabel: String,
+    onCreate: () -> Unit,
+    suggestions: List<RecurrenceSuggestionItem>,
+    scan: RecurrenceScanUi,
+    onScanClick: () -> Unit,
+    onSuggestionClick: (RecurrenceSuggestionItem) -> Unit,
+    onSuggestionDismiss: (RecurrenceSuggestionItem) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (type == TransactionType.TRANSFER) {
+        RecurrencesEmptyState(
+            type = type,
+            actionLabel = actionLabel,
+            onCreate = onCreate,
+            modifier = modifier,
+        )
+        return
+    }
+    LazyColumn(
+        modifier = modifier,
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+        verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
+    ) {
+        item(key = "recurrences-empty") {
+            RecurrencesEmptyState(
+                type = type,
+                actionLabel = actionLabel,
+                onCreate = onCreate,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 48.dp, bottom = 24.dp),
+            )
+        }
+        recurrenceSuggestionItems(
+            suggestions = suggestions,
+            scan = scan,
+            onScanClick = onScanClick,
+            onSuggestionClick = onSuggestionClick,
+            onSuggestionDismiss = onSuggestionDismiss,
         )
     }
 }

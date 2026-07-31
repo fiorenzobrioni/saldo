@@ -2,6 +2,9 @@ package com.callbackdev.saldo.feature.recurring
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
+import com.callbackdev.saldo.core.common.recurrencescan.RecurrenceScanSnapshot
+import com.callbackdev.saldo.core.common.recurrencescan.RecurrenceScanStore
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
@@ -13,28 +16,44 @@ import com.callbackdev.saldo.core.domain.model.hasEndedBy
 import com.callbackdev.saldo.core.domain.model.runsInMonthOf
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.common.time.midnightTicker
+import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
+import com.callbackdev.saldo.core.domain.recurrence.RecurrenceDetector
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
+import com.callbackdev.saldo.core.domain.usecase.DetectRecurrenceSuggestionsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.LocalDate
 import java.util.Currency
 import javax.inject.Inject
 
+/** One-shot events consumed by the hub screen. */
+sealed interface RecurrencesEvent {
+    /** The explicit scan failed: say so instead of silently showing the old result. */
+    data object ScanFailed : RecurrencesEvent
+}
+
 /**
  * Drives the recurrences hub: active recurring expenses (subscriptions) and
  * recurring incomes, each with monthly-equivalent figures, the next
  * charge/credit, the monthly total and the annual projection. All figures
  * derive reactively from the database.
+ *
+ * The recurrence scan (Fase 19, ADR 43) has no observer here on purpose: the
+ * hub re-presents the persisted result and the only trigger is [onScanClick].
  */
 @HiltViewModel
 class RecurrencesViewModel @Inject constructor(
@@ -42,10 +61,15 @@ class RecurrencesViewModel @Inject constructor(
     accountRepository: AccountRepository,
     categoryRepository: CategoryRepository,
     userPreferences: UserPreferencesRepository,
+    private val detectRecurrenceSuggestions: DetectRecurrenceSuggestionsUseCase,
+    private val recurrenceScanStore: RecurrenceScanStore,
     private val clock: Clock,
 ) : ViewModel() {
 
     private val sort = MutableStateFlow(SubscriptionSort.NEXT_CHARGE)
+
+    /** True while a tapped scan is running; guards against a double tap. */
+    private val isScanning = MutableStateFlow(false)
 
     /**
      * Sort choice and the current day, pre-combined to stay within combine's
@@ -54,22 +78,63 @@ class RecurrencesViewModel @Inject constructor(
      */
     private val sortAndToday = combine(sort, midnightTicker(clock), ::Pair)
 
+    /**
+     * The persisted scan state (ADR 43): the last result with its date and the
+     * dismissed keys. Reading a saved result is not a scan; nothing here ever
+     * queries the ledger.
+     */
+    private val scanInputs = combine(
+        recurrenceScanStore.snapshot,
+        recurrenceScanStore.dismissedKeys,
+        isScanning,
+        ::Triple,
+    )
+
+    /** Currency preference and scan state, pre-combined to stay within combine's arity. */
+    private val currencyAndScan = combine(userPreferences.primaryCurrencyOverride, scanInputs, ::Pair)
+
     val uiState: StateFlow<RecurrencesUiState> = combine(
         recurringRuleRepository.observeRules(),
         accountRepository.observeAccountsWithBalance(),
         categoryRepository.observeCategories(),
         sortAndToday,
-        userPreferences.primaryCurrencyOverride,
-    ) { rules, accounts, categories, (sortOrder, today), currencyOverride ->
-        buildState(rules, accounts, categories, sortOrder, currencyOverride, today)
+        currencyAndScan,
+    ) { rules, accounts, categories, (sortOrder, today), (currencyOverride, scanState) ->
+        buildState(rules, accounts, categories, sortOrder, currencyOverride, today, scanState)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
         initialValue = RecurrencesUiState(today = LocalDate.now(clock)),
     )
 
+    private val _events = Channel<RecurrencesEvent>(Channel.BUFFERED)
+    val events: Flow<RecurrencesEvent> = _events.receiveAsFlow()
+
     fun onSortSelected(newSort: SubscriptionSort) {
         sort.update { newSort }
+    }
+
+    /**
+     * The one and only trigger of the recurrence scan (ADR 43): runs the pass,
+     * persists the outcome with today's date, and reports a failure instead of
+     * pretending nothing happened.
+     */
+    fun onScanClick() {
+        if (isScanning.value) return
+        isScanning.value = true
+        viewModelScope.launch {
+            val today = LocalDate.now(clock)
+            val result = suspendRunCatching {
+                recurrenceScanStore.saveResult(detectRecurrenceSuggestions(today), today)
+            }
+            isScanning.value = false
+            if (result.isFailure) _events.send(RecurrencesEvent.ScanFailed)
+        }
+    }
+
+    /** Persists the dismissal: a dismissed suggestion never reappears (ADR 43). */
+    fun onSuggestionDismissed(item: RecurrenceSuggestionItem) {
+        viewModelScope.launch { recurrenceScanStore.dismiss(item.suggestion.key) }
     }
 
     @Suppress("LongParameterList") // One argument per combined source plus the resolved day.
@@ -80,9 +145,11 @@ class RecurrencesViewModel @Inject constructor(
         sortOrder: SubscriptionSort,
         currencyOverride: Currency?,
         today: LocalDate,
+        scanState: Triple<RecurrenceScanSnapshot?, Set<String>, Boolean>,
     ): RecurrencesUiState {
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = categories.associateBy { it.id }
+        val (snapshot, dismissedKeys, scanning) = scanState
 
         fun sectionFor(type: TransactionType): RecurrenceSection {
             // Listed: everything not yet over. A rule starting next quarter is
@@ -149,8 +216,39 @@ class RecurrencesViewModel @Inject constructor(
             savingsCurrency = savingsCurrency,
             sort = sortOrder,
             today = today,
+            suggestions = visibleSuggestions(snapshot, dismissedKeys, rules, accountById, categoryById),
+            scan = RecurrenceScanUi(
+                isScanning = scanning,
+                lastScan = snapshot?.scannedOn,
+                foundNothing = snapshot != null && snapshot.result.suggestions.isEmpty(),
+                truncated = snapshot?.result?.truncated == true,
+            ),
         )
     }
+
+    /**
+     * The suggestions worth showing (ADR 43): not dismissed, on a live
+     * account, and not already covered by a rule - creating the rule is what
+     * makes its suggestion disappear, since the manual history that produced
+     * it stays in the ledger and a re-scan would keep finding it.
+     */
+    private fun visibleSuggestions(
+        snapshot: RecurrenceScanSnapshot?,
+        dismissedKeys: Set<String>,
+        rules: List<RecurringRule>,
+        accountById: Map<Long, Account>,
+        categoryById: Map<Long, Category>,
+    ): List<RecurrenceSuggestionItem> = snapshot?.result?.suggestions.orEmpty()
+        .filter { it.key !in dismissedKeys }
+        .filter { accountById[it.accountId]?.isArchived == false }
+        .filterNot { RecurrenceDetector.isCoveredBy(it, rules) }
+        .map { suggestion ->
+            RecurrenceSuggestionItem(
+                suggestion = suggestion,
+                category = suggestion.categoryId?.let { categoryById[it] },
+                amount = MoneyMapper.toAmount(suggestion.amountMinor, suggestion.currency),
+            )
+        }
 
     private fun RecurringRule.toItem(
         today: LocalDate,

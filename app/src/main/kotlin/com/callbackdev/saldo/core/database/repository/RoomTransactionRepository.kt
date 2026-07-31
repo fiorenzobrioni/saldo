@@ -5,6 +5,7 @@ import com.callbackdev.saldo.core.database.dao.TransactionDao
 import com.callbackdev.saldo.core.database.mapper.toDomain
 import com.callbackdev.saldo.core.database.mapper.toEntity
 import com.callbackdev.saldo.core.database.relation.CategorySpendCurrencyDayRow
+import com.callbackdev.saldo.core.database.relation.RecurrenceOccurrenceRow
 import com.callbackdev.saldo.core.database.relation.SpendCurrencyDayRow
 import com.callbackdev.saldo.core.domain.model.AccountTotal
 import com.callbackdev.saldo.core.domain.model.CategorySpendDayTotal
@@ -28,6 +29,9 @@ import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.quickentry.DescriptionUsage
+import com.callbackdev.saldo.core.domain.recurrence.CandidateOccurrence
+import com.callbackdev.saldo.core.domain.recurrence.RecurrenceAmountGroup
+import com.callbackdev.saldo.core.domain.recurrence.RecurrenceDescriptionGroup
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -266,6 +270,81 @@ class RoomTransactionRepository @Inject constructor(
     ): List<DescriptionUsage> =
         transactionDao.descriptionUsage(type.name, since.toEpochMilli(), word, foldedWord, limit)
             .map { DescriptionUsage(description = it.description, categoryId = it.categoryId) }
+
+    override suspend fun recurrenceAmountGroups(
+        since: Instant,
+        minOccurrences: Int,
+        limit: Int,
+    ): List<RecurrenceAmountGroup> =
+        transactionDao.recurrenceAmountGroups(since.toEpochMilli(), minOccurrences, limit)
+            .mapNotNull { row ->
+                val currency = runCatching { Currency.getInstance(row.currency) }.getOrNull()
+                    ?: return@mapNotNull null
+                RecurrenceAmountGroup(
+                    type = TransactionType.valueOf(row.type),
+                    accountId = row.accountId,
+                    categoryId = row.categoryId,
+                    currency = currency,
+                    amountMinor = row.amountMinor,
+                    count = row.count,
+                )
+            }
+
+    override suspend fun recurrenceDescriptionGroups(
+        since: Instant,
+        minOccurrences: Int,
+        limit: Int,
+    ): List<RecurrenceDescriptionGroup> =
+        transactionDao.recurrenceDescriptionGroups(since.toEpochMilli(), minOccurrences, limit)
+            .mapNotNull { row ->
+                val currency = runCatching { Currency.getInstance(row.currency) }.getOrNull()
+                    ?: return@mapNotNull null
+                RecurrenceDescriptionGroup(
+                    type = TransactionType.valueOf(row.type),
+                    accountId = row.accountId,
+                    categoryId = row.categoryId,
+                    currency = currency,
+                    descriptionKey = row.descriptionKey,
+                    count = row.count,
+                )
+            }
+
+    override suspend fun recurrenceAmountGroupOccurrences(
+        group: RecurrenceAmountGroup,
+        since: Instant,
+        limit: Int,
+    ): List<CandidateOccurrence> =
+        transactionDao.recurrenceAmountGroupOccurrences(
+            type = group.type.name,
+            accountId = group.accountId,
+            categoryId = group.categoryId,
+            currency = group.currency.currencyCode,
+            amountMinor = group.amountMinor,
+            sinceMillis = since.toEpochMilli(),
+            limit = limit,
+        ).map { it.toOccurrence() }
+
+    override suspend fun recurrenceDescriptionGroupOccurrences(
+        group: RecurrenceDescriptionGroup,
+        since: Instant,
+        limit: Int,
+    ): List<CandidateOccurrence> =
+        transactionDao.recurrenceDescriptionGroupOccurrences(
+            type = group.type.name,
+            accountId = group.accountId,
+            categoryId = group.categoryId,
+            currency = group.currency.currencyCode,
+            descriptionKey = group.descriptionKey,
+            sinceMillis = since.toEpochMilli(),
+            limit = limit,
+        ).map { it.toOccurrence() }
+
+    private fun RecurrenceOccurrenceRow.toOccurrence(): CandidateOccurrence =
+        CandidateOccurrence(
+            date = LocalDate.ofEpochDay(epochDay),
+            amountMinor = amountMinor,
+            description = description,
+        )
 
     override fun observeCounterpartyTotals(): Flow<List<CounterpartyTotal>> =
         transactionDao.observeCounterpartyTotals().map { rows -> rows.map { it.toDomain() } }

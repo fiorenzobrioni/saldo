@@ -50,6 +50,7 @@ import com.callbackdev.saldo.feature.rates.ExchangeRatesScreen
 import com.callbackdev.saldo.feature.recap.MonthlyRecapScreen
 import com.callbackdev.saldo.feature.recurring.RecurringRuleEditorScreen
 import com.callbackdev.saldo.feature.recurring.RecurrencesScreen
+import com.callbackdev.saldo.feature.recurring.toEditorRoute
 import com.callbackdev.saldo.feature.savings.SavingsGoalEditorScreen
 import com.callbackdev.saldo.feature.savings.SavingsGoalsScreen
 import com.callbackdev.saldo.feature.settings.SettingsScreen
@@ -253,6 +254,9 @@ fun SaldoApp(
                 },
                 onNavigateToEditRule = { id ->
                     nav.navigate(RecurringRuleEditorRoute(id))
+                },
+                onNavigateToSuggestedRule = { item ->
+                    nav.navigate(item.toEditorRoute())
                 },
             )
         }

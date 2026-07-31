@@ -531,6 +531,29 @@
     <string name="transfers_empty_body">Schedule a monthly move between accounts, for example setting money aside into savings.</string>
     <string name="transfers_planned_savings">Planned savings</string>
     <string name="transfers_planned_savings_amount">%1$s / month</string>
+    <!-- Recurrence scan and suggestions (Phase 19, ADR 43). The scan runs only from the hub row, never on its own. -->
+    <string name="recurrences_scan_title">Find unregistered recurrences</string>
+    <string name="recurrences_scan_hint">Scans the last 12 months for regular expenses and income</string>
+    <string name="recurrences_scan_running">Scanning your movements…</string>
+    <!-- %1$s is a short date, e.g. "30 Jul". -->
+    <string name="recurrences_scan_last">Last search: %1$s</string>
+    <string name="recurrences_scan_last_empty">Last search: %1$s · nothing found</string>
+    <string name="recurrences_scan_failed">The search failed. Try again.</string>
+    <string name="recurrences_scan_truncated">Partial result: the search hit its declared cap. Create or dismiss suggestions, then search again.</string>
+    <string name="recurrences_suggestions_header">Suggestions</string>
+    <!-- %1$s is a formatted amount, e.g. "12.99 €". -->
+    <string name="recurrences_suggestion_cadence_weekly">%1$s every week</string>
+    <string name="recurrences_suggestion_cadence_monthly">%1$s every month</string>
+    <string name="recurrences_suggestion_cadence_annual">%1$s every year</string>
+    <!-- %1$s is a short date, e.g. "28 Aug". -->
+    <string name="recurrences_suggestion_next">next on %1$s</string>
+    <plurals name="recurrences_suggestion_count">
+        <item quantity="one">Found %1$d time in the last 12 months</item>
+        <item quantity="other">Found %1$d times in the last 12 months</item>
+    </plurals>
+    <string name="recurrences_suggestion_dismiss">Dismiss suggestion</string>
+    <string name="recurrences_suggestion_fallback_expense">Recurring expense</string>
+    <string name="recurrences_suggestion_fallback_income">Recurring income</string>
     <string name="subscription_editor_title_new">New recurring expense</string>
     <string name="subscription_editor_title_edit">Edit recurring expense</string>
     <string name="subscription_editor_save">Save recurring expense</string>
