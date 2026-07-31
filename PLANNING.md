@@ -772,7 +772,7 @@ Voci della v2.0 che non hanno una fase propria:
 - [x] Serializzazione, derivazione e cifratura fuori dal main thread (dispatcher CPU): mezzo secondo di derivazione sul thread della UI sarebbe un blocco visibile, e la stessa passata copre l'encode del JSON che prima girava sul main
 - [x] Stringhe IT/EN; unit test: round-trip cifrato end-to-end (dati piu impostazioni), passphrase errata e passphrase vuota, header manomesso, payload troncato o alterato, base64 malformato, IV di dimensione sbagliata, iterazioni implausibili, contenitore di versione futura, iterazioni lette dall'header, due export della stessa base che non producono mai gli stessi byte, il non cifrato che importa come prima, `unlock` nell'onboarding (passphrase errata che continua a chiedere, dismiss che dimentica il contenitore)
 - [x] Documentazione: pagina della guida utente "Backup e ripristino" (cosa contiene il file, protezione con passphrase e il patto sulla sua irrecuperabilita, ripristino guidato, cancellazione dei dati), README e VISION allineati
-- [ ] Verifica su device (non eseguibile in CI, ADR 26): export cifrato e ripristino su device, passphrase sbagliata, ripristino di un backup in chiaro esportato da una versione precedente, giro dall'onboarding con file cifrato
+- [x] Verifica su device (non eseguibile in CI, ADR 26), confermata dall'utente il 31 luglio 2026 sulla 1.0.18 (CI verde sulla PR #77): export cifrato e ripristino, passphrase sbagliata, ripristino di un backup in chiaro esportato da una versione precedente, ripristino delle impostazioni dopo una cancellazione totale, giro dall'onboarding con file cifrato e in tema scuro
 
 ## Fase 22.1 - Review dell'onboarding a chiusura della v2.0 (31 luglio 2026)
 
@@ -826,7 +826,7 @@ Voci della v2.0 che non hanno una fase propria:
 
 **Comuni alle due strade**
 
-- [ ] Fasi 16, 17, 19, 22 (con la 22.0), 32 e 33 completate, cioe tutte quelle della roadmap v2.0 (la Fase cloud e opzionale e non blocca la release, come le fasi da valutare)
+- [x] Fasi 16, 17, 19, 22 (con la 22.0 e la 22.1), 32 e 33 completate, cioe tutte quelle della roadmap v2.0 (la Fase cloud e opzionale e non blocca la release, come le fasi da valutare): chiuse il 31 luglio 2026 con la verifica su device della Fase 22
 - [ ] Baseline profile, rimandato dalla v1.0: modulo `:macrobenchmark`, generazione su device o emulatore, misura del guadagno al primo avvio
 - [ ] QA manuale end-to-end con la checklist della v1.0 estesa alle funzionalita nuove
 - [ ] Migration test strumentati su device dalla v1 alla versione corrente: le Fasi 12 e 13 introducono migration reali con bump di `SALDO_DATABASE_VERSION` (ADR 26)

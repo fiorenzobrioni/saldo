@@ -14,6 +14,16 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-31 - Fase 22 verificata su device: la roadmap v2.0 e completa
+
+**Fatto:** CI verde sulla PR #77 al secondo giro (il primo era caduto su un solo rilievo detekt, `ComplexCondition` sulla guardia a quattro clausole di `BackupCrypto.open`, risolto nel codice con due predicati con un nome e non con una deroga). Giro su device confermato dall'utente sulla 1.0.18: export cifrato e ripristino, passphrase sbagliata, ripristino di un backup in chiaro esportato da una versione precedente, ripristino delle impostazioni dopo una cancellazione totale, giro dall'onboarding con file cifrato e in tema scuro. Spuntata l'ultima checkbox della Fase 22 e, per conseguenza, la prima della Fase 23: **le fasi della roadmap v2.0 (16, 17, 19, 22 con 22.0 e 22.1, 32, 33) sono tutte chiuse.** Nessun bump di versione: modifica di sola documentazione.
+
+**Problemi:** una nota che vale per i prossimi giri, scritta perche e costata un ciclo: nel workflow CI detekt analizza i sorgenti senza compilarli e gira in parallelo alla compilazione, quindi un run rosso su detekt puo morire prima che compilazione e unit test siano partiti e non dice nulla su di essi. Il primo run verde e stato il primo a dire qualcosa su compilazione e test.
+
+**Prossimo:** la Fase 23 (release v2.0), che ora ha la sua precondizione soddisfatta: restano baseline profile, QA manuale end-to-end, migration test strumentati dalla v1, compatibilita all'indietro del backup, prove su API 33 e ultimo Android stabile piu un tablet, note di rilascio in `docs/release-notes/v2.0.0.md` e allineamento finale di README, VISION e guida utente.
+
+---
+
 ## 2026-07-31 - Review dell'onboarding a chiusura della v2.0 (Fase 22.1)
 
 **Fatto:** consegnata l'ultima funzionalita della roadmap v2.0, review delle cinque pagine dell'onboarding contro lo stato reale dell'app. Struttura confermata, due testi corretti perche non erano piu veri fino in fondo. La pagina privacy prometteva "niente cloud, niente tracciamenti" senza dire nulla della lettura dei tassi BCE (ADR 40): ora nomina l'unica cosa che l'app scarica, quando succede (solo con conti in valuta estera) e che quella richiesta non porta con se alcun dato dell'utente, coerente con la card "Privacy e rete" delle Informazioni e con la sezione privacy di VISION; la stessa riga cita ora anche il backup protetto da passphrase. La pagina notifiche elencava due dei cinque motivi per cui l'app notifica, quindi chi rifiutava il permesso perche "non ho abbonamenti" rifiutava senza saperlo anche gli avvisi di budget e i promemoria di scadenza: ora copre i quattro casi visibili. Solo stringhe IT/EN, nessun cambio di codice. Bump a versionCode 170, versionName 1.0.18.
