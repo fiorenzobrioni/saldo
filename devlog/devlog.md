@@ -14,6 +14,14 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-31 - Fix compilazione androidTest e run strumentato dei candidati ricorrenza
+
+**Fatto:** il primo lancio del workflow "Instrumented tests" con filtro `TransactionDaoRecurrenceCandidatesTest` moriva su `compileDebugAndroidTestKotlin`, prima di eseguire qualunque test: il refactor 9fe796a aveva aggiunto `RecurrenceCandidateDao` come terzo parametro del costruttore di `RoomTransactionRepository`, ma `BalanceAdjustmentTest` (unico punto in androidTest che lo istanzia a mano) era rimasto alla firma a due parametri. Il filtro per classe agisce solo a runtime, Gradle compila comunque l'intero source set. Fix con PR #76 (mergiata): il test passa anche il nuovo DAO. Rilanciato il workflow sul branch: suite verde, i 9 casi di `TransactionDaoRecurrenceCandidatesTest` eseguiti e passati. Nessun bump di versione: la modifica tocca solo il source set di test, l'APK dell'app non cambia.
+
+**Prossimo:** secondo l'ordine della roadmap v2.0, la Fase 22 (cifratura del backup con passphrase) e poi la Fase 23 (release v2.0).
+
+---
+
 ## 2026-07-31 - Fase 19 verificata su device e chiusa
 
 **Fatto:** dopo il fix detekt (CI verde sul commit 9fe796a, vedi la voce sotto), verifica su device dell'utente con una base dati di prova di 400 movimenti da gennaio 2026: la ricerca a comando risponde subito e ha proposto 5 ricorrenze suggerite. Spuntata la checkbox di misurazione: la Fase 19 e chiusa. Il vincolo "nessun lavoro senza il tap" vale per costruzione (nessun worker, nessun osservatore: le query dei candidati sono raggiungibili solo dall'azione esplicita, ADR 43).
