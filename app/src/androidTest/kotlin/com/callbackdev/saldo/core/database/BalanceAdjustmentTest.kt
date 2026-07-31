@@ -46,8 +46,11 @@ class BalanceAdjustmentTest {
             .allowMainThreadQueries()
             .build()
         accountRepository = RoomAccountRepository(database.accountDao())
-        transactionRepository =
-            RoomTransactionRepository(database.transactionDao(), database.foreignFlowDao())
+        transactionRepository = RoomTransactionRepository(
+            database.transactionDao(),
+            database.foreignFlowDao(),
+            database.recurrenceCandidateDao(),
+        )
         adjustBalance = AdjustBalanceUseCase(
             accountRepository = accountRepository,
             transactionRepository = transactionRepository,
