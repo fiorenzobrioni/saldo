@@ -128,7 +128,7 @@ Lingue, commit, regole di dominio sugli importi, stringhe e gate di build stanno
 - [x] Card oggi (spese/entrate/netto)
 - [x] Card mese corrente + confronto con stesso giorno mese precedente
 - [x] Card abbonamenti del mese (totale + prossimo addebito) - placeholder (teaser) finché Fase 6 non è pronta
-- [x] Ultimi 5–7 movimenti con tap → dettaglio
+- [x] Ultimi 5-7 movimenti con tap → dettaglio
 - [x] FAB con 3 quick action (speed-dial: spesa/entrata/trasferimento, con tipo preimpostato)
 - [x] Empty state prima apertura (CTA: crea il primo account)
 - [x] Performance: dashboard reattiva via Flow combinati, nessun ricalcolo manuale
@@ -642,7 +642,7 @@ Lingue, commit, regole di dominio sugli importi, stringhe e gate di build stanno
 
 Voci della v2.0 che non hanno una fase propria:
 
-- [ ] Ricerca potenziata con suggerimenti: chip di categorie, tag e descrizioni frequenti proposte sotto il campo di ricerca del registro, per arrivare al filtro giusto senza digitare
+- [ ] Ricerca potenziata con suggerimenti: chip di categorie, tag e descrizioni frequenti proposte sotto il campo di ricerca del registro, per arrivare al filtro giusto senza digitare. **Unica voce della v2.0 rimasta aperta al 31 luglio 2026**, notata mentre si preparava la release: da decidere prima del tag se implementarla (nessun ADR necessario, riusa il motore filtri e le query di `mostUsedCategories`/`descriptionUsage` che esistono) o se spostarla dichiaratamente alla roadmap v3.0. Non blocca nulla di quanto consegnato
 - [ ] Miglioramenti UX dal feedback della v1.0
 
 ## Fase 12 - Crediti e debiti verso persone
@@ -828,13 +828,13 @@ Voci della v2.0 che non hanno una fase propria:
 
 - [x] Fasi 16, 17, 19, 22 (con la 22.0 e la 22.1), 32 e 33 completate, cioe tutte quelle della roadmap v2.0 (la Fase cloud e opzionale e non blocca la release, come le fasi da valutare): chiuse il 31 luglio 2026 con la verifica su device della Fase 22
 - [ ] Baseline profile, rimandato dalla v1.0: modulo `:macrobenchmark`, generazione su device o emulatore, misura del guadagno al primo avvio
-- [ ] QA manuale end-to-end con la checklist della v1.0 estesa alle funzionalita nuove
+- [ ] QA manuale end-to-end con la checklist della v1.0 estesa alle funzionalita nuove: la checklist e scritta e pronta da seguire in [docs/qa-checklist-v2.0.md](./docs/qa-checklist-v2.0.md) (18 sezioni, dalla prova di aggiornamento in place alla resa su tablet), resta da eseguire
 - [ ] Migration test strumentati su device dalla v1 alla versione corrente: le Fasi 12 e 13 introducono migration reali con bump di `SALDO_DATABASE_VERSION` (ADR 26)
 - [ ] Compatibilita all'indietro del backup: ripristino di un file esportato dalla 1.0 su un'installazione 2.0, piu un round-trip del contenitore cifrato (Fase 22)
 - [ ] Test su device reali: API 33 e ultimo Android stabile, piu tablet o schermo grande
 - [ ] `versionCode` +1 e `versionName` 2.0.0
-- [ ] Note di rilascio in `docs/release-notes/v2.0.0.md`, con una sezione "cosa cambia dalla 1.0"
-- [ ] README, VISION e guida utente allineati alle funzionalita nuove
+- [ ] Note di rilascio in `docs/release-notes/v2.0.0.md`, con una sezione "cosa cambia dalla 1.0": bozza completa scritta il 31 luglio 2026 (il file porta in testa un commento con i punti da confermare al tag: baseline profile, conteggio dei test, data). Include per scelta una sezione dedicata al permesso `INTERNET` comparso con la 2.0, che la 1.0 dichiarava esplicitamente di non avere: una modifica del genere si annuncia, non si lascia scoprire
+- [x] README, VISION e guida utente allineati alle funzionalita nuove (31 luglio 2026): README con la sezione roadmap aggiornata (l'elenco funzionalita era gia allineato fase per fase); VISION con il perimetro v2.0 dichiarato completo, la voce "ricerca con suggerimenti" separata perche **non** consegnata e la nota sulle sottocategorie chiusa; guida utente con tre pagine nuove ([multi-valuta.md](./docs/guida-utente/multi-valuta.md), [aggiunta-rapida.md](./docs/guida-utente/aggiunta-rapida.md), [tag.md](./docs/guida-utente/tag.md)), la sezione sulle ricorrenze suggerite in [movimenti-ricorrenti.md](./docs/guida-utente/movimenti-ricorrenti.md) e le due affermazioni non piu vere in [descrizione-generale.md](./docs/guida-utente/descrizione-generale.md) corrette (la rete serve anche ai tassi, e non esiste alcun account Google da collegare)
 
 **Strada A - Release su GitHub (procedura della v1.0)**
 

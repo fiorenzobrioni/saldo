@@ -114,6 +114,19 @@ Recupero all'apertura e controllo in background possono capitare a ridosso l'uno
 - **Da confermare**: quando ci sono movimenti in attesa (modalità con conferma o importo variabile) che aspettano la tua conferma.
 - **Pre-rinnovo (opzionale)**: un promemoria prima della scadenza, per esempio "Netflix si rinnova tra 3 giorni", con anticipo configurabile. Va attivato: di default è spento.
 
+## Ricorrenze suggerite
+
+Nell'hub, sopra l'elenco, c'è la riga **"Cerca ricorrenze non registrate"**. Quando la tocchi, l'app guarda gli ultimi 12 mesi dei tuoi movimenti e propone quelli che registri a mano con una cadenza regolare: l'abbonamento sempre allo stesso importo, la bolletta che cambia cifra ma torna ogni due mesi.
+
+- La ricerca parte **solo da quel tap**. Non c'è nessuna analisi automatica in background: se non la usi, non costa niente in batteria né in tempo.
+- Ogni suggerimento mostra il nome che deduce dalle tue descrizioni, l'importo con la cadenza (con "≈" quando l'importo varia), la prossima occorrenza prevista e quante volte l'ha trovato.
+- Un tap sul suggerimento apre l'editor della regola **già precompilato**: nulla viene creato finché non salvi tu. Lo storico non viene rigenerato, quindi non ti ritrovi movimenti doppi per i mesi passati.
+- La **X** scarta un suggerimento: non riappare più.
+- L'esito resta salvato con la sua data, così riaprendo l'hub lo ritrovi come l'avevi lasciato; toccare di nuovo la riga rifà la ricerca.
+- Le serie ferme non vengono proposte, e nemmeno quelle già coperte da una regola che hai. Trasferimenti, rettifiche e movimenti esclusi dalle statistiche restano fuori: una regola non saprebbe riprodurli.
+
+Tutto avviene sul dispositivo: nessun dato esce per essere analizzato.
+
 ## Modificare o eliminare una regola
 
 - **Modifica**: cambiare importo, nome, conto o altri campi non tocca i movimenti già registrati; vale per le occorrenze future. Se cambi la cadenza (frequenza, data di partenza o giorno di riferimento), la generazione riparte allineata alla nuova cadenza, sempre senza recuperare il passato della nuova pianificazione.

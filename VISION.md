@@ -59,7 +59,7 @@ L'app è un **Expense Tracker evoluto**, non un sistema bancario.
 - **Privacy-first**: nessun dato lascia il dispositivo senza azione esplicita dell'utente
 - **Zero backend obbligatorio**: nessun server proprietario
 - **Nessun account obbligatorio**: l'account Google serve solo per backup/export opzionali
-- **Zero frizione**: registrare una spesa deve richiedere 2–3 tap
+- **Zero frizione**: registrare una spesa deve richiedere 2-3 tap
 
 ---
 
@@ -200,7 +200,7 @@ Ogni categoria ha:
 
 Note di design:
 
-- **niente sottocategorie nel MVP**: i tag coprono il 90% del bisogno con molta meno complessità UI. Rivalutare in v2.0 se emergono richieste reali.
+- **niente sottocategorie**: i tag coprono il 90% del bisogno con molta meno complessità UI. Rivalutata alla chiusura della v2.0 e confermata: nessuna richiesta reale, e la gestione dei tag arrivata con la v2.0 (rinomina, unione, eliminazione) ha coperto il bisogno di rimettere ordine.
 - una categoria eliminata non elimina i movimenti: chiede a quale categoria riassegnarli (o "Altro")
 
 ---
@@ -258,13 +258,13 @@ Budget mese: 320,00 € rimanenti su 1.500,00 €
 █████████░░░░  79%
 ```
 
-### 6. Ultimi movimenti (5–7)
+### 6. Ultimi movimenti (5-7)
 
 ```text
-Supermercato Esselunga   -45,00 €   Spesa · Carta Visa
-Stipendio             +2.000,00 €   Stipendio · Conto Intesa
-Netflix                  -12,99 €   Abbonamenti · Carta Visa  ↻
-Benzina                  -30,00 €   Auto · Contanti
+Supermercato Esselunga   -45,00 €   Spesa - Carta Visa
+Stipendio             +2.000,00 €   Stipendio - Conto Intesa
+Netflix                  -12,99 €   Abbonamenti - Carta Visa  ↻
+Benzina                  -30,00 €   Auto - Contanti
 ```
 
 Il simbolo ↻ indica un movimento generato da una ricorrenza.
@@ -277,7 +277,7 @@ Floating Action Button sempre visibile con tre azioni:
 - ➕ Aggiungi entrata
 - ⇄ Aggiungi trasferimento
 
-**Requisito UX:** registrare una spesa "tipica" (importo + categoria, account di default) deve richiedere **massimo 2–3 tap più la digitazione dell'importo**. La schermata di inserimento apre direttamente il tastierino numerico.
+**Requisito UX:** registrare una spesa "tipica" (importo + categoria, account di default) deve richiedere **massimo 2-3 tap più la digitazione dell'importo**. La schermata di inserimento apre direttamente il tastierino numerico.
 
 ---
 
@@ -361,7 +361,7 @@ Categoria: Ristoranti    Budget: 200 €   Speso: 180 €   ██████�
 Categoria: Spesa         Budget: 400 €   Speso: 420 €   ██████████ 105% 🔴
 ```
 
-Indicatori: 🟢 sotto budget (< 80%) · 🟡 vicino al limite (80–100%) · 🔴 superato.
+Indicatori: 🟢 sotto budget (< 80%) - 🟡 vicino al limite (80-100%) - 🔴 superato.
 
 Comportamento:
 
@@ -540,7 +540,7 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 # UI / UX - Principi
 
 - **zero frizione**: inserire una spesa è l'azione più frequente, va ottimizzata sopra ogni cosa
-- massimo 2–3 tap per registrare un movimento
+- massimo 2-3 tap per registrare un movimento
 - dashboard immediata, leggibile in 5 secondi
 - valori monetari sempre formattati secondo locale, sempre con segno esplicito
 - gesti rapidi sulla lista movimenti: swipe per eliminare (con undo via Snackbar), tap per modificare
@@ -565,7 +565,7 @@ UI (Compose + Navigation 3)
         ↓
    Repository (interfacce nel dominio, implementazioni nel data layer)
         ↓
- Room DB  ·  DataStore  ·  Backup/Export layer (Drive, CSV, Sheets)
+ Room DB  -  DataStore  -  Backup/Export layer (Drive, CSV, Sheets)
 ```
 
 Linee guida:
@@ -623,17 +623,18 @@ Anticipato dalle roadmap successive prima del rilascio:
 
 Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, spostato a una fase da valutare a fine roadmap (ADR 17). Il backup della v1.0 è quello manuale su file.
 
-## v2.0
+## v2.0 (perimetro completo, in rilascio)
 
 - Crediti e debiti verso persone
 - Movimenti futuri e scadenze una tantum (elenco "in arrivo", promemoria, stima a fine mese che li conta)
 - PIN + biometria + FLAG_SECURE (consegnato in anticipo, dopo la 1.0.0)
 - Conversione valuta automatica
-- Gestione tag dedicata e ricerca con suggerimenti
+- Gestione tag dedicata (rinomina, unione, eliminazione)
 - Rilevamento automatico delle ricorrenze
 - Aggiunta rapida dalla tendina delle impostazioni rapide, e inserimento rapido testuale ("12,50 pizza")
 - Cifratura backup (opzionale, con passphrase) e backup che include anche le impostazioni
 - Miglioramenti UX dal feedback della v1.0
+- Non entrata nel perimetro consegnato, da riassegnare a una roadmap successiva: la **ricerca con suggerimenti** (chip di categorie, tag e descrizioni frequenti sotto il campo di ricerca del registro)
 - Da valutare, fuori dal piano: allegati fotografici ai movimenti, rimborsi collegati alla spesa originale, commissioni sui trasferimenti, analisi avanzate, export PDF/Excel/Google Sheets, pagamento parziale dell'estratto carta, arrotondamento degli spiccioli, riepilogo settimanale, backup automatico su Google Drive
 
 ---

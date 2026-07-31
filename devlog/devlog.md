@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-07-31 - Materiali della release v2.0: note, checklist QA e documentazione allineata
+
+**Fatto:** preparata la parte scrivibile della Fase 23. Note di rilascio in `docs/release-notes/v2.0.0.md` sul modello della v1.0.0 (stesso ordine di sezioni, stesso tono), con la sezione "cosa cambia dalla 1.0" organizzata per quello che l'utente guadagna e non per fase: valuta estera nei totali, crediti e debiti, In arrivo, blocco app e backup cifrato, backup completo, scorciatoie di inserimento, gestione tag. Il file porta in testa un commento coi punti da confermare al tag (baseline profile, conteggio dei test, data). Checklist QA in `docs/qa-checklist-v2.0.md`: 113 voci in 18 sezioni, scritte come esito atteso e non come azione, dalla prova di aggiornamento in place fino alla resa su tablet, con in coda le verifiche non manuali da allegare al giro (workflow strumentato, CI, baseline profile). Documentazione allineata: README (sezione roadmap; l'elenco funzionalita era gia aggiornato fase per fase), VISION (perimetro v2.0 dichiarato completo, nota sulle sottocategorie chiusa), guida utente con tre pagine nuove (`multi-valuta.md`, `aggiunta-rapida.md`, `tag.md`), la sezione sulle ricorrenze suggerite in `movimenti-ricorrenti.md` e due affermazioni corrette in `descrizione-generale.md`. Nessun bump di versione: sola documentazione.
+
+**Decisioni:** le note di rilascio dedicano una sezione al permesso `INTERNET`, che la 1.0 dichiarava esplicitamente di **non** avere: una modifica del genere si annuncia in evidenza, non si lascia scoprire da chi legge il manifest. La pagina di guida sul multi-valuta e stata scritta per prima fra le tre perche e quella dove un utente puo fraintendere una cifra (le due regole della conversione, il "≈", la data del tasso); tag e aggiunta rapida sono descrittive e rischiano meno. Ripulita anche la tipografia di VISION e PLANNING dai trattini lunghi e dai punti mediani rimasti da prima della regola in CLAUDE.md.
+
+**Problemi:** trovata una voce della roadmap v2.0 ancora aperta, che non e una fase e per questo era sfuggita al conteggio: la **ricerca potenziata con suggerimenti** (chip di categorie, tag e descrizioni frequenti sotto il campo di ricerca del registro). Non blocca niente di consegnato, ma va deciso prima del tag se implementarla o spostarla dichiaratamente alla roadmap v3.0: la nota e ora sulla voce in PLANNING, in modo che la decisione sia esplicita e non implicita.
+
+**Prossimo:** decisione sulla ricerca con suggerimenti; poi baseline profile, giro di QA con la checklist, migration test strumentati dalla v1, bump a 2.0.0, tag e release.
+
+---
+
 ## 2026-07-31 - Fase 22 verificata su device: la roadmap v2.0 e completa
 
 **Fatto:** CI verde sulla PR #77 al secondo giro (il primo era caduto su un solo rilievo detekt, `ComplexCondition` sulla guardia a quattro clausole di `BackupCrypto.open`, risolto nel codice con due predicati con un nome e non con una deroga). Giro su device confermato dall'utente sulla 1.0.18: export cifrato e ripristino, passphrase sbagliata, ripristino di un backup in chiaro esportato da una versione precedente, ripristino delle impostazioni dopo una cancellazione totale, giro dall'onboarding con file cifrato e in tema scuro. Spuntata l'ultima checkbox della Fase 22 e, per conseguenza, la prima della Fase 23: **le fasi della roadmap v2.0 (16, 17, 19, 22 con 22.0 e 22.1, 32, 33) sono tutte chiuse.** Nessun bump di versione: modifica di sola documentazione.
