@@ -128,7 +128,7 @@ Lingue, commit, regole di dominio sugli importi, stringhe e gate di build stanno
 - [x] Card oggi (spese/entrate/netto)
 - [x] Card mese corrente + confronto con stesso giorno mese precedente
 - [x] Card abbonamenti del mese (totale + prossimo addebito) - placeholder (teaser) finché Fase 6 non è pronta
-- [x] Ultimi 5–7 movimenti con tap → dettaglio
+- [x] Ultimi 5-7 movimenti con tap → dettaglio
 - [x] FAB con 3 quick action (speed-dial: spesa/entrata/trasferimento, con tipo preimpostato)
 - [x] Empty state prima apertura (CTA: crea il primo account)
 - [x] Performance: dashboard reattiva via Flow combinati, nessun ricalcolo manuale
@@ -640,10 +640,9 @@ Lingue, commit, regole di dominio sugli importi, stringhe e gate di build stanno
 >
 > Restano deliberatamente fuori (valutate e scartate): la **riconciliazione con flag "spuntato" per movimento** (richiede una colonna, una modalita dedicata e un'abitudine che l'utente tipo non ha; la rettifica saldo continua a coprire il riallineamento), i **conti "bene" non transazionali** per immobili o portafogli valorizzati a mano (poco codice ma rompono la semantica di Account, "il luogo dove si trovano i soldi", e si infilerebbero in ogni picker di conto degli editor), piu i due candidati che la review stessa chiude: il **beneficiario/payee come entita** (coperto da descrizione, ricerca full-text e tag; raddoppierebbe i selettori dell'editor senza una richiesta reale) e le **sottocategorie** (coperte dai tag, rinviate per scelta in VISION: non si implementano senza rivedere quella decisione).
 
-Voci della v2.0 che non hanno una fase propria:
+Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla preparazione della release):
 
-- [ ] Ricerca potenziata con suggerimenti: chip di categorie, tag e descrizioni frequenti proposte sotto il campo di ricerca del registro, per arrivare al filtro giusto senza digitare
-- [ ] Miglioramenti UX dal feedback della v1.0
+- [x] Miglioramenti UX dal feedback della v1.0: assorbiti dalle rifiniture di ogni fase invece di essere un lavoro a se (giri su device delle Fasi 12, 13, 16 e 17, rifiniture della riga dei tassi e della lista Conti, review dell'onboarding della Fase 22.1). Non resta lavoro pendente sotto questa voce: il feedback successivo alla 2.0 aprira le sue fasi
 
 ## Fase 12 - Crediti e debiti verso persone
 
@@ -828,13 +827,13 @@ Voci della v2.0 che non hanno una fase propria:
 
 - [x] Fasi 16, 17, 19, 22 (con la 22.0 e la 22.1), 32 e 33 completate, cioe tutte quelle della roadmap v2.0 (la Fase cloud e opzionale e non blocca la release, come le fasi da valutare): chiuse il 31 luglio 2026 con la verifica su device della Fase 22
 - [ ] Baseline profile, rimandato dalla v1.0: modulo `:macrobenchmark`, generazione su device o emulatore, misura del guadagno al primo avvio
-- [ ] QA manuale end-to-end con la checklist della v1.0 estesa alle funzionalita nuove
+- [ ] QA manuale end-to-end con la checklist della v1.0 estesa alle funzionalita nuove: la checklist e scritta e pronta da seguire in [docs/qa-checklist-v2.0.md](./docs/qa-checklist-v2.0.md) (18 sezioni, dalla prova di aggiornamento in place alla resa su tablet), resta da eseguire
 - [ ] Migration test strumentati su device dalla v1 alla versione corrente: le Fasi 12 e 13 introducono migration reali con bump di `SALDO_DATABASE_VERSION` (ADR 26)
 - [ ] Compatibilita all'indietro del backup: ripristino di un file esportato dalla 1.0 su un'installazione 2.0, piu un round-trip del contenitore cifrato (Fase 22)
 - [ ] Test su device reali: API 33 e ultimo Android stabile, piu tablet o schermo grande
 - [ ] `versionCode` +1 e `versionName` 2.0.0
-- [ ] Note di rilascio in `docs/release-notes/v2.0.0.md`, con una sezione "cosa cambia dalla 1.0"
-- [ ] README, VISION e guida utente allineati alle funzionalita nuove
+- [ ] Note di rilascio in `docs/release-notes/v2.0.0.md`, con una sezione "cosa cambia dalla 1.0": bozza completa scritta il 31 luglio 2026 (il file porta in testa un commento con i punti da confermare al tag: baseline profile, conteggio dei test, data). Include per scelta una sezione dedicata al permesso `INTERNET` comparso con la 2.0, che la 1.0 dichiarava esplicitamente di non avere: una modifica del genere si annuncia, non si lascia scoprire
+- [x] README, VISION e guida utente allineati alle funzionalita nuove (31 luglio 2026): README con la sezione roadmap aggiornata (l'elenco funzionalita era gia allineato fase per fase); VISION con il perimetro v2.0 dichiarato completo, la voce "ricerca con suggerimenti" separata perche **non** consegnata e la nota sulle sottocategorie chiusa; guida utente con tre pagine nuove ([multi-valuta.md](./docs/guida-utente/multi-valuta.md), [aggiunta-rapida.md](./docs/guida-utente/aggiunta-rapida.md), [tag.md](./docs/guida-utente/tag.md)), la sezione sulle ricorrenze suggerite in [movimenti-ricorrenti.md](./docs/guida-utente/movimenti-ricorrenti.md) e le due affermazioni non piu vere in [descrizione-generale.md](./docs/guida-utente/descrizione-generale.md) corrette (la rete serve anche ai tassi, e non esiste alcun account Google da collegare)
 
 **Strada A - Release su GitHub (procedura della v1.0)**
 
@@ -860,7 +859,7 @@ Voci della v2.0 che non hanno una fase propria:
 
 # Roadmap v3.0
 
-> Candidati della review delle funzionalita finanziarie ([docs/review-funzionalita-finanziarie-2026-07-27.md](./docs/review-funzionalita-finanziarie-2026-07-27.md)) promossi a fasi dettagliate il 28 luglio 2026 e collocati, per decisione esplicita, dopo la release v2.0: si dettagliano ora per non perdere le note della review, si eseguono dopo la Fase 23. Le tre rimaste sono la 24, la 25 e la 26: superano il criterio di selezione della roadmap v2.0 ma non hanno l'urgenza di precedere il rilascio. Nessuna di queste fasi ha ancora un ADR: ogni fase elenca le decisioni da proporre come ADR all'avvio. La fase di release v3.0 si definira alla chiusura di queste, con la stessa procedura della Fase 23.
+> Candidati della review delle funzionalita finanziarie ([docs/review-funzionalita-finanziarie-2026-07-27.md](./docs/review-funzionalita-finanziarie-2026-07-27.md)) promossi a fasi dettagliate il 28 luglio 2026 e collocati, per decisione esplicita, dopo la release v2.0: si dettagliano ora per non perdere le note della review, si eseguono dopo la Fase 23. Le tre rimaste sono la 24, la 25 e la 26: superano il criterio di selezione della roadmap v2.0 ma non hanno l'urgenza di precedere il rilascio. A queste si aggiunge la Fase 34, spostata qui dalla roadmap v2.0 il 31 luglio 2026. Nessuna di queste fasi ha ancora un ADR: ogni fase elenca le decisioni da proporre come ADR all'avvio. La fase di release v3.0 si definira alla chiusura di queste, con la stessa procedura della Fase 23.
 >
 > Restano esclusi anche da questa roadmap, come raccomanda la review stessa: il beneficiario/payee come entita separata (coperto da descrizione, ricerca full-text e tag) e le sottocategorie (coperte dai tag, rinviate per scelta in VISION).
 
@@ -898,6 +897,16 @@ Voci della v2.0 che non hanno una fase propria:
 - [ ] Eliminazione categoria con riassegnazione: le fette seguono la stessa riassegnazione dei movimenti (Fase 4 e fix della Fase 10.14)
 - [ ] Migration forward con bump (ADR 26), backup additivo (lista di fette per movimento); export CSV: decidere la rappresentazione (una riga per fetta o colonna aggiuntiva) e dichiararla nella schermata
 - [ ] Stringhe IT/EN; unit test pesanti su statistiche e budget (fette vs categoria del movimento, mai doppio conteggio), somma vincolata, riassegnazione, round-trip backup, import CSV invariato per il caso semplice
+
+## Fase 34 - Ricerca con suggerimenti
+
+> Voce della roadmap v2.0 che non ha mai avuto una fase propria, spostata qui **per decisione esplicita del 31 luglio 2026**, alla preparazione della release v2.0: non e stata implementata, non blocca nulla di quanto consegnato e non vale la pena farla entrare a ridosso di un tag. Il campo di ricerca del registro funziona: quello che manca e la scorciatoia per arrivare al filtro giusto senza digitare.
+
+- [ ] ADR non necessario per la meccanica (nessun dato nuovo, nessuna tabella, nessuna query nuova da inventare): si riusano il motore filtri esistente e le query che alimentano gia altre superfici, `mostUsedCategories` per le categorie e `descriptionUsage` per le descrizioni (la seconda esiste per il suggeritore di categoria dell'ADR 42, con la sua finestra e i suoi tetti). Da dichiarare invece, prima di scrivere codice, i tetti di questa superficie: quante chip, su che finestra, con quale debounce
+- [ ] Chip sotto il campo di ricerca del registro: categorie e tag piu usati e descrizioni frequenti, un tocco applica il filtro corrispondente invece di scrivere il testo. Le chip sono scorciatoie ai filtri che esistono, non un secondo motore di ricerca
+- [ ] Costo a riposo: le chip si calcolano solo a campo di ricerca aperto, mai al caricamento del registro (spirito dell'ADR 37); niente osservatori nuovi
+- [ ] Il campo di testo resta la via principale e non cambia comportamento: le chip aggiungono, non sostituiscono
+- [ ] Stringhe IT/EN; unit test sulla selezione delle chip (ordinamento per uso, esclusione di quelle gia applicate, tetti dichiarati) e sull'applicazione del filtro corrispondente
 
 ---
 

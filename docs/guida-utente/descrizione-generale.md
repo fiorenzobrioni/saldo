@@ -41,9 +41,9 @@ Alcune cose sono escluse di proposito, per restare un'app semplice e focalizzata
 
 Questi principi guidano ogni scelta dell'app e non vengono derogati:
 
-- **Funziona offline**: tutte le funzioni principali funzionano senza connessione. La rete serve solo per i backup ed export opzionali.
-- **Privacy prima di tutto**: nessun dato lascia il dispositivo senza un'azione esplicita da parte tua.
-- **Nessun account obbligatorio**: puoi usare l'app senza registrarti. Un account Google serve solo se vuoi il backup o l'export sul cloud.
+- **Funziona offline**: tutte le funzioni principali funzionano senza connessione. L'unica cosa che l'app scarica sono i tassi di cambio, e solo se hai conti in valuta diversa dalla principale: quella richiesta non porta con sé nessun tuo dato, i tassi restano in cache e senza rete vale l'ultimo tasso noto. Si può disattivare (vedi [Multi-valuta](multi-valuta.md)).
+- **Privacy prima di tutto**: nessun dato lascia il dispositivo senza un'azione esplicita da parte tua. Nessuna telemetria, nessun account, nessun servizio di terze parti.
+- **Nessun account obbligatorio**: non serve registrarsi, e non esiste nessuna registrazione da fare. Il backup è un file che scegli tu dove salvare.
 - **Poca frizione**: registrare una spesa richiede pochi tap, con il tastierino numerico che si apre da subito.
 - **Affidabile nel tempo**: quando il saldo dell'app si discosta da quello reale (capita di dimenticare movimenti), la rettifica saldo lo riallinea senza sporcare le statistiche.
 
@@ -66,4 +66,4 @@ Il saldo di un conto non è un numero salvato che l'app aggiorna a mano: è semp
 
 ## Lingua e valuta
 
-L'app è disponibile in italiano e inglese e segue le convenzioni locali per numeri, valute e date. Ogni movimento conserva il proprio importo e la propria valuta, e ogni conto ha la sua valuta principale; la valuta principale dell'app si sceglie al primo avvio.
+L'app è disponibile in italiano e inglese e segue le convenzioni locali per numeri, valute e date. Ogni movimento conserva il proprio importo e la propria valuta, e ogni conto ha la sua valuta; la valuta principale dell'app si sceglie al primo avvio e si cambia dalle Impostazioni. Se hai conti in valuta estera, l'app ne mostra il controvalore stimato nella valuta principale, sempre dichiarato come stima: vedi [Multi-valuta e tassi di cambio](multi-valuta.md).
