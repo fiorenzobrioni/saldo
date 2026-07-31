@@ -23,6 +23,8 @@ import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -30,6 +32,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +64,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
 import com.callbackdev.saldo.core.designsystem.component.SaldoCard
+import com.callbackdev.saldo.core.designsystem.component.SettingsSwitchRow
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
@@ -96,7 +100,9 @@ fun BackupScreen(
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
-    ) { uri -> uri?.let(viewModel::onExportDestinationPicked) }
+    ) { uri ->
+        if (uri == null) viewModel.onExportCancelled() else viewModel.onExportDestinationPicked(uri)
+    }
     val restoreLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
     ) { uri -> uri?.let(viewModel::onRestoreFilePicked) }
@@ -104,6 +110,11 @@ fun BackupScreen(
     LaunchedEffect(viewModel, resources) {
         viewModel.events.collect { event ->
             val message = when (event) {
+                is BackupEvent.LaunchExportPicker -> {
+                    exportLauncher.launch(suggestedBackupFileName(encrypted = event.encrypted))
+                    return@collect
+                }
+
                 is BackupEvent.ExportCompleted ->
                     resources.getString(R.string.backup_snackbar_exported, event.summary.transactions)
 
@@ -123,6 +134,12 @@ fun BackupScreen(
                             R.string.backup_error_unsupported_version
 
                         ImportBackupUseCase.Error.CORRUPTED -> R.string.backup_error_corrupted
+
+                        ImportBackupUseCase.Error.WRONG_PASSPHRASE ->
+                            R.string.backup_error_wrong_passphrase
+
+                        ImportBackupUseCase.Error.UNSUPPORTED_CONTAINER ->
+                            R.string.backup_error_unsupported_container
                     },
                 )
             }
@@ -162,7 +179,9 @@ fun BackupScreen(
             ExportCard(
                 lastBackupAt = uiState.lastBackupAt,
                 enabled = !uiState.isWorking,
-                onExport = { exportLauncher.launch(suggestedBackupFileName()) },
+                isEncryptionEnabled = uiState.isEncryptionEnabled,
+                onEncryptionEnabledChange = viewModel::onEncryptionEnabledChanged,
+                onExport = viewModel::onExportRequested,
             )
             Spacer(Modifier.height(SaldoDimens.cardSpacing))
             RestoreCard(
@@ -177,6 +196,21 @@ fun BackupScreen(
                 onErase = viewModel::onEraseRequested,
             )
         }
+    }
+
+    if (uiState.isAskingExportPassphrase) {
+        ExportPassphraseDialog(
+            onConfirm = viewModel::onExportPassphraseConfirmed,
+            onDismiss = viewModel::onExportPassphraseDismissed,
+        )
+    }
+
+    uiState.unlockRequest?.let { request ->
+        UnlockPassphraseDialog(
+            request = request,
+            onSubmit = viewModel::onUnlockPassphraseSubmitted,
+            onDismiss = viewModel::onUnlockDismissed,
+        )
     }
 
     uiState.pendingRestore?.let { summary ->
@@ -319,8 +353,15 @@ private fun EraseConfirmationDialog(
     )
 }
 
-/** `saldo-backup-YYYY-MM-DD.json`, the name suggested to the SAF create dialog. */
-private fun suggestedBackupFileName(): String = "saldo-backup-${LocalDate.now()}.json"
+/**
+ * The name suggested to the SAF create dialog: `saldo-backup-YYYY-MM-DD.json`,
+ * or `...-enc.json` for an encrypted one. Both stay `.json` because both are
+ * JSON documents - the encrypted one carries its payload inside a container
+ * (ADR 44) - and the marker only helps the user tell two files apart in a
+ * folder. Nothing on the read path ever looks at the name.
+ */
+private fun suggestedBackupFileName(encrypted: Boolean): String =
+    "saldo-backup-${LocalDate.now()}${if (encrypted) "-enc" else ""}.json"
 
 /** Offline-first reassurance: what a backup is and where it lives (nowhere but the file). */
 @Composable
@@ -364,60 +405,105 @@ private fun PrivacyHeroCard(modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Export, with its protection choice attached below the action instead of hidden
+ * in Settings: whether the file is readable by anyone who finds it is part of
+ * exporting it, and the note under the switch always describes the file that the
+ * button is about to write - never the other one.
+ */
 @Composable
 private fun ExportCard(
     lastBackupAt: Instant?,
     enabled: Boolean,
+    isEncryptionEnabled: Boolean,
+    onEncryptionEnabledChange: (Boolean) -> Unit,
     onExport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SaldoCard(
         modifier = modifier.fillMaxWidth(),
     ) {
-        Column(modifier = Modifier.padding(SaldoDimens.cardPadding)) {
-            Text(
-                text = stringResource(R.string.backup_export_title),
-                style = MaterialTheme.typography.titleMedium,
+        Column {
+            Column(modifier = Modifier.padding(SaldoDimens.cardPadding)) {
+                Text(
+                    text = stringResource(R.string.backup_export_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.backup_export_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = lastBackupAt
+                        ?.let { stringResource(R.string.backup_last_backup, formatBackupInstant(it)) }
+                        ?: stringResource(R.string.backup_last_backup_never),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = onExport,
+                    enabled = enabled,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Icon(
+                        imageVector = if (isEncryptionEnabled) {
+                            Icons.Outlined.Lock
+                        } else {
+                            Icons.Outlined.FileUpload
+                        },
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    Text(
+                        stringResource(
+                            if (isEncryptionEnabled) {
+                                R.string.backup_export_action_encrypted
+                            } else {
+                                R.string.backup_export_action
+                            },
+                        ),
+                    )
+                }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            SettingsSwitchRow(
+                title = stringResource(R.string.backup_encryption_title),
+                hint = stringResource(R.string.backup_encryption_hint),
+                checked = isEncryptionEnabled,
+                onCheckedChange = onEncryptionEnabledChange,
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.backup_export_body),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = lastBackupAt
-                    ?.let { stringResource(R.string.backup_last_backup, formatBackupInstant(it)) }
-                    ?: stringResource(R.string.backup_last_backup_never),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = onExport,
-                enabled = enabled,
-                modifier = Modifier.fillMaxWidth(),
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(
+                    start = SaldoDimens.cardPadding,
+                    end = SaldoDimens.cardPadding,
+                    bottom = SaldoDimens.cardPadding,
+                ),
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.FileUpload,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.size(8.dp))
-                Text(stringResource(R.string.backup_export_action))
-            }
-            Spacer(Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Outlined.WarningAmber,
+                    imageVector = if (isEncryptionEnabled) {
+                        Icons.Outlined.Shield
+                    } else {
+                        Icons.Outlined.WarningAmber
+                    },
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.size(8.dp))
                 Text(
-                    text = stringResource(R.string.backup_unencrypted_warning),
+                    text = stringResource(
+                        if (isEncryptionEnabled) {
+                            R.string.backup_encrypted_note
+                        } else {
+                            R.string.backup_unencrypted_warning
+                        },
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -531,6 +617,31 @@ private fun RestoreConfirmationDialog(
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                if (summary.hasSettings) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.backup_restore_dialog_settings),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (summary.isEncrypted) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.Lock,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Spacer(Modifier.size(6.dp))
+                        Text(
+                            text = stringResource(R.string.backup_restore_dialog_encrypted),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = stringResource(R.string.backup_restore_dialog_warning),

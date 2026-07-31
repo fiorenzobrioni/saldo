@@ -44,6 +44,6 @@ Il manuale cresce in modo incrementale. Gli argomenti già disponibili hanno un 
 
 ### Dati e impostazioni
 
-- 💾 Backup, export e import: salvare, esportare e ripristinare i dati.
+- 💾 [Backup e ripristino](backup-e-ripristino.md): cosa contiene il file, la protezione con passphrase, il ripristino guidato e la cancellazione dei dati.
 - ⚙️ Impostazioni: tema, valuta, notifiche e altre preferenze.
 - 🔒 [Blocco app e privacy dello schermo](blocco-app.md): PIN di 6 cifre, sblocco biometrico, blocco automatico e contenuto nascosto nelle app recenti.

@@ -474,7 +474,7 @@ Note tecniche importanti:
 - richiede un account Google, **ma resta 100% opzionale**: l'app è pienamente funzionante senza (coerente con "nessun account obbligatorio")
 - formato: **export JSON versionato** (decisione già presa, ADR 5 in PLANNING.md) - più robusto di uno snapshot del file `.db` tra versioni diverse dello schema Room; il restore è un import
 - modello **single-device con restore**, non sync multi-device in tempo reale (fuori scope: eviterebbe di dover risolvere conflitti)
-- **cifratura del backup** con passphrase utente: v2.0
+- **cifratura del backup** con passphrase utente: consegnata con la v2.0, e vale per il file esportato di qualunque destinazione (il contenitore cifrato avvolge lo stesso JSON, ADR 44)
 
 ## Backup manuale su file (v1.0)
 
@@ -484,7 +484,8 @@ L'utente può esportare in qualsiasi momento un **backup completo su file**, sen
 - salvataggio tramite **Storage Access Framework** (`ACTION_CREATE_DOCUMENT`): l'utente sceglie la destinazione dal picker di sistema (memoria locale, Drive, qualunque provider di documenti) e l'app **non richiede permessi di storage**
 - nome file con data: `saldo-backup-2026-07-05.json`
 - quando esistono **allegati** il backup diventa un archivio `saldo-backup-2026-07-05.zip` con dentro lo stesso JSON più i file: il formato JSON e il suo numero di versione non cambiano, e il ripristino accetta indistintamente l'archivio o il JSON nudo. Chi non usa allegati continua a esportare un file di testo leggibile
-- avvertenza in UI: il file non è cifrato fino alla v2.0 (cifratura backup), quindi va custodito con attenzione
+- il file contiene anche le **impostazioni** scelte dall'utente (tema, valuta principale, conto predefinito, promemoria, card della Dashboard, separatore CSV): un ripristino su un dispositivo nuovo non chiede di riconfigurare l'app. Restano fuori il PIN del blocco app e la cache dei tassi, per ragioni scritte nell'ADR 45
+- **cifratura opzionale con passphrase** (v2.0): un interruttore accanto all'export protegge il file con AES-256 e chiave derivata sul dispositivo. Con la cifratura spenta il file resta in chiaro e la UI lo dichiara, come prima; con la cifratura attiva la stessa riga spiega che la passphrase non è recuperabile. Il ripristino riconosce il contenitore dal contenuto e lo decifra prima di mostrare l'anteprima, mai dopo aver sostituito i dati; i backup non cifrati restano importabili per sempre
 
 Questa opzione rafforza i principi del progetto: backup completo possibile **senza account Google** e piena portabilità dei dati - il file può essere copiato a mano su Google Drive, NAS, Syncthing o qualsiasi altro servizio.
 
@@ -519,7 +520,7 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 - **PIN lock** (consegnato, PIN a 6 cifre opzionale)
 - **sblocco biometrico** via `BiometricPrompt` (consegnato)
 - oscuramento del contenuto nelle app recenti (`FLAG_SECURE`, opzionale) - consegnato; la stessa protezione blocca anche gli screenshot
-- **cifratura backup** (v2.0)
+- **cifratura backup** con passphrase (consegnata, opzionale): AES-256-GCM con chiave derivata dalla passphrase sul dispositivo, nessun recupero possibile e dichiarato prima di attivarla
 - il blocco è un gate di accesso all'app, non cifratura del database: il PIN non è mai salvato in chiaro (hash con salt) e non entra nei backup
 - permessi Android richiesti: praticamente nessuno (niente contatti, niente posizione, niente SMS). Anche gli allegati fotografici restano a zero permessi: il photo picker di sistema non ne richiede e la fotocamera si usa via intent, senza dichiarare `CAMERA` nel manifest
 
@@ -631,7 +632,7 @@ Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, sp
 - Gestione tag dedicata e ricerca con suggerimenti
 - Rilevamento automatico delle ricorrenze
 - Aggiunta rapida dalla tendina delle impostazioni rapide, e inserimento rapido testuale ("12,50 pizza")
-- Cifratura backup
+- Cifratura backup (opzionale, con passphrase) e backup che include anche le impostazioni
 - Miglioramenti UX dal feedback della v1.0
 - Da valutare, fuori dal piano: allegati fotografici ai movimenti, rimborsi collegati alla spesa originale, commissioni sui trasferimenti, analisi avanzate, export PDF/Excel/Google Sheets, pagamento parziale dell'estratto carta, arrotondamento degli spiccioli, riepilogo settimanale, backup automatico su Google Drive
 

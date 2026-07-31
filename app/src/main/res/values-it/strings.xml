@@ -754,10 +754,14 @@
     <string name="backup_hero_title">I tuoi dati restano tuoi</string>
     <string name="backup_hero_body">Saldo funziona completamente offline. Il backup è un singolo file JSON salvato dove scegli tu: nessun account, nessun cloud.</string>
     <string name="backup_export_title">Esporta backup</string>
-    <string name="backup_export_body">Salva conti, movimenti, categorie, ricorrenze e tag in un file.</string>
+    <string name="backup_export_body">Salva conti, movimenti, categorie, ricorrenze, tag e le tue impostazioni in un file.</string>
     <string name="backup_last_backup">Ultimo backup: %1$s</string>
     <string name="backup_last_backup_never">Nessun backup finora</string>
     <string name="backup_export_action">Esporta backup</string>
+    <string name="backup_export_action_encrypted">Cifra ed esporta</string>
+    <string name="backup_encryption_title">Proteggi con una passphrase</string>
+    <string name="backup_encryption_hint">Il file viene cifrato con AES-256. Solo la tua passphrase lo apre.</string>
+    <string name="backup_encrypted_note">Il file sarà cifrato con la passphrase che scrivi al momento dell\'export. Non esiste modo di recuperarla: se la perdi, quel backup non è più ripristinabile.</string>
     <string name="backup_unencrypted_warning">Il file non è cifrato: contiene i tuoi dati in chiaro. Conservalo in un luogo sicuro.</string>
     <string name="backup_restore_title">Ripristino</string>
     <string name="backup_restore_body">Importa un file di backup di Saldo, sostituendo i dati attualmente nell\'app.</string>
@@ -766,6 +770,8 @@
     <string name="backup_restore_dialog_metadata">Backup del %1$s</string>
     <string name="backup_restore_dialog_metadata_versioned">Backup del %1$s (Saldo %2$s)</string>
     <string name="backup_restore_dialog_counts">Conti: %1$d\nMovimenti: %2$d\nCategorie: %3$d\nRicorrenze: %4$d\nTag: %5$d\nBudget: %6$d\nObiettivi di risparmio: %7$d</string>
+    <string name="backup_restore_dialog_settings">Impostazioni incluse: sostituiscono quelle di questo device.</string>
+    <string name="backup_restore_dialog_encrypted">File cifrato, aperto con la tua passphrase.</string>
     <string name="backup_restore_dialog_warning">Tutti i dati attuali verranno sostituiti. L\'operazione non si può annullare.</string>
     <string name="backup_restore_confirm">Ripristina</string>
     <string name="backup_snackbar_exported">Backup salvato (%1$d movimenti)</string>
@@ -775,6 +781,21 @@
     <string name="backup_error_not_a_backup">Questo file non è un backup di Saldo.</string>
     <string name="backup_error_unsupported_version">Questo backup viene da una versione più recente di Saldo. Aggiorna l\'app per ripristinarlo.</string>
     <string name="backup_error_corrupted">Il file di backup è danneggiato e non può essere letto.</string>
+    <string name="backup_error_wrong_passphrase">Passphrase errata: questo backup non può essere aperto.</string>
+    <string name="backup_error_unsupported_container">Questo backup cifrato arriva da una versione più recente di Saldo. Aggiorna l\'app per ripristinarlo.</string>
+    <string name="backup_passphrase_dialog_title">Scegli una passphrase</string>
+    <string name="backup_passphrase_dialog_body">Protegge questo file e nient\'altro, e non viene salvata da nessuna parte: se la perdi, questo backup non è più ripristinabile. I dati su questo device non vengono toccati.</string>
+    <string name="backup_passphrase_label">Passphrase</string>
+    <string name="backup_passphrase_confirm_label">Ripeti la passphrase</string>
+    <string name="backup_passphrase_min_length">Almeno %1$d caratteri</string>
+    <string name="backup_passphrase_mismatch">Le due passphrase sono diverse</string>
+    <string name="backup_passphrase_show">Mostra la passphrase</string>
+    <string name="backup_passphrase_hide">Nascondi la passphrase</string>
+    <string name="backup_passphrase_confirm_action">Cifra ed esporta</string>
+    <string name="backup_unlock_dialog_title">Backup cifrato</string>
+    <string name="backup_unlock_dialog_body">Scrivi la passphrase usata quando questo file è stato esportato. Niente viene sostituito prima che tu confermi cosa contiene il file.</string>
+    <string name="backup_unlock_error">Passphrase errata. Riprova.</string>
+    <string name="backup_unlock_action">Sblocca</string>
     <string name="backup_csv_hint">Per esportare i movimenti in CSV usa l\'icona di condivisione nella schermata Movimenti.</string>
 
     <string name="backup_erase_title">Cancella tutti i dati</string>
@@ -920,6 +941,7 @@
     <string name="onboarding_restore_confirm">Ripristina tutto</string>
     <string name="onboarding_restore_cancel">Non questo file</string>
     <string name="onboarding_restore_done">Fatto: è tutto di nuovo al suo posto.</string>
+    <string name="onboarding_restore_settings">Nel file ci sono anche le tue impostazioni: verranno applicate come erano.</string>
     <string name="onboarding_notifications_title">Un promemoria al momento giusto</string>
     <string name="onboarding_notifications_body">Saldo può avvisarti prima che un abbonamento si rinnovi e quando un movimento ricorrente aspetta il tuo OK. Solo cose utili, niente spam, mai.</string>
     <string name="onboarding_notifications_cta">Attiva le notifiche</string>

@@ -57,6 +57,7 @@ import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.domain.backup.BackupSummary
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.usecase.ImportBackupUseCase
+import com.callbackdev.saldo.feature.backup.UnlockPassphraseDialog
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -188,6 +189,14 @@ fun OnboardingScreen(
         }
     }
 
+    uiState.unlockRequest?.let { request ->
+        UnlockPassphraseDialog(
+            request = request,
+            onSubmit = viewModel::onUnlockPassphraseSubmitted,
+            onDismiss = viewModel::onUnlockDismissed,
+        )
+    }
+
     uiState.pendingRestore?.let { summary ->
         RestoreConfirmationDialog(
             summary = summary,
@@ -206,6 +215,8 @@ private fun OnboardingEvent.messageRes(): Int = when (this) {
         ImportBackupUseCase.Error.NOT_A_BACKUP -> R.string.backup_error_not_a_backup
         ImportBackupUseCase.Error.UNSUPPORTED_VERSION -> R.string.backup_error_unsupported_version
         ImportBackupUseCase.Error.CORRUPTED -> R.string.backup_error_corrupted
+        ImportBackupUseCase.Error.WRONG_PASSPHRASE -> R.string.backup_error_wrong_passphrase
+        ImportBackupUseCase.Error.UNSUPPORTED_CONTAINER -> R.string.backup_error_unsupported_container
     }
 }
 
@@ -384,9 +395,17 @@ private fun RestoreConfirmationDialog(
                         summary.recurringRules,
                         summary.tags,
                         summary.budgets,
+                        summary.savingsGoals,
                     ),
                     style = MaterialTheme.typography.bodySmall,
                 )
+                if (summary.hasSettings) {
+                    Text(
+                        text = stringResource(R.string.onboarding_restore_settings),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         },
         confirmButton = {

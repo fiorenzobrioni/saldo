@@ -2,11 +2,30 @@ package com.callbackdev.saldo.core.common.prefs
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.longPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_ENCRYPTION_ENABLED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BALANCE_ACCOUNTS_EXPANDED_DEFAULT
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CSV_SEPARATOR
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CURRENCY_CONVERSION_ENABLED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_BUDGET_CARD
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_COUNTERPARTIES
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECAP_TEASER
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECENT_TRANSACTIONS
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_SAFE_TO_SPEND
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_SAVINGS_GOALS
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_UPCOMING
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DEFAULT_ACCOUNT_ID
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DISMISSED_RECAP_MONTH
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.FIRST_DAY_OF_WEEK
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.LAST_BACKUP_AT_EPOCH_MILLI
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.LAST_RATE_SYNC_ATTEMPT_EPOCH_MILLI
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.LAST_USED_ACCOUNT_ID
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.ONBOARDING_COMPLETED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.PRIMARY_CURRENCY_CODE
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.RENEWAL_REMINDER_ENABLED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.RENEWAL_REMINDER_LEAD_DAYS
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.THEME_MODE
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.USE_DYNAMIC_COLOR
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -261,6 +280,20 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { preferences -> preferences[LAST_BACKUP_AT_EPOCH_MILLI] = epochMilli }
     }
 
+    /**
+     * Whether the export asks for a passphrase and encrypts the file (Fase 22).
+     * Off by default: encryption is a deliberate choice with a real cost - a
+     * lost passphrase is a lost backup - so it is never turned on for the user.
+     * The passphrase itself is never stored, only this choice.
+     */
+    val backupEncryptionEnabled: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[BACKUP_ENCRYPTION_ENABLED] ?: false }
+            .distinctUntilChanged()
+
+    suspend fun setBackupEncryptionEnabled(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[BACKUP_ENCRYPTION_ENABLED] = enabled }
+    }
+
     /** Visibility of the optional dashboard cards; everything shown by default. */
     val dashboardCardPreferences: Flow<DashboardCardPreferences> = dataStore.data.map { preferences ->
         DashboardCardPreferences(
@@ -358,32 +391,4 @@ class UserPreferencesRepository @Inject constructor(
     private fun Int.coerceToAllowedLeadDays(): Int =
         RenewalReminderPreferences.allowedLeadDays.minByOrNull { kotlin.math.abs(it - this) }
             ?: RenewalReminderPreferences.DEFAULT_LEAD_DAYS
-
-    private companion object {
-        val LAST_USED_ACCOUNT_ID = longPreferencesKey("last_used_account_id")
-        val DEFAULT_ACCOUNT_ID = longPreferencesKey("default_account_id")
-        val PRIMARY_CURRENCY_CODE = stringPreferencesKey("primary_currency_code")
-        val CURRENCY_CONVERSION_ENABLED = booleanPreferencesKey("currency_conversion_enabled")
-        val LAST_RATE_SYNC_ATTEMPT_EPOCH_MILLI =
-            longPreferencesKey("last_rate_sync_attempt_epoch_milli")
-        val THEME_MODE = stringPreferencesKey("theme_mode")
-        val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
-        val RENEWAL_REMINDER_ENABLED = booleanPreferencesKey("renewal_reminder_enabled")
-        val RENEWAL_REMINDER_LEAD_DAYS = intPreferencesKey("renewal_reminder_lead_days")
-        val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
-        val FIRST_DAY_OF_WEEK = stringPreferencesKey("first_day_of_week")
-        val LAST_BACKUP_AT_EPOCH_MILLI = longPreferencesKey("last_backup_at_epoch_milli")
-        val CSV_SEPARATOR = stringPreferencesKey("csv_separator")
-        val DASHBOARD_SHOW_BUDGET_CARD = booleanPreferencesKey("dashboard_show_budget_card")
-        val DASHBOARD_SHOW_SAFE_TO_SPEND = booleanPreferencesKey("dashboard_show_safe_to_spend")
-        val DASHBOARD_SHOW_RECENT_TRANSACTIONS =
-            booleanPreferencesKey("dashboard_show_recent_transactions")
-        val DASHBOARD_SHOW_SAVINGS_GOALS = booleanPreferencesKey("dashboard_show_savings_goals")
-        val DASHBOARD_SHOW_COUNTERPARTIES = booleanPreferencesKey("dashboard_show_counterparties")
-        val DASHBOARD_SHOW_UPCOMING = booleanPreferencesKey("dashboard_show_upcoming")
-        val DASHBOARD_SHOW_RECAP_TEASER = booleanPreferencesKey("dashboard_show_recap_teaser")
-        val BALANCE_ACCOUNTS_EXPANDED_DEFAULT =
-            booleanPreferencesKey("balance_accounts_expanded_default")
-        val DISMISSED_RECAP_MONTH = stringPreferencesKey("recap_dismissed_month")
-    }
 }
