@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -35,6 +37,15 @@ import java.time.LocalDate
  * types its slot as `ColumnScope` but lays it out in a `Box` (verified in the
  * material3 1.4.0 bytecode), so siblings stack on top of each other. Without
  * the wrapper the calendar, composed last, simply paints over the quick dates.
+ *
+ * That [Column] scrolls for a second reason: the dialog caps its surface at
+ * 568dp and gives the content whatever is left once the buttons are placed,
+ * while the calendar grid is a `requiredHeight` of six 48dp rows that never
+ * gives ground. The weekday header (`L M M G V S D`) is the only compressible
+ * part, so as soon as the content does not fit - the quick dates row, a large
+ * font scale, a short screen - it collapses and the first week of the month is
+ * drawn on top of it. Measuring under an unbounded height keeps every part at
+ * its natural size and lets the overflow scroll instead.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,7 +90,7 @@ fun SaldoDatePickerDialog(
             }
         },
     ) {
-        Column {
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             if (showQuickDates) {
                 val today = LocalDate.now()
                 Row(
