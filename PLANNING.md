@@ -632,6 +632,8 @@ Lingue, commit, regole di dominio sugli importi, stringhe e gate di build stanno
 
 # Roadmap v2.0
 
+> **Chiusa il 5 agosto 2026 con la versione 2.0.0** (Fase 23): tutte le fasi sono consegnate e verificate su device, la preparazione della release e completa e restano i soli passi da eseguire su GitHub. La roadmap attiva e ora la v3.0.
+>
 > Le Fasi 16, 17, 19 e 22 vengono dalla review delle funzionalita finanziarie di luglio 2026 ([docs/review-funzionalita-finanziarie-2026-07-27.md](./docs/review-funzionalita-finanziarie-2026-07-27.md)); le Fasi 32 e 33 sono state promosse il 29 luglio 2026 dalle idee raccolte in "Note e appunti". Nessuna di queste ha ancora un ADR: ognuna elenca le decisioni di design da proporre come ADR all'avvio, prima dell'implementazione.
 >
 > **Criterio di selezione, dal 29 luglio 2026**: una fase entra in roadmap se serve spesso o se la sua assenza si paga (un dato sbagliato, un dato che si puo creare e non correggere, un backup perso). Le fasi che non lo superano vivono in "Fasi da valutare" con la loro motivazione, non vengono cancellate.
@@ -810,39 +812,36 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 - [x] Stringhe IT/EN; unit test pesanti sul parser, che e una funzione pura e va coperta come tale (`QuickEntryParserTest`): importo con virgola e con punto, migliaia, separatori misti, simbolo prima e dopo, valuta a zero decimali, testo senza importo, importo senza testo, separatore finale a meta digitazione, migliaia a spazio ambigue, date relative, giorno della settimana, data corta nei due ordini, data impossibile che resta in descrizione; `CategorySuggesterTest`: parola che coincide col nome di una categoria, ambiguita tra nomi, soglie e conflitti della storia, parola mai vista che non produce alcun suggerimento, match parola-intera con accenti; ViewModel: parse live, precedenze della categoria, tastierino che vince sul parser, salvataggio con descrizione e data
 - [x] Verifica su device (non eseguibile in CI, ADR 26), completata il 30 luglio 2026: riga di testo dalla sheet di widget e tile, IME e tastierino che si scambiano il focus, suggerimento da nome e da storia, salvataggio con data "ieri", giro anche con locale inglese
 
-## Fase cloud - Backup su Google Drive (da valutare a fine roadmap)
-
-> Parte cloud della Fase 8, spostata qui a luglio 2026 (ADR 17). Da valutare quando le fasi delle roadmap saranno concluse: il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.
-
-- [ ] Google Sign-In via Credential Manager, scope `drive.appdata`
-- [ ] Upload backup su App Data Folder + rotazione (ultimi 5)
-- [ ] Backup automatico WorkManager (periodico, solo Wi-Fi, configurabile)
-- [ ] Restore guidato dal backup Drive (primo avvio e da impostazioni)
-
 ## Fase 23 - Release v2.0
 
 > Ultima fase della roadmap, sempre in fondo: si chiude quando le fasi ancora aperte sono concluse. Due strade che non si escludono: la release su GitHub e la stessa procedura della v1.0 e si fa comunque, il Play Store si aggiunge solo se e quando ci sara un account sviluppatore. La strada B e la checklist Play Store della prima stesura del piano, rimessa qui invece di essere buttata via.
+>
+> **Stato al 5 agosto 2026**: la preparazione e chiusa (versione a 2.0.0, note di rilascio confermate, documentazione allineata) e restano i soli passi che si eseguono su GitHub e sul device, elencati nella strada A. Due punti sono chiusi come **rinvii dichiarati** e non come lavoro fatto: il baseline profile e la copertura QA su piu device, entrambi raccolti nella Fase 35 della roadmap v3.0.
 
 **Comuni alle due strade**
 
 - [x] Fasi 16, 17, 19, 22 (con la 22.0 e la 22.1), 32 e 33 completate, cioe tutte quelle della roadmap v2.0 (la Fase cloud e opzionale e non blocca la release, come le fasi da valutare): chiuse il 31 luglio 2026 con la verifica su device della Fase 22
-- [ ] Baseline profile, rimandato dalla v1.0: modulo `:macrobenchmark`, generazione su device o emulatore, misura del guadagno al primo avvio
-- [ ] QA manuale end-to-end con la checklist della v1.0 estesa alle funzionalita nuove: la checklist e scritta e pronta da seguire in [docs/qa-checklist-v2.0.md](./docs/qa-checklist-v2.0.md) (18 sezioni, dalla prova di aggiornamento in place alla resa su tablet), resta da eseguire
-- [ ] Migration test strumentati su device dalla v1 alla versione corrente: le Fasi 12 e 13 introducono migration reali con bump di `SALDO_DATABASE_VERSION` (ADR 26)
-- [ ] Compatibilita all'indietro del backup: ripristino di un file esportato dalla 1.0 su un'installazione 2.0, piu un round-trip del contenitore cifrato (Fase 22)
-- [ ] Test su device reali: API 33 e ultimo Android stabile, piu tablet o schermo grande
-- [ ] `versionCode` +1 e `versionName` 2.0.0
-- [ ] Note di rilascio in `docs/release-notes/v2.0.0.md`, con una sezione "cosa cambia dalla 1.0": bozza completa scritta il 31 luglio 2026 (il file porta in testa un commento con i punti da confermare al tag: baseline profile, conteggio dei test, data). Include per scelta una sezione dedicata al permesso `INTERNET` comparso con la 2.0, che la 1.0 dichiarava esplicitamente di non avere: una modifica del genere si annuncia, non si lascia scoprire
+- [x] Baseline profile: **valutato e non incluso nella 2.0** (5 agosto 2026). Non e una dimenticanza ma un rinvio dichiarato: costa un modulo `:macrobenchmark`, il plugin `androidx.baselineprofile` e tre dipendenze nuove, e il guadagno riguarda il solo primo avvio dopo l'installazione. Resta scritto fra le "Limitazioni note" delle note di rilascio, come nella 1.0, e diventa un punto della roadmap v3.0 (Fase 35): non si aggiunge un modulo e tre dipendenze a ridosso di un tag
+- [x] QA end-to-end: la 2.0 esce validata dall'**uso reale continuativo** del device dell'utente (piu giorni sulla 1.0.19, esito riferito il 5 agosto 2026) piu i giri su device di ogni fase, elencati fase per fase qui sopra (12, 13, 14, 16, 17, 19, 22, 32, 33). La checklist in [docs/qa-checklist-v2.0.md](./docs/qa-checklist-v2.0.md) **non e stata eseguita voce per voce**: resta scritta e valida, e il suo posto e la prossima release (Fase 35). Dichiarato qui e non taciuto: e la differenza fra un rilascio verificato dall'uso e uno certificato da una checklist
+- [x] Migration test strumentati su device dalla v1 alla versione corrente: la catena 1 -> 4 e verde su `MigrationsTest` nel workflow "Instrumented tests" (Fase 17) e ognuna delle tre migration e stata applicata anche su un'installazione reale con dati veri, attraverso gli aggiornamenti in place dalla 1.0.2 alla 1.0.19 dei giri di review (Fasi 12, 13 e 17)
+- [x] Compatibilita all'indietro del backup: verificata sul device il 31 luglio 2026 nella Fase 22 (ripristino di un file in chiaro esportato da una versione precedente su un'installazione con la cifratura disponibile); il round-trip del contenitore cifrato e coperto end-to-end da `BackupRoundTripTest` e `BackupCryptoTest`
+- [ ] Test su device reali oltre al principale: API 33 e ultimo Android stabile, piu tablet o schermo grande. **Non eseguito**, e non viene spuntato per comodita: la verifica si e fermata al device dell'utente. Accettato per un rilascio su GitHub di un APK di debug, che si disinstalla senza conseguenze; resta un punto della release v3.0 (Fase 35)
+- [x] `versionCode` +1 e `versionName` 2.0.0: `versionCode` 172, `versionName` 2.0.0 (5 agosto 2026)
+- [x] Note di rilascio in [docs/release-notes/v2.0.0.md](./docs/release-notes/v2.0.0.md), con la sezione "cosa cambia dalla 1.0": confermate al tag il 5 agosto 2026 (commento di bozza rimosso). Verificato riga per riga cio che il file afferma: 967 unit test JVM in 99 classi e 17 classi strumentate (conteggio sui sorgenti del commit di rilascio), tre migration dalla 1.0 con `SALDO_DATABASE_VERSION` a 4, tre permessi dichiarati nel manifest, nessuna dipendenza nuova rispetto alla 1.0 (`libs.versions.toml` invariato dal tag `v1.0.0`), baseline profile ancora fra le limitazioni. Include per scelta una sezione dedicata al permesso `INTERNET` comparso con la 2.0, che la 1.0 dichiarava esplicitamente di non avere: una modifica del genere si annuncia, non si lascia scoprire
 - [x] README, VISION e guida utente allineati alle funzionalita nuove (31 luglio 2026): README con la sezione roadmap aggiornata (l'elenco funzionalita era gia allineato fase per fase); VISION con il perimetro v2.0 dichiarato completo, la voce "ricerca con suggerimenti" separata perche **non** consegnata e la nota sulle sottocategorie chiusa; guida utente con tre pagine nuove ([multi-valuta.md](./docs/guida-utente/multi-valuta.md), [aggiunta-rapida.md](./docs/guida-utente/aggiunta-rapida.md), [tag.md](./docs/guida-utente/tag.md)), la sezione sulle ricorrenze suggerite in [movimenti-ricorrenti.md](./docs/guida-utente/movimenti-ricorrenti.md) e le due affermazioni non piu vere in [descrizione-generale.md](./docs/guida-utente/descrizione-generale.md) corrette (la rete serve anche ai tassi, e non esiste alcun account Google da collegare)
 
 **Strada A - Release su GitHub (procedura della v1.0)**
 
+> Confermata come unica strada della 2.0 il 5 agosto 2026, su decisione dell'utente: niente Play Store per questa versione, si pubblica l'APK di debug. La release e manuale come quella della v1.0: la CI verifica ogni push (`assembleDebug testDebugUnitTest lint detekt`) e pubblica l'APK come artefatto della build, ma **non** esiste un workflow che crea la release al push di un tag, quindi APK e note si allegano a mano.
+
 - [ ] Merge su `main`, CI verde
 - [ ] Creazione Tag `v2.0.0` e pubblicazione dell'APK di debug con le note del file
 - [ ] Aggiornamento in place sopra la 1.0 verificato su device (stesso keystore di debug, `versionCode` superiore) senza perdita di dati
-- [ ] Link alla release aggiornato nel README
+- [ ] Link alla release aggiornato nel README: il badge e il bottone di download puntano gia a `releases/latest`, quindi si aggiornano da soli col tag; resta da rileggere il resto della sezione
 
 **Strada B - Pubblicazione sul Play Store (solo con un account sviluppatore)**
+
+> Non percorsa per la 2.0 (decisione confermata il 5 agosto 2026). Le voci restano com'erano: sono la procedura da rileggere nella prima release che decidera di adottarla, non lavoro pendente di questa.
 
 - [ ] Account Google Play Developer (una tantum, a pagamento) e verifica dell'identita dello sviluppatore
 - [ ] Keystore di **upload** dedicato, mai committato, con Play App Signing attivo; chiave e password come secret di GitHub Actions per la build firmata in CI
@@ -861,7 +860,9 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 
 > Candidati della review delle funzionalita finanziarie ([docs/review-funzionalita-finanziarie-2026-07-27.md](./docs/review-funzionalita-finanziarie-2026-07-27.md)) promossi a fasi dettagliate il 28 luglio 2026 e collocati, per decisione esplicita, dopo la release v2.0: si dettagliano ora per non perdere le note della review, si eseguono dopo la Fase 23. Le tre rimaste sono la 24, la 25 e la 26: superano il criterio di selezione della roadmap v2.0 ma non hanno l'urgenza di precedere il rilascio. A queste si aggiunge la Fase 34, spostata qui dalla roadmap v2.0 il 31 luglio 2026. Nessuna di queste fasi ha ancora un ADR: ogni fase elenca le decisioni da proporre come ADR all'avvio. La fase di release v3.0 si definira alla chiusura di queste, con la stessa procedura della Fase 23.
 >
-> Restano esclusi anche da questa roadmap, come raccomanda la review stessa: il beneficiario/payee come entita separata (coperto da descrizione, ricerca full-text e tag) e le sottocategorie (coperte dai tag, rinviate per scelta in VISION).
+> **Aggiornamento del 5 agosto 2026, alla chiusura della roadmap v2.0**: questa roadmap e ora quella attiva. Contiene quattro fasi di prodotto (24, 25, 26, 34) piu la Fase 35, che raccoglie i due punti di qualita rinviati dalla release v2.0 (baseline profile e QA multi-device) e va eseguita prima del tag v3.0, non a ridosso. Il feedback d'uso sulla 2.0 aprira le sue fasi qui, come e successo con la 1.0: le voci nuove si inseriscono prima della fase di release, che resta sempre in fondo.
+>
+> Restano esclusi anche da questa roadmap, come raccomanda la review stessa: il beneficiario/payee come entita separata (coperto da descrizione, ricerca full-text e tag) e le sottocategorie (coperte dai tag, rinviate per scelta in VISION). Il backup su Google Drive resta in "Fasi da valutare", dove e stato spostato lo stesso giorno.
 
 ## Fase 24 - Budget con periodo personalizzato e riporto
 
@@ -907,6 +908,15 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 - [ ] Costo a riposo: le chip si calcolano solo a campo di ricerca aperto, mai al caricamento del registro (spirito dell'ADR 37); niente osservatori nuovi
 - [ ] Il campo di testo resta la via principale e non cambia comportamento: le chip aggiungono, non sostituiscono
 - [ ] Stringhe IT/EN; unit test sulla selezione delle chip (ordinamento per uso, esclusione di quelle gia applicate, tetti dichiarati) e sull'applicazione del filtro corrispondente
+
+## Fase 35 - Debito di qualita della release v2.0 (baseline profile e QA multi-device)
+
+> Aperta il 5 agosto 2026 alla chiusura della Fase 23: raccoglie i due punti della release v2.0 chiusi come rinvii dichiarati invece che come lavoro fatto. Non sono funzionalita e non hanno una superficie utente, ma sono lavoro reale con un posto nel piano, che e meglio di due caselle lasciate aperte in una fase chiusa. Da eseguire **prima** della release v3.0, non a ridosso del suo tag: e esattamente l'errore che ha portato al rinvio.
+
+- [ ] Baseline profile, rimandato due volte (v1.0 e v2.0): modulo `:macrobenchmark` con il plugin `androidx.baselineprofile`, generazione su device o emulatore, misura del guadagno al primo avvio prima e dopo. Le tre dipendenze nuove vanno chieste e approvate come ogni libreria, e il modulo entra nel Version Catalog come il resto. Se la misura non mostra un guadagno che valga il modulo, la voce si chiude motivando: rinviare e legittimo, lasciarla ambigua no
+- [ ] Giro della checklist [docs/qa-checklist-v2.0.md](./docs/qa-checklist-v2.0.md) voce per voce, estesa nel frattempo alle funzionalita della v3.0: e gia scritta, gia organizzata in 18 sezioni e non e mai stata eseguita per intero
+- [ ] Verifica su un secondo device: API 33 (il minSdk, mai provato su un device reale con quella API) e ultimo Android stabile, piu tablet o schermo grande per la resa dei layout larghi
+- [ ] Da rileggere alla luce di quanto sopra, prima del tag v3.0: la riga "Baseline profile non incluso" nelle limitazioni note delle note di rilascio, che compare identica nella 1.0 e nella 2.0
 
 ---
 
@@ -1048,6 +1058,15 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 - [ ] Recap e mesi chiusi: un mese già recappato e condiviso cambierebbe cifre a distanza. Da decidere se il recap si congela alla prima apertura o se accetta di essere mobile
 - [ ] Il caso limite già gestito resta garantito da test: mese di soli rimborsi in una categoria (fetta negativa filtrata dall'anello, budget a zero e mai sotto zero)
 - [ ] Unit test: rimborso a cavallo di due mesi attribuito al mese della spesa, rimborsi parziali multipli, collegamento decaduto, drill-down coerente
+
+## Fase cloud - Backup su Google Drive
+
+> Parte cloud della Fase 8, spostata fuori dalla Fase 8 a luglio 2026 (ADR 17) e spostata qui il 5 agosto 2026, alla chiusura della roadmap v2.0: era rimasta in coda alla v2.0 come "da valutare a fine roadmap", ma una voce da valutare sta in questa sezione, non dentro una roadmap chiusa. Non ha bloccato la 2.0 e non blocca la v3.0. Il formato JSON versionato e il code path di export/restore della Fase 8 si riusano così come sono.
+
+- [ ] Google Sign-In via Credential Manager, scope `drive.appdata`
+- [ ] Upload backup su App Data Folder + rotazione (ultimi 5)
+- [ ] Backup automatico WorkManager (periodico, solo Wi-Fi, configurabile)
+- [ ] Restore guidato dal backup Drive (primo avvio e da impostazioni)
 
 ---
 

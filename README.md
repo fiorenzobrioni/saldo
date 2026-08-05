@@ -75,7 +75,7 @@ Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a mon
 
 ### Roadmap futura
 
-Le funzionalità della roadmap v2.0 sono implementate e testate sul dispositivo: resta la release. Una roadmap v3.0 raccoglie le estensioni successive (budget con periodo personalizzato e riporto, acquisti a rate, spesa divisa su più categorie, ricerca con suggerimenti). Restano da valutare, fuori dal piano: foto dello scontrino allegate ai movimenti, rimborsi collegati alla spesa originale, commissioni sui trasferimenti, analisi avanzate, export PDF/Excel/Google Sheets, pagamento parziale dell'estratto carta, arrotondamento degli spiccioli, riepilogo settimanale e backup automatico su Google Drive. Roadmap completa in [PLANNING.md](./PLANNING.md).
+La roadmap v2.0 è chiusa: tutte le sue funzionalità sono nella versione 2.0.0. La roadmap v3.0 raccoglie le estensioni successive (budget con periodo personalizzato e riporto, acquisti a rate, spesa divisa su più categorie, ricerca con suggerimenti) più il baseline profile e il giro di QA su più dispositivi rinviati dalla 2.0. Restano da valutare, fuori dal piano: foto dello scontrino allegate ai movimenti, rimborsi collegati alla spesa originale, commissioni sui trasferimenti, analisi avanzate, export PDF/Excel/Google Sheets, pagamento parziale dell'estratto carta, arrotondamento degli spiccioli, riepilogo settimanale e backup automatico su Google Drive. Roadmap completa in [PLANNING.md](./PLANNING.md).
 
 ## Installazione
 
@@ -128,7 +128,7 @@ Verifica completa (build, unit test, lint, analisi statica):
 ./gradlew assembleDebug testDebugUnitTest lint detekt
 ```
 
-La CI (GitHub Actions) esegue gli stessi task su ogni push. Il push di un tag `vX.Y.Z` esegue la stessa verifica e pubblica una release con l'APK allegato.
+La CI (GitHub Actions) esegue gli stessi task su ogni push e allega l'APK di debug come artefatto della build. Le release sono create a mano: l'APK pubblicato è quello dell'artefatto della build verde del commit taggato.
 
 ## Struttura del progetto
 
