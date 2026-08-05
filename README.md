@@ -17,7 +17,22 @@ Un'app Android moderna, offline-first e privacy-first per il tracciamento delle 
 
 </div>
 
----
+## Schermate
+
+<div align="center">
+<table>
+  <tr>
+    <td align="center"><img src="docs/screenshots/screenshot-1.jpg" width="260" alt="Dashboard"><br><em>Dashboard</em></td>
+    <td align="center"><img src="docs/screenshots/screenshot-2.jpg" width="260" alt="Movimenti"><br><em>Movimenti</em></td>
+    <td align="center"><img src="docs/screenshots/screenshot-3.jpg" width="260" alt="Statistiche"><br><em>Statistiche</em></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/screenshot-4.jpg" width="260" alt="Movimenti ricorrenti"><br><em>Ricorrenti</em></td>
+    <td align="center"><img src="docs/screenshots/screenshot-5.jpg" width="260" alt="Tassi di cambio"><br><em>Tassi di cambio</em></td>
+    <td align="center"><img src="docs/screenshots/screenshot-6.jpg" width="260" alt="Widget"><br><em>Widget</em></td>
+  </tr>
+</table>
+</div>
 
 ## Cos'è Saldo
 
