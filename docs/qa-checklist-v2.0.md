@@ -4,6 +4,8 @@ Checklist di verifica su device per la Fase 23 (release v2.0) in [PLANNING.md](.
 
 Serve a coprire ciò che la CI non può verificare (ADR 26): la CI esegue build, unit test, lint e detekt, i test strumentati girano sul workflow dedicato, ma nessuno dei due tocca un device reale. Le voci sono scritte come esito atteso, non come azione: se l'esito è diverso, il giro si ferma e il difetto va in "Bug conosciuti" di PLANNING.
 
+> **Stato al 5 agosto 2026**: questa checklist **non è stata eseguita voce per voce** per la release 2.0.0, che è uscita validata dall'uso reale continuativo sul device dell'utente più i giri su device di ogni fase (Fase 23 in PLANNING). Il documento resta valido e non è archiviato: il suo giro completo è un punto della Fase 35, da fare prima della release successiva ed esteso nel frattempo alle funzionalità della v3.0.
+
 ## Preparazione
 
 - [ ] Device principale con Android recente e un secondo device o emulatore su **API 33**, più un **tablet o schermo grande** (anche emulatore)

@@ -623,7 +623,7 @@ Anticipato dalle roadmap successive prima del rilascio:
 
 Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, spostato a una fase da valutare a fine roadmap (ADR 17). Il backup della v1.0 è quello manuale su file.
 
-## v2.0 (perimetro completo, in rilascio)
+## v2.0 (rilasciata)
 
 - Crediti e debiti verso persone
 - Movimenti futuri e scadenze una tantum (elenco "in arrivo", promemoria, stima a fine mese che li conta)
@@ -636,6 +636,14 @@ Rimasto fuori rispetto al piano iniziale dell'MVP: il backup su Google Drive, sp
 - Miglioramenti UX dal feedback della v1.0
 - Spostata alla roadmap v3.0 il 31 luglio 2026, per decisione esplicita alla preparazione del rilascio: la **ricerca con suggerimenti** (chip di categorie, tag e descrizioni frequenti sotto il campo di ricerca del registro), che non era stata implementata e non blocca nulla di quanto consegnato
 - Da valutare, fuori dal piano: allegati fotografici ai movimenti, rimborsi collegati alla spesa originale, commissioni sui trasferimenti, analisi avanzate, export PDF/Excel/Google Sheets, pagamento parziale dell'estratto carta, arrotondamento degli spiccioli, riepilogo settimanale, backup automatico su Google Drive
+
+## v3.0 (roadmap attiva)
+
+- Budget con periodo personalizzato ("dal 27 al 27") e riporto del residuo
+- Acquisti a rate e regole ricorrenti con numero di ripetizioni ("rata 3 di 12")
+- Spesa divisa su più categorie
+- Ricerca con suggerimenti (chip di categorie, tag e descrizioni frequenti sotto il campo di ricerca)
+- Baseline profile e giro di QA su più dispositivi, rinviati dalla v2.0 e da chiudere prima del rilascio
 
 ---
 
