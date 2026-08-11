@@ -252,9 +252,11 @@ internal fun BalanceCard(
                 // keeps only the breakdown affordance.
                 trailingContent = if (accounts.isNotEmpty()) {
                     {
-                        AccountsExpandChevron(
+                        DashboardExpandChevron(
                             expanded = accountsExpanded,
                             onToggle = onToggleAccounts,
+                            collapseRes = R.string.dashboard_accounts_collapse,
+                            expandRes = R.string.dashboard_accounts_expand,
                         )
                     }
                 } else {
@@ -670,24 +672,25 @@ private fun EstimatedRatesLabel(
 /**
  * The header expand/collapse affordance: the same 24dp [Icons.Outlined.ExpandMore]
  * chevron as the safe-to-spend card, columnar in the header's trailing slot and
- * rotating on toggle. It carries its own click so the tap toggles the breakdown
- * instead of falling through to the card's "manage accounts" navigation.
+ * rotating on toggle. It carries its own click so the tap toggles the card's
+ * detail instead of falling through to the card-wide navigation. Shared by the
+ * balance and month-comparison cards; each passes its own spoken labels.
  */
 @Composable
-private fun AccountsExpandChevron(
+internal fun DashboardExpandChevron(
     expanded: Boolean,
     onToggle: () -> Unit,
+    @androidx.annotation.StringRes collapseRes: Int,
+    @androidx.annotation.StringRes expandRes: Int,
     modifier: Modifier = Modifier,
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (expanded) CHEVRON_EXPANDED_DEGREES else 0f,
-        label = "balanceAccountsChevron",
+        label = "dashboardExpandChevron",
     )
     Icon(
         imageVector = Icons.Outlined.ExpandMore,
-        contentDescription = stringResource(
-            if (expanded) R.string.dashboard_accounts_collapse else R.string.dashboard_accounts_expand,
-        ),
+        contentDescription = stringResource(if (expanded) collapseRes else expandRes),
         tint = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier
             .clip(CircleShape)

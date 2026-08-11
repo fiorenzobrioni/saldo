@@ -182,6 +182,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { userPreferences.setShowRecurringCard(shown) }
     }
 
+    fun onShowMonthComparisonChanged(shown: Boolean) {
+        viewModelScope.launch { userPreferences.setShowMonthComparisonCard(shown) }
+    }
+
     fun onBalanceAccountsExpandedDefaultChanged(expanded: Boolean) {
         viewModelScope.launch { userPreferences.setBalanceAccountsExpandedByDefault(expanded) }
     }

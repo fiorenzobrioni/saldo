@@ -446,6 +446,25 @@ class DashboardViewModel @Inject constructor(
     }
 
     /**
+     * Expansion of the month-comparison card's legend and reference rows.
+     * Unlike the two above it is persisted, not per-open: collapsing that card
+     * to its chart is a layout choice, and redoing it on every app open would
+     * defeat it.
+     */
+    val monthComparisonExpanded: StateFlow<Boolean> = userPreferences.monthComparisonExpanded
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = true,
+        )
+
+    fun toggleMonthComparisonExpanded() {
+        viewModelScope.launch {
+            userPreferences.setMonthComparisonExpanded(!monthComparisonExpanded.value)
+        }
+    }
+
+    /**
      * The recap teaser month: the just-completed month, only during the first
      * [RECAP_TEASER_MAX_DAY] days of the new one, only when that month has
      * statistics movements, and only until the user dismisses it.

@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-08-11 - Confronto mensile: chevron di compattazione e switch di visibilita
+
+**Fatto:** due richieste dell'utente sulla card Confronto mensile, entrambe condivise in review. Un chevron nell'intestazione (lo stesso pattern del Saldo totale: click proprio, non ruba il tap della card che continua ad aprire le Statistiche) restringe la card al solo grafico, nascondendo legenda e righe di riferimento con la stessa animazione del dettaglio conti. La card e entrata fra quelle configurabili in Impostazioni > Dashboard (switch dopo Spendibile, chiave `dashboard_show_month_comparison` nel backup). Il chevron del Saldo totale e stato generalizzato in `DashboardExpandChevron` (etichette vocali parametriche) e riusato da entrambe le card. Versione 2.0.4 (`versionCode` 176).
+
+**Decisioni:** lo stato aperto/chiuso del chevron e **persistito** in DataStore (`month_comparison_expanded`, default aperto, inclusa nel backup), a differenza del dettaglio conti (default da Impostazioni + override di sessione) e dello Spendibile (solo sessione): compattare la card e una scelta di layout e rifarla a ogni apertura dell'app la vanificherebbe. Senza grafico (nessun mese di confronto completo nel walk) il chevron non compare e le righe restano visibili: una card ridotta alla sola intestazione non avrebbe senso.
+
+**Problemi:** nessuno.
+
+**Prossimo:** verifica su device di chevron (persistenza tra aperture), switch in Impostazioni e round-trip delle due chiavi nel backup.
+
+---
+
 ## 2026-08-11 - Confronto mensile: la didascalia della legenda diventa una riga con valore
 
 **Fatto:** secondo screenshot dell'utente dalla 2.0.2: la scritta "Variazione da inizio mese" nella riga della legenda si leggeva come una terza voce di legenda, senza pallino e senza valore, e l'utente ha cercato (giustamente) il numero corrispondente. Era la didascalia dell'asse, e la posizione la rendeva ambigua. Risolto trasformandola nella prima riga del footer con il proprio valore: la variazione netta del mese corrente da inizio mese, cioe esattamente il punto dove finisce la linea del mese corrente, cosi testo e grafico si agganciano. La legenda ora tiene solo le due chiavi colore. Versione 2.0.3 (`versionCode` 175).

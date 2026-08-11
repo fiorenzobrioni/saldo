@@ -107,6 +107,7 @@ fun DashboardScreen(
     // defaults only on a fresh app open.
     val accountsExpanded by viewModel.balanceAccountsExpanded.collectAsStateWithLifecycle()
     val safeToSpendExpanded by viewModel.safeToSpendExpanded.collectAsStateWithLifecycle()
+    val monthComparisonExpanded by viewModel.monthComparisonExpanded.collectAsStateWithLifecycle()
     // Plain remember on purpose: an open speed dial should not survive
     // navigating away and back (the tab keeps its state now), nor a rotation.
     var fabExpanded by remember { mutableStateOf(false) }
@@ -182,6 +183,8 @@ fun DashboardScreen(
                     onToggleAccounts = viewModel::toggleBalanceAccountsExpanded,
                     safeToSpendExpanded = safeToSpendExpanded,
                     onToggleSafeToSpend = viewModel::toggleSafeToSpendExpanded,
+                    monthComparisonExpanded = monthComparisonExpanded,
+                    onToggleMonthComparison = viewModel::toggleMonthComparisonExpanded,
                     onManageAccounts = onNavigateToAccounts,
                     onAccountClick = onNavigateToAccount,
                     onSeeAllTransactions = onSeeAllTransactions,
@@ -309,6 +312,8 @@ private fun DashboardContent(
     onToggleAccounts: () -> Unit,
     safeToSpendExpanded: Boolean,
     onToggleSafeToSpend: () -> Unit,
+    monthComparisonExpanded: Boolean,
+    onToggleMonthComparison: () -> Unit,
     onManageAccounts: () -> Unit,
     onAccountClick: (Long) -> Unit,
     onSeeAllTransactions: () -> Unit,
@@ -387,15 +392,19 @@ private fun DashboardContent(
                 },
             )
         }
-        uiState.previousMonthSpendToDate?.let { previousSpend ->
-            item {
-                MonthComparisonCard(
-                    comparison = uiState.monthComparison,
-                    previousSpend = previousSpend,
-                    delta = uiState.monthVsPreviousToDate,
-                    currency = uiState.primaryCurrency,
-                    onClick = onOpenStats,
-                )
+        if (uiState.cardPrefs.showMonthComparison) {
+            uiState.previousMonthSpendToDate?.let { previousSpend ->
+                item {
+                    MonthComparisonCard(
+                        comparison = uiState.monthComparison,
+                        previousSpend = previousSpend,
+                        delta = uiState.monthVsPreviousToDate,
+                        currency = uiState.primaryCurrency,
+                        expanded = monthComparisonExpanded,
+                        onToggleExpanded = onToggleMonthComparison,
+                        onClick = onOpenStats,
+                    )
+                }
             }
         }
         uiState.recapTeaserMonth?.let { teaserMonth ->

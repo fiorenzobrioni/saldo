@@ -5,10 +5,12 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_ENCRYPTION_ENABLED
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BALANCE_ACCOUNTS_EXPANDED_DEFAULT
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.MONTH_COMPARISON_EXPANDED
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CSV_SEPARATOR
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CURRENCY_CONVERSION_ENABLED
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_BUDGET_CARD
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_COUNTERPARTIES
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_MONTH_COMPARISON
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECAP_TEASER
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECENT_TRANSACTIONS
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECURRING
@@ -95,6 +97,8 @@ data class DashboardCardPreferences(
      * unconditional.
      */
     val showRecurring: Boolean = true,
+    /** The month-comparison chart card; shown only once a baseline month exists. */
+    val showMonthComparison: Boolean = true,
     /** The self-expiring monthly recap teaser; off silences it for good. */
     val showRecapTeaser: Boolean = true,
 )
@@ -312,6 +316,7 @@ class UserPreferencesRepository @Inject constructor(
             showCounterparties = preferences[DASHBOARD_SHOW_COUNTERPARTIES] ?: true,
             showUpcoming = preferences[DASHBOARD_SHOW_UPCOMING] ?: true,
             showRecurring = preferences[DASHBOARD_SHOW_RECURRING] ?: true,
+            showMonthComparison = preferences[DASHBOARD_SHOW_MONTH_COMPARISON] ?: true,
             showRecapTeaser = preferences[DASHBOARD_SHOW_RECAP_TEASER] ?: true,
         )
     }.distinctUntilChanged()
@@ -342,6 +347,24 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setShowRecurringCard(shown: Boolean) {
         dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_RECURRING] = shown }
+    }
+
+    suspend fun setShowMonthComparisonCard(shown: Boolean) {
+        dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_MONTH_COMPARISON] = shown }
+    }
+
+    /**
+     * Whether the month-comparison card shows its legend and reference rows or
+     * just the chart. Toggled by the card's own chevron and persisted (unlike
+     * the balance and safe-to-spend expansions): collapsing the card is a
+     * layout choice, and redoing it on every app open would defeat it.
+     */
+    val monthComparisonExpanded: Flow<Boolean> = dataStore.data
+        .map { preferences -> preferences[MONTH_COMPARISON_EXPANDED] ?: true }
+        .distinctUntilChanged()
+
+    suspend fun setMonthComparisonExpanded(expanded: Boolean) {
+        dataStore.edit { preferences -> preferences[MONTH_COMPARISON_EXPANDED] = expanded }
     }
 
     suspend fun setShowRecapTeaser(shown: Boolean) {

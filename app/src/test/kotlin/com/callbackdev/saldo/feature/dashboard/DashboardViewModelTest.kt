@@ -140,6 +140,7 @@ class DashboardViewModelTest {
         every {
             userPreferences.balanceAccountsExpandedByDefault
         } returns flowOf(balanceAccountsExpandedByDefault)
+        every { userPreferences.monthComparisonExpanded } returns flowOf(true)
         every { userPreferences.dismissedRecapMonth } returns flowOf(dismissedRecapMonth)
         every {
             transactionRepository.observeMonthlyTotals(any(), any(), any())
@@ -567,6 +568,7 @@ class DashboardViewModelTest {
         every { userPreferences.primaryCurrencyOverride } returns flowOf(null)
         every { userPreferences.dashboardCardPreferences } returns flowOf(DashboardCardPreferences())
         every { userPreferences.balanceAccountsExpandedByDefault } returns flowOf(true)
+        every { userPreferences.monthComparisonExpanded } returns flowOf(true)
         every {
             transactionRepository.observeDashboardTotals(capture(windows), eur)
         } returns flowOf(DashboardTotals())

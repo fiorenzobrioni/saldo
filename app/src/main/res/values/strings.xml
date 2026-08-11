@@ -66,6 +66,9 @@
     <string name="dashboard_comparison_caption">Change since month start</string>
     <string name="dashboard_comparison_spent_last_month">Spent by this point last month</string>
     <string name="dashboard_comparison_delta_label">Difference</string>
+    <!-- Spoken labels of the comparison card's expand chevron. -->
+    <string name="dashboard_comparison_expand">Show details</string>
+    <string name="dashboard_comparison_collapse">Hide details</string>
     <string name="dashboard_recurring_title">Recurring transactions</string>
     <string name="dashboard_recurring_expenses_label">Expenses / month</string>
     <string name="dashboard_recurring_incomes_label">Income / month</string>
@@ -982,6 +985,8 @@
     <string name="settings_dashboard_show_sts_hint">Show what you can still spend today (needs a monthly budget)</string>
     <string name="settings_dashboard_show_budget">Budgets card</string>
     <string name="settings_dashboard_show_budget_hint">Show the month\'s budget progress</string>
+    <string name="settings_dashboard_show_comparison">Monthly comparison card</string>
+    <string name="settings_dashboard_show_comparison_hint">This month\'s trend overlaid on last month\'s (needs a month to compare against)</string>
     <string name="settings_dashboard_show_recurring">Recurring movements card</string>
     <string name="settings_dashboard_show_recurring_hint">Monthly totals of recurring expenses and incomes, and the next charge</string>
     <string name="settings_dashboard_show_recent">Latest transactions card</string>

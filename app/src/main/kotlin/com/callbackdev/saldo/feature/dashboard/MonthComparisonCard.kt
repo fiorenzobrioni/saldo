@@ -1,8 +1,13 @@
 package com.callbackdev.saldo.feature.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -57,7 +62,11 @@ import java.util.Currency
  * wrapping sentence): the net change since the month started (the value the
  * current line ends on, so the chart's reading is spelled out), what had been
  * spent by this day last month, and the signed spend difference against it.
- * Tap opens the statistics tab.
+ * A header chevron collapses legend and footer down to the bare chart, like
+ * the balance card's breakdown; the choice is persisted, so [expanded] and
+ * [onToggleExpanded] round-trip through the ViewModel to DataStore. Without a
+ * chart to fall back on the footer stays, or the card would collapse to its
+ * title alone. Tap opens the statistics tab.
  */
 @Suppress("LongParameterList") // One argument per card ingredient, all owned by the ViewModel.
 @Composable
@@ -66,9 +75,12 @@ internal fun MonthComparisonCard(
     previousSpend: BigDecimal,
     delta: BigDecimal?,
     currency: Currency,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val chartSeries = comparison?.takeIf { it.previous.isNotEmpty() && it.current.isNotEmpty() }
     SaldoCard(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
@@ -82,41 +94,62 @@ internal fun MonthComparisonCard(
             DashboardCardHeader(
                 icon = Icons.Outlined.SsidChart,
                 title = stringResource(R.string.dashboard_month_comparison_title),
+                trailingContent = if (chartSeries != null) {
+                    {
+                        DashboardExpandChevron(
+                            expanded = expanded,
+                            onToggle = onToggleExpanded,
+                            collapseRes = R.string.dashboard_comparison_collapse,
+                            expandRes = R.string.dashboard_comparison_expand,
+                        )
+                    }
+                } else {
+                    null
+                },
             )
-            if (comparison != null &&
-                comparison.previous.isNotEmpty() && comparison.current.isNotEmpty()
-            ) {
+            if (chartSeries != null) {
                 Spacer(Modifier.height(CHART_TOP_GAP))
                 MonthComparisonChart(
-                    comparison = comparison,
+                    comparison = chartSeries,
                     currency = currency,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(CHART_HEIGHT),
                 )
-                Spacer(Modifier.height(LEGEND_TOP_GAP))
-                ComparisonLegend()
             }
-            Spacer(Modifier.height(FOOTER_TOP_GAP))
-            // The chart's own reading, first: the net change this month so
-            // far, i.e. exactly where the current-month line ends.
-            comparison?.current?.lastOrNull()?.let { currentChange ->
-                ComparisonStatRow(
-                    label = stringResource(R.string.dashboard_comparison_caption),
-                    value = MoneyFormatter.formatSigned(currentChange, currency),
-                )
-                Spacer(Modifier.height(FOOTER_ROW_GAP))
-            }
-            ComparisonStatRow(
-                label = stringResource(R.string.dashboard_comparison_spent_last_month),
-                value = MoneyFormatter.format(previousSpend, currency),
-            )
-            delta?.let {
-                Spacer(Modifier.height(FOOTER_ROW_GAP))
-                ComparisonStatRow(
-                    label = stringResource(R.string.dashboard_comparison_delta_label),
-                    value = MoneyFormatter.formatSigned(it, currency),
-                )
+            AnimatedVisibility(
+                visible = expanded || chartSeries == null,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    if (chartSeries != null) {
+                        Spacer(Modifier.height(LEGEND_TOP_GAP))
+                        ComparisonLegend()
+                    }
+                    Spacer(Modifier.height(FOOTER_TOP_GAP))
+                    // The chart's own reading, first: the net change this
+                    // month so far, i.e. exactly where the current line ends.
+                    comparison?.current?.lastOrNull()?.let { currentChange ->
+                        ComparisonStatRow(
+                            label = stringResource(R.string.dashboard_comparison_caption),
+                            value = MoneyFormatter.formatSigned(currentChange, currency),
+                        )
+                        Spacer(Modifier.height(FOOTER_ROW_GAP))
+                    }
+                    ComparisonStatRow(
+                        label = stringResource(R.string.dashboard_comparison_spent_last_month),
+                        value = MoneyFormatter.format(previousSpend, currency),
+                    )
+                    delta?.let {
+                        Spacer(Modifier.height(FOOTER_ROW_GAP))
+                        ComparisonStatRow(
+                            label = stringResource(R.string.dashboard_comparison_delta_label),
+                            value = MoneyFormatter.formatSigned(it, currency),
+                        )
+                    }
+                }
             }
         }
     }

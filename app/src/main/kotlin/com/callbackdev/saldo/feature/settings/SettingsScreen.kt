@@ -206,6 +206,12 @@ fun SettingsScreen(
                     onCheckedChange = viewModel::onShowSafeToSpendChanged,
                 )
                 SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dashboard_show_comparison),
+                    hint = stringResource(R.string.settings_dashboard_show_comparison_hint),
+                    checked = dashboardCards.showMonthComparison,
+                    onCheckedChange = viewModel::onShowMonthComparisonChanged,
+                )
+                SettingsSwitchRow(
                     title = stringResource(R.string.settings_dashboard_show_budget),
                     hint = stringResource(R.string.settings_dashboard_show_budget_hint),
                     checked = dashboardCards.showBudget,
