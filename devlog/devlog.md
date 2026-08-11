@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-08-11 - Speed dial: via l'ombra dalle pillole (artefatto durante l'animazione)
+
+**Fatto:** segnalazione dell'utente dalla 2.0.4: aprendo lo speed dial, sotto le pillole compariva un'ombra evidente durante l'animazione d'ingresso, che spariva di colpo ad animazione conclusa. Causa: le pillole avevano `shadowElevation` 3dp e durante `scaleIn` l'ombra viene composta e scalata col layer animato (con l'overshoot della spring appare piu marcata); a fine animazione resta l'ombra statica, quasi invisibile sullo sfondo gia scurito dallo scrim, da cui lo stacco percepito. Rimossa l'ombra: le pillole sono piatte. Versione 2.0.5 (`versionCode` 177).
+
+**Decisioni:** rimozione preferita a qualsiasi correzione dell'artefatto (es. animare l'elevazione): il design system dell'app e volutamente piatto e border-led (card a elevazione zero) e le pillole erano l'unica superficie con ombra; lo scrim fornisce gia la separazione dal contenuto. Il FAB principale conserva la sua elevazione di default M3.
+
+**Problemi:** nessuno.
+
+**Prossimo:** conferma visiva su device dell'apertura senza artefatti.
+
+---
+
 ## 2026-08-11 - Confronto mensile: chevron di compattazione e switch di visibilita
 
 **Fatto:** due richieste dell'utente sulla card Confronto mensile, entrambe condivise in review. Un chevron nell'intestazione (lo stesso pattern del Saldo totale: click proprio, non ruba il tap della card che continua ad aprire le Statistiche) restringe la card al solo grafico, nascondendo legenda e righe di riferimento con la stessa animazione del dettaglio conti. La card e entrata fra quelle configurabili in Impostazioni > Dashboard (switch dopo Spendibile, chiave `dashboard_show_month_comparison` nel backup). Il chevron del Saldo totale e stato generalizzato in `DashboardExpandChevron` (etichette vocali parametriche) e riusato da entrambe le card. Versione 2.0.4 (`versionCode` 176).

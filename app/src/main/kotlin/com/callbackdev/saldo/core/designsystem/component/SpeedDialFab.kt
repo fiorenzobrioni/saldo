@@ -127,7 +127,10 @@ fun SpeedDialFab(
 /**
  * One quick action rendered as a single pill (leading icon + label in one
  * rounded container), so the dial reads as a compact stack of pills rather than
- * detached label/button pairs. Colours come from the app palette.
+ * detached label/button pairs. Colours come from the app palette. Flat on
+ * purpose, like every card surface: the scrim already separates the pills from
+ * the content, and an elevation shadow scales visibly with the entrance layer
+ * only to all but vanish once the animation settles.
  */
 @Composable
 private fun SpeedDialActionPill(action: SpeedDialAction, modifier: Modifier = Modifier) {
@@ -136,7 +139,6 @@ private fun SpeedDialActionPill(action: SpeedDialAction, modifier: Modifier = Mo
         shape = CircleShape,
         color = MaterialTheme.colorScheme.secondaryContainer,
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        shadowElevation = ACTION_ELEVATION,
         modifier = modifier,
     ) {
         Row(
@@ -211,7 +213,6 @@ private val TOGGLE_CORNER_OPEN = 28.dp
 
 private val ACTION_SPACING = 12.dp
 private val ACTIONS_BOTTOM_GAP = 16.dp
-private val ACTION_ELEVATION = 3.dp
 private val ACTION_ICON_SIZE = 22.dp
 private val ACTION_ICON_GAP = 12.dp
 private val ACTION_PADDING_START = 20.dp
