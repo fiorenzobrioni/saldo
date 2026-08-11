@@ -62,9 +62,8 @@
     <string name="dashboard_comparison_previous_month">Last month</string>
     <!-- TalkBack summary of the comparison chart; %1$s and %2$s are signed formatted amounts. -->
     <string name="dashboard_comparison_a11y">Net balance change since the start of the month: %1$s this month, %2$s by this day last month</string>
-    <!-- Caption in the legend row: what the two lines plot. Kept short, it shares the row with the color keys. -->
+    <!-- Footer reference rows: label on the left, amount pushed to the row's end. The first row's value is the current month's net change, i.e. the point the chart's current line ends on. -->
     <string name="dashboard_comparison_caption">Change since month start</string>
-    <!-- Footer reference rows: label on the left, amount pushed to the row's end. -->
     <string name="dashboard_comparison_spent_last_month">Spent by this point last month</string>
     <string name="dashboard_comparison_delta_label">Difference</string>
     <string name="dashboard_recurring_title">Recurring transactions</string>

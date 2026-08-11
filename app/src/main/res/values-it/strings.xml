@@ -62,9 +62,8 @@
     <string name="dashboard_comparison_previous_month">Mese scorso</string>
     <!-- Riepilogo TalkBack del grafico di confronto; %1$s e %2$s sono importi formattati con segno. -->
     <string name="dashboard_comparison_a11y">Variazione netta del saldo da inizio mese: %1$s questo mese, %2$s a questo punto del mese scorso</string>
-    <!-- Didascalia nella riga della legenda: cosa tracciano le due linee. Corta, condivide la riga con le chiavi colore. -->
+    <!-- Righe di riferimento in chiusura: etichetta a sinistra, importo a fine riga. Il valore della prima riga è la variazione netta del mese corrente, cioè il punto dove finisce la linea del grafico. -->
     <string name="dashboard_comparison_caption">Variazione da inizio mese</string>
-    <!-- Righe di riferimento in chiusura: etichetta a sinistra, importo spinto a fine riga. -->
     <string name="dashboard_comparison_spent_last_month">Speso a questo punto del mese scorso</string>
     <string name="dashboard_comparison_delta_label">Differenza</string>
     <string name="dashboard_recurring_title">Movimenti ricorrenti</string>

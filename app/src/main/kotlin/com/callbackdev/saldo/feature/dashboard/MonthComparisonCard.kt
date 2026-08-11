@@ -34,8 +34,6 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
@@ -55,9 +53,11 @@ import java.util.Currency
  * the hero sparkline above already estimates the month's end, this card
  * compares facts with facts.
  *
- * The footer carries the two reference figures as label/amount rows (never a
- * wrapping sentence): what had been spent by this day last month, and the
- * signed spend difference against it. Tap opens the statistics tab.
+ * The footer carries the reference figures as label/amount rows (never a
+ * wrapping sentence): the net change since the month started (the value the
+ * current line ends on, so the chart's reading is spelled out), what had been
+ * spent by this day last month, and the signed spend difference against it.
+ * Tap opens the statistics tab.
  */
 @Suppress("LongParameterList") // One argument per card ingredient, all owned by the ViewModel.
 @Composable
@@ -98,6 +98,15 @@ internal fun MonthComparisonCard(
                 ComparisonLegend()
             }
             Spacer(Modifier.height(FOOTER_TOP_GAP))
+            // The chart's own reading, first: the net change this month so
+            // far, i.e. exactly where the current-month line ends.
+            comparison?.current?.lastOrNull()?.let { currentChange ->
+                ComparisonStatRow(
+                    label = stringResource(R.string.dashboard_comparison_caption),
+                    value = MoneyFormatter.formatSigned(currentChange, currency),
+                )
+                Spacer(Modifier.height(FOOTER_ROW_GAP))
+            }
             ComparisonStatRow(
                 label = stringResource(R.string.dashboard_comparison_spent_last_month),
                 value = MoneyFormatter.format(previousSpend, currency),
@@ -235,7 +244,12 @@ private data class ComparisonGeometry(
     val daySteps: Int,
 )
 
-/** Color-key legend under the chart, plus what the lines plot. */
+/**
+ * Color-key legend under the chart: the two series keys and nothing else.
+ * What the lines plot is said by the "change since month start" footer row,
+ * which carries the current line's own end value - a caption sharing this row
+ * read as a third, unmarked legend entry.
+ */
 @Composable
 private fun ComparisonLegend(modifier: Modifier = Modifier) {
     Row(
@@ -250,17 +264,6 @@ private fun ComparisonLegend(modifier: Modifier = Modifier) {
         LegendEntry(
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PREVIOUS_ALPHA),
             label = stringResource(R.string.dashboard_comparison_previous_month),
-        )
-        Text(
-            text = stringResource(R.string.dashboard_comparison_caption),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.End,
-            // Takes only the leftover width and truncates with an ellipsis:
-            // the color keys always win the space fight.
-            modifier = Modifier.weight(1f),
         )
     }
 }

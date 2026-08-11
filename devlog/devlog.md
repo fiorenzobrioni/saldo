@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-08-11 - Confronto mensile: la didascalia della legenda diventa una riga con valore
+
+**Fatto:** secondo screenshot dell'utente dalla 2.0.2: la scritta "Variazione da inizio mese" nella riga della legenda si leggeva come una terza voce di legenda, senza pallino e senza valore, e l'utente ha cercato (giustamente) il numero corrispondente. Era la didascalia dell'asse, e la posizione la rendeva ambigua. Risolto trasformandola nella prima riga del footer con il proprio valore: la variazione netta del mese corrente da inizio mese, cioe esattamente il punto dove finisce la linea del mese corrente, cosi testo e grafico si agganciano. La legenda ora tiene solo le due chiavi colore. Versione 2.0.3 (`versionCode` 175).
+
+**Decisioni:** il valore della riga e `comparison.current.last()` (variazione netta, entrate incluse), con `formatSigned`: coincide col netto della card del mese quando non ci sono entrate, e la ridondanza e voluta, ancora la lettura del grafico. Le righe spesa/differenza restano su semantica di spesa: ogni etichetta e autoesplicativa e la riga della variazione sta per prima, attaccata al grafico che descrive.
+
+**Problemi:** nessuno.
+
+**Prossimo:** verifica su device della card con le tre righe.
+
+---
+
 ## 2026-08-11 - Rifinitura della card Confronto mensile dal giro su device
 
 **Fatto:** screenshot dell'utente dalla 2.0.1: la riga di chiusura della card Confronto mensile ("A questo punto del mese scorso avevi speso 2.155,90 EUR") mandava l'importo a capo, e la didascalia della legenda risultava troncata di netto ("Variazione netta da inizio"). Footer riscritto come due righe etichetta/importo nello stesso stile delle stat line delle card Oggi/Mese: "Speso a questo punto del mese scorso" con l'importo a fine riga (tabulare, mai a capo) e una nuova riga "Differenza" con lo scarto di spesa con segno rispetto allo stesso punto del mese scorso (`formatSigned`, "+" per chi ha speso di piu). Icona trend rimossa: era variabile (su/giu secondo la spesa), ma col grafico appena sopra era ridondante e ambigua. Didascalia della legenda accorciata ("Variazione da inizio mese") e resa robusta (peso residuo della riga, ellissi, allineata a destra). Versione 2.0.2 (`versionCode` 174).

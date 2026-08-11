@@ -930,6 +930,7 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 - [x] Pulizia: eliminato `PlaceholderScreen` (residuo Fase 0) con la sua stringa; unificati i due notice valuta identici delle Statistiche in un solo componente parametrizzato; verificata la parita IT/EN delle stringhe (le 8 voci solo EN sono tutte `translatable="false"`, per design)
 - [x] Verifica: `assembleDebug testDebugUnitTest lint` verdi; nuovo unit test del builder della serie di confronto (mesi corti, normalizzazione al proprio inizio mese, finestre incomplete -> null); test finestra sparkline esteso alle due finestre del walk
 - [x] Rifinitura dal giro su device (11 agosto 2026): il footer della card Confronto mensile passa dalla frase con importo inline (andava a capo) a due righe etichetta/importo in stile stat line (spesa di riferimento del mese scorso e differenza con segno, `+` incluso per i positivi); rimossa l'icona trend, ridondante col grafico sopra; didascalia della legenda accorciata e con ellissi, non piu troncata di netto; rimosso dallo state `spentMoreThanLastMonth`, rimasto senza consumer
+- [x] Seconda rifinitura dal giro su device (11 agosto 2026): la didascalia "Variazione da inizio mese" nella riga della legenda si leggeva come una terza voce senza pallino ne valore; e diventata la prima riga del footer con il proprio valore (la variazione netta del mese corrente, il punto dove finisce la linea), e la legenda tiene solo le due chiavi colore
 
 ---
 
