@@ -178,6 +178,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { userPreferences.setShowUpcomingCard(shown) }
     }
 
+    fun onShowRecurringChanged(shown: Boolean) {
+        viewModelScope.launch { userPreferences.setShowRecurringCard(shown) }
+    }
+
     fun onBalanceAccountsExpandedDefaultChanged(expanded: Boolean) {
         viewModelScope.launch { userPreferences.setBalanceAccountsExpandedByDefault(expanded) }
     }

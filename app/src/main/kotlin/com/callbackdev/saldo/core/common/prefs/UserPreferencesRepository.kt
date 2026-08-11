@@ -11,6 +11,7 @@ import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_COUNTERPARTIES
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECAP_TEASER
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECENT_TRANSACTIONS
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECURRING
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_SAFE_TO_SPEND
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_SAVINGS_GOALS
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_UPCOMING
@@ -87,6 +88,13 @@ data class DashboardCardPreferences(
      * a second way in, so turning it off never buries the queue.
      */
     val showUpcoming: Boolean = true,
+    /**
+     * The recurring-movements summary (monthly totals and the next charge).
+     * Steady-state like the budget and savings cards, so it is configurable
+     * like them; the pending-confirmation and statement-due alerts stay
+     * unconditional.
+     */
+    val showRecurring: Boolean = true,
     /** The self-expiring monthly recap teaser; off silences it for good. */
     val showRecapTeaser: Boolean = true,
 )
@@ -303,6 +311,7 @@ class UserPreferencesRepository @Inject constructor(
             showSavingsGoals = preferences[DASHBOARD_SHOW_SAVINGS_GOALS] ?: true,
             showCounterparties = preferences[DASHBOARD_SHOW_COUNTERPARTIES] ?: true,
             showUpcoming = preferences[DASHBOARD_SHOW_UPCOMING] ?: true,
+            showRecurring = preferences[DASHBOARD_SHOW_RECURRING] ?: true,
             showRecapTeaser = preferences[DASHBOARD_SHOW_RECAP_TEASER] ?: true,
         )
     }.distinctUntilChanged()
@@ -329,6 +338,10 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setShowUpcomingCard(shown: Boolean) {
         dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_UPCOMING] = shown }
+    }
+
+    suspend fun setShowRecurringCard(shown: Boolean) {
+        dataStore.edit { preferences -> preferences[DASHBOARD_SHOW_RECURRING] = shown }
     }
 
     suspend fun setShowRecapTeaser(shown: Boolean) {

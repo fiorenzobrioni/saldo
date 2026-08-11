@@ -267,9 +267,10 @@ private fun sparklineDescription(
  * The monotone-cubic path through [points] between indices [from] and [to]
  * (inclusive). [scaledTangents] are the series tangents already multiplied by
  * the drawing height; sharing them across segments keeps the dashed tail
- * continuing the solid line without a kink at today's point.
+ * continuing the solid line without a kink at today's point. Internal because
+ * the month-comparison chart draws its two lines through the same geometry.
  */
-private fun segmentPath(
+internal fun segmentPath(
     points: List<Offset>,
     scaledTangents: List<Float>,
     from: Int,

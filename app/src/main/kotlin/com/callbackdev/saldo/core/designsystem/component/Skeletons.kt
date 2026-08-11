@@ -69,9 +69,9 @@ fun SkeletonBlock(
 }
 
 /**
- * Loading placeholder for the dashboard: a title line, the hero balance card,
- * the two period cards, a wide summary card and a few recent rows, matching the
- * real screen's rhythm.
+ * Loading placeholder for the dashboard: the hero balance card, the two period
+ * cards, a wide summary card and a few recent rows, matching the real screen's
+ * rhythm (the title lives in the pinned top bar, so no line for it here).
  */
 @Composable
 fun DashboardSkeleton(modifier: Modifier = Modifier) {
@@ -79,12 +79,11 @@ fun DashboardSkeleton(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = 16.dp, end = 16.dp, top = 12.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp),
         // Matches SaldoDimens.cardSpacing: the skeleton's rhythm must be the
         // real dashboard's, or the layout jumps when data arrives.
         verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
-        SkeletonBlock(color, Modifier.padding(start = 4.dp).width(200.dp).height(28.dp))
         // Matches the hero balance card: header, amount, sparkline + caption
         // and a couple of breakdown rows.
         SkeletonBlock(color, Modifier.fillMaxWidth().height(224.dp), shape = CardShape)

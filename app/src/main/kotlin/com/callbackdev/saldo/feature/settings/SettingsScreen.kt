@@ -230,6 +230,12 @@ fun SettingsScreen(
                     onCheckedChange = viewModel::onShowUpcomingChanged,
                 )
                 SettingsSwitchRow(
+                    title = stringResource(R.string.settings_dashboard_show_recurring),
+                    hint = stringResource(R.string.settings_dashboard_show_recurring_hint),
+                    checked = dashboardCards.showRecurring,
+                    onCheckedChange = viewModel::onShowRecurringChanged,
+                )
+                SettingsSwitchRow(
                     title = stringResource(R.string.settings_dashboard_show_recent),
                     hint = stringResource(R.string.settings_dashboard_show_recent_hint),
                     checked = dashboardCards.showRecentTransactions,

@@ -237,14 +237,16 @@ class DashboardViewModelTest {
     }
 
     @Test
-    fun `sparkline window covers the last thirty days anchored to today`() = runTest {
+    fun `balance walk windows cover the sparkline and the month comparison`() = runTest {
         val viewModel = viewModel(
             accounts = listOf(AccountWithBalance(account(1L, eur), BigDecimal.ZERO)),
         )
         // Stubbed after the helper so this capture wins over its any() stub.
-        val days = slot<List<LocalDate>>()
+        // Two walks are requested: the 30-day sparkline and the comparison
+        // window from the day before the previous month's start through today.
+        val windows = mutableListOf<List<LocalDate>>()
         every {
-            observeDailyBalanceHistory(eur, capture(days), any(), any())
+            observeDailyBalanceHistory(eur, capture(windows), any(), any())
         } returns flowOf(emptyList())
 
         viewModel.uiState.test {
@@ -253,9 +255,12 @@ class DashboardViewModelTest {
         }
 
         val today = LocalDate.of(2026, 7, 8)
-        assertEquals(30, days.captured.size)
-        assertEquals(today.minusDays(29), days.captured.first())
-        assertEquals(today, days.captured.last())
+        val sparkline = windows.first { it.size == 30 }
+        assertEquals(today.minusDays(29), sparkline.first())
+        assertEquals(today, sparkline.last())
+        val comparison = windows.first { it.size != 30 }
+        assertEquals(LocalDate.of(2026, 5, 31), comparison.first())
+        assertEquals(today, comparison.last())
     }
 
     @Test

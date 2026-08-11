@@ -918,6 +918,18 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 - [ ] Verifica su un secondo device: API 33 (il minSdk, mai provato su un device reale con quella API) e ultimo Android stabile, piu tablet o schermo grande per la resa dei layout larghi
 - [ ] Da rileggere alla luce di quanto sopra, prima del tag v3.0: la riga "Baseline profile non incluso" nelle limitazioni note delle note di rilascio, che compare identica nella 1.0 e nella 2.0
 
+## Fase 36 - Review UX di agosto 2026: header informativo, confronto mensile, FAB unificati (11 agosto 2026)
+
+> Nata da una review UX completa dell'app: il saluto ruotato della Dashboard consumava lo spazio sopra la piega senza portare informazione (in contrasto con il "quadro in 5 secondi" di VISION.md), la Dashboard era l'unico tab senza top bar, i due FAB di inserimento erano diversi tra Dashboard e Movimenti e sparivano proprio nei casi in cui servivano di piu. Nota sul perimetro: l'adozione delle API Material 3 Expressive (MotionScheme, LoadingIndicator, FloatingActionButtonMenu) era prevista ma su material3 1.4.0 (BOM stabile) l'intera superficie Expressive risulta ancora `internal`; il feel espressivo del FAB e della top bar usa spring standard di Compose e la voce si riapre con la chore SDK 37 (material3 1.5).
+
+- [x] Header Dashboard: rimosse le 40 frasi ruotate a caso; la Dashboard ha ora una top bar fissa come gli altri tab, con saluto minimale per fascia oraria (4 stringhe fisse) come riga eyebrow e la data completa come titolo. La data non e piu duplicata nell'header della card Saldo totale
+- [x] Saldo collassante: scorrendo oltre la cifra hero, il titolo della top bar passa al saldo totale compatto (con "≈" quando stimato e rosso solo se negativo); il ritorno in cima ripristina saluto e data. Swap animato su spring, snap con animazioni di sistema disattivate
+- [x] Confronto mensile: la riga nuda "a questo punto del mese scorso" e diventata una card con grafico a due linee sovrapposte (variazione netta del saldo dal primo giorno del mese: mese corrente fino a oggi in primary, mese scorso completo in tinta neutra), zero baseline puntinata, legenda, riga di riferimento come footer e tap verso le Statistiche. Niente forecast di proposito: la stima a fine mese vive gia nella sparkline della card saldo. Serie calcolate da una seconda finestra del walk giornaliero esistente, normalizzazione testata su JVM (MonthComparisonTest)
+- [x] FAB unificati: speed dial a tre azioni tipizzate (Spesa, Entrata, Trasferimento) condiviso tra Dashboard e Movimenti (componente `SpeedDialFab` nel design system, azioni in feature/transactions); sempre visibile a caricamento concluso, senza conti diventa un FAB che porta alla creazione del primo conto. Toggle con morph di forma (quadrato arrotondato -> cerchio primary) e rotazione su spring con rimbalzo leggero
+- [x] Card Movimenti ricorrenti: aggiunto lo switch di visibilita in Impostazioni > Dashboard come per tutte le altre card di riepilogo (chiave inclusa nel backup); le card di allerta (da confermare, estratto carta) restano non configurabili
+- [x] Pulizia: eliminato `PlaceholderScreen` (residuo Fase 0) con la sua stringa; unificati i due notice valuta identici delle Statistiche in un solo componente parametrizzato; verificata la parita IT/EN delle stringhe (le 8 voci solo EN sono tutte `translatable="false"`, per design)
+- [x] Verifica: `assembleDebug testDebugUnitTest lint` verdi; nuovo unit test del builder della serie di confronto (mesi corti, normalizzazione al proprio inizio mese, finestre incomplete -> null); test finestra sparkline esteso alle due finestre del walk
+
 ---
 
 # Fasi da valutare

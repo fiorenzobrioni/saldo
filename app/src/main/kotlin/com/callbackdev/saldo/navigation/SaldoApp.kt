@@ -154,6 +154,7 @@ fun SaldoApp(
                     nav.navigate(TransactionEditorRoute(id))
                 },
                 onSeeAllTransactions = { nav.switchTab(TopLevelDestination.TRANSACTIONS) },
+                onNavigateToStats = { nav.switchTab(TopLevelDestination.STATS) },
                 onNavigateToRecurrences = { nav.navigate(RecurrencesRoute) },
                 onNavigateToPending = { nav.navigate(UpcomingRoute(pendingOnly = true)) },
                 onNavigateToUpcoming = { nav.navigate(UpcomingRoute()) },
@@ -170,7 +171,9 @@ fun SaldoApp(
         entry<TransactionsRoute> {
             TransactionsScreen(
                 modifier = topLevelModifier,
-                onNavigateToNewTransaction = { nav.navigate(TransactionEditorRoute()) },
+                onNavigateToNewTransaction = { type ->
+                    nav.navigate(TransactionEditorRoute(initialTypeName = type.name))
+                },
                 onNavigateToEditTransaction = { id ->
                     nav.navigate(TransactionEditorRoute(id))
                 },

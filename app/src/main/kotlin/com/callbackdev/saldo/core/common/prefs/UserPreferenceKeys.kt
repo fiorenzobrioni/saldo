@@ -35,6 +35,7 @@ internal object UserPreferenceKeys {
     val DASHBOARD_SHOW_SAVINGS_GOALS = booleanPreferencesKey("dashboard_show_savings_goals")
     val DASHBOARD_SHOW_COUNTERPARTIES = booleanPreferencesKey("dashboard_show_counterparties")
     val DASHBOARD_SHOW_UPCOMING = booleanPreferencesKey("dashboard_show_upcoming")
+    val DASHBOARD_SHOW_RECURRING = booleanPreferencesKey("dashboard_show_recurring")
     val DASHBOARD_SHOW_RECAP_TEASER = booleanPreferencesKey("dashboard_show_recap_teaser")
     val BALANCE_ACCOUNTS_EXPANDED_DEFAULT = booleanPreferencesKey("balance_accounts_expanded_default")
     val DISMISSED_RECAP_MONTH = stringPreferencesKey("recap_dismissed_month")
@@ -63,6 +64,7 @@ internal object UserPreferenceKeys {
         DASHBOARD_SHOW_SAVINGS_GOALS,
         DASHBOARD_SHOW_COUNTERPARTIES,
         DASHBOARD_SHOW_UPCOMING,
+        DASHBOARD_SHOW_RECURRING,
         DASHBOARD_SHOW_RECAP_TEASER,
         BALANCE_ACCOUNTS_EXPANDED_DEFAULT,
     )

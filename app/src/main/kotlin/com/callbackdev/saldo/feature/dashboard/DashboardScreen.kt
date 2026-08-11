@@ -1,50 +1,85 @@
 package com.callbackdev.saldo.feature.dashboard
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.DashboardSkeleton
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
+import com.callbackdev.saldo.core.designsystem.component.SpeedDialFab
+import com.callbackdev.saldo.core.designsystem.component.SpeedDialScrim
+import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
+import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.feature.transactions.movementSpeedDialActions
 import com.callbackdev.saldo.navigation.FilteredTransactionsRoute
+import java.math.BigDecimal
+import java.time.LocalDate
 import java.time.YearMonth
+import java.util.Currency
 
 /**
  * The "Today" home screen: a single glance at total balance, today's and this
  * month's cash flow, and the latest movements, with a speed-dial FAB for the
  * three quick actions. All figures derive reactively from the database.
+ *
+ * The pinned top bar carries the greeting and the date; once the hero balance
+ * scrolls out of sight the title swaps to a compact total balance, so the
+ * screen's key figure never actually leaves the screen.
  */
+@OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongParameterList") // One callback per navigation target, all wired by SaldoApp.
 @Composable
 fun DashboardScreen(
     onNavigateToAccounts: () -> Unit,
@@ -53,6 +88,7 @@ fun DashboardScreen(
     onNavigateToNewTransaction: (TransactionType) -> Unit,
     onNavigateToEditTransaction: (Long) -> Unit,
     onSeeAllTransactions: () -> Unit,
+    onNavigateToStats: () -> Unit,
     onNavigateToRecurrences: () -> Unit,
     onNavigateToPending: () -> Unit,
     onNavigateToUpcoming: () -> Unit,
@@ -80,17 +116,52 @@ fun DashboardScreen(
         onNavigateToNewTransaction(type)
     }
 
+    // The list state is hoisted here so the top bar can watch the hero balance
+    // scroll away: past the threshold (the hero figure is under the bar) the
+    // title swaps to the compact balance.
+    val listState = rememberLazyListState()
+    val collapseThresholdPx = with(LocalDensity.current) { BALANCE_COLLAPSE_THRESHOLD.toPx() }
+    val heroScrolledAway by remember(listState, collapseThresholdPx) {
+        derivedStateOf {
+            listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > collapseThresholdPx
+        }
+    }
+
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
-        modifier = modifier,
+        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = MaterialTheme.saldoSurfaces.canvas,
+        topBar = {
+            DashboardTopBar(
+                band = uiState.greetingBand,
+                date = uiState.date,
+                showBalance = heroScrolledAway && !uiState.isLoading && uiState.hasAccounts,
+                totalBalance = uiState.totalBalance,
+                currency = uiState.primaryCurrency,
+                estimated = uiState.totalBalanceEstimated,
+                scrollBehavior = scrollBehavior,
+            )
+        },
         floatingActionButton = {
-            if (!uiState.isLoading && uiState.hasAccounts) {
-                DashboardSpeedDial(
+            when {
+                uiState.isLoading -> Unit
+
+                // Without an account there is nothing to record yet: the FAB
+                // stays (it must never vanish) and leads where the empty state
+                // does, to the first account.
+                !uiState.hasAccounts -> FloatingActionButton(onClick = onCreateFirstAccount) {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = stringResource(R.string.dashboard_empty_cta),
+                    )
+                }
+
+                else -> SpeedDialFab(
                     expanded = fabExpanded,
                     onToggle = { fabExpanded = !fabExpanded },
-                    onAddExpense = { quickAction(TransactionType.EXPENSE) },
-                    onAddIncome = { quickAction(TransactionType.INCOME) },
-                    onAddTransfer = { quickAction(TransactionType.TRANSFER) },
+                    actions = movementSpeedDialActions(::quickAction),
+                    toggleDescription = stringResource(R.string.dashboard_fab_add),
                 )
             }
         },
@@ -106,6 +177,7 @@ fun DashboardScreen(
 
                 else -> DashboardContent(
                     uiState = uiState,
+                    listState = listState,
                     accountsExpanded = accountsExpanded,
                     onToggleAccounts = viewModel::toggleBalanceAccountsExpanded,
                     safeToSpendExpanded = safeToSpendExpanded,
@@ -114,6 +186,7 @@ fun DashboardScreen(
                     onAccountClick = onNavigateToAccount,
                     onSeeAllTransactions = onSeeAllTransactions,
                     onTransactionClick = onNavigateToEditTransaction,
+                    onOpenStats = onNavigateToStats,
                     onRecurringClick = onNavigateToRecurrences,
                     onPendingClick = onNavigateToPending,
                     onUpcomingClick = onNavigateToUpcoming,
@@ -127,29 +200,111 @@ fun DashboardScreen(
                 )
             }
 
-            AnimatedVisibility(
+            SpeedDialScrim(
                 visible = fabExpanded,
-                enter = fadeIn(),
-                exit = fadeOut(),
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.scrim.copy(alpha = SCRIM_ALPHA))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                        ) { fabExpanded = false },
-                )
-            }
+                onDismiss = { fabExpanded = false },
+            )
         }
     }
 }
 
+/**
+ * The dashboard's pinned top bar. Its title crossfades between the greeting +
+ * date header and a compact total balance, following [showBalance]: while the
+ * hero card is on screen the bar carries context, once the hero figure is gone
+ * the bar carries the figure. The swap slides in the scroll's own direction on
+ * the theme's motion; with system animations off it snaps.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DashboardTopBar(
+    band: GreetingBand,
+    date: LocalDate,
+    showBalance: Boolean,
+    totalBalance: BigDecimal,
+    currency: Currency,
+    estimated: Boolean,
+    scrollBehavior: TopAppBarScrollBehavior,
+    modifier: Modifier = Modifier,
+) {
+    val motionEnabled = rememberMotionEnabled()
+    TopAppBar(
+        scrollBehavior = scrollBehavior,
+        modifier = modifier,
+        title = {
+            AnimatedContent(
+                targetState = showBalance,
+                transitionSpec = {
+                    // The incoming line slides in the scroll's own direction
+                    // (up while collapsing, down while expanding) and fades;
+                    // with system animations off it snaps.
+                    if (!motionEnabled) {
+                        fadeIn(snap()) togetherWith fadeOut(snap())
+                    } else {
+                        val direction = if (targetState) 1 else -1
+                        val enter = fadeIn(tween(TITLE_SWAP_MILLIS)) +
+                            slideInVertically(spring(stiffness = Spring.StiffnessMediumLow)) {
+                                it / TITLE_SLIDE_DIVISOR * direction
+                            }
+                        val exit = fadeOut(tween(TITLE_SWAP_MILLIS)) +
+                            slideOutVertically(spring(stiffness = Spring.StiffnessMediumLow)) {
+                                -it / TITLE_SLIDE_DIVISOR * direction
+                            }
+                        enter togetherWith exit
+                    }
+                },
+                label = "dashboardTopBarTitle",
+            ) { balance ->
+                if (balance) {
+                    CollapsedBalanceTitle(
+                        totalBalance = totalBalance,
+                        currency = currency,
+                        estimated = estimated,
+                    )
+                } else {
+                    DashboardHeader(band = band, date = date)
+                }
+            }
+        },
+    )
+}
+
+/** Compact total balance shown in the top bar while the hero card is scrolled away. */
+@Composable
+private fun CollapsedBalanceTitle(
+    totalBalance: BigDecimal,
+    currency: Currency,
+    estimated: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.dashboard_balance_total),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+        )
+        Text(
+            // The "≈" is the app-wide estimate marker (ADR 40).
+            text = (if (estimated) "≈ " else "") + MoneyFormatter.format(totalBalance, currency),
+            style = MaterialTheme.typography.titleLarge.tabularNumbers(),
+            fontWeight = FontWeight.SemiBold,
+            color = if (totalBalance.signum() < 0) {
+                MaterialTheme.moneyColors.negative
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Suppress("LongParameterList") // One callback per card, all owned by the screen.
 @Composable
 private fun DashboardContent(
     uiState: DashboardUiState,
+    listState: LazyListState,
     accountsExpanded: Boolean,
     onToggleAccounts: () -> Unit,
     safeToSpendExpanded: Boolean,
@@ -158,6 +313,7 @@ private fun DashboardContent(
     onAccountClick: (Long) -> Unit,
     onSeeAllTransactions: () -> Unit,
     onTransactionClick: (Long) -> Unit,
+    onOpenStats: () -> Unit,
     onRecurringClick: () -> Unit,
     onPendingClick: () -> Unit,
     onUpcomingClick: () -> Unit,
@@ -171,17 +327,11 @@ private fun DashboardContent(
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
+        state = listState,
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(SaldoDimens.cardSpacing),
     ) {
-        item {
-            DashboardHeader(
-                band = uiState.greetingBand,
-                roll = uiState.greetingRoll,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
-            )
-        }
         item {
             BalanceCard(
                 totalBalance = uiState.totalBalance,
@@ -190,7 +340,6 @@ private fun DashboardContent(
                 accounts = uiState.accounts,
                 history = uiState.balanceHistory,
                 forecast = uiState.balanceForecast,
-                date = uiState.date,
                 accountsExpanded = accountsExpanded,
                 onToggleAccounts = onToggleAccounts,
                 onManageAccounts = onManageAccounts,
@@ -240,10 +389,12 @@ private fun DashboardContent(
         }
         uiState.previousMonthSpendToDate?.let { previousSpend ->
             item {
-                MonthComparisonRow(
+                MonthComparisonCard(
+                    comparison = uiState.monthComparison,
                     previousSpend = previousSpend,
                     spentMore = uiState.spentMoreThanLastMonth,
                     currency = uiState.primaryCurrency,
+                    onClick = onOpenStats,
                 )
             }
         }
@@ -301,12 +452,14 @@ private fun DashboardContent(
                 )
             }
         }
-        item {
-            RecurringCard(
-                summary = uiState.recurring,
-                currency = uiState.primaryCurrency,
-                onClick = onRecurringClick,
-            )
+        if (uiState.cardPrefs.showRecurring) {
+            item {
+                RecurringCard(
+                    summary = uiState.recurring,
+                    currency = uiState.primaryCurrency,
+                    onClick = onRecurringClick,
+                )
+            }
         }
         if (uiState.cardPrefs.showRecentTransactions) {
             item { RecentHeader(onSeeAll = onSeeAllTransactions) }
@@ -368,4 +521,15 @@ private fun DashboardEmptyState(
     )
 }
 
-private const val SCRIM_ALPHA = 0.32f
+/**
+ * How far the hero card must scroll under the bar before the title swaps to
+ * the compact balance: roughly the hero figure's own offset within the card,
+ * so the swap lands just as the number disappears.
+ */
+private val BALANCE_COLLAPSE_THRESHOLD = 96.dp
+
+/** How far the swapping top-bar titles slide, as a fraction (1/N) of their height. */
+private const val TITLE_SLIDE_DIVISOR = 2
+
+/** Fade duration of the top-bar title swap (the slide runs on its own spring). */
+private const val TITLE_SWAP_MILLIS = 200

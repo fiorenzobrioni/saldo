@@ -70,7 +70,6 @@ import java.time.YearMonth
 import java.util.Currency
 import java.util.Locale
 import javax.inject.Inject
-import kotlin.random.Random
 
 /** The soonest upcoming recurring charge or credit, for the dashboard card preview. */
 data class NextRecurringEvent(
@@ -218,9 +217,14 @@ data class DashboardUiState(
      */
     val recapTeaserMonth: YearMonth? = null,
     val date: LocalDate = LocalDate.ofEpochDay(0),
-    /** Greeting band and a stable [0,1) roll, both fixed once per app-open. */
+    /** Time-of-day band of the fixed header greeting, set once per app-open. */
     val greetingBand: GreetingBand = GreetingBand.MORNING,
-    val greetingRoll: Float = 0f,
+    /**
+     * The month-comparison chart's two series (previous month complete,
+     * current month to date), normalized to each month's own starting
+     * balance; null while the balance walk has not covered both months yet.
+     */
+    val monthComparison: MonthComparisonSeries? = null,
 )
 
 @HiltViewModel
@@ -243,10 +247,9 @@ class DashboardViewModel @Inject constructor(
 ) : ViewModel() {
 
     // Fixed once when the ViewModel is created (once per app-open): the greeting
-    // stays put across recomposition and rotation, and only re-rolls on a fresh
-    // open. The roll indexes the band's message array in the composable.
+    // stays put across recomposition and rotation, and only refreshes on a
+    // fresh open.
     private val greetingBand: GreetingBand = GreetingBand.of(LocalTime.now(clock))
-    private val greetingRoll: Float = Random.nextFloat()
 
     /** Everything the dashboard combines besides the accounts themselves. */
     private data class Sources(
@@ -339,6 +342,12 @@ class DashboardViewModel @Inject constructor(
                 Extras(budgets, safeToSpend, cardPrefs, dueStatements, savingsGoals, counterparties)
             }
             val sparklineDays = List(SPARKLINE_DAYS) { today.minusDays(SPARKLINE_DAYS - 1L - it) }
+            // The comparison chart needs the walk from the day before the
+            // previous month's start (its baseline) through today.
+            val comparisonStart = today.withDayOfMonth(1).minusMonths(1).minusDays(1)
+            val comparisonDays = generateSequence(comparisonStart) { it.plusDays(1) }
+                .takeWhile { !it.isAfter(today) }
+                .toList()
             // Foreign currencies whose included accounts should enter the
             // sparkline as converted stocks; empty when conversion is off.
             val sparklineForeign = if (conversion.active) {
@@ -352,15 +361,22 @@ class DashboardViewModel @Inject constructor(
             } else {
                 emptyList()
             }
+            // The sparkline and comparison walks travel together in one slot:
+            // the typed combine stops at five flows.
+            val balanceWalks = combine(
+                observeDailyBalanceHistory(primary, sparklineDays, sparklineForeign, rates),
+                observeDailyBalanceHistory(primary, comparisonDays, sparklineForeign, rates),
+                ::Pair,
+            )
             combine(
                 sources,
                 extras,
-                observeDailyBalanceHistory(primary, sparklineDays, sparklineForeign, rates),
+                balanceWalks,
                 recapTeaserMonth(today, primary),
                 // Accounts enriched with their per-account "as of today" balance,
                 // so a diverging account can show it in the breakdown.
                 accountRepository.observeAccountsWithBalanceAsOfToday(today.plusDays(1).toEpochDay()),
-            ) { collapsed, bundle, balanceHistory, recapTeaserMonth, accountsToday ->
+            ) { collapsed, bundle, (balanceHistory, comparisonHistory), recapTeaserMonth, accountsToday ->
                 buildState(
                     accounts = accountsToday,
                     primary = primary,
@@ -368,6 +384,7 @@ class DashboardViewModel @Inject constructor(
                     today = today,
                     sources = collapsed,
                     balanceHistory = balanceHistory,
+                    comparisonHistory = comparisonHistory,
                     recapTeaserMonth = recapTeaserMonth,
                     budgets = bundle.budgets,
                     safeToSpend = bundle.safeToSpend,
@@ -389,7 +406,6 @@ class DashboardViewModel @Inject constructor(
             initialValue = DashboardUiState(
                 date = LocalDate.now(clock),
                 greetingBand = greetingBand,
-                greetingRoll = greetingRoll,
             ),
         )
 
@@ -468,6 +484,7 @@ class DashboardViewModel @Inject constructor(
         today: LocalDate,
         sources: Sources,
         balanceHistory: List<DailyBalance>,
+        comparisonHistory: List<DailyBalance>,
         recapTeaserMonth: YearMonth?,
         budgets: List<BudgetProgress>,
         safeToSpend: SafeToSpend?,
@@ -562,7 +579,7 @@ class DashboardViewModel @Inject constructor(
             recapTeaserMonth = recapTeaserMonth.takeIf { cardPrefs.showRecapTeaser },
             date = today,
             greetingBand = greetingBand,
-            greetingRoll = greetingRoll,
+            monthComparison = buildMonthComparison(comparisonHistory, today),
         )
     }
 

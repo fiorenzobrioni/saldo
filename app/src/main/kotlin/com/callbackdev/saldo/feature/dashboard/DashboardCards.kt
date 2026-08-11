@@ -29,8 +29,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.TrendingDown
-import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CalendarMonth
@@ -66,7 +64,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -105,31 +102,37 @@ import java.time.format.FormatStyle
 import java.util.Currency
 
 /**
- * A warm, time-of-day greeting as the screen's title. The [band] and [roll] are
- * fixed once per app-open in the ViewModel, so the message is stable across
- * recomposition and rotation and only changes on a fresh open. Messages are
- * written to fit one line at the default font scale; a second line is allowed
- * so larger accessibility font sizes never truncate the text.
+ * The dashboard's top-bar title: a quiet time-of-day greeting as the eyebrow
+ * line and the full weekday date as the actual title. The [band] is fixed once
+ * per app-open in the ViewModel, so the greeting is stable across
+ * recomposition and rotation. Deliberately informational, not decorative: the
+ * date is the one piece of context every figure below refers to.
  */
 @Composable
-internal fun DashboardHeader(band: GreetingBand, roll: Float, modifier: Modifier = Modifier) {
-    val greetings = stringArrayResource(band.greetingsArrayRes())
-    val greeting = greetings.getOrElse((roll * greetings.size).toInt()) { greetings.firstOrNull().orEmpty() }
-    Text(
-        text = greeting,
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.SemiBold,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-        modifier = modifier.fillMaxWidth(),
-    )
+internal fun DashboardHeader(band: GreetingBand, date: LocalDate, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(band.greetingRes()),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = fullWeekdayDate(date),
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 /**
  * The uniform card header: leading icon in the primary tint, [title] in
- * titleMedium and an optional trailing slot (the balance card's date). Every
- * dashboard card opens its detail on tap, so no chevron: the convention is
- * carried by the cards themselves, not per-card affordances.
+ * titleMedium and an optional trailing slot (the balance card's expand
+ * chevron). Every dashboard card opens its detail on tap, so no chevron: the
+ * convention is carried by the cards themselves, not per-card affordances.
  */
 @Composable
 internal fun DashboardCardHeader(
@@ -160,12 +163,12 @@ internal fun DashboardCardHeader(
     }
 }
 
-@androidx.annotation.ArrayRes
-private fun GreetingBand.greetingsArrayRes(): Int = when (this) {
-    GreetingBand.NIGHT -> R.array.dashboard_greetings_night
-    GreetingBand.MORNING -> R.array.dashboard_greetings_morning
-    GreetingBand.AFTERNOON -> R.array.dashboard_greetings_afternoon
-    GreetingBand.EVENING -> R.array.dashboard_greetings_evening
+@androidx.annotation.StringRes
+private fun GreetingBand.greetingRes(): Int = when (this) {
+    GreetingBand.NIGHT -> R.string.dashboard_greeting_night
+    GreetingBand.MORNING -> R.string.dashboard_greeting_morning
+    GreetingBand.AFTERNOON -> R.string.dashboard_greeting_afternoon
+    GreetingBand.EVENING -> R.string.dashboard_greeting_evening
 }
 
 /**
@@ -209,7 +212,6 @@ internal fun BalanceCard(
     accounts: List<AccountWithBalance>,
     history: List<DailyBalance>,
     forecast: List<DailyBalance>,
-    date: LocalDate,
     accountsExpanded: Boolean,
     onToggleAccounts: () -> Unit,
     onManageAccounts: () -> Unit,
@@ -246,22 +248,17 @@ internal fun BalanceCard(
             DashboardCardHeader(
                 icon = Icons.Outlined.AccountBalanceWallet,
                 title = stringResource(R.string.dashboard_balance_total),
-                trailingContent = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = fullWeekdayDate(date),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
+                // The date lives in the screen's header now; the trailing slot
+                // keeps only the breakdown affordance.
+                trailingContent = if (accounts.isNotEmpty()) {
+                    {
+                        AccountsExpandChevron(
+                            expanded = accountsExpanded,
+                            onToggle = onToggleAccounts,
                         )
-                        if (accounts.isNotEmpty()) {
-                            Spacer(Modifier.width(4.dp))
-                            AccountsExpandChevron(
-                                expanded = accountsExpanded,
-                                onToggle = onToggleAccounts,
-                            )
-                        }
                     }
+                } else {
+                    null
                 },
             )
             Spacer(Modifier.height(BALANCE_AMOUNT_TOP_GAP))
@@ -931,42 +928,6 @@ private fun StatLine(label: String, value: String, modifier: Modifier = Modifier
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-/** Standalone reference line: how much had been spent by this day last month. */
-@Composable
-internal fun MonthComparisonRow(
-    previousSpend: BigDecimal,
-    spentMore: Boolean,
-    currency: Currency,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            imageVector = if (spentMore) {
-                Icons.AutoMirrored.Outlined.TrendingUp
-            } else {
-                Icons.AutoMirrored.Outlined.TrendingDown
-            },
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.size(8.dp))
-        Text(
-            text = stringResource(
-                R.string.dashboard_month_comparison,
-                MoneyFormatter.format(previousSpend, currency),
-            ),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

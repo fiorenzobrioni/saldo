@@ -9,7 +9,6 @@
     <string name="nav_settings">Settings</string>
 
     <!-- Placeholder screens (Phase 0) -->
-    <string name="placeholder_screen_body">This section will be available soon.</string>
 
     <!-- Common actions -->
     <string name="action_back">Back</string>
@@ -32,55 +31,11 @@
     <!-- Label of the pill next to the dashed forecast tail; %1$s is a formatted amount. -->
     <string name="dashboard_sparkline_forecast_pill">≈ %1$s</string>
     <string name="dashboard_sparkline_a11y_forecast">Estimated end-of-month balance: %1$s</string>
-    <!-- Time-of-day greetings shown in the dashboard header; one is picked at random per app open. -->
-    <string-array name="dashboard_greetings_night">
-        <item>Still up? A quick look.</item>
-        <item>Night owl? Welcome back.</item>
-        <item>Savings never sleep.</item>
-        <item>Two quick sums, then rest.</item>
-        <item>One last check before bed?</item>
-        <item>Good night.</item>
-        <item>Just you and the numbers.</item>
-        <item>Quiet hours, tidy accounts.</item>
-        <item>Wide awake? A quick glance.</item>
-        <item>Let\'s close out the day.</item>
-    </string-array>
-    <string-array name="dashboard_greetings_morning">
-        <item>Good morning!</item>
-        <item>How are the accounts?</item>
-        <item>New day, accounts in order.</item>
-        <item>Coffee and accounts?</item>
-        <item>Have a great day!</item>
-        <item>Morning! Let\'s track today.</item>
-        <item>Let\'s start with the numbers.</item>
-        <item>Coffee first, then accounts.</item>
-        <item>What\'s on the books today?</item>
-        <item>A good day starts here.</item>
-    </string-array>
-    <string-array name="dashboard_greetings_afternoon">
-        <item>Good afternoon!</item>
-        <item>How\'s the day going?</item>
-        <item>Everything under control?</item>
-        <item>A quick midday check-in.</item>
-        <item>Small expenses count too.</item>
-        <item>Afternoon! All in order?</item>
-        <item>Midday, all on track?</item>
-        <item>Take a break for the numbers.</item>
-        <item>Where are you with the books?</item>
-        <item>Log those expenses on the go?</item>
-    </string-array>
-    <string-array name="dashboard_greetings_evening">
-        <item>Good evening!</item>
-        <item>How did today go?</item>
-        <item>Time to take stock.</item>
-        <item>Any expenses to log?</item>
-        <item>End of the day: all set?</item>
-        <item>A minute for the numbers.</item>
-        <item>How\'s the evening going?</item>
-        <item>Evening tally?</item>
-        <item>Dinner and a quick check?</item>
-        <item>The evening\'s yours - and the books.</item>
-    </string-array>
+    <!-- Fixed time-of-day greeting, the eyebrow line above the date in the dashboard top bar. -->
+    <string name="dashboard_greeting_night">Good night</string>
+    <string name="dashboard_greeting_morning">Good morning</string>
+    <string name="dashboard_greeting_afternoon">Good afternoon</string>
+    <string name="dashboard_greeting_evening">Good evening</string>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d account</item>
         <item quantity="other">%1$d accounts</item>
@@ -106,6 +61,13 @@
     <string name="dashboard_month_less">%1$s less than by this day last month</string>
     <string name="dashboard_month_same">Same as by this day last month</string>
     <string name="dashboard_month_comparison">By this point last month you had spent %1$s</string>
+    <string name="dashboard_month_comparison_title">Monthly comparison</string>
+    <string name="dashboard_comparison_this_month">This month</string>
+    <string name="dashboard_comparison_previous_month">Last month</string>
+    <!-- TalkBack summary of the comparison chart; %1$s and %2$s are signed formatted amounts. -->
+    <string name="dashboard_comparison_a11y">Net balance change since the start of the month: %1$s this month, %2$s by this day last month</string>
+    <!-- Caption under the comparison chart: what the two lines plot. -->
+    <string name="dashboard_comparison_caption">Net change since the start of each month</string>
     <string name="dashboard_recurring_title">Recurring transactions</string>
     <string name="dashboard_recurring_expenses_label">Expenses / month</string>
     <string name="dashboard_recurring_incomes_label">Income / month</string>
@@ -248,7 +210,6 @@
     <string name="account_cc_mode_auto_hint">The transfer is recorded automatically on the payment day.</string>
 
     <!-- Transactions (Phase 3) -->
-    <string name="transactions_new">New transaction</string>
     <string name="transactions_empty_title">No transactions yet</string>
     <string name="transactions_empty_body">Record your first expense or income: it takes three taps.</string>
     <string name="transactions_empty_no_accounts_body">To record transactions you first need an account.</string>
@@ -1023,6 +984,8 @@
     <string name="settings_dashboard_show_sts_hint">Show what you can still spend today (needs a monthly budget)</string>
     <string name="settings_dashboard_show_budget">Budgets card</string>
     <string name="settings_dashboard_show_budget_hint">Show the month\'s budget progress</string>
+    <string name="settings_dashboard_show_recurring">Recurring movements card</string>
+    <string name="settings_dashboard_show_recurring_hint">Monthly totals of recurring expenses and incomes, and the next charge</string>
     <string name="settings_dashboard_show_recent">Latest transactions card</string>
     <string name="settings_dashboard_show_recent_hint">Show the most recent transactions at the bottom</string>
     <string name="settings_dashboard_show_recap_teaser">Monthly recap invite</string>

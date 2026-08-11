@@ -17,6 +17,12 @@ import androidx.compose.ui.platform.LocalContext
  * Settings. minSdk is 33, so when [dynamicColor] is on no availability check
  * is needed (revised ADR 9 in PLANNING.md).
  *
+ * Material 3 Expressive note: on material3 1.4.0 (the stable BOM's version)
+ * the whole Expressive API surface - MaterialExpressiveTheme, MotionScheme,
+ * MaterialTheme.motionScheme - is still internal, so the expressive motion
+ * feel is carried by plain Compose springs at the call sites (see
+ * SpeedDialFab) until the SDK 37 chore unlocks material3 1.5.
+ *
  * [applyBackground] draws the opaque themed backdrop described below. It is on
  * everywhere the app owns the whole window, and off in the one place that must
  * let the surface behind show through: the quick-entry sheet, whose translucent

@@ -116,9 +116,13 @@ fun StatsScreen(
                 // a period holding only foreign movements reads as "you
                 // recorded nothing this month".
                 if (uiState.showsOtherCurrencyNotice) {
-                    OtherCurrencyNotice(
-                        count = uiState.otherCurrencyCount,
-                        currency = uiState.currency,
+                    CurrencyNotice(
+                        text = pluralStringResource(
+                            R.plurals.stats_other_currencies_notice,
+                            uiState.otherCurrencyCount,
+                            uiState.otherCurrencyCount,
+                            uiState.currency.currencyCode,
+                        ),
                         onClick = {
                             onNavigateToFiltered(
                                 periodRoute(
@@ -153,9 +157,13 @@ fun StatsScreen(
                 // the whole screen is about, before any figure is read.
                 if (uiState.showsOtherCurrencyNotice) {
                     item {
-                        OtherCurrencyNotice(
-                            count = uiState.otherCurrencyCount,
-                            currency = uiState.currency,
+                        CurrencyNotice(
+                            text = pluralStringResource(
+                                R.plurals.stats_other_currencies_notice,
+                                uiState.otherCurrencyCount,
+                                uiState.otherCurrencyCount,
+                                uiState.currency.currencyCode,
+                            ),
                             onClick = {
                                 onNavigateToFiltered(
                                     periodRoute(
@@ -174,9 +182,13 @@ fun StatsScreen(
                 // movements stay one tap away.
                 if (uiState.showsConvertedNotice) {
                     item {
-                        ConvertedCurrencyNotice(
-                            count = uiState.convertedCurrencyCount,
-                            currency = uiState.currency,
+                        CurrencyNotice(
+                            text = pluralStringResource(
+                                R.plurals.stats_converted_currencies_notice,
+                                uiState.convertedCurrencyCount,
+                                uiState.convertedCurrencyCount,
+                                uiState.currency.currencyCode,
+                            ),
                             onClick = {
                                 onNavigateToFiltered(
                                     periodRoute(
@@ -423,17 +435,15 @@ private fun periodRoute(
 
 /**
  * Every figure on this screen is scoped to one currency, so a period that also
- * holds foreign movements is being under-reported. This says so in one line and
- * hands over the list of what is missing, rather than leaving the user to work
- * out why the totals feel short.
- *
- * Deliberately a quiet informational row, not a warning: nothing is wrong, the
- * charts simply cannot add up two currencies until conversion exists.
+ * holds foreign movements needs a word about them: excluded ones are
+ * under-reporting the totals, converted ones make the figures estimates
+ * (ADR 40, third condition: the estimate is declared). One quiet informational
+ * row for either [text], not a warning - nothing is wrong - with the same
+ * drill-down to the movements it talks about.
  */
 @Composable
-private fun OtherCurrencyNotice(
-    count: Int,
-    currency: Currency,
+private fun CurrencyNotice(
+    text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -455,63 +465,7 @@ private fun OtherCurrencyNotice(
             )
             Spacer(Modifier.width(12.dp))
             Text(
-                text = pluralStringResource(
-                    R.plurals.stats_other_currencies_notice,
-                    count,
-                    count,
-                    currency.currencyCode,
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f),
-            )
-            Spacer(Modifier.width(8.dp))
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
-            )
-        }
-    }
-}
-
-/**
- * Twin of [OtherCurrencyNotice] for the movements the charts now include as
- * estimates: converted into the primary currency at the ECB rate of each
- * movement's own day (ADR 40, third condition: the estimate is declared).
- */
-@Composable
-private fun ConvertedCurrencyNotice(
-    count: Int,
-    currency: Currency,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        onClick = onClick,
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.CurrencyExchange,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(
-                text = pluralStringResource(
-                    R.plurals.stats_converted_currencies_notice,
-                    count,
-                    count,
-                    currency.currencyCode,
-                ),
+                text = text,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),

@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -22,16 +23,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ReceiptLong
+import androidx.compose.material.icons.automirrored.outlined.TrendingDown
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,9 +69,13 @@ import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.EmptyState
 import com.callbackdev.saldo.core.designsystem.component.ListSkeleton
 import com.callbackdev.saldo.core.designsystem.component.SaldoCard
+import com.callbackdev.saldo.core.designsystem.component.SpeedDialAction
+import com.callbackdev.saldo.core.designsystem.component.SpeedDialFab
+import com.callbackdev.saldo.core.designsystem.component.SpeedDialScrim
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.feature.transactions.export.CsvExportSheet
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.importer.CsvImportError
@@ -91,7 +99,7 @@ private val CSV_IMPORT_MIME_TYPES = arrayOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionsScreen(
-    onNavigateToNewTransaction: () -> Unit,
+    onNavigateToNewTransaction: (TransactionType) -> Unit,
     onNavigateToEditTransaction: (Long) -> Unit,
     onNavigateToAccounts: () -> Unit,
     modifier: Modifier = Modifier,
@@ -108,6 +116,9 @@ fun TransactionsScreen(
         ActivityResultContracts.OpenDocument(),
     ) { uri -> uri?.let(viewModel::importCsv) }
     var isSearching by rememberSaveable { mutableStateOf(false) }
+    // Plain remember on purpose: an open speed dial should not survive
+    // navigating away and back, nor a rotation.
+    var fabExpanded by remember { mutableStateOf(false) }
     var showFilterSheet by remember { mutableStateOf(false) }
     var showRangePicker by remember { mutableStateOf(false) }
     var showExportSheet by remember { mutableStateOf(false) }
@@ -184,61 +195,84 @@ fun TransactionsScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
-            if (!uiState.isLoading && !uiState.isEmpty) {
-                ExtendedFloatingActionButton(
-                    onClick = onNavigateToNewTransaction,
-                    icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.transactions_new)) },
+            // Never hidden once loaded (an always-there way to record is the
+            // point of the ledger): the same typed speed dial as the
+            // dashboard, or a plain FAB to the first account when none exists.
+            when {
+                uiState.isLoading -> Unit
+
+                !uiState.hasAccounts -> FloatingActionButton(onClick = onNavigateToAccounts) {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = stringResource(R.string.transactions_create_account),
+                    )
+                }
+
+                else -> SpeedDialFab(
+                    expanded = fabExpanded,
+                    onToggle = { fabExpanded = !fabExpanded },
+                    actions = movementSpeedDialActions { type ->
+                        fabExpanded = false
+                        onNavigateToNewTransaction(type)
+                    },
+                    toggleDescription = stringResource(R.string.dashboard_fab_add),
                 )
             }
         },
     ) { innerPadding ->
-        when {
-            uiState.isLoading -> ListSkeleton(Modifier.padding(innerPadding))
+        Box(modifier = Modifier.fillMaxSize()) {
+            when {
+                uiState.isLoading -> ListSkeleton(Modifier.padding(innerPadding))
 
-            uiState.isEmpty -> TransactionsEmptyState(
-                hasAccounts = uiState.hasAccounts,
-                onAddTransaction = onNavigateToNewTransaction,
-                onCreateAccount = onNavigateToAccounts,
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-            )
-
-            else -> Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                TransactionsFilterBar(
-                    filters = uiState.filters,
-                    today = uiState.today,
-                    categories = uiState.filterCategories,
-                    accounts = uiState.filterAccounts,
-                    tags = uiState.filterTags,
-                    onSetPreset = viewModel::setDatePreset,
-                    onRequestCustomRange = { showRangePicker = true },
-                    onFiltersChange = viewModel::applyFilters,
+                uiState.isEmpty -> TransactionsEmptyState(
+                    hasAccounts = uiState.hasAccounts,
+                    onAddTransaction = { onNavigateToNewTransaction(TransactionType.EXPENSE) },
+                    onCreateAccount = onNavigateToAccounts,
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
                 )
-                if (uiState.filters.isActive) {
-                    Spacer(Modifier.height(4.dp))
-                    FilteredTotalsBar(
-                        totals = uiState.filteredTotals,
-                        count = uiState.filteredCount,
-                    )
-                }
-                if (uiState.isNoResults) {
-                    NoResultsState(
-                        onClearFilters = {
-                            viewModel.clearFilters()
-                            isSearching = false
-                        },
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                } else {
-                    TransactionsList(
-                        days = uiState.days,
+
+                else -> Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                    TransactionsFilterBar(
+                        filters = uiState.filters,
                         today = uiState.today,
-                        onItemClick = { onNavigateToEditTransaction(it.id) },
-                        onItemDelete = viewModel::delete,
-                        modifier = Modifier.fillMaxSize(),
+                        categories = uiState.filterCategories,
+                        accounts = uiState.filterAccounts,
+                        tags = uiState.filterTags,
+                        onSetPreset = viewModel::setDatePreset,
+                        onRequestCustomRange = { showRangePicker = true },
+                        onFiltersChange = viewModel::applyFilters,
                     )
+                    if (uiState.filters.isActive) {
+                        Spacer(Modifier.height(4.dp))
+                        FilteredTotalsBar(
+                            totals = uiState.filteredTotals,
+                            count = uiState.filteredCount,
+                        )
+                    }
+                    if (uiState.isNoResults) {
+                        NoResultsState(
+                            onClearFilters = {
+                                viewModel.clearFilters()
+                                isSearching = false
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        TransactionsList(
+                            days = uiState.days,
+                            today = uiState.today,
+                            onItemClick = { onNavigateToEditTransaction(it.id) },
+                            onItemDelete = viewModel::delete,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                 }
             }
+            SpeedDialScrim(
+                visible = fabExpanded,
+                onDismiss = { fabExpanded = false },
+                modifier = Modifier.padding(innerPadding),
+            )
         }
     }
 
@@ -550,6 +584,31 @@ private fun DayHeader(
         )
     }
 }
+
+/**
+ * The three typed quick actions of the movement speed dial, shared by the
+ * dashboard and the ledger so a new movement always starts with its type
+ * preselected (one tap saved, per the 2-3 taps rule in VISION.md).
+ */
+@Composable
+internal fun movementSpeedDialActions(onAction: (TransactionType) -> Unit): List<SpeedDialAction> =
+    listOf(
+        SpeedDialAction(
+            icon = Icons.Outlined.SwapHoriz,
+            label = stringResource(R.string.dashboard_fab_transfer),
+            onClick = { onAction(TransactionType.TRANSFER) },
+        ),
+        SpeedDialAction(
+            icon = Icons.AutoMirrored.Outlined.TrendingUp,
+            label = stringResource(R.string.dashboard_fab_income),
+            onClick = { onAction(TransactionType.INCOME) },
+        ),
+        SpeedDialAction(
+            icon = Icons.AutoMirrored.Outlined.TrendingDown,
+            label = stringResource(R.string.dashboard_fab_expense),
+            onClick = { onAction(TransactionType.EXPENSE) },
+        ),
+    )
 
 @Composable
 private fun TransactionsEmptyState(

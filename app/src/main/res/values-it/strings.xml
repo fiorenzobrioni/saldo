@@ -7,7 +7,6 @@
     <string name="nav_settings">Impostazioni</string>
 
     <!-- Placeholder screens (Phase 0) -->
-    <string name="placeholder_screen_body">Questa sezione sarà disponibile presto.</string>
 
     <!-- Azioni comuni -->
     <string name="action_back">Indietro</string>
@@ -30,55 +29,11 @@
     <!-- Etichetta della pill accanto alla coda tratteggiata; %1$s è un importo formattato. -->
     <string name="dashboard_sparkline_forecast_pill">≈ %1$s</string>
     <string name="dashboard_sparkline_a11y_forecast">Saldo stimato a fine mese: %1$s</string>
-    <!-- Saluti mostrati nell'header della dashboard; uno scelto a caso a ogni apertura. -->
-    <string-array name="dashboard_greetings_night">
-        <item>Un\'occhiata e poi a letto.</item>
-        <item>Notte fonda? Solo un attimo.</item>
-        <item>I risparmi non dormono mai.</item>
-        <item>Prima di dormire, due conti.</item>
-        <item>Un ultimo controllo?</item>
-        <item>Buonanotte.</item>
-        <item>Solo tu e i conti.</item>
-        <item>Due conti e sogni sereni.</item>
-        <item>Ancora in piedi? Uno sguardo veloce.</item>
-        <item>Chiudiamo la giornata.</item>
-    </string-array>
-    <string-array name="dashboard_greetings_morning">
-        <item>Buongiorno!</item>
-        <item>Come vanno i conti?</item>
-        <item>Nuovo giorno, conti a posto.</item>
-        <item>Caffè e conti?</item>
-        <item>Buona giornata!</item>
-        <item>Teniamo d\'occhio le spese.</item>
-        <item>Si comincia: due conti.</item>
-        <item>Colazione fatta, conti dopo.</item>
-        <item>Che si mette in conto oggi?</item>
-        <item>Un buon inizio parte dai conti.</item>
-    </string-array>
-    <string-array name="dashboard_greetings_afternoon">
-        <item>Buon pomeriggio!</item>
-        <item>Come procede la giornata?</item>
-        <item>Tutto sotto controllo?</item>
-        <item>Pausa e due conti?</item>
-        <item>Le piccole spese contano.</item>
-        <item>Conti in ordine?</item>
-        <item>Metà giornata, tutto a posto?</item>
-        <item>Una pausa per i conti.</item>
-        <item>A che punto sei coi conti?</item>
-        <item>Segna le spese al volo?</item>
-    </string-array>
-    <string-array name="dashboard_greetings_evening">
-        <item>Buonasera!</item>
-        <item>Com\'è andata oggi?</item>
-        <item>Tempo di fare il punto.</item>
-        <item>Registra le ultime spese?</item>
-        <item>Fine giornata: tutto ok?</item>
-        <item>Un minuto ai conti.</item>
-        <item>Come va la serata?</item>
-        <item>Bilancio di fine giornata?</item>
-        <item>Cena e due conti?</item>
-        <item>La serata è tua, i conti pure.</item>
-    </string-array>
+    <!-- Saluto fisso per fascia oraria, la riga sopra la data nella top bar della dashboard. -->
+    <string name="dashboard_greeting_night">Buonanotte</string>
+    <string name="dashboard_greeting_morning">Buongiorno</string>
+    <string name="dashboard_greeting_afternoon">Buon pomeriggio</string>
+    <string name="dashboard_greeting_evening">Buonasera</string>
     <plurals name="dashboard_accounts_count">
         <item quantity="one">%1$d conto</item>
         <item quantity="many">%1$d conti</item>
@@ -106,6 +61,13 @@
     <string name="dashboard_month_less">%1$s in meno rispetto a questo punto del mese scorso</string>
     <string name="dashboard_month_same">Come a questo punto del mese scorso</string>
     <string name="dashboard_month_comparison">A questo punto del mese scorso avevi speso %1$s</string>
+    <string name="dashboard_month_comparison_title">Confronto mensile</string>
+    <string name="dashboard_comparison_this_month">Questo mese</string>
+    <string name="dashboard_comparison_previous_month">Mese scorso</string>
+    <!-- Riepilogo TalkBack del grafico di confronto; %1$s e %2$s sono importi formattati con segno. -->
+    <string name="dashboard_comparison_a11y">Variazione netta del saldo da inizio mese: %1$s questo mese, %2$s a questo punto del mese scorso</string>
+    <!-- Didascalia sotto il grafico di confronto: cosa tracciano le due linee. -->
+    <string name="dashboard_comparison_caption">Variazione netta da inizio mese</string>
     <string name="dashboard_recurring_title">Movimenti ricorrenti</string>
     <string name="dashboard_recurring_expenses_label">Uscite / mese</string>
     <string name="dashboard_recurring_incomes_label">Entrate / mese</string>
@@ -250,7 +212,6 @@
     <string name="account_cc_mode_auto_hint">Il trasferimento viene registrato in automatico alla data di addebito.</string>
 
     <!-- Movimenti (Fase 3) -->
-    <string name="transactions_new">Nuovo movimento</string>
     <string name="transactions_empty_title">Ancora nessun movimento</string>
     <string name="transactions_empty_body">Registra la tua prima spesa o entrata: bastano tre tocchi.</string>
     <string name="transactions_empty_no_accounts_body">Per registrare i movimenti serve prima un conto.</string>
@@ -1040,6 +1001,8 @@
     <string name="settings_dashboard_show_sts_hint">Mostra quanto puoi ancora spendere oggi (richiede un budget mensile)</string>
     <string name="settings_dashboard_show_budget">Scheda budget</string>
     <string name="settings_dashboard_show_budget_hint">Mostra i progressi dei budget del mese</string>
+    <string name="settings_dashboard_show_recurring">Card movimenti ricorrenti</string>
+    <string name="settings_dashboard_show_recurring_hint">Totali mensili di spese ed entrate ricorrenti e il prossimo addebito</string>
     <string name="settings_dashboard_show_recent">Scheda ultimi movimenti</string>
     <string name="settings_dashboard_show_recent_hint">Mostra i movimenti più recenti in fondo</string>
     <string name="settings_dashboard_show_recap_teaser">Invito al recap mensile</string>
