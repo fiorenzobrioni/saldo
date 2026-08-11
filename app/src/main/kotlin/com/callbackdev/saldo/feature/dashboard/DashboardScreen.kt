@@ -392,7 +392,7 @@ private fun DashboardContent(
                 MonthComparisonCard(
                     comparison = uiState.monthComparison,
                     previousSpend = previousSpend,
-                    spentMore = uiState.spentMoreThanLastMonth,
+                    delta = uiState.monthVsPreviousToDate,
                     currency = uiState.primaryCurrency,
                     onClick = onOpenStats,
                 )

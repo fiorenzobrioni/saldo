@@ -57,17 +57,16 @@
     <string name="dashboard_stat_incomes">Entrate</string>
     <string name="dashboard_stat_net">Netto</string>
     <string name="dashboard_stat_balance">Saldo</string>
-    <string name="dashboard_month_more">%1$s in più rispetto a questo punto del mese scorso</string>
-    <string name="dashboard_month_less">%1$s in meno rispetto a questo punto del mese scorso</string>
-    <string name="dashboard_month_same">Come a questo punto del mese scorso</string>
-    <string name="dashboard_month_comparison">A questo punto del mese scorso avevi speso %1$s</string>
     <string name="dashboard_month_comparison_title">Confronto mensile</string>
     <string name="dashboard_comparison_this_month">Questo mese</string>
     <string name="dashboard_comparison_previous_month">Mese scorso</string>
     <!-- Riepilogo TalkBack del grafico di confronto; %1$s e %2$s sono importi formattati con segno. -->
     <string name="dashboard_comparison_a11y">Variazione netta del saldo da inizio mese: %1$s questo mese, %2$s a questo punto del mese scorso</string>
-    <!-- Didascalia sotto il grafico di confronto: cosa tracciano le due linee. -->
-    <string name="dashboard_comparison_caption">Variazione netta da inizio mese</string>
+    <!-- Didascalia nella riga della legenda: cosa tracciano le due linee. Corta, condivide la riga con le chiavi colore. -->
+    <string name="dashboard_comparison_caption">Variazione da inizio mese</string>
+    <!-- Righe di riferimento in chiusura: etichetta a sinistra, importo spinto a fine riga. -->
+    <string name="dashboard_comparison_spent_last_month">Speso a questo punto del mese scorso</string>
+    <string name="dashboard_comparison_delta_label">Differenza</string>
     <string name="dashboard_recurring_title">Movimenti ricorrenti</string>
     <string name="dashboard_recurring_expenses_label">Uscite / mese</string>
     <string name="dashboard_recurring_incomes_label">Entrate / mese</string>

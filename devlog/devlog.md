@@ -14,6 +14,18 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-08-11 - Rifinitura della card Confronto mensile dal giro su device
+
+**Fatto:** screenshot dell'utente dalla 2.0.1: la riga di chiusura della card Confronto mensile ("A questo punto del mese scorso avevi speso 2.155,90 EUR") mandava l'importo a capo, e la didascalia della legenda risultava troncata di netto ("Variazione netta da inizio"). Footer riscritto come due righe etichetta/importo nello stesso stile delle stat line delle card Oggi/Mese: "Speso a questo punto del mese scorso" con l'importo a fine riga (tabulare, mai a capo) e una nuova riga "Differenza" con lo scarto di spesa con segno rispetto allo stesso punto del mese scorso (`formatSigned`, "+" per chi ha speso di piu). Icona trend rimossa: era variabile (su/giu secondo la spesa), ma col grafico appena sopra era ridondante e ambigua. Didascalia della legenda accorciata ("Variazione da inizio mese") e resa robusta (peso residuo della riga, ellissi, allineata a destra). Versione 2.0.2 (`versionCode` 174).
+
+**Decisioni:** la nuova riga Differenza usa `monthVsPreviousToDate`, gia calcolato nello state e mai consumato dalla UI; il flag `spentMoreThanLastMonth`, rimasto senza consumer dopo la rimozione dell'icona, e stato tolto dallo state insieme alle stringhe leftover `dashboard_month_more/less/same` (mai riferite dal codice). Colore neutro per la differenza: la direzione la porta il segno, coerente con la regola "rosso solo per i saldi negativi".
+
+**Problemi:** nessuno.
+
+**Prossimo:** verifica su device della card aggiornata (footer su schermi stretti e a scala font maggiorata).
+
+---
+
 ## 2026-08-11 - Fase 36: review UX, header informativo, confronto mensile a grafico, FAB unificati
 
 **Fatto:** giro di review UX su tutta l'app, poi implementazione in un'unica passata (versione 2.0.1, `versionCode` 173). La Dashboard perde il saluto ruotato a caso (40 frasi in 4 fasce orarie) e guadagna una top bar fissa come gli altri tre tab: saluto minimale per fascia (4 stringhe fisse) come riga eyebrow e la data completa come titolo; scorrendo oltre la cifra hero, il titolo passa al saldo totale compatto ("saldo collassante"), cosi la cifra chiave non lascia mai lo schermo. La data e sparita dall'header della card Saldo totale, dove era duplicata. La riga nuda del confronto col mese scorso e diventata una card con grafico: variazione netta del saldo dal primo giorno del mese, mese corrente (fino a oggi, linea primary con punto) sovrapposto al mese scorso completo (linea neutra), zero baseline puntinata, legenda e riga di riferimento come footer; tap verso le Statistiche. I FAB sono unificati: speed dial a tre azioni tipizzate condiviso fra Dashboard e Movimenti (`SpeedDialFab` nel design system), sempre visibile a caricamento finito, e senza conti diventa un FAB verso la creazione del primo conto. La card Movimenti ricorrenti ha lo switch di visibilita in Impostazioni come le altre (chiave nel backup). Pulizia: `PlaceholderScreen` eliminato, i due notice valuta delle Statistiche unificati in un componente, parita IT/EN verificata (le 8 voci solo EN sono `translatable="false"`). Verificato con `assembleDebug testDebugUnitTest lint` verdi; unit test nuovi sul builder della serie di confronto (`MonthComparisonTest`: normalizzazione al proprio inizio mese, mesi corti, finestre incomplete che danno null) e test delle finestre del walk esteso alle due richieste.

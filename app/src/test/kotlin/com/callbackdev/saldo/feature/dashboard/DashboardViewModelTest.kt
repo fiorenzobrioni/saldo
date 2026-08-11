@@ -657,13 +657,12 @@ class DashboardViewModelTest {
             // 118.90 spent so far this month vs 50.00 by the 8th last month.
             assertEquals(BigDecimal("68.90"), state.monthVsPreviousToDate)
             assertEquals(BigDecimal("50.00"), state.previousMonthSpendToDate)
-            assertTrue(state.spentMoreThanLastMonth)
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
-    fun `no last-month baseline yields no comparison and no spent-more flag`() = runTest {
+    fun `no last-month baseline yields no comparison`() = runTest {
         val totals = DashboardTotals(
             month = PeriodTotals(spend = BigDecimal("-118.90"), income = BigDecimal.ZERO),
             monthToDateSpend = BigDecimal("118.90"),
@@ -678,7 +677,6 @@ class DashboardViewModelTest {
             val state = awaitLoaded()
             assertNull(state.monthVsPreviousToDate)
             assertNull(state.previousMonthSpendToDate)
-            assertFalse(state.spentMoreThanLastMonth)
             cancelAndIgnoreRemainingEvents()
         }
     }

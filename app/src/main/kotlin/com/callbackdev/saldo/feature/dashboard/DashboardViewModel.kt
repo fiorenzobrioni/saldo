@@ -191,8 +191,6 @@ data class DashboardUiState(
      * to compare against.
      */
     val previousMonthSpendToDate: BigDecimal? = null,
-    /** Whether more has been spent so far this month than by this day last month. */
-    val spentMoreThanLastMonth: Boolean = false,
     val recurring: RecurringSummary = RecurringSummary(),
     /** Number of recurring movements awaiting confirmation. */
     val pendingCount: Int = 0,
@@ -510,8 +508,6 @@ class DashboardViewModel @Inject constructor(
         val totals = sources.totals.value
         val previousReference = totals.previousMonthToDateSpend.takeIf { it.signum() > 0 }
         val comparison = previousReference?.let { totals.monthToDateSpend.subtract(it) }
-        // Meaningful only when a baseline exists, like the two figures above.
-        val spentMore = previousReference != null && totals.monthToDateSpend > previousReference
 
         val accountById = accounts.associate { it.account.id to it.account }
         val categoryById = sources.categories.associateBy { it.id }
@@ -563,7 +559,6 @@ class DashboardViewModel @Inject constructor(
             month = totals.month,
             monthVsPreviousToDate = comparison,
             previousMonthSpendToDate = previousReference,
-            spentMoreThanLastMonth = spentMore,
             recurring = recurringSummary(sources.rules, primary, today, savingsAccountIds(accounts)),
             pendingCount = sources.upcoming.count { it.isPending },
             upcoming = upcomingPreview(sources.upcoming, accountById, categoryById, sources.rules),

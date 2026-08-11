@@ -16,10 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.TrendingDown
-import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.SsidChart
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,12 +34,15 @@ import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.designsystem.component.SaldoCard
 import com.callbackdev.saldo.core.designsystem.component.rememberMotionEnabled
 import com.callbackdev.saldo.core.designsystem.theme.SaldoDimens
+import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import java.math.BigDecimal
 import java.util.Currency
 
@@ -55,15 +55,16 @@ import java.util.Currency
  * the hero sparkline above already estimates the month's end, this card
  * compares facts with facts.
  *
- * The footer keeps the spend-to-date reference line the old bare row carried
- * ("by this point last month you had spent X"). Tap opens the statistics tab.
+ * The footer carries the two reference figures as label/amount rows (never a
+ * wrapping sentence): what had been spent by this day last month, and the
+ * signed spend difference against it. Tap opens the statistics tab.
  */
 @Suppress("LongParameterList") // One argument per card ingredient, all owned by the ViewModel.
 @Composable
 internal fun MonthComparisonCard(
     comparison: MonthComparisonSeries?,
     previousSpend: BigDecimal,
-    spentMore: Boolean,
+    delta: BigDecimal?,
     currency: Currency,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -97,11 +98,17 @@ internal fun MonthComparisonCard(
                 ComparisonLegend()
             }
             Spacer(Modifier.height(FOOTER_TOP_GAP))
-            ComparisonFooter(
-                previousSpend = previousSpend,
-                spentMore = spentMore,
-                currency = currency,
+            ComparisonStatRow(
+                label = stringResource(R.string.dashboard_comparison_spent_last_month),
+                value = MoneyFormatter.format(previousSpend, currency),
             )
+            delta?.let {
+                Spacer(Modifier.height(FOOTER_ROW_GAP))
+                ComparisonStatRow(
+                    label = stringResource(R.string.dashboard_comparison_delta_label),
+                    value = MoneyFormatter.formatSigned(it, currency),
+                )
+            }
         }
     }
 }
@@ -244,12 +251,16 @@ private fun ComparisonLegend(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = PREVIOUS_ALPHA),
             label = stringResource(R.string.dashboard_comparison_previous_month),
         )
-        Spacer(Modifier.weight(1f))
         Text(
             text = stringResource(R.string.dashboard_comparison_caption),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End,
+            // Takes only the leftover width and truncates with an ellipsis:
+            // the color keys always win the space fight.
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -276,36 +287,29 @@ private fun LegendEntry(color: Color, label: String, modifier: Modifier = Modifi
     }
 }
 
-/** The spend-to-date reference the old bare row carried, now the card's footer. */
+/**
+ * One reference row of the card's footer: muted label taking the leftover
+ * width, tabular amount pushed to the row's end (the same idiom as the
+ * Today/month stat lines), so the figure never wraps to its own line.
+ */
 @Composable
-private fun ComparisonFooter(
-    previousSpend: BigDecimal,
-    spentMore: Boolean,
-    currency: Currency,
-    modifier: Modifier = Modifier,
-) {
+private fun ComparisonStatRow(label: String, value: String, modifier: Modifier = Modifier) {
     Row(
-        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(
-            imageVector = if (spentMore) {
-                Icons.AutoMirrored.Outlined.TrendingUp
-            } else {
-                Icons.AutoMirrored.Outlined.TrendingDown
-            },
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(FOOTER_ICON_SIZE),
-        )
-        Spacer(Modifier.width(FOOTER_ICON_GAP))
         Text(
-            text = stringResource(
-                R.string.dashboard_month_comparison,
-                MoneyFormatter.format(previousSpend, currency),
-            ),
+            text = label,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        Spacer(Modifier.width(FOOTER_VALUE_GAP))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall.tabularNumbers(),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
         )
     }
 }
@@ -314,11 +318,11 @@ private val CHART_HEIGHT = 64.dp
 private val CHART_TOP_GAP = 10.dp
 private val LEGEND_TOP_GAP = 4.dp
 private val FOOTER_TOP_GAP = 8.dp
+private val FOOTER_ROW_GAP = 2.dp
+private val FOOTER_VALUE_GAP = 6.dp
 private val LEGEND_ENTRY_GAP = 12.dp
 private val LEGEND_DOT_GAP = 4.dp
 private val LEGEND_DOT_SIZE = 8.dp
-private val FOOTER_ICON_SIZE = 18.dp
-private val FOOTER_ICON_GAP = 8.dp
 
 private const val PREVIOUS_ALPHA = 0.45f
 private const val PREVIOUS_STROKE = 1.5f
