@@ -53,7 +53,7 @@ class QuickAddWidgetThemeTest {
     /**
      * The token's whole point: a step apart from secondaryContainer, lighter
      * on the light side and darker on the dark side, exactly as
-     * glance-material3 derives it for the launcher.
+     * the Material 3 widget spec derives it.
      */
     @Test
     fun theWidgetBackgroundTokenStepsAwayFromSecondaryContainer() {

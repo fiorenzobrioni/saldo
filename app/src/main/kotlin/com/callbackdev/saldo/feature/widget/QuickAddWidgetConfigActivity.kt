@@ -11,9 +11,6 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.getAppWidgetState
-import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.callbackdev.saldo.R
@@ -43,6 +40,12 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
     @Inject
     lateinit var appLockRepository: AppLockRepository
 
+    @Inject
+    lateinit var configStore: WidgetConfigStore
+
+    @Inject
+    lateinit var widgetUpdater: WidgetUpdater
+
     private val viewModel: QuickAddWidgetConfigViewModel by viewModels()
 
     private val appWidgetId: Int
@@ -61,7 +64,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
         runCatching {
             AppWidgetManager.getInstance(this)
                 .getAppWidgetInfo(appWidgetId)
-                ?.provider?.className == SaldoQuickBarWidgetReceiver::class.java.name
+                ?.provider?.className == QuickBarWidgetProvider::class.java.name
         }.getOrDefault(false)
     }
 
@@ -121,14 +124,8 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
 
     private fun loadStoredConfig() {
         lifecycleScope.launch {
-            val stored = runCatching {
-                val glanceId = GlanceAppWidgetManager(this@QuickAddWidgetConfigActivity)
-                    .getGlanceIdBy(appWidgetId)
-                val widget = if (isBar) SaldoQuickBarWidget() else SaldoQuickAddWidget()
-                QuickAddWidgetPrefs.read(
-                    widget.getAppWidgetState(this@QuickAddWidgetConfigActivity, glanceId),
-                )
-            }.getOrDefault(QuickAddWidgetConfig())
+            val stored = runCatching { configStore.read(appWidgetId) }
+                .getOrDefault(QuickAddWidgetConfig())
             // Always seeds, defaults included: the screen gates its content on
             // this, and a read that failed must degrade to an editable form
             // rather than to a spinner that never ends.
@@ -140,34 +137,18 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
         val config = viewModel.uiState.value.config
         lifecycleScope.launch {
             runCatching {
-                val bar = isBar
-                val manager = GlanceAppWidgetManager(this@QuickAddWidgetConfigActivity)
-                val glanceId = manager.getGlanceIdBy(appWidgetId)
-                updateAppWidgetState(this@QuickAddWidgetConfigActivity, glanceId) { prefs ->
-                    prefs[QuickAddWidgetPrefs.AccountId] = QuickAddWidgetPrefs.encodeAccountId(config.accountId)
-                    prefs[QuickAddWidgetPrefs.Type] = config.type.name
-                    prefs[QuickAddWidgetPrefs.PinnedCategoryIds] =
-                        QuickAddWidgetPrefs.encodePinned(config.pinnedCategoryIds)
-                    prefs[QuickAddWidgetPrefs.Appearance] = config.appearance.name
-                    prefs[QuickAddWidgetPrefs.Buttons] = config.buttons.name
-                    // Confirming settings puts the widget back on its configured
-                    // start: leaving the runtime choice behind would mean the
-                    // widget ignored the value just chosen.
-                    prefs[QuickAddWidgetPrefs.CurrentType] = config.type.name
-                    prefs[QuickAddWidgetPrefs.ShowAppShortcut] = config.showAppShortcut
-                    // Bumped here as well as by the refresh watcher. The
-                    // composition reloads on any change of its inputs, and the
-                    // revision is the one input guaranteed to differ, so a
-                    // setting that happens to round-trip to the same value still
-                    // forces the redraw.
-                    val revision = prefs[QuickAddWidgetPrefs.Revision] ?: 0L
-                    prefs[QuickAddWidgetPrefs.Revision] = revision + 1
-                }
-                if (bar) {
-                    SaldoQuickBarWidget().update(this@QuickAddWidgetConfigActivity, glanceId)
-                } else {
-                    SaldoQuickAddWidget().update(this@QuickAddWidgetConfigActivity, glanceId)
-                }
+                configStore.write(appWidgetId, config)
+                // The snapshot cache is keyed by configuration, so the write
+                // above already misses it; only the render has to be asked for.
+                widgetUpdater.update(
+                    provider = if (isBar) {
+                        QuickBarWidgetProvider::class.java
+                    } else {
+                        QuickAddWidgetProvider::class.java
+                    },
+                    appWidgetIds = intArrayOf(appWidgetId),
+                    sizes = if (isBar) ActionSizes else GridWidgetSizes,
+                )
             }.onFailure {
                 // The one thing worse than a failed save is a silent one: the
                 // user just chose these settings and would find them undone.

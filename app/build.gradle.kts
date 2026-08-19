@@ -20,8 +20,8 @@ android {
         applicationId = "com.callbackdev.saldo"
         minSdk = 33
         targetSdk = 36
-        versionCode = 177
-        versionName = "2.0.5"
+        versionCode = 178
+        versionName = "2.0.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -110,9 +110,6 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
 
-    // Glance (home screen quick-add widget)
-    implementation(libs.androidx.glance.appwidget)
-    implementation(libs.androidx.glance.material3)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

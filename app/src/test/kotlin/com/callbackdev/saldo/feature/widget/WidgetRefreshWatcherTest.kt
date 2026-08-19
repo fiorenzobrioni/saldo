@@ -29,9 +29,9 @@ import java.util.Currency
  * Equally deliberate is what is *not* here: no transactions flow. The widget
  * shows no totals and no usage-derived ordering, so a recorded movement must
  * not redraw it - that absence is the whole point of it being a static entry
- * point, and adding the flow back would reintroduce a full refresh (state
- * write, database pass, one composition per size bucket, a RemoteViews
- * payload) on every single movement.
+ * point, and adding the flow back would reintroduce a full refresh (database
+ * pass, one render per breakpoint, a RemoteViews payload to the launcher) on
+ * every single movement.
  */
 class WidgetRefreshWatcherTest {
 
@@ -54,6 +54,8 @@ class WidgetRefreshWatcherTest {
         categoryRepository = categoryRepository,
         accountRepository = accountRepository,
         userPreferences = userPreferences,
+        updater = mockk<WidgetUpdater>(relaxed = true),
+        loader = mockk<QuickAddWidgetDataLoader>(relaxed = true),
     )
 
     private val account = Account(

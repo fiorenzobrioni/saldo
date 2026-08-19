@@ -1,11 +1,6 @@
 package com.callbackdev.saldo.feature.widget
 
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
 import android.content.Context
-import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.state.updateAppWidgetState
-import androidx.glance.appwidget.updateAll
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
@@ -27,7 +22,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Keeps placed widgets in step with the data. A widget renders a snapshot (see
- * [SaldoQuickAddWidget]), so something has to ask for the redraw: this watches
+ * [SaldoWidgetProvider]), so something has to ask for the redraw: this watches
  * the little a widget still shows - the category list, the account list, the
  * theme settings - and refreshes on change, debounced so a restore or a bulk
  * edit costs one redraw instead of hundreds.
@@ -48,6 +43,8 @@ class WidgetRefreshWatcher @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val accountRepository: AccountRepository,
     private val userPreferences: UserPreferencesRepository,
+    private val updater: WidgetUpdater,
+    private val loader: QuickAddWidgetDataLoader,
 ) {
 
     private val hasPlacedWidgets = MutableStateFlow(false)
@@ -102,46 +99,30 @@ class WidgetRefreshWatcher @Inject constructor(
     }
 
     private fun readPlacement() {
-        hasPlacedWidgets.value = runCatching {
-            val manager = AppWidgetManager.getInstance(context)
-            widgetReceivers.any { receiver ->
-                manager.getAppWidgetIds(ComponentName(context, receiver)).isNotEmpty()
-            }
-        }.getOrDefault(false)
+        hasPlacedWidgets.value = SaldoWidgetProvider.hasWidgets(context)
     }
 
     /**
      * One-shot redraw for the debounced signal collector.
      *
-     * The revision bump is not ceremony. A Glance session composes once and
-     * only reacts to its own widget state, so `updateAll` on its own would
-     * re-render the identical snapshot; moving the revision is what makes the
-     * composition re-read the database.
+     * Nothing is written on this path, which is the difference from the
+     * Glance-backed version: a session only reacted to its own widget state, so
+     * a redraw had to be forced by bumping a revision counter - one DataStore
+     * write per widget per refresh, for data the widget was about to re-read
+     * anyway. Pushing `RemoteViews` needs no such nudge, so the counter is gone
+     * and a refresh is now a read and a render.
      */
     private suspend fun refresh() {
         // A failed redraw must not kill the watcher: the next change picks it up.
         runCatching {
-            val manager = GlanceAppWidgetManager(context)
-            // Both providers, grid and bar: they render the same data.
-            listOf(SaldoQuickAddWidget(), SaldoQuickBarWidget()).forEach { widget ->
-                manager.getGlanceIds(widget.javaClass).forEach { glanceId ->
-                    updateAppWidgetState(context, glanceId) { preferences ->
-                        val current = preferences[QuickAddWidgetPrefs.Revision] ?: 0L
-                        preferences[QuickAddWidgetPrefs.Revision] = current + 1
-                    }
-                }
-                widget.updateAll(context)
-            }
+            // The snapshot cache is keyed by configuration alone, so it has to be
+            // dropped here: this is the one moment the database moved under it.
+            loader.invalidate()
+            updater.updateAll()
         }
     }
 
     private companion object {
         const val DEBOUNCE_MILLIS = 500L
-
-        /** Every manifest receiver whose widgets this watcher keeps fresh. */
-        val widgetReceivers = listOf(
-            SaldoQuickAddWidgetReceiver::class.java,
-            SaldoQuickBarWidgetReceiver::class.java,
-        )
     }
 }

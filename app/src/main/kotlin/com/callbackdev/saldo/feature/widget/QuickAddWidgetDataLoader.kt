@@ -17,9 +17,9 @@ import javax.inject.Singleton
 /**
  * Everything one widget render needs, produced in a single pass: the data
  * snapshot and the resolved palette. Bundled because they go stale together -
- * any change that affects either reaches the widget as a revision bump - and
- * because resolving them once here is what spares the per-bucket compositions
- * from doing it a dozen times each (see [QuickAddWidgetDataLoader.loadShared]).
+ * every change that affects one is a change that affects the other - and because
+ * resolving them once here is what spares the instances of a refresh from doing
+ * it each (see [QuickAddWidgetDataLoader.loadShared]).
  */
 data class QuickAddWidgetSnapshot(
     val data: QuickAddWidgetData,
@@ -48,41 +48,42 @@ class QuickAddWidgetDataLoader @Inject constructor(
 
     /**
      * A handful of entries rather than one: two widgets with different
-     * configurations refresh with the same revision, and a single-entry cache
-     * would evict on every alternation between them, turning "one database
-     * pass per render" back into one per bucket.
+     * configurations are refreshed in the same pass, and a single-entry cache
+     * would evict on every alternation between them, turning "one database pass
+     * per refresh" back into one per instance.
      */
-    private val shared = object : LinkedHashMap<Pair<QuickAddWidgetConfig, Long>, QuickAddWidgetSnapshot>(
+    private val shared = object : LinkedHashMap<QuickAddWidgetConfig, QuickAddWidgetSnapshot>(
         SHARED_CACHE_CAPACITY,
         LOAD_FACTOR,
         true,
     ) {
         override fun removeEldestEntry(
-            eldest: MutableMap.MutableEntry<Pair<QuickAddWidgetConfig, Long>, QuickAddWidgetSnapshot>,
+            eldest: MutableMap.MutableEntry<QuickAddWidgetConfig, QuickAddWidgetSnapshot>,
         ): Boolean = size > SHARED_CACHE_CAPACITY
     }
 
     /**
-     * [load] plus the resolved theme, deduplicated across the sizes of one
-     * render. A Responsive widget composes its content once per bucket, all
-     * with the same config and revision, and every one of those compositions
-     * asks for the same snapshot: this hands them a single database pass and a
-     * single theme resolution instead of one each.
+     * [load] plus the resolved theme, deduplicated across the instances of one
+     * refresh. Two widgets on the same configuration ask for the same snapshot,
+     * and this hands them a single database pass and a single theme resolution
+     * instead of one each.
      *
-     * The revision is part of the key, which is what keeps the cache honest:
-     * any data or theme-settings change reaches the widget only as a revision
-     * bump (see `WidgetRefreshWatcher`), so a hit can never serve a stale
-     * snapshot - equal key, equal snapshot, by construction. [load] itself
-     * stays stateless for everyone else.
+     * The cache is invalidated by [invalidate], called by `WidgetRefreshWatcher`
+     * the moment anything a widget draws moves. That is what keeps it honest: a
+     * hit can only ever serve a snapshot taken since the last change.
      */
-    suspend fun loadShared(config: QuickAddWidgetConfig, revision: Long): QuickAddWidgetSnapshot =
+    suspend fun loadShared(config: QuickAddWidgetConfig): QuickAddWidgetSnapshot =
         sharedLock.withLock {
-            val key = config to revision
-            shared[key] ?: QuickAddWidgetSnapshot(
+            shared[config] ?: QuickAddWidgetSnapshot(
                 data = load(config),
                 theme = resolveWidgetTheme(context, userPreferences.themePreferences.first(), config),
-            ).also { shared[key] = it }
+            ).also { shared[config] = it }
         }
+
+    /** Drops every cached snapshot: the next render reads the database again. */
+    suspend fun invalidate() {
+        sharedLock.withLock { shared.clear() }
+    }
 
     /**
      * [categoryLimit] exists for tests and for nothing else: the widget takes
@@ -104,6 +105,8 @@ class QuickAddWidgetDataLoader @Inject constructor(
             hasAccounts = active.isNotEmpty(),
             pinnedAccountId = pinned?.id,
             pinnedAccountName = pinned?.name,
+            buttons = config.buttons,
+            showAppShortcut = config.showAppShortcut,
         )
     }
 

@@ -147,13 +147,12 @@ class QuickAddWidgetDataLoaderTest {
     }
 
     /**
-     * The widget's composition reloads on every change of its inputs, with no
-     * "we already had this one" shortcut, because the state a session starts on
-     * is also a state the user comes back to. That only holds if `load` is
-     * stateless: the day someone adds a cache in here, switching type and
-     * switching back would leave the widget showing the type it just left.
-     * (`loadShared` below is allowed its cache precisely because the revision
-     * in its key changes with the data.)
+     * A render reads the configuration it is handed, with no "we already had
+     * this one" shortcut, because the type a widget starts on is also a type the
+     * user comes back to. That only holds if `load` is stateless: the day
+     * someone adds a cache in here, switching type and switching back would
+     * leave the widget showing the type it just left. (`loadShared` below is
+     * allowed its cache because the watcher drops it whenever the data moves.)
      */
     @Test
     fun `switching type and back reloads both times`() = runTest {
@@ -172,17 +171,16 @@ class QuickAddWidgetDataLoaderTest {
     }
 
     /**
-     * A Responsive widget composes once per size bucket, every one asking for
-     * the same snapshot: the shared load must collapse those into one database
-     * pass and one theme resolution.
+     * Several instances of one refresh ask for the same snapshot: the shared
+     * load must collapse those into one database pass and one theme resolution.
      */
     @Test
-    fun `the shared load reads the database once per config and revision`() = runTest {
+    fun `the shared load reads the database once per config`() = runTest {
         val subject = loader()
         val config = QuickAddWidgetConfig()
 
-        val first = subject.loadShared(config, revision = 1L)
-        val second = subject.loadShared(config, revision = 1L)
+        val first = subject.loadShared(config)
+        val second = subject.loadShared(config)
 
         assertEquals(first, second)
         verify(exactly = 1) { accountRepository.observeAccounts() }
@@ -190,19 +188,25 @@ class QuickAddWidgetDataLoaderTest {
 
     @Test
     fun `the shared snapshot carries the resolved theme with the data`() = runTest {
-        val snapshot = loader().loadShared(QuickAddWidgetConfig(), revision = 1L)
+        val snapshot = loader().loadShared(QuickAddWidgetConfig())
         // Forced light: both branches must be the same scheme, or the launcher
         // could flip a widget its user pinned to one side.
         assertEquals(snapshot.theme.lightScheme, snapshot.theme.darkScheme)
     }
 
+    /**
+     * The cache is keyed by configuration alone, so the watcher has to drop it
+     * when the database moves: without this the widget would keep redrawing the
+     * snapshot it took before the category was renamed.
+     */
     @Test
-    fun `a revision bump makes the shared load read again`() = runTest {
+    fun `invalidating makes the shared load read again`() = runTest {
         val subject = loader()
         val config = QuickAddWidgetConfig()
 
-        subject.loadShared(config, revision = 1L)
-        subject.loadShared(config, revision = 2L)
+        subject.loadShared(config)
+        subject.invalidate()
+        subject.loadShared(config)
 
         verify(exactly = 2) { accountRepository.observeAccounts() }
     }
@@ -211,16 +215,16 @@ class QuickAddWidgetDataLoaderTest {
     fun `a config change makes the shared load read again`() = runTest {
         val subject = loader()
 
-        subject.loadShared(QuickAddWidgetConfig(), revision = 1L)
-        subject.loadShared(QuickAddWidgetConfig(type = TransactionType.INCOME), revision = 1L)
+        subject.loadShared(QuickAddWidgetConfig())
+        subject.loadShared(QuickAddWidgetConfig(type = TransactionType.INCOME))
 
         verify(exactly = 2) { accountRepository.observeAccounts() }
     }
 
     /**
-     * Two widgets with different configurations render with the same revision,
-     * and their per-bucket compositions interleave: the cache must hold both,
-     * or the alternation would evict on every call and reload once per bucket.
+     * Two widgets with different configurations are refreshed in the same pass
+     * and their reads interleave: the cache must hold both, or the alternation
+     * would evict on every call and reload once per instance.
      */
     @Test
     fun `two widgets with different configs do not evict each other`() = runTest {
@@ -228,10 +232,10 @@ class QuickAddWidgetDataLoaderTest {
         val grid = QuickAddWidgetConfig()
         val bar = QuickAddWidgetConfig(accountId = cash.id)
 
-        subject.loadShared(grid, revision = 1L)
-        subject.loadShared(bar, revision = 1L)
-        subject.loadShared(grid, revision = 1L)
-        subject.loadShared(bar, revision = 1L)
+        subject.loadShared(grid)
+        subject.loadShared(bar)
+        subject.loadShared(grid)
+        subject.loadShared(bar)
 
         verify(exactly = 2) { accountRepository.observeAccounts() }
     }

@@ -2,16 +2,18 @@
 <resources>
     <!-- Dark side of the widget picker preview palette (see values/colors.xml):
          the launcher resolves these against its own configuration, which is the
-         only mechanism that makes a previewLayout follow light/dark mode. -->
+         only mechanism that makes a previewLayout follow light/dark mode.
+
+         The category accents are deliberately absent: they are a user's own
+         colours and do not flip with the theme, exactly as on the placed
+         widget. -->
     <color name="widget_preview_surface">@android:color/system_accent2_800</color>
     <color name="widget_preview_ink">@android:color/system_neutral1_100</color>
     <color name="widget_preview_ink_muted">@android:color/system_neutral2_200</color>
     <color name="widget_preview_expense">#FFB4AB</color>
     <color name="widget_preview_income">#A4D397</color>
-    <color name="widget_preview_tile_1">@android:color/system_accent1_700</color>
-    <color name="widget_preview_tile_2">@android:color/system_accent2_700</color>
-    <color name="widget_preview_tile_3">@android:color/system_accent3_700</color>
-    <color name="widget_preview_tile_4">@android:color/system_accent1_600</color>
+    <color name="widget_placeholder">#3B3547</color>
+
     <color name="widget_preview_pill">@android:color/system_accent1_200</color>
     <color name="widget_preview_pill_ink">@android:color/system_accent1_900</color>
 </resources>

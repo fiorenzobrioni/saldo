@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Picker-preview glyph, exported from the app's own ImageVector set rather than
+    redrawn: the launcher never runs our binding for a previewLayout, so the icon
+    has to be a static resource, and a hand-copied path would be the first thing
+    to drift from what the widget actually draws.
+
+    Regenerate with ExportPreviewVectorsTest (see the branch history) if the
+    previewed categories ever change. White fill, tinted by the ImageView that
+    shows it, exactly like the placed widget's masks.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M19.77,7.23 l0.01,-0.01 l-3.72,-3.72 L15,4.56 l2.11,2.11 c-0.94,0.36 -1.61,1.26 -1.61,2.33 c0,1.38 1.12,2.5 2.5,2.5 c0.36,0 0.69,-0.08 1,-0.21 v7.21 c0,0.55 -0.45,1 -1,1 s-1,-0.45 -1,-1 L17,14 c0,-1.1 -0.9,-2 -2,-2 h-1 L14,5 c0,-1.1 -0.9,-2 -2,-2 L6,3 c-1.1,0 -2,0.9 -2,2 v16 h10 v-7.5 h1.5 v5 c0,1.38 1.12,2.5 2.5,2.5 s2.5,-1.12 2.5,-2.5 L20.5,9 c0,-0.69 -0.28,-1.32 -0.73,-1.77 z M12,13.5 L12,19 L6,19 v-7 h6 v1.5 z M12,10 L6,10 L6,5 h6 v5 z M18,10 c-0.55,0 -1,-0.45 -1,-1 s0.45,-1 1,-1 s1,0.45 1,1 s-0.45,1 -1,1 z" />
+</vector>

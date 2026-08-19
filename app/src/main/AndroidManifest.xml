@@ -38,13 +38,16 @@
         </activity>
 
         <!--
-            Home screen quick-add widget. The receiver is exported because the
-            launcher has to reach it; the two activities below are not, since
-            only the widget's own in-app actions start them.
+            Home screen quick-add widget, the grid shape.
+
+            exported=false: the system delivers the APPWIDGET_* broadcasts either
+            way, and it keeps our own SET_TYPE action (the expense/income
+            selector) private to the app. The activities below are not exported
+            either, since only the widget's own actions start them.
         -->
         <receiver
-            android:name=".feature.widget.SaldoQuickAddWidgetReceiver"
-            android:exported="true"
+            android:name=".feature.widget.QuickAddWidgetProvider"
+            android:exported="false"
             android:label="@string/widget_quick_add_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -57,8 +60,8 @@
         <!-- The single-row bar as its own provider: its own picker card, its
              own preview, and a shape pinned by maxResizeHeight. -->
         <receiver
-            android:name=".feature.widget.SaldoQuickBarWidgetReceiver"
-            android:exported="true"
+            android:name=".feature.widget.QuickBarWidgetProvider"
+            android:exported="false"
             android:label="@string/widget_quick_bar_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

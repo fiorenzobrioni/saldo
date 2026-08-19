@@ -1,152 +1,416 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The widget picker's preview of the grid widget. Static and complete: the
-    picker never asks the app for anything, so a placed widget, an app update
-    and a reboot leave it exactly as it is (ADR 37).
+    The widget picker's preview of the grid widget.
 
-    A mock rather than the real thing. It draws the shape of the widget - the
-    expense/income selector over a grid of category tiles - with plain shapes:
-    no icons, no category names, no colours read from the database. The picker
-    is shown before a user's categories are known (and to users who have none),
-    so a stand-in is the honest thing to show, and it is the only kind of
-    preview that costs nothing to keep correct.
+    Static and complete: the picker never asks the app for anything, so a placed
+    widget, an app update and a reboot leave it exactly as it is (ADR 37). It is
+    also only resources - shape drawables, exported vector glyphs and colours
+    with a values-night variant - so it is correct by construction and costs
+    nothing to keep so. Nothing here is read from the database or rasterized at
+    runtime.
 
-    Colors come from res/values(-night)/colors.xml, not from ?android:attr:
-    a previewLayout is inflated with a plain application context, whose theme
-    falls back to Theme.DeviceDefault.Light, so theme attributes gave near-black
-    ink on a dark picker sheet. Resource qualifiers are resolved against the
-    launcher's configuration and do follow its light/dark mode.
+    What it draws is the real wide grid at its two-row size: the same selector,
+    the same 44dp tiles at the same corner ratio, the same 16% wash under the
+    glyph, and the first seven categories of the default seed with their own
+    icons, colours and names. The previous version stood in for all of that with
+    eight blank rounded rectangles, which read as a widget still loading rather
+    than as the widget the user is about to place.
 
-    Only views RemoteViews accepts (LinearLayout, TextView, ImageView) and plain
-    shape drawables: the host inflates this the same way it inflates a widget,
-    and anything richer has already proved unreliable here once (adaptive icons
+    The wash is android:alpha over the surface rather than a second set of
+    colours: the surface is a dynamic system token, so there is no build-time
+    value to pre-blend against - and unlike the placed widget, a static layout
+    can simply carry view alpha.
+
+    Only views RemoteViews accepts (LinearLayout, FrameLayout, TextView,
+    ImageView): the host inflates this the same way it inflates a widget, and
+    anything richer has already proved unreliable here once (adaptive icons
     rendered as a full squircle on one button and as nothing on the other).
+
+    Colours come from res/values(-night)/colors.xml, never from ?android:attr: a
+    previewLayout is inflated with a plain application context whose theme falls
+    back to Theme.DeviceDefault.Light, so theme attributes gave near-black ink on
+    a dark picker sheet.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_preview_background"
-    android:gravity="center"
     android:orientation="vertical"
-    android:padding="12dp">
+    android:paddingHorizontal="12dp"
+    android:paddingVertical="8dp">
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:layout_marginBottom="6dp"
+        android:gravity="center"
         android:orientation="horizontal">
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:background="@drawable/widget_preview_pill"
+            android:gravity="center"
             android:maxLines="1"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="4dp"
+            android:paddingHorizontal="14dp"
             android:text="@string/widget_quick_add_expense"
             android:textColor="@color/widget_preview_pill_ink"
-            android:textSize="12sp" />
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="6dp"
+            android:gravity="center"
             android:maxLines="1"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="4dp"
+            android:paddingHorizontal="14dp"
             android:text="@string/widget_quick_add_income"
             android:textColor="@color/widget_preview_ink_muted"
-            android:textSize="12sp" />
+            android:textSize="13sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:layout_height="64dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <ImageView
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="34dp"
-            android:layout_marginEnd="8dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:contentDescription="@null"
-            android:scaleType="fitXY"
-            android:src="@drawable/widget_preview_tile"
-            android:tint="@color/widget_preview_tile_1" />
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
-        <ImageView
-            android:layout_width="0dp"
-            android:layout_height="34dp"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:contentDescription="@null"
-            android:scaleType="fitXY"
-            android:src="@drawable/widget_preview_tile"
-            android:tint="@color/widget_preview_tile_2" />
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp">
 
-        <ImageView
-            android:layout_width="0dp"
-            android:layout_height="34dp"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:contentDescription="@null"
-            android:scaleType="fitXY"
-            android:src="@drawable/widget_preview_tile"
-            android:tint="@color/widget_preview_tile_3" />
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.16"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_tile_bg_wide"
+                    android:tint="@color/widget_preview_cat_home" />
 
-        <ImageView
+                <ImageView
+                    android:layout_width="27dp"
+                    android:layout_height="27dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_widget_cat_home"
+                    android:tint="@color/widget_preview_cat_home" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:text="@string/seed_category_home"
+                android:textColor="@color/widget_preview_ink_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="34dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:contentDescription="@null"
-            android:scaleType="fitXY"
-            android:src="@drawable/widget_preview_tile"
-            android:tint="@color/widget_preview_tile_4" />
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.16"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_tile_bg_wide"
+                    android:tint="@color/widget_preview_cat_rent" />
+
+                <ImageView
+                    android:layout_width="27dp"
+                    android:layout_height="27dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_widget_cat_home_work"
+                    android:tint="@color/widget_preview_cat_rent" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:text="@string/seed_category_rent_mortgage"
+                android:textColor="@color/widget_preview_ink_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.16"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_tile_bg_wide"
+                    android:tint="@color/widget_preview_cat_groceries" />
+
+                <ImageView
+                    android:layout_width="27dp"
+                    android:layout_height="27dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_widget_cat_shopping_cart"
+                    android:tint="@color/widget_preview_cat_groceries" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:text="@string/seed_category_groceries"
+                android:textColor="@color/widget_preview_ink_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.16"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_tile_bg_wide"
+                    android:tint="@color/widget_preview_cat_dining" />
+
+                <ImageView
+                    android:layout_width="27dp"
+                    android:layout_height="27dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_widget_cat_restaurant"
+                    android:tint="@color/widget_preview_cat_dining" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:text="@string/seed_category_dining"
+                android:textColor="@color/widget_preview_ink_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="64dp"
+        android:layout_marginTop="6dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <ImageView
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="34dp"
-            android:layout_marginEnd="8dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:contentDescription="@null"
-            android:scaleType="fitXY"
-            android:src="@drawable/widget_preview_tile"
-            android:tint="@color/widget_preview_tile_3" />
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
-        <ImageView
-            android:layout_width="0dp"
-            android:layout_height="34dp"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:contentDescription="@null"
-            android:scaleType="fitXY"
-            android:src="@drawable/widget_preview_tile"
-            android:tint="@color/widget_preview_tile_4" />
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp">
 
-        <ImageView
-            android:layout_width="0dp"
-            android:layout_height="34dp"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:contentDescription="@null"
-            android:scaleType="fitXY"
-            android:src="@drawable/widget_preview_tile"
-            android:tint="@color/widget_preview_tile_1" />
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.16"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_tile_bg_wide"
+                    android:tint="@color/widget_preview_cat_transport" />
 
-        <ImageView
+                <ImageView
+                    android:layout_width="27dp"
+                    android:layout_height="27dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_widget_cat_commute"
+                    android:tint="@color/widget_preview_cat_transport" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:text="@string/seed_category_transport"
+                android:textColor="@color/widget_preview_ink_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="34dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:contentDescription="@null"
-            android:scaleType="fitXY"
-            android:src="@drawable/widget_preview_tile"
-            android:tint="@color/widget_preview_tile_2" />
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.16"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_tile_bg_wide"
+                    android:tint="@color/widget_preview_cat_fuel" />
+
+                <ImageView
+                    android:layout_width="27dp"
+                    android:layout_height="27dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_widget_cat_local_gas_station"
+                    android:tint="@color/widget_preview_cat_fuel" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:text="@string/seed_category_car_fuel"
+                android:textColor="@color/widget_preview_ink_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.16"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_tile_bg_wide"
+                    android:tint="@color/widget_preview_cat_health" />
+
+                <ImageView
+                    android:layout_width="27dp"
+                    android:layout_height="27dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_widget_cat_health_and_safety"
+                    android:tint="@color/widget_preview_cat_health" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:text="@string/seed_category_health"
+                android:textColor="@color/widget_preview_ink_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="44dp"
+                android:layout_height="44dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:alpha="0.16"
+                    android:contentDescription="@null"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/widget_tile_bg_wide"
+                    android:tint="@color/widget_preview_pill" />
+
+                <ImageView
+                    android:layout_width="27dp"
+                    android:layout_height="27dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_widget_cat_more"
+                    android:tint="@color/widget_preview_pill" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:ellipsize="end"
+                android:gravity="center_horizontal"
+                android:maxLines="1"
+                android:text="@string/widget_quick_add_open"
+                android:textColor="@color/widget_preview_ink_muted"
+                android:textSize="12sp" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>

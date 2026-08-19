@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Dark side of the container, for the same one moment as the light one: the raw
+    initialLayout, before the first bind re-tints it with the resolved day/night
+    pair. Resource qualifiers are resolved against the *host's* configuration,
+    which is what lets even the un-bound layout land on the right side.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#332D41" />
+    <corners android:radius="@android:dimen/system_app_widget_background_radius" />
+</shape>
