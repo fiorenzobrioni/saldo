@@ -4,16 +4,20 @@ import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
 
 /**
- * The snapshot a placed quick-add widget renders. Glance draws through
- * `RemoteViews` in the launcher's process, so the widget cannot observe flows
- * the way a screen does: it renders a snapshot and is redrawn when something
- * asks it to (see `WidgetRefreshWatcher`).
+ * The snapshot a placed quick-add widget renders. A widget is drawn through
+ * `RemoteViews` in the launcher's process, so it cannot observe flows the way a
+ * screen does: it renders a snapshot and is redrawn when something asks it to
+ * (see [WidgetRefreshWatcher]).
  *
  * Deliberately free of anything that moves with the ledger: no balances, no
  * daily totals, no usage-derived ordering. What is here changes only when the
  * user edits accounts, categories or the theme, which is what lets the widget
- * stay a static entry point instead of a surface that redraws on every
- * movement.
+ * stay a static entry point instead of a surface that redraws on every movement
+ * (ADR 37).
+ *
+ * The two presentation flags come straight from the instance's configuration and
+ * ride along here so the renderer takes one object rather than two: everything a
+ * render needs, resolved once.
  */
 data class QuickAddWidgetData(
     val type: TransactionType,
@@ -28,12 +32,15 @@ data class QuickAddWidgetData(
      */
     val pinnedAccountId: Long? = null,
     /**
-     * The account's name when the widget is pinned to one that is still
-     * active, null when it follows the app default. Shown as a badge: with two
-     * widgets on two accounts, an unlabelled pair is a wrong-account entry
-     * waiting to happen.
+     * The account's name when the widget is pinned to one that is still active,
+     * null when it follows the app default. Shown as a badge: with two widgets on
+     * two accounts, an unlabelled pair is a wrong-account entry waiting to happen.
      */
     val pinnedAccountName: String? = null,
+    /** Which buttons the single-row layout offers. */
+    val buttons: WidgetActionButtons = WidgetActionButtons.BOTH,
+    /** The app-icon square beside them. */
+    val showAppShortcut: Boolean = true,
 ) {
     /** False when there is nothing to add to yet: no account, or no category of this type. */
     val isReady: Boolean get() = hasAccounts && categories.isNotEmpty()

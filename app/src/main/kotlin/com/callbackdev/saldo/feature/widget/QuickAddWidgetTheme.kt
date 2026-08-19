@@ -8,35 +8,30 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
-import androidx.glance.color.ColorProviders
-import androidx.glance.color.ColorProvider as DayNightColorProvider
-import androidx.glance.unit.ColorProvider
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.designsystem.theme.BrandDarkColorScheme
 import com.callbackdev.saldo.core.designsystem.theme.BrandLightColorScheme
 import com.callbackdev.saldo.core.designsystem.theme.MoneyColors
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
-import androidx.glance.material3.ColorProviders as GlanceColorProviders
 
 /**
  * The palette a placed widget draws in, carried as a light/dark *pair* rather
  * than a single resolved scheme.
  *
  * The pair is the fix for a real bug: a widget renders in the launcher's
- * process, and the launcher re-resolves day/night resources on its own when the
- * system theme flips - but only if it was handed both branches. The old single
- * resolved scheme meant a widget froze in whichever theme it was last composed
- * in until the next data refresh happened along. When an appearance is forced
- * (light or dark), both sides of the pair are simply the same scheme: the
- * launcher can flip all it wants, the choice made here wins.
+ * process, and the launcher re-resolves day/night on its own when the system
+ * theme flips - but only if it was handed both branches. A single resolved
+ * scheme meant a widget froze in whichever theme it was last rendered in until
+ * the next data refresh happened along. When an appearance is forced (light or
+ * dark), both sides of the pair are simply the same scheme: the launcher can
+ * flip all it wants, the choice made here wins.
  *
  * The background is always solid: the widget never sits directly on the
  * wallpaper anymore, so no code here needs to know what the wallpaper looks
- * like. The container color itself is not chosen here - the widget body uses
- * `GlanceTheme.colors.widgetBackground`, the Material 3 token Glance derives
- * from these schemes (see [widgetBackgroundColorOf], which mirrors it for the
- * in-app settings preview).
+ * like. The container colour is the Material 3 `widgetBackground` token (see
+ * [widgetBackgroundColorOf]), the role the platform reserves for widget
+ * containers.
  */
 data class QuickAddWidgetTheme(
     val lightScheme: ColorScheme,
@@ -52,62 +47,47 @@ data class QuickAddWidgetTheme(
 ) {
 
     /**
-     * What Glance hands the launcher: both branches, resolved there. Computed
-     * once per theme instance - the theme is shared across every size bucket
-     * of a render (see `QuickAddWidgetDataLoader.loadShared`), so a `get()`
-     * here would rebuild the same providers over a dozen times per refresh.
+     * What the renderer hands the launcher: every colour as a day/night pair of
+     * ARGB ints. Computed once per theme instance - the theme is shared across
+     * every size of a render (see `QuickAddWidgetDataLoader.loadShared`), so a
+     * `get()` here would rebuild the same palette a dozen times per refresh.
      */
-    val providers: ColorProviders by lazy(LazyThreadSafetyMode.NONE) {
-        GlanceColorProviders(lightScheme, darkScheme)
+    internal val palette: WidgetPalette by lazy(LazyThreadSafetyMode.NONE) {
+        widgetPalette(
+            light = lightScheme,
+            dark = darkScheme,
+            lightIncome = lightMoney.income,
+            darkIncome = darkMoney.income,
+        )
     }
-
-    /** A full-strength ink that still flips with the launcher's night mode. */
-    fun ink(day: Color, night: Color): ColorProvider = DayNightColorProvider(day = day, night = night)
-
-    /** The wash behind glyphs: the app's own category wash, on both branches. */
-    fun wash(day: Color, night: Color): ColorProvider = DayNightColorProvider(
-        day = day.copy(alpha = WashAlpha),
-        night = night.copy(alpha = WashAlpha),
-    )
-
-    /**
-     * The accents of the single-row layout's two buttons.
-     *
-     * A deliberate, narrow exception to [MoneyColors], which keeps `expense`
-     * neutral on purpose: colouring every expense in a ledger would shout, and
-     * there the minus sign and the icon carry the distinction. Two action
-     * buttons alone on a widget are not a ledger - there is no other context to
-     * read them by - so the colour does the fast work and the icons still do the
-     * accessible work. `income` is the app's own green; the red is the scheme's
-     * only one, worn as a wash so it reads as soft rather than as an alarm.
-     */
-    val expenseAccent: ColorProvider get() = ink(lightScheme.error, darkScheme.error)
-    val expenseWash: ColorProvider get() = wash(lightScheme.error, darkScheme.error)
-    val incomeAccent: ColorProvider get() = ink(lightMoney.income, darkMoney.income)
-    val incomeWash: ColorProvider get() = wash(lightMoney.income, darkMoney.income)
-
-    /** The quiet tonal fill of the app-shortcut button: present, not competing. */
-    val neutralWash: ColorProvider get() = wash(lightScheme.onSurfaceVariant, darkScheme.onSurfaceVariant)
 
     /** The side the settings preview renders, since it cannot do day/night. */
     val previewScheme: ColorScheme get() = if (previewDark) darkScheme else lightScheme
 
+    /** The money colours that go with [previewScheme]. */
+    val previewMoney: MoneyColors get() = if (previewDark) darkMoney else lightMoney
+
     /**
-     * The widget container color the settings preview shows: the same
-     * `widgetBackground` token the placed widget wears, mirrored here because
-     * a regular Compose screen has no [androidx.glance.GlanceTheme] to read
-     * it from.
+     * The widget container colour the settings preview shows: the same
+     * `widgetBackground` token the placed widget wears.
      */
     val previewBackground: Color get() = widgetBackgroundColorOf(previewScheme)
+
+    /** The in-app preview's own copy of the tonal wash behind a glyph. */
+    fun previewWash(accent: Color): Color =
+        Color(washOver(previewBackground.toArgb(), accent.toArgb()))
 }
 
 /**
- * The Material 3 `widgetBackground` token for [scheme], as glance-material3
- * derives it in `ColorProviders(light, dark)`: the scheme's secondaryContainer
- * nudged in HCT tone (+5 above mid tone, -10 below), so the widget container
- * reads a step apart from in-app surfaces while staying in the dynamic
- * palette. Kept in lockstep with the library so the in-app preview cannot
- * drift from what the launcher actually draws.
+ * The Material 3 `widgetBackground` token for [scheme]: the scheme's
+ * secondaryContainer nudged in HCT tone (+5 above mid tone, -10 below), so the
+ * widget container reads a step apart from in-app surfaces while staying in the
+ * dynamic palette.
+ *
+ * The derivation is the one glance-material3 applied in `ColorProviders(light,
+ * dark)`. It is spelled out here rather than imported because the widget no
+ * longer goes through Glance at all, and because the in-app settings preview
+ * has to show the same container colour the launcher draws.
  */
 internal fun widgetBackgroundColorOf(scheme: ColorScheme): Color {
     val hct = FloatArray(HctComponents)
@@ -121,7 +101,7 @@ private const val HctComponents = 3
 private const val MidTone = 50f
 private const val MaxTone = 100f
 
-/** glance-material3's own WIDGET_BG_TONE_ADJUSTMENT_LIGHT/_DARK values. */
+/** The WIDGET_BG_TONE_ADJUSTMENT_LIGHT/_DARK values of the Material 3 widget spec. */
 private const val WidgetBackgroundToneLight = 5f
 private const val WidgetBackgroundToneDark = -10f
 
@@ -173,6 +153,3 @@ private fun ThemeMode.forcedDark(): Boolean? = when (this) {
 private fun Context.isSystemInDarkMode(): Boolean =
     resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
         Configuration.UI_MODE_NIGHT_YES
-
-/** Matches `CategoryCell`: the app's unselected category wash. */
-internal const val WashAlpha = 0.16f

@@ -7,8 +7,8 @@ import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
 
 /**
- * The DI door for the widget. `GlanceAppWidget` and `ActionCallback` are
- * instantiated by the framework, not by Hilt, so they cannot take constructor
+ * The DI door for the widget. An [android.appwidget.AppWidgetProvider] is
+ * instantiated by the framework, not by Hilt, so it cannot take constructor
  * injection: this is the one place in the app that reaches into the graph by
  * hand.
  */
@@ -17,6 +17,10 @@ import dagger.hilt.components.SingletonComponent
 interface WidgetEntryPoint {
 
     fun quickAddWidgetDataLoader(): QuickAddWidgetDataLoader
+
+    fun widgetConfigStore(): WidgetConfigStore
+
+    fun widgetUpdater(): WidgetUpdater
 
     fun widgetRefreshWatcher(): WidgetRefreshWatcher
 }

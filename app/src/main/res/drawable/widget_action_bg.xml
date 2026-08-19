@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The tonal fill of the single-row layout's buttons - expense, income and the
+    app-shortcut square. Tinted at bind time like every other shape here.
+
+    The baked colour is a placeholder, not the wash. At bind time the ImageView
+    tints this with setColorFilter, which an ImageView applies in SRC_ATOP: the
+    result is the tint multiplied by the shape's ALPHA and the shape's own colour
+    drops out of the arithmetic entirely. So the value here is free to be
+    whatever looks best in the one moment it is ever seen - the raw
+    initialLayout, inflated by the host before the first bind lands. A muted
+    neutral makes that moment read as a widget about to fill in; solid white read
+    as a grid of broken blocks.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_placeholder" />
+    <corners android:radius="18dp" />
+</shape>

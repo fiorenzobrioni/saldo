@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The widget container.
+
+    The radius is the system's own widget background radius, so the widget
+    wears the same rounding as every other widget on the device instead of a
+    private value, and the launcher's placement and resize animations have the
+    shape they expect to attach to.
+
+    The fill baked in here is the light widgetBackground of the brand scheme,
+    and it is load-bearing rather than decoration: this drawable is what the
+    host inflates for initialLayout, before the first bind ever lands, so
+    without it a freshly dropped widget flashes as a white box. At bind time it
+    is re-tinted with the resolved day/night pair (see WidgetRenderer).
+
+    The solid is also what makes that tint work at all: GradientDrawable
+    substitutes an opaque fill of its own whenever a colour filter is set on a
+    shape that declares no solid colour.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#E8DEF8" />
+    <corners android:radius="@android:dimen/system_app_widget_background_radius" />
+</shape>

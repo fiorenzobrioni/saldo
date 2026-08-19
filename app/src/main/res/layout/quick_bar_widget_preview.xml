@@ -1,64 +1,136 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Static preview of the bar widget for the picker. Two labelled buttons side by
-    side, the same glyphs and accents the real widget draws. Same colour rules as
-    quick_add_widget_preview.xml: own resources with a values-night variant,
-    never ?android:attr, which a previewLayout resolves against the light
-    DeviceDefault theme whatever the launcher is wearing. The icons are plain
-    vectors on purpose: the adaptive shortcut icons used here before rendered
-    unreliably in the picker (a full squircle on one button, nothing on the other).
+    Static preview of the bar widget for the picker.
+
+    Draws what the placed bar draws: two tonal buttons, the 16% wash behind them,
+    the same 18dp corner, the same glyphs and accents, and the app-icon square
+    that ships on by default. The previous version showed bare icon-and-label
+    pairs floating on the card, which is not what the widget looks like - a
+    preview that undersells the widget is as wrong as one that oversells it.
+
+    Same rules as quick_add_widget_preview.xml: only resources, only views
+    RemoteViews accepts, colours from res/values(-night) rather than
+    ?android:attr, and the wash as android:alpha over a dynamic surface there is
+    no build-time value to pre-blend against.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_preview_background"
-    android:gravity="center"
     android:orientation="horizontal"
     android:padding="14dp">
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:layout_weight="1">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.16"
             android:contentDescription="@null"
-            android:src="@drawable/ic_widget_preview_expense" />
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_action_bg"
+            android:tint="@color/widget_preview_expense" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:maxLines="1"
-            android:text="@string/widget_quick_add_expense"
-            android:textColor="@color/widget_preview_expense"
-            android:textSize="14sp" />
-    </LinearLayout>
+            android:layout_gravity="center"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-    <LinearLayout
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_widget_preview_expense" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:maxLines="1"
+                android:text="@string/widget_quick_add_expense"
+                android:textColor="@color/widget_preview_expense"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="8dp"
+        android:layout_height="match_parent" />
+
+    <FrameLayout
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:layout_weight="1">
 
         <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.16"
             android:contentDescription="@null"
-            android:src="@drawable/ic_widget_preview_income" />
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_action_bg"
+            android:tint="@color/widget_preview_income" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="6dp"
-            android:maxLines="1"
-            android:text="@string/widget_quick_add_income"
-            android:textColor="@color/widget_preview_income"
-            android:textSize="14sp" />
-    </LinearLayout>
+            android:layout_gravity="center"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_widget_preview_income" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:maxLines="1"
+                android:text="@string/widget_quick_add_income"
+                android:textColor="@color/widget_preview_income"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:layout_width="8dp"
+        android:layout_height="match_parent" />
+
+    <!--
+        The app-icon square, on by default on the placed widget. The mark is the
+        monochrome launcher layer rather than the adaptive icon: a previewLayout
+        renders AdaptiveIconDrawable unreliably (see ic_widget_preview_expense),
+        and a flat mask tints cleanly against the neutral wash.
+    -->
+    <FrameLayout
+        android:layout_width="40dp"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.16"
+            android:contentDescription="@null"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_action_bg"
+            android:tint="@color/widget_preview_ink_muted" />
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_launcher_monochrome"
+            android:tint="@color/widget_preview_ink_muted" />
+    </FrameLayout>
 </LinearLayout>

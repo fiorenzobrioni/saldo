@@ -37,15 +37,38 @@
     <color name="widget_preview_expense">#BA1A1A</color>
     <color name="widget_preview_income">#3E6837</color>
 
-    <!-- The grid preview's mock tiles and type selector. Four tones rather than
-         real category colours: the preview is drawn before any user exists, so
-         it stands for the shape of the widget, not for its contents. System
-         palette tokens again, so the mock follows Material You and has a
-         values-night counterpart. -->
-    <color name="widget_preview_tile_1">@android:color/system_accent1_100</color>
-    <color name="widget_preview_tile_2">@android:color/system_accent2_100</color>
-    <color name="widget_preview_tile_3">@android:color/system_accent3_100</color>
-    <color name="widget_preview_tile_4">@android:color/system_accent1_200</color>
+    <!--
+        What a placed widget's tinted shapes are baked with, seen only in the raw
+        initialLayout the host inflates before the first bind lands (see
+        widget_tile_bg_wide.xml for why the value is cosmetic). A muted step off
+        the container colour, so that moment reads as a widget filling in.
+    -->
+    <color name="widget_placeholder">#DCD2EA</color>
+
     <color name="widget_preview_pill">@android:color/system_accent1_600</color>
     <color name="widget_preview_pill_ink">@android:color/system_accent1_50</color>
+
+    <!--
+        The grid preview's category accents: the first seven colours of the
+        default seed (DefaultCategories.kt), in seed order, next to the glyphs of
+        the same seven categories.
+
+        Fixed hex and no values-night variant on purpose, because that is exactly
+        how the placed widget draws them: a category's colour is the one its user
+        picked, so the ink is the same on both branches and only the wash behind
+        it differs - which the layout gets from android:alpha over the surface,
+        not from a second set of colours.
+
+        Still only resources, so the preview stays correct by construction and
+        costs nothing to keep so (ADR 37): nothing here is read from the database
+        or rasterized at runtime. It is what a fresh install actually shows,
+        which is the honest thing to advertise in the picker.
+    -->
+    <color name="widget_preview_cat_home">#5C6BC0</color>
+    <color name="widget_preview_cat_rent">#7E57C2</color>
+    <color name="widget_preview_cat_groceries">#66BB6A</color>
+    <color name="widget_preview_cat_dining">#EF5350</color>
+    <color name="widget_preview_cat_transport">#42A5F5</color>
+    <color name="widget_preview_cat_fuel">#26A69A</color>
+    <color name="widget_preview_cat_health">#EC407A</color>
 </resources>

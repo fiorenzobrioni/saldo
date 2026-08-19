@@ -1,22 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Quick-add widget. targetCellWidth/Height are the API 31+ way of asking for a
-    size in launcher cells; minWidth/minHeight stay as the pre-31 fallback the
-    framework still validates against.
+    Quick-add widget, the grid shape. targetCellWidth/Height are the API 31+ way
+    of asking for a size in launcher cells; minWidth/minHeight stay as the pre-31
+    fallback the framework still validates against.
 
-    widgetFeatures marks the configuration as optional and re-openable: the
-    widget works the moment it is dropped (app default account, categories in
-    the app's own order) and can be configured later, instead of gating the
-    first use behind a setup screen.
+    updatePeriodMillis=0 on purpose, and it is a decision rather than a default:
+    the widget never polls. It draws a snapshot of accounts, categories and the
+    theme, and is re-rendered only when one of those changes (ADR 37), so its
+    battery cost at rest is nil.
 
-    minResizeHeight goes down to one launcher row: at that height the widget
-    stops being a grid and becomes two buttons (see WidgetStyle.ACTIONS), so the
-    small size is a design rather than a squeeze.
+    initialLayout is the real wide grid, not a spinner. The host inflates it raw,
+    before the first bind lands, so what it shows is whatever the XML bakes in:
+    widget_bg carries a solid fill for exactly this moment, and the alternative
+    was a white box flashing at every placement and every reboot.
+
+    widgetFeatures marks the configuration as optional and re-openable: the widget
+    works the moment it is dropped (app default account, categories in the app's
+    own order) and can be configured later, instead of gating the first use behind
+    a setup screen.
+
+    minResizeHeight goes down to one launcher row: at that height the widget stops
+    being a grid and becomes two buttons (see WidgetStyle.ACTIONS), so the small
+    size is a design rather than a squeeze.
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:configure="com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigActivity"
     android:description="@string/widget_quick_add_description"
-    android:initialLayout="@layout/glance_default_loading_layout"
+    android:initialLayout="@layout/widget_quick_grid_wide"
     android:minWidth="110dp"
     android:minHeight="40dp"
     android:minResizeWidth="110dp"

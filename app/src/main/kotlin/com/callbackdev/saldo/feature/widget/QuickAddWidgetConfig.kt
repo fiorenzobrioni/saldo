@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.widget
 
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -7,9 +8,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.callbackdev.saldo.core.domain.model.TransactionType
 
 /**
- * Per-instance settings of a placed quick-add widget, stored in the widget's
- * own Glance preferences (one record per `GlanceId`), so two widgets on the
- * same home screen can add to two different accounts.
+ * Per-instance settings of a placed quick-add widget, keyed by app widget id in
+ * the shared widget store (see [WidgetConfigStore]), so two widgets on the same
+ * home screen can add to two different accounts.
  *
  * Every field has a working default: the widget is usable the moment it is
  * dropped, and its configuration screen is an option rather than a toll gate.
@@ -60,15 +61,22 @@ data class QuickAddWidgetConfig(
     val effectiveType: TransactionType get() = currentType ?: type
 
     /** True when the single-row layout should draw this type's button. */
-    fun showsButton(candidate: TransactionType): Boolean = when (buttons) {
-        WidgetActionButtons.BOTH -> true
-        WidgetActionButtons.EXPENSE_ONLY -> candidate == TransactionType.EXPENSE
-        WidgetActionButtons.INCOME_ONLY -> candidate == TransactionType.INCOME
-    }
+    fun showsButton(candidate: TransactionType): Boolean = buttons.shows(candidate)
 }
 
 /** Which buttons the single-row layout offers. */
-enum class WidgetActionButtons { BOTH, EXPENSE_ONLY, INCOME_ONLY }
+enum class WidgetActionButtons {
+    BOTH,
+    EXPENSE_ONLY,
+    INCOME_ONLY,
+    ;
+
+    fun shows(candidate: TransactionType): Boolean = when (this) {
+        BOTH -> true
+        EXPENSE_ONLY -> candidate == TransactionType.EXPENSE
+        INCOME_ONLY -> candidate == TransactionType.INCOME
+    }
+}
 
 /**
  * How a placed widget picks its palette. A widget lives on the wallpaper,
@@ -87,40 +95,101 @@ enum class WidgetActionButtons { BOTH, EXPENSE_ONLY, INCOME_ONLY }
  */
 enum class WidgetAppearance { SYSTEM, LIGHT, DARK, TRANSPARENT }
 
+
+/**
+ * How a widget's settings are spelled in the shared preferences file.
+ *
+ * Every key carries the app widget id, because the whole feature lives in one
+ * file now (see [WidgetPreferencesModule]) rather than one per instance. The
+ * unsuffixed names are still read once, by [readLegacy], to carry across the
+ * widgets configured while the state belonged to Glance.
+ */
 object QuickAddWidgetPrefs {
 
-    val AccountId = longPreferencesKey("quick_add_account_id")
-    val Type = stringPreferencesKey("quick_add_type")
-    val PinnedCategoryIds = stringPreferencesKey("quick_add_pinned_category_ids")
+    fun accountId(appWidgetId: Int) = longPreferencesKey(key(ACCOUNT_ID, appWidgetId))
+    fun type(appWidgetId: Int) = stringPreferencesKey(key(TYPE, appWidgetId))
+    fun pinnedCategoryIds(appWidgetId: Int) = stringPreferencesKey(key(PINNED, appWidgetId))
+    fun appearance(appWidgetId: Int) = stringPreferencesKey(key(APPEARANCE, appWidgetId))
+    fun buttons(appWidgetId: Int) = stringPreferencesKey(key(BUTTONS, appWidgetId))
+    fun showAppShortcut(appWidgetId: Int) = booleanPreferencesKey(key(SHORTCUT, appWidgetId))
 
-    /**
-     * Bumped by [WidgetRefreshWatcher] when the underlying data moves. The
-     * widget state is the only channel a Glance session listens to, so a
-     * category or theme change has to arrive as a state change or the
-     * recomposition would render the very same snapshot.
-     */
-    val Revision = longPreferencesKey("quick_add_revision")
-
-    val Appearance = stringPreferencesKey("quick_add_appearance")
-    val Buttons = stringPreferencesKey("quick_add_buttons")
-    val ShowAppShortcut = booleanPreferencesKey("quick_add_show_app_shortcut")
-
-    /** The selector's runtime choice, kept apart from the configured [Type]. */
-    val CurrentType = stringPreferencesKey("quick_add_current_type")
+    /** The selector's runtime choice, kept apart from the configured start type. */
+    fun currentType(appWidgetId: Int) = stringPreferencesKey(key(CURRENT_TYPE, appWidgetId))
 
     /** Absent account id is stored as [NO_ACCOUNT] because DataStore has no nullable Long. */
     private const val NO_ACCOUNT = -1L
     private const val SEPARATOR = ","
 
-    fun read(preferences: Preferences): QuickAddWidgetConfig {
-        val storedAppearance = preferences[Appearance]?.let { stored ->
+    private const val ACCOUNT_ID = "quick_add_account_id"
+    private const val TYPE = "quick_add_type"
+    private const val PINNED = "quick_add_pinned_category_ids"
+    private const val APPEARANCE = "quick_add_appearance"
+    private const val BUTTONS = "quick_add_buttons"
+    private const val SHORTCUT = "quick_add_show_app_shortcut"
+    private const val CURRENT_TYPE = "quick_add_current_type"
+
+    private fun key(name: String, appWidgetId: Int) = "${name}_$appWidgetId"
+
+    fun read(preferences: Preferences, appWidgetId: Int): QuickAddWidgetConfig = decode(
+        appearance = preferences[appearance(appWidgetId)],
+        accountId = preferences[accountId(appWidgetId)],
+        type = preferences[type(appWidgetId)],
+        currentType = preferences[currentType(appWidgetId)],
+        pinned = preferences[pinnedCategoryIds(appWidgetId)],
+        buttons = preferences[buttons(appWidgetId)],
+        showAppShortcut = preferences[showAppShortcut(appWidgetId)],
+    )
+
+    /** The Glance-era per-instance file, whose keys carried no id. */
+    fun readLegacy(preferences: Preferences): QuickAddWidgetConfig = decode(
+        appearance = preferences[stringPreferencesKey(APPEARANCE)],
+        accountId = preferences[longPreferencesKey(ACCOUNT_ID)],
+        type = preferences[stringPreferencesKey(TYPE)],
+        currentType = preferences[stringPreferencesKey(CURRENT_TYPE)],
+        pinned = preferences[stringPreferencesKey(PINNED)],
+        buttons = preferences[stringPreferencesKey(BUTTONS)],
+        showAppShortcut = preferences[booleanPreferencesKey(SHORTCUT)],
+    )
+
+    fun write(preferences: MutablePreferences, appWidgetId: Int, config: QuickAddWidgetConfig) {
+        preferences[accountId(appWidgetId)] = config.accountId ?: NO_ACCOUNT
+        preferences[type(appWidgetId)] = config.type.name
+        preferences[currentType(appWidgetId)] = config.effectiveType.name
+        preferences[pinnedCategoryIds(appWidgetId)] =
+            config.pinnedCategoryIds.joinToString(SEPARATOR)
+        preferences[appearance(appWidgetId)] = config.appearance.name
+        preferences[buttons(appWidgetId)] = config.buttons.name
+        preferences[showAppShortcut(appWidgetId)] = config.showAppShortcut
+    }
+
+    fun clear(preferences: MutablePreferences, appWidgetId: Int) {
+        preferences.remove(accountId(appWidgetId))
+        preferences.remove(type(appWidgetId))
+        preferences.remove(currentType(appWidgetId))
+        preferences.remove(pinnedCategoryIds(appWidgetId))
+        preferences.remove(appearance(appWidgetId))
+        preferences.remove(buttons(appWidgetId))
+        preferences.remove(showAppShortcut(appWidgetId))
+    }
+
+    @Suppress("LongParameterList")
+    private fun decode(
+        appearance: String?,
+        accountId: Long?,
+        type: String?,
+        currentType: String?,
+        pinned: String?,
+        buttons: String?,
+        showAppShortcut: Boolean?,
+    ): QuickAddWidgetConfig {
+        val storedAppearance = appearance?.let { stored ->
             WidgetAppearance.entries.firstOrNull { it.name == stored }
         } ?: WidgetAppearance.SYSTEM
         return QuickAddWidgetConfig(
-            accountId = preferences[AccountId]?.takeIf { it != NO_ACCOUNT },
-            type = preferences[Type]?.movementType() ?: TransactionType.EXPENSE,
-            currentType = preferences[CurrentType]?.movementType(),
-            pinnedCategoryIds = preferences[PinnedCategoryIds]
+            accountId = accountId?.takeIf { it != NO_ACCOUNT },
+            type = type?.movementType() ?: TransactionType.EXPENSE,
+            currentType = currentType?.movementType(),
+            pinnedCategoryIds = pinned
                 ?.split(SEPARATOR)
                 ?.mapNotNull(String::toLongOrNull)
                 .orEmpty(),
@@ -130,17 +199,13 @@ object QuickAddWidgetPrefs {
                 WidgetAppearance.TRANSPARENT -> WidgetAppearance.SYSTEM
                 else -> storedAppearance
             },
-            buttons = preferences[Buttons]?.let { stored ->
+            buttons = buttons?.let { stored ->
                 WidgetActionButtons.entries.firstOrNull { it.name == stored }
             } ?: WidgetActionButtons.BOTH,
-            showAppShortcut = preferences[ShowAppShortcut] ?: true,
+            showAppShortcut = showAppShortcut ?: true,
         )
     }
 
     private fun String.movementType(): TransactionType? =
         TransactionType.entries.firstOrNull { it.name == this }
-
-    fun encodeAccountId(accountId: Long?): Long = accountId ?: NO_ACCOUNT
-
-    fun encodePinned(categoryIds: List<Long>): String = categoryIds.joinToString(SEPARATOR)
 }
