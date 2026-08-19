@@ -141,11 +141,6 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                 // The snapshot cache is keyed by configuration, so the write
                 // above already misses it; only the render has to be asked for.
                 widgetUpdater.update(
-                    provider = if (isBar) {
-                        QuickBarWidgetProvider::class.java
-                    } else {
-                        QuickAddWidgetProvider::class.java
-                    },
                     appWidgetIds = intArrayOf(appWidgetId),
                     sizes = if (isBar) ActionSizes else GridWidgetSizes,
                 )

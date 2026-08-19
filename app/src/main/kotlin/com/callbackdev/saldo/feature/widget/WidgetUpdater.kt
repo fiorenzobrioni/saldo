@@ -26,12 +26,14 @@ class WidgetUpdater @Inject constructor(
     /** Every placed instance of both providers. */
     suspend fun updateAll() {
         SaldoWidgetProvider.providers.forEach { (provider, sizes) ->
-            update(provider, appWidgetIds(provider), sizes)
+            update(appWidgetIds(provider), sizes)
         }
     }
 
     /**
-     * The instances of one provider.
+     * The given instances, which are always one provider's: the sizes come from
+     * the provider, so a caller that mixed the two would hand the launcher the
+     * wrong breakpoints.
      *
      * Instances usually share a configuration, so the data pass is grouped by
      * it: one database read and one theme resolution per distinct configuration,
@@ -39,7 +41,7 @@ class WidgetUpdater @Inject constructor(
      * built per instance - the selector's broadcast names the widget it belongs
      * to, so two instances cannot share one set of intents.
      */
-    internal suspend fun update(provider: Class<*>, appWidgetIds: IntArray, sizes: List<WidgetSize>) {
+    internal suspend fun update(appWidgetIds: IntArray, sizes: List<WidgetSize>) {
         if (appWidgetIds.isEmpty()) return
         val manager = AppWidgetManager.getInstance(context)
         val configs = configStore.readAll(appWidgetIds)

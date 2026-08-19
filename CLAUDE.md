@@ -66,7 +66,7 @@ Quando scrivi, modifichi o generi testo per i file di documentazione del reposit
 
 ## Qualità e verifica
 
-- Prima di considerare concluso un task: `./gradlew assembleDebug testDebugUnitTest lint` deve passare.
+- Prima di considerare concluso un task: `./gradlew assembleDebug testDebugUnitTest lint detekt` deve passare. È lo stesso comando del workflow CI (`.github/workflows/ci.yml`): se i due divergono, la CI boccia lavoro già dato per concluso.
 - **Versioning delle build di test**: al termine di ogni implementazione che modifica l'app (non per modifiche solo alla documentazione), incrementa `versionCode` di 1 in `app/build.gradle.kts` e allinea `versionName` allo schema `2.0.<incremento>` (fino alla release 1.0.0 lo schema era `0.<ultima fase completata>.<incremento>`, fra la 1.0.0 e la 2.0.0 era `1.0.<incremento>`; la prossima versione pubblicata sarà la 3.0.0). Serve ad aggiornare in place l'APK debug sul device di test senza reinstallare (e senza perdere i dati inseriti). Il bump fa parte del commit dell'implementazione, non richiede una build dedicata.
 - **Keystore di debug condiviso**: `keystore/debug.keystore` (committato di proposito, `signingConfigs.debug` in `app/build.gradle.kts`) firma allo stesso modo ogni build, locale o CI. Senza un keystore condiviso il bump di versione da solo non basta: ogni macchina firmerebbe con il proprio `~/.android/debug.keystore` e Android rifiuterebbe comunque l'update in-place per firma diversa. Non toccare né rigenerare questo file: è una chiave di solo debug (nessun valore ai fini della pubblicazione), non ha bisogno di segreti/CI secrets.
 - **Release**: si pubblica su GitHub, non sul Play Store (ADR 38 in PLANNING.md). Scrivere le note di rilascio in `docs/release-notes/vX.Y.Z.md`.

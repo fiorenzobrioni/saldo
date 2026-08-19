@@ -111,13 +111,17 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
         val forget = deleted
         val remap = restored
         val selector = requestedType
-        if (ids == null && !placement && forget == null && remap == null && selector == null) return
+        val wanted = listOfNotNull(ids, forget, remap, selector).isNotEmpty() || placement
+        if (!wanted) return
 
         // Nullable despite the platform signature: goAsync() only returns a
         // result while a real broadcast is being dispatched. The work still runs.
         val pendingResult: BroadcastReceiver.PendingResult? = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
-            try {
+            // Wrapped whole: a throw on this path would crash the app out of a
+            // broadcast, where the worst acceptable outcome is a widget that
+            // keeps showing whatever it already had.
+            runCatching {
                 val entryPoint = context.widgetEntryPoint()
                 val store = entryPoint.widgetConfigStore()
                 val updater = entryPoint.widgetUpdater()
@@ -127,16 +131,12 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
                 forget?.let { store.forget(it) }
                 selector?.let { (id, type) ->
                     store.setCurrentType(id, type)
-                    updater.update(javaClass, intArrayOf(id), sizes)
+                    updater.update(intArrayOf(id), sizes)
                 }
                 if (placement) entryPoint.widgetRefreshWatcher().onWidgetsChanged()
-                ids?.let { updater.update(javaClass, it, sizes) }
-            } catch (e: Exception) {
-                // An unhandled throw here would crash the app from a broadcast;
-                // the widget simply keeps whatever it was already showing.
-            } finally {
-                pendingResult?.finish()
+                ids?.let { updater.update(it, sizes) }
             }
+            pendingResult?.finish()
         }
     }
 
