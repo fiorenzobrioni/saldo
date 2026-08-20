@@ -1,0 +1,91 @@
+name: Release
+
+# Fires only on version tags (v1.0.0, v2.1.0, ...). Builds the minified APK
+# signed with the REAL release key (GitHub Secrets) and publishes the GitHub
+# Release, taking the body from docs/release-notes/<tag>.md with the relative
+# links rewritten to absolute URLs pinned to the tag - the manual step that
+# produced broken links on v1.0.0, v2.0.0 and v2.1.0, now automated (see the
+# release-notes ADR in CLAUDE.md). Per-push testing builds stay in ci.yml.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write # create the GitHub Release
+
+jobs:
+  release:
+    name: Signed release build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # Same gate as CI: a red suite must never become a published release.
+      - name: Lint and test
+        run: ./gradlew testDebugUnitTest lint detekt
+
+      # No release without its notes: fail early, before building anything.
+      - name: Check release notes exist
+        run: |
+          test -f "docs/release-notes/${GITHUB_REF_NAME}.md" || {
+            echo "::error::docs/release-notes/${GITHUB_REF_NAME}.md not found - write the notes, then re-tag."
+            exit 1
+          }
+
+      - name: Decode release keystore
+        run: echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      # Gradle picks up ORG_GRADLE_PROJECT_<name> env vars as project
+      # properties - same names the signingConfig reads locally, and nothing
+      # secret on the command line or in the logs.
+      - name: Build signed release APK
+        run: ./gradlew :app:assembleRelease
+        env:
+          ORG_GRADLE_PROJECT_SALDO_KEYSTORE: ${{ runner.temp }}/release.jks
+          ORG_GRADLE_PROJECT_SALDO_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_SALDO_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_SALDO_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      # The notes in the repo use relative links, correct where the file lives
+      # (docs/release-notes/). A GitHub Release body resolves them against the
+      # release page instead, so they 404. Rewrite them as absolute URLs pinned
+      # to THIS tag (the source of this exact version, not main, which will
+      # diverge). ../../ points at the repo root, ../ at docs/.
+      - name: Absolutize release-notes links against the tag
+        run: |
+          sed -e "s|](\.\./\.\./|](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/|g" \
+              -e "s|](\.\./|](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/docs/|g" \
+              "docs/release-notes/${GITHUB_REF_NAME}.md" > release-body.md
+          if grep -n "](\.\.\?/" release-body.md; then
+            echo "::error::relative links survived the rewrite - fix the patterns above."
+            exit 1
+          fi
+
+      # Name the artifacts after the tag: the mapping must stay forever paired
+      # with the exact APK it deobfuscates.
+      - name: Rename artifacts after the tag
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk "saldo-${GITHUB_REF_NAME}.apk"
+          cp app/build/outputs/mapping/release/mapping.txt "mapping-${GITHUB_REF_NAME}.txt"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-body.md
+          files: |
+            saldo-${{ github.ref_name }}.apk
+            mapping-${{ github.ref_name }}.txt

@@ -38,6 +38,26 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+
+        // Real release key (ADR 47, supersedes the artifact choice of ADR 38).
+        // The keystore lives OUTSIDE the repo; the four properties come from
+        // ~/.gradle/gradle.properties locally and from ORG_GRADLE_PROJECT_*
+        // env vars (GitHub Secrets) in the release workflow. Only created when
+        // fully configured, so a clean checkout still builds.
+        val releaseStore = findProperty("SALDO_KEYSTORE") as String?
+        val releaseStorePassword = findProperty("SALDO_KEYSTORE_PASSWORD") as String?
+        val releaseKeyAlias = findProperty("SALDO_KEY_ALIAS") as String?
+        val releaseKeyPassword = findProperty("SALDO_KEY_PASSWORD") as String?
+        if (!releaseStore.isNullOrBlank() && !releaseStorePassword.isNullOrBlank() &&
+            !releaseKeyAlias.isNullOrBlank() && !releaseKeyPassword.isNullOrBlank()
+        ) {
+            create("release") {
+                storeFile = file(releaseStore)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -48,6 +68,15 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // The real key wins whenever it is configured. Otherwise the
+            // debug-key opt-in: with the flag, per-push CI signs the minified
+            // build so it can actually be installed and smoke-tested (R8
+            // breakage only shows up in a release build). Off by default so an
+            // unconfigured checkout can never produce an installable release
+            // by accident.
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
+                    .takeIf { project.hasProperty("signReleaseWithDebugKey") }
         }
     }
 
