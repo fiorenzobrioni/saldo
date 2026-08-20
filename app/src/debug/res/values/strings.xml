@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Debug builds install side-by-side with the release app (applicationIdSuffix
+         ".debug"): a distinct launcher label is what tells the two icons apart. -->
+    <string name="app_name" translatable="false">Saldo (dev)</string>
+</resources>
