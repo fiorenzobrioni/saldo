@@ -25,6 +25,7 @@ class UpcomingChargesCalculatorTest {
         lastGenerated: LocalDate? = null,
         endDate: LocalDate? = null,
         isVariable: Boolean = false,
+        isPaused: Boolean = false,
     ) = RecurringRule(
         id = id,
         name = "rule-$id",
@@ -38,10 +39,17 @@ class UpcomingChargesCalculatorTest {
         endDate = endDate,
         isVariableAmount = isVariable,
         lastGeneratedDate = lastGenerated,
+        isPaused = isPaused,
     )
 
     private fun remaining(rules: List<RecurringRule>, today: LocalDate) =
         UpcomingChargesCalculator.remainingExpenseChargesInMonth(rules, today, eur)
+
+    @Test
+    fun `a paused rule owes nothing this month`() = assertEquals(
+        BigDecimal.ZERO,
+        remaining(listOf(rule(isPaused = true)), LocalDate.of(2026, 7, 12)),
+    )
 
     @Test
     fun `sums the charges still due between today and month end`() = assertEquals(

@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.recurring
 
 import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,8 @@ import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Upcoming
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Pause
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.SwapVert
@@ -57,6 +60,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -101,6 +106,10 @@ fun RecurrencesScreen(
             when (event) {
                 RecurrencesEvent.ScanFailed -> snackbarHostState.showSnackbar(
                     message = resources.getString(R.string.recurrences_scan_failed),
+                )
+
+                RecurrencesEvent.WriteFailed -> snackbarHostState.showSnackbar(
+                    message = resources.getString(R.string.recurrences_write_failed),
                 )
             }
         }
@@ -195,6 +204,7 @@ fun RecurrencesScreen(
                     scan = uiState.scan,
                     onSortSelected = viewModel::onSortSelected,
                     onItemClick = onNavigateToEditRule,
+                    onPauseToggle = viewModel::onPauseToggled,
                     onUpcomingClick = onNavigateToUpcoming,
                     onScanClick = viewModel::onScanClick,
                     onSuggestionClick = onNavigateToSuggestedRule,
@@ -218,6 +228,7 @@ private fun RecurrencesContent(
     scan: RecurrenceScanUi,
     onSortSelected: (SubscriptionSort) -> Unit,
     onItemClick: (Long) -> Unit,
+    onPauseToggle: (SubscriptionItem) -> Unit,
     onUpcomingClick: () -> Unit,
     onScanClick: () -> Unit,
     onSuggestionClick: (RecurrenceSuggestionItem) -> Unit,
@@ -263,6 +274,7 @@ private fun RecurrencesContent(
                 type = type,
                 today = today,
                 onItemClick = onItemClick,
+                onPauseToggle = onPauseToggle,
             )
         }
         item {
@@ -538,6 +550,7 @@ private fun RecurrencesListCard(
     type: TransactionType,
     today: java.time.LocalDate,
     onItemClick: (Long) -> Unit,
+    onPauseToggle: (SubscriptionItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SaldoCard(
@@ -551,21 +564,77 @@ private fun RecurrencesListCard(
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
                 }
-                Surface(
+                RecurrenceRow(
+                    item = item,
+                    type = type,
+                    today = today,
                     onClick = { onItemClick(item.id) },
-                    color = Color.Transparent,
-                ) {
-                    SubscriptionRowContent(
-                        item = item,
-                        type = type,
-                        today = today,
-                        modifier = Modifier.padding(
-                            horizontal = SaldoDimens.rowPaddingHorizontal,
-                            vertical = SaldoDimens.rowPaddingVertical,
+                    onPauseToggle = { onPauseToggle(item) },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * One rule row: tap opens the editor, long-press opens a menu with the pause /
+ * resume quick action (Fase 39, F3). The same long-press-for-actions gesture
+ * the ledger rows use, so the two lists feel alike.
+ */
+@Composable
+private fun RecurrenceRow(
+    item: SubscriptionItem,
+    type: TransactionType,
+    today: java.time.LocalDate,
+    onClick: () -> Unit,
+    onPauseToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val haptics = LocalHapticFeedback.current
+    var menuOpen by remember { mutableStateOf(false) }
+    val isPaused = item.rule.isPaused
+    Box(modifier = modifier) {
+        Surface(
+            color = Color.Transparent,
+            modifier = Modifier.combinedClickable(
+                onClick = onClick,
+                onLongClick = {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    menuOpen = true
+                },
+                onLongClickLabel = stringResource(R.string.subscriptions_row_more_actions),
+            ),
+        ) {
+            SubscriptionRowContent(
+                item = item,
+                type = type,
+                today = today,
+                modifier = Modifier.padding(
+                    horizontal = SaldoDimens.rowPaddingHorizontal,
+                    vertical = SaldoDimens.rowPaddingVertical,
+                ),
+            )
+        }
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        stringResource(
+                            if (isPaused) R.string.subscriptions_action_resume else R.string.subscriptions_action_pause,
                         ),
                     )
-                }
-            }
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = if (isPaused) Icons.Outlined.PlayArrow else Icons.Outlined.Pause,
+                        contentDescription = null,
+                    )
+                },
+                onClick = {
+                    menuOpen = false
+                    onPauseToggle()
+                },
+            )
         }
     }
 }

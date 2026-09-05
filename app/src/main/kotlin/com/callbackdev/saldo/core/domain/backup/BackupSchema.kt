@@ -179,6 +179,8 @@ data class RecurringRuleBackup(
     val transferAccountId: Long? = null,
     val transferAmountMinor: Long? = null,
     val transferCurrency: String? = null,
+    /** Fase 39 (F3): absent in older backups, which only had active rules. */
+    val isPaused: Boolean = false,
 )
 
 @Serializable

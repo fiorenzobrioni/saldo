@@ -81,7 +81,11 @@ internal fun SubscriptionRowContent(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                ChargeBadge(nextCharge = item.nextCharge, today = today)
+                if (rule.isPaused) {
+                    PausedBadge()
+                } else {
+                    ChargeBadge(nextCharge = item.nextCharge, today = today)
+                }
             }
             Text(
                 text = subscriptionSubtitle(item, type),
@@ -105,6 +109,25 @@ internal fun SubscriptionRowContent(
                 )
             }
         }
+    }
+}
+
+/** Neutral "Paused" pill (Fase 39, F3): the rule is on file but not running. */
+@Composable
+private fun PausedBadge(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .padding(start = 8.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .padding(horizontal = 8.dp, vertical = 2.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.subscriptions_paused),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

@@ -490,6 +490,11 @@
     <string name="subscriptions_charged_on">addebito il %1$s</string>
     <string name="subscriptions_charge_today">Oggi</string>
     <string name="subscriptions_charge_tomorrow">Domani</string>
+    <string name="subscriptions_paused">In pausa</string>
+    <string name="subscriptions_action_pause">Metti in pausa</string>
+    <string name="subscriptions_action_resume">Riprendi</string>
+    <string name="subscriptions_row_more_actions">Altre azioni</string>
+    <string name="recurrences_write_failed">Qualcosa è andato storto. Riprova.</string>
     <string name="subscriptions_prorated_note">I costi non mensili sono ripartiti sul mese per il totale.</string>
     <string name="subscriptions_empty_title">Nessuna uscita ricorrente</string>
     <string name="subscriptions_empty_body">Aggiungi le tue spese ricorrenti per vedere quanto costano ogni mese e in un anno.</string>
@@ -567,6 +572,8 @@
     <string name="subscription_editor_end_date">Data di fine</string>
     <string name="subscription_editor_has_end_date">Con scadenza</string>
     <string name="subscription_editor_has_end_date_hint">La ricorrenza termina a una data scelta</string>
+    <string name="subscription_editor_paused">In pausa</string>
+    <string name="subscription_editor_paused_hint">Non viene registrato nulla e la regola resta fuori da totali e previsioni finché non la riprendi. Gli addebiti saltati nel frattempo non vengono recuperati.</string>
     <string name="subscription_editor_section_color">Colore</string>
     <string name="subscription_editor_section_icon">Icona</string>
     <string name="subscription_editor_color_option">Colore %1$d</string>

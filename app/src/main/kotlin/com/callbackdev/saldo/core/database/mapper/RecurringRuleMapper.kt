@@ -33,6 +33,7 @@ fun RecurringRuleEntity.toDomain(): RecurringRule {
             MoneyMapper.toAmount(it, transferCurrency ?: currency)
         },
         transferCurrency = transferCurrency,
+        isPaused = isPaused,
     )
 }
 
@@ -60,4 +61,5 @@ fun RecurringRule.toEntity(): RecurringRuleEntity = RecurringRuleEntity(
         MoneyMapper.toMinorUnits(it, transferCurrency ?: currency)
     },
     transferCurrency = transferCurrency?.currencyCode,
+    isPaused = isPaused,
 )

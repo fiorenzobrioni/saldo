@@ -73,4 +73,11 @@ data class RecurringRuleEntity(
     @ColumnInfo(name = "transferAmountMinor")
     val transferAmountMinor: Long? = null,
     val transferCurrency: String? = null,
+    /**
+     * A paused rule generates nothing and is priced at zero until resumed
+     * (Fase 39, F3). Added in schema v5 with a DEFAULT so existing rows stay
+     * active.
+     */
+    @ColumnInfo(name = "isPaused", defaultValue = "0")
+    val isPaused: Boolean = false,
 )

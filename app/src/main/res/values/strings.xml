@@ -480,6 +480,11 @@
     <string name="subscriptions_charged_on">charged on %1$s</string>
     <string name="subscriptions_charge_today">Today</string>
     <string name="subscriptions_charge_tomorrow">Tomorrow</string>
+    <string name="subscriptions_paused">Paused</string>
+    <string name="subscriptions_action_pause">Pause</string>
+    <string name="subscriptions_action_resume">Resume</string>
+    <string name="subscriptions_row_more_actions">More actions</string>
+    <string name="recurrences_write_failed">Something went wrong. Please try again.</string>
     <string name="subscriptions_prorated_note">Non-monthly costs are spread over the month for the total.</string>
     <string name="subscriptions_empty_title">No recurring expenses yet</string>
     <string name="subscriptions_empty_body">Add your recurring expenses to see how much they cost each month and over a year.</string>
@@ -554,6 +559,8 @@
     <string name="subscription_editor_end_date">End date</string>
     <string name="subscription_editor_has_end_date">Has an end date</string>
     <string name="subscription_editor_has_end_date_hint">The recurrence stops on a chosen date</string>
+    <string name="subscription_editor_paused">Paused</string>
+    <string name="subscription_editor_paused_hint">Nothing is recorded and the rule stays out of totals and forecasts until you resume it. Charges skipped in the meantime are not recovered.</string>
     <string name="subscription_editor_section_color">Color</string>
     <string name="subscription_editor_section_icon">Icon</string>
     <string name="subscription_editor_color_option">Color %1$d</string>

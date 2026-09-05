@@ -60,6 +60,12 @@ Le frequenze giornaliera e settimanale contano semplicemente i giorni o le setti
 
 Puoi impostare una scadenza ("Con scadenza"): dopo quella data la regola smette di generare movimenti. Senza scadenza la regola continua a tempo indeterminato.
 
+### Pausa
+
+Una regola si può mettere in pausa senza cancellarla né inventare una data di fine: dall'editor con l'interruttore "In pausa", oppure dall'hub con una pressione prolungata sulla riga e "Metti in pausa". In pausa la regola non genera movimenti, non manda notifiche di pre-rinnovo e resta fuori da tutte le cifre che guardano avanti (totale mensile e proiezione annua dell'hub, card Ricorrenti, Spendibile, previsione a fine mese, prossimo addebito). Resta in elenco con l'etichetta "In pausa", in coda alle regole attive; i movimenti che aveva già creato restano dove sono.
+
+Alla ripresa ("Riprendi", o interruttore disattivato e Salva) la regola riparte dalla prima occorrenza successiva a oggi: gli addebiti caduti durante la pausa **non** vengono recuperati. Se vuoi registrarli comunque, inseriscili a mano o duplica un movimento precedente.
+
 ## Modalità di registrazione
 
 Sotto "Registrazione" scegli come deve comportarsi la regola a ogni scadenza. Le modalità sono due, più un caso particolare per gli importi che cambiano.
@@ -130,6 +136,7 @@ Tutto avviene sul dispositivo: nessun dato esce per essere analizzato.
 ## Modificare o eliminare una regola
 
 - **Modifica**: cambiare importo, nome, conto o altri campi non tocca i movimenti già registrati; vale per le occorrenze future. Se cambi la cadenza (frequenza, data di partenza o giorno di riferimento), la generazione riparte allineata alla nuova cadenza, sempre senza recuperare il passato della nuova pianificazione.
+- **Pausa**: sospende la regola conservandola, vedi la sezione "Pausa" sopra. È l'alternativa corretta alla cancellazione quando la sospensione è temporanea.
 - **Eliminazione**: la regola viene rimossa e non genera più movimenti. I movimenti che ha già creato **restano**: se vuoi eliminarli, agisci sui singoli movimenti.
 
 ## Effetto su saldi, budget e spendibile

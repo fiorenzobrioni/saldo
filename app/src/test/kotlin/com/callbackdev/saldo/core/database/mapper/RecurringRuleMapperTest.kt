@@ -17,6 +17,25 @@ class RecurringRuleMapperTest {
     private val usd = Currency.getInstance("USD")
 
     @Test
+    fun `round trip preserves the paused flag`() {
+        val rule = RecurringRule(
+            id = 6L,
+            name = "Gym",
+            type = TransactionType.EXPENSE,
+            currency = eur,
+            accountId = 1L,
+            frequency = RecurrenceFrequency.MONTHLY,
+            startDate = LocalDate.of(2026, 1, 5),
+            amount = BigDecimal("30.00"),
+            isPaused = true,
+        )
+
+        val entity = rule.toEntity()
+        assertEquals(true, entity.isPaused)
+        assertEquals(true, entity.toDomain().isPaused)
+    }
+
+    @Test
     fun `round trip preserves a same-currency transfer rule`() {
         val rule = RecurringRule(
             id = 4L,

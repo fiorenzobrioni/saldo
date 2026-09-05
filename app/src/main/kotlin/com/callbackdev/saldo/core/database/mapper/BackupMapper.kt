@@ -124,6 +124,7 @@ fun RecurringRuleEntity.toBackup(): RecurringRuleBackup = RecurringRuleBackup(
     transferAccountId = transferAccountId,
     transferAmountMinor = transferAmountMinor,
     transferCurrency = transferCurrency,
+    isPaused = isPaused,
 )
 
 fun RecurringRuleBackup.toEntity(): RecurringRuleEntity = RecurringRuleEntity(
@@ -148,6 +149,7 @@ fun RecurringRuleBackup.toEntity(): RecurringRuleEntity = RecurringRuleEntity(
     transferAccountId = transferAccountId,
     transferAmountMinor = transferAmountMinor,
     transferCurrency = transferCurrency?.let(::validatedCurrencyCode),
+    isPaused = isPaused,
 )
 
 fun TransactionEntity.toBackup(): TransactionBackup = TransactionBackup(

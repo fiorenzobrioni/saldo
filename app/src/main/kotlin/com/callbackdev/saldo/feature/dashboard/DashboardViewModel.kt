@@ -688,9 +688,10 @@ class DashboardViewModel @Inject constructor(
         today: LocalDate,
         savingsAccountIds: Set<Long>,
     ): RecurringSummary {
-        // Everything not yet over feeds the "next charge" line: a rule starting
-        // next quarter has a real, useful upcoming date.
-        val flows = rules.filter { it.isFlow() && !it.hasEndedBy(today) }
+        // Everything not yet over and not paused feeds the "next charge" line: a
+        // rule starting next quarter has a real, useful upcoming date; a paused
+        // one will not charge at all.
+        val flows = rules.filter { it.isFlow() && !it.isPaused && !it.hasEndedBy(today) }
         val plannedSavings = rules.filter { it.isPlannedSavingsInto(savingsAccountIds, primary, today) }
         if (flows.isEmpty() && plannedSavings.isEmpty()) return RecurringSummary()
 

@@ -83,4 +83,16 @@ private val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
-val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+/**
+ * Adds `recurring_rules.isPaused` (Fase 39, F3): a paused rule generates
+ * nothing and is priced at zero until resumed. `NOT NULL DEFAULT 0` keeps every
+ * existing rule active, and matches the entity's `defaultValue` so Room's
+ * schema validation accepts the migrated table.
+ */
+private val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `recurring_rules` ADD COLUMN `isPaused` INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+val ALL_MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)

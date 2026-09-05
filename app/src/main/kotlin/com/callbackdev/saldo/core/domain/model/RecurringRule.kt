@@ -56,11 +56,33 @@ data class RecurringRule(
     val transferAmount: BigDecimal? = null,
     /** Currency of the destination account for a transfer rule; null otherwise. */
     val transferCurrency: Currency? = null,
+    /**
+     * Paused (Fase 39, F3): the rule stays on file with its schedule intact but
+     * generates nothing, posts no reminder, and is priced at zero everywhere
+     * ([runsInMonthOf] is false). Occurrences skipped while paused are never
+     * recovered: see [resumed].
+     */
+    val isPaused: Boolean = false,
 )
 
 /**
- * Whether the rule carries a cost into the month containing [date]: it has not
- * ended yet, and its schedule starts no later than that month's last day.
+ * The rule active again after a pause. The generation watermark moves to the
+ * day before [today] when it is behind, so the catch-up on the next run starts
+ * from today and the occurrences skipped during the pause are not back-filled:
+ * pausing means "do not charge me for a while", not "charge me later". A
+ * watermark already at or past that day (a charge generated today) is kept, so
+ * the same occurrence cannot be produced twice.
+ */
+fun RecurringRule.resumed(today: LocalDate): RecurringRule {
+    val floor = today.minusDays(1)
+    val watermark = lastGeneratedDate?.takeIf { it >= floor } ?: floor
+    return copy(isPaused = false, lastGeneratedDate = watermark)
+}
+
+/**
+ * Whether the rule carries a cost into the month containing [date]: it is not
+ * paused, it has not ended yet, and its schedule starts no later than that
+ * month's last day.
  *
  * The start bound is the end of the month, not [date] itself: a subscription
  * added on the 9th whose first charge lands on the 12th is a real monthly cost
@@ -74,7 +96,7 @@ data class RecurringRule(
  * projection must agree on what counts toward a "per month" figure.
  */
 fun RecurringRule.runsInMonthOf(date: LocalDate): Boolean =
-    !hasEndedBy(date) && startDate <= date.withDayOfMonth(date.lengthOfMonth())
+    !isPaused && !hasEndedBy(date) && startDate <= date.withDayOfMonth(date.lengthOfMonth())
 
 /**
  * Whether the rule's schedule is over on [date]: no further occurrence will

@@ -62,6 +62,9 @@ class GenerateRecurringMovementsUseCase @Inject constructor(
         }
 
     private suspend fun generateForRule(rule: RecurringRule, today: LocalDate): List<GeneratedMovement> {
+        // A paused rule is left exactly where it is: no movements and no watermark
+        // advance, so nothing about its schedule changes while it sleeps.
+        if (rule.isPaused) return emptyList()
         val pending = rule.isVariableAmount || rule.mode == RecurrenceMode.CONFIRM
         // A non-pending rule needs a fixed amount to materialize automatically.
         val eligible = pending || rule.amount != null

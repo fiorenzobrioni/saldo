@@ -107,6 +107,7 @@ class BackupMapperTest {
             icon = "payments",
             note = "gross",
             lastReminderEpochDay = 20_490L,
+            isPaused = true,
         )
 
         assertEquals(entity, entity.toBackup().toEntity())
