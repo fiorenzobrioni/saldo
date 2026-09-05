@@ -973,6 +973,7 @@
     <string name="dashboard_sts_detail_budget">Month\'s budget</string>
     <string name="dashboard_sts_detail_spent">Spent so far</string>
     <string name="dashboard_sts_detail_pending">Awaiting confirmation</string>
+    <string name="dashboard_sts_detail_future">Dated later this month</string>
     <string name="dashboard_sts_detail_upcoming">Recurring due by month end</string>
     <string name="dashboard_sts_detail_remaining">Left for the month</string>
     <string name="dashboard_sts_manage_budgets">Manage budgets</string>

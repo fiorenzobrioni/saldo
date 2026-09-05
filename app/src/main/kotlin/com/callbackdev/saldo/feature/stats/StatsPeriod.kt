@@ -32,10 +32,18 @@ val EARLIEST_LEDGER_DATE: LocalDate = LocalDate.of(1, 1, 1)
  * Inclusive local-date range covered by the period. A custom period's open
  * bounds resolve against [today]: an open start floors at [EARLIEST_LEDGER_DATE],
  * an open end ceils at [today].
+ *
+ * The month and the year that contain [today] stop at [today] as well: a
+ * movement dated in the future is not spending that happened yet (ADR 36), so
+ * the current period reads "to date", exactly like the dashboard's month card
+ * and the budgets. Past periods keep their full calendar span.
  */
 fun StatsPeriod.dateRange(today: LocalDate): ClosedRange<LocalDate> = when (this) {
-    is StatsPeriod.Month -> month.atDay(1)..month.atEndOfMonth()
-    is StatsPeriod.Year -> Year.of(year).atDay(1)..Year.of(year).atMonth(Month.DECEMBER).atEndOfMonth()
+    is StatsPeriod.Month -> month.atDay(1)..minOf(month.atEndOfMonth(), today.coerceAtLeast(month.atDay(1)))
+    is StatsPeriod.Year -> {
+        val first = Year.of(year).atDay(1)
+        first..minOf(Year.of(year).atMonth(Month.DECEMBER).atEndOfMonth(), today.coerceAtLeast(first))
+    }
     is StatsPeriod.Custom -> (start ?: EARLIEST_LEDGER_DATE)..(end ?: today)
 }
 

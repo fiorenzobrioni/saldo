@@ -82,13 +82,13 @@ class CheckBudgetThresholdsUseCase @Inject constructor(
         month: YearMonth,
     ): List<BudgetAlert> = budgets.groupBy { it.currency }.flatMap { (currency, group) ->
         val totalSpend = if (group.any { it.isOverall }) {
-            transactionRepository.getStatsSpendTotal(windows.monthStart, windows.monthEnd, currency)
+            transactionRepository.getStatsSpendTotal(windows.monthStart, windows.todayEnd, currency)
         } else {
             BigDecimal.ZERO
         }
         val spendByCategory = if (group.any { !it.isOverall }) {
             transactionRepository
-                .getCategorySpendTotals(windows.monthStart, windows.monthEnd, currency)
+                .getCategorySpendTotals(windows.monthStart, windows.todayEnd, currency)
                 .associate { it.categoryId to it.total }
         } else {
             emptyMap()
@@ -107,13 +107,13 @@ class CheckBudgetThresholdsUseCase @Inject constructor(
         rates: RateTable,
     ): List<BudgetAlert> {
         val spendRows = if (budgets.any { it.isOverall }) {
-            transactionRepository.getSpendByCurrencyDay(windows.monthStart, windows.monthEnd)
+            transactionRepository.getSpendByCurrencyDay(windows.monthStart, windows.todayEnd)
         } else {
             emptyList()
         }
         val categoryRows = if (budgets.any { !it.isOverall }) {
             transactionRepository
-                .getCategorySpendByCurrencyDay(windows.monthStart, windows.monthEnd)
+                .getCategorySpendByCurrencyDay(windows.monthStart, windows.todayEnd)
                 .groupBy { it.categoryId }
         } else {
             emptyMap()

@@ -8,6 +8,7 @@ import com.callbackdev.saldo.core.database.dao.TransactionDao
 import com.callbackdev.saldo.core.database.entity.AccountEntity
 import com.callbackdev.saldo.core.database.entity.TransactionEntity
 import com.callbackdev.saldo.core.domain.model.AccountType
+import com.callbackdev.saldo.core.domain.model.DashboardWindows
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -29,9 +30,10 @@ import java.time.ZoneOffset
  * They also pin down the promise the phase makes explicit: a movement dated in
  * the future belongs to the ledger and to the headline balance, but stays out
  * of every figure scoped to today - the statistics, the budget spend and the
- * dashboard's today/month cards - until its day arrives. That holds by
- * construction (those windows are closed on the right) and this is where it
- * stops being an accident.
+ * dashboard's today/month cards - until its day arrives. The tests resolve the
+ * windows through `DashboardWindows`, the same object production uses, so a
+ * window that drifted back to the calendar month end (as it once did) would
+ * fail here instead of quietly counting tomorrow's bill today.
  */
 @RunWith(AndroidJUnit4::class)
 class TransactionDaoUpcomingTest {
@@ -153,10 +155,12 @@ class TransactionDaoUpcomingTest {
     fun aFutureMovementStaysOutOfTheStatisticsAndTheBudgetSpendOfThisMonth() = runBlocking {
         val spent = transactionDao.insert(movement(today.minusDays(1), amountMinor = -25_00L))
         transactionDao.insert(movement(today.plusDays(5), amountMinor = -30_00L))
-        val monthStart = instantOf(today.withDayOfMonth(1)).toEpochMilli()
-        // The window every month-scoped figure uses: closed on the right at
-        // today + 1, which is exactly what leaves the future out.
-        val cutoff = instantOf(today.plusDays(1)).toEpochMilli()
+        // The very windows production resolves, not a window of the test's own:
+        // the budget spend, the statistics and the month card all stop at
+        // `todayEnd`, which is exactly what leaves the future out.
+        val windows = DashboardWindows.around(today, ZoneOffset.UTC)
+        val monthStart = windows.monthStart.toEpochMilli()
+        val cutoff = windows.todayEnd.toEpochMilli()
 
         val statsTotal = transactionDao.observeStatsSpendTotal(monthStart, cutoff, "EUR").first()
         val monthly = transactionDao.observeMonthlyTotals(monthStart, cutoff, "EUR").first()
@@ -164,6 +168,28 @@ class TransactionDaoUpcomingTest {
         assertEquals(-25_00L, statsTotal)
         assertEquals(-25_00L, monthly.single().expenseMinor)
         assertTrue(spent > 0)
+    }
+
+    @Test
+    fun aFutureMovementStaysOutOfTheDashboardMonthCardUntilItsDay() = runBlocking {
+        transactionDao.insert(movement(today.minusDays(1), amountMinor = -25_00L))
+        transactionDao.insert(movement(today.plusDays(5), amountMinor = -30_00L))
+        transactionDao.insert(movement(today.plusDays(5), amountMinor = 500_00L, type = TransactionType.INCOME))
+        val windows = DashboardWindows.around(today, ZoneOffset.UTC)
+
+        val totals = transactionDao.observeDashboardTotals(
+            todayStart = windows.todayStart.toEpochMilli(),
+            todayEnd = windows.todayEnd.toEpochMilli(),
+            monthStart = windows.monthStart.toEpochMilli(),
+            previousStart = windows.previousStart.toEpochMilli(),
+            previousToDateEnd = windows.previousToDateEnd.toEpochMilli(),
+            currency = "EUR",
+        ).first()
+
+        // The month figures are month-to-date: the two future rows wait for their day.
+        assertEquals(-25_00L, totals.monthSpendMinor)
+        assertEquals(0L, totals.monthIncomeMinor)
+        assertEquals(-25_00L, totals.monthToDateSpendMinor)
     }
 
     @Test

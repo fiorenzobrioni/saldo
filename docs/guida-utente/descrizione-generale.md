@@ -60,6 +60,14 @@ Ogni movimento è di uno di questi quattro tipi. La differenza sta in come incid
 
 I trasferimenti e le rettifiche non sono spese né entrate: spostano o correggono denaro, quindi restano fuori dalle statistiche per non falsare i totali.
 
+## Due letture dello stesso mese: cassa e statistiche
+
+Le schede **Oggi** e **Mese** della Dashboard rispondono a "quanto denaro è uscito ed entrato": sono cifre di cassa. Contano ogni spesa ed entrata confermata fino a oggi, anche quelle che hai escluso dalle statistiche o segnato come prestito a una persona, e un rimborso ricevuto vi compare come entrata.
+
+Le **Statistiche**, il **Recap mensile**, i **budget** e lo **Spendibile** rispondono invece a "quanto ho consumato": sono cifre statistiche. Lasciano fuori i movimenti esclusi e i prestiti (prestare non è spendere), e un rimborso riduce la spesa della sua categoria invece di essere un'entrata.
+
+Per questo, in un mese con un rimborso o con un prestito, la scheda Mese e il mese nelle Statistiche mostrano due cifre diverse: non è un errore, sono due domande diverse. In entrambe le letture un movimento con data futura entra solo nel giorno in cui cade.
+
 ## Il saldo è sempre calcolato
 
 Il saldo di un conto non è un numero salvato che l'app aggiorna a mano: è sempre ricalcolato come saldo iniziale più la somma dei movimenti di quel conto. Per questo correggere, aggiungere o eliminare un movimento aggiorna il saldo in modo coerente, senza rischio di disallineamenti.

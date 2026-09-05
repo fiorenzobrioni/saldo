@@ -85,6 +85,42 @@ class CsvFieldParsersTest {
     }
 
     @Test
+    fun `with a known decimal mark the other separator is grouping wherever it appears`() {
+        fun with(mark: Char, raw: String) = CsvFieldParsers.parseAmount(raw, mark)
+        assertEquals(0, with('.', "1,234")!!.compareTo(BigDecimal("1234")))
+        assertEquals(0, with(',', "2.500")!!.compareTo(BigDecimal("2500")))
+        assertEquals(0, with(',', "1.234,56")!!.compareTo(BigDecimal("1234.56")))
+        assertEquals(0, with('.', "1,234,567.89")!!.compareTo(BigDecimal("1234567.89")))
+        assertEquals(0, with(',', "12,5")!!.compareTo(BigDecimal("12.5")))
+        // A repeated decimal mark is not a number in that convention.
+        assertNull(with('.', "1.234.567"))
+    }
+
+    @Test
+    fun `the decimal mark is inferred from the cells that settle it`() {
+        val infer = CsvFieldParsers::inferDecimalMark
+        // A cell with both separators names the decimal one.
+        assertEquals(',', infer(listOf("-1.234,56", "-2.500", "10")))
+        assertEquals('.', infer(listOf("1,234.56", "2,500")))
+        // One separator with other than three trailing digits names it too.
+        assertEquals(',', infer(listOf("12,5", "1,234")))
+        assertEquals('.', infer(listOf("3.1415", "2.500")))
+        // A repeated separator is grouping, so the decimal mark is the other one.
+        assertEquals(',', infer(listOf("1.234.567", "2.500")))
+        assertEquals('.', infer(listOf("1,234,567")))
+    }
+
+    @Test
+    fun `the decimal mark stays open on ambiguous or conflicting cells`() {
+        val infer = CsvFieldParsers::inferDecimalMark
+        // Only "x,xxx" shapes and integers: undecidable without the locale.
+        assertNull(infer(listOf("1,234", "2,500", "10")))
+        assertNull(infer(emptyList()))
+        // Two cells disagree: better undecided than a coin flip.
+        assertNull(infer(listOf("12,5", "12.5")))
+    }
+
+    @Test
     fun `amount rejects non-numeric and empty input`() {
         assertNull(amount("abc"))
         assertNull(amount("   "))

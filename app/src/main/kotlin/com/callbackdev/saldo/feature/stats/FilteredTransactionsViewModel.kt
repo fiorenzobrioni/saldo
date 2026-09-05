@@ -178,9 +178,11 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
     /**
      * Mirrors the statistics queries when the route is stats-scoped: only the
      * primary currency, never excluded-from-stats rows, and only spend rows
-     * (expenses plus refunds) charged to the account itself for an account
-     * drill-down. The uncategorized cut is not here: it rides on the filters,
-     * through the shared engine.
+     * (expenses plus refunds) for the drill-downs that open from a spend figure,
+     * i.e. an account, a category slice or the uncategorized bucket. The period
+     * drill-down (the trend bars) keeps incomes, which its chart shows. The
+     * uncategorized cut itself is not here: it rides on the filters, through
+     * the shared engine.
      */
     private fun matchesStatsScope(transaction: Transaction, currency: Currency): Boolean {
         if (!route.statsScope) return true
@@ -191,11 +193,12 @@ class FilteredTransactionsViewModel @AssistedInject constructor(
         }
         val counted = !transaction.isExcludedFromStats && currencyMatches
         val isRefund = transaction.type == TransactionType.INCOME && transaction.isRefund
-        val typeMatches = if (route.accountId != null) {
-            transaction.accountId == route.accountId &&
-                (transaction.type == TransactionType.EXPENSE || isRefund)
-        } else {
-            transaction.type == TransactionType.EXPENSE || transaction.type == TransactionType.INCOME
+        val isSpend = transaction.type == TransactionType.EXPENSE || isRefund
+        val spendOnly = route.accountId != null || route.categoryId != null || route.uncategorizedOnly
+        val typeMatches = when {
+            route.accountId != null -> transaction.accountId == route.accountId && isSpend
+            spendOnly -> isSpend
+            else -> transaction.type == TransactionType.EXPENSE || transaction.type == TransactionType.INCOME
         }
         return counted && typeMatches
     }

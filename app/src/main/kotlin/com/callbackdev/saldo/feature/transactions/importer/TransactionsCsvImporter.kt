@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.io.IOException
 import java.math.BigDecimal
+import java.text.DecimalFormatSymbols
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -237,6 +238,7 @@ class TransactionsCsvImporter @Inject constructor(
             columnLabels = columnLabels(),
             typeLabels = typeLabels(),
             defaultCurrency = defaultCurrency(accounts),
+            localeDecimalMark = DecimalFormatSymbols.getInstance(Locale.getDefault()).decimalSeparator,
         )
     }
 

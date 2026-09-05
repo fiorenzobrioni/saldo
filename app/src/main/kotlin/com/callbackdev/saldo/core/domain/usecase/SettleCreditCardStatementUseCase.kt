@@ -12,6 +12,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.math.BigDecimal
 import java.time.Clock
+import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -80,11 +81,11 @@ class SettleCreditCardStatementUseCase @Inject constructor(
 
         val due = BillingCycleCalculator.dueStatements(today, config)
         if (due.isEmpty()) return StatementSettlement.NothingDue
-        val owed = due.firstNotNullOfOrNull { cycle ->
-            statementAmount(account, cycle).takeIf { it.signum() > 0 }?.let { cycle to it }
-        }
-        // All due cycles empty: settle through to the newest so the next run
-        // finds nothing due instead of re-walking the same empty statements.
+        val owed = due.zip(statementAmounts(account, due))
+            .firstOrNull { (_, amount) -> amount.signum() > 0 }
+        // All due cycles empty (or already covered by payments made by hand):
+        // settle through to the newest so the next run finds nothing due
+        // instead of re-walking the same statements.
         val (cycle, amount) = owed ?: (due.last() to BigDecimal.ZERO)
         transactionRunner.inTransaction {
             if (amount.signum() > 0) {
@@ -96,16 +97,44 @@ class SettleCreditCardStatementUseCase @Inject constructor(
     }
 
     /**
-     * The amount owed for [cycle]: the negation of the card's own signed
-     * movements dated in the cycle (expenses are negative, so the owed amount is
-     * positive), never below zero. Read-only, so it also serves the confirm-mode
-     * preview that shows a statement without posting it.
+     * What each of [cycles] (oldest first, as [BillingCycleCalculator.dueStatements]
+     * lists them) still owes today, in the same order; each figure is never
+     * below zero. Read-only, so it also serves the confirm-mode preview that
+     * shows a statement without posting it.
+     *
+     * The debt outstanding as of a closing day is everything charged to the
+     * card through that day minus every payment the card ever received (see
+     * [outstandingAsOf]). Payments settle the oldest debt first: the first
+     * cycle takes the whole figure outstanding as of its closing, each later
+     * cycle takes only what its own closing adds on top of the cycles before
+     * it. Two consequences the plain "spend of the cycle" reading missed: a
+     * payment made by hand before the due date lowers the statement instead of
+     * being charged a second time by the settlement, and a cycle that ends in
+     * credit (a refund larger than its spending) carries that credit into the
+     * next one instead of losing it.
      */
-    suspend fun statementAmount(account: Account, cycle: BillingCycle): BigDecimal {
-        val start = cycle.start.atStartOfDay(clock.zone).toInstant()
-        val end = cycle.closing.plusDays(1).atStartOfDay(clock.zone).toInstant()
-        val net = transactionRepository.sumOwnMovements(account.id, start, end, account.currency)
-        return net.negate().max(BigDecimal.ZERO)
+    suspend fun statementAmounts(account: Account, cycles: List<BillingCycle>): List<BigDecimal> {
+        var attributed = BigDecimal.ZERO
+        return cycles.map { cycle ->
+            val owed = outstandingAsOf(account, cycle.closing).subtract(attributed).max(BigDecimal.ZERO)
+            attributed = attributed.add(owed)
+            owed
+        }
+    }
+
+    /**
+     * The card's debt at the end of [closing], as a positive magnitude (negative
+     * when the card is in credit): the negation of the initial balance plus the
+     * card's own movements dated through [closing] (charges are negative,
+     * refunds positive) plus every incoming transfer leg, whenever dated. A
+     * settlement posted here and a transfer the user typed are the same thing
+     * to this figure, which is what keeps the two from adding up.
+     */
+    private suspend fun outstandingAsOf(account: Account, closing: LocalDate): BigDecimal {
+        val end = closing.plusDays(1).atStartOfDay(clock.zone).toInstant()
+        val charges = transactionRepository.sumOwnMovements(account.id, BEGINNING, end, account.currency)
+        val payments = transactionRepository.sumIncomingTransfers(account.id, BEGINNING, FOREVER, account.currency)
+        return account.initialBalance.add(charges).add(payments).negate()
     }
 
     private fun settlementTransfer(
@@ -132,5 +161,9 @@ class SettleCreditCardStatementUseCase @Inject constructor(
 
     private companion object {
         const val GENERATION_HOUR = 12
+
+        /** Open window bounds: the whole ledger, in either direction. */
+        val BEGINNING: Instant = Instant.ofEpochMilli(Long.MIN_VALUE)
+        val FOREVER: Instant = Instant.ofEpochMilli(Long.MAX_VALUE)
     }
 }

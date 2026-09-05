@@ -40,8 +40,8 @@ class ObserveDueStatementsUseCase @Inject constructor(
 
     private suspend fun Account.dueStatements(today: LocalDate): List<DueStatement> {
         val config = creditCard ?: return emptyList()
-        return BillingCycleCalculator.dueStatements(today, config).mapNotNull { cycle ->
-            val amount = settleStatement.statementAmount(this, cycle)
+        val due = BillingCycleCalculator.dueStatements(today, config)
+        return due.zip(settleStatement.statementAmounts(this, due)).mapNotNull { (cycle, amount) ->
             if (amount.signum() <= 0) return@mapNotNull null
             DueStatement(
                 accountId = id,

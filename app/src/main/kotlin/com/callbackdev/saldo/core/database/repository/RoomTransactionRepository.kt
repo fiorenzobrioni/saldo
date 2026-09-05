@@ -249,7 +249,6 @@ class RoomTransactionRepository @Inject constructor(
             todayStart = windows.todayStart.toEpochMilli(),
             todayEnd = windows.todayEnd.toEpochMilli(),
             monthStart = windows.monthStart.toEpochMilli(),
-            monthEnd = windows.monthEnd.toEpochMilli(),
             previousStart = windows.previousStart.toEpochMilli(),
             previousToDateEnd = windows.previousToDateEnd.toEpochMilli(),
             currency = currency.currencyCode,
@@ -389,6 +388,16 @@ class RoomTransactionRepository @Inject constructor(
         currency,
     )
 
+    override suspend fun sumIncomingTransfers(
+        accountId: Long,
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): BigDecimal = MoneyMapper.toAmount(
+        transactionDao.sumIncomingTransfersInWindow(accountId, start.toEpochMilli(), end.toEpochMilli()),
+        currency,
+    )
+
     override suspend fun upsert(transaction: Transaction): Long {
         val entity = transaction.toEntity()
         return if (entity.id == 0L) {
@@ -421,7 +430,6 @@ class RoomTransactionRepository @Inject constructor(
             todayStart = windows.todayStart.toEpochMilli(),
             todayEnd = windows.todayEnd.toEpochMilli(),
             monthStart = windows.monthStart.toEpochMilli(),
-            monthEnd = windows.monthEnd.toEpochMilli(),
             previousStart = windows.previousStart.toEpochMilli(),
             previousToDateEnd = windows.previousToDateEnd.toEpochMilli(),
             currency = currency.currencyCode,

@@ -223,8 +223,10 @@ private fun KeyBox(
 private val DigitRows = listOf(listOf(1, 2, 3), listOf(4, 5, 6), listOf(7, 8, 9))
 
 // Deliberately tighter than a system keyboard: every dp the panel gives back is
-// a dp the entry form can spend on the categories above it.
+// a dp the entry form can spend on the categories above it. Never below the
+// Material 3 minimum touch target (48dp), the compact variant included: a
+// dialog saves its height on spacing and type, not on the key itself.
 private val KeyHeight = 48.dp
-private val CompactKeyHeight = 42.dp
+private val CompactKeyHeight = 48.dp
 private val KeySpacing = 4.dp
 private val HandleHeight = 32.dp

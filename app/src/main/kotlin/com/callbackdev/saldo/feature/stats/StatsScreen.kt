@@ -311,6 +311,7 @@ private fun ExpenseTrendCard(
         )
         MonthDrillDownButton(
             month = selectedIndex?.let { uiState.monthlyTotals.getOrNull(it)?.month },
+            today = uiState.today,
             onNavigateToFiltered = onNavigateToFiltered,
         )
     }
@@ -360,6 +361,7 @@ private fun IncomeExpenseCard(
         )
         MonthDrillDownButton(
             month = selectedIndex?.let { uiState.monthlyTotals.getOrNull(it)?.month },
+            today = uiState.today,
             onNavigateToFiltered = onNavigateToFiltered,
         )
     }
@@ -386,6 +388,7 @@ private fun recapMonthFor(uiState: StatsUiState): YearMonth {
 @Composable
 private fun MonthDrillDownButton(
     month: YearMonth?,
+    today: LocalDate,
     onNavigateToFiltered: (FilteredTransactionsRoute) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -398,10 +401,12 @@ private fun MonthDrillDownButton(
     }
     TextButton(
         onClick = {
+            // The current month's bar stops at today, so does its list.
+            val end = minOf(month.plusMonths(1).atDay(1), today.plusDays(1))
             onNavigateToFiltered(
                 FilteredTransactionsRoute(
                     startEpochDay = month.atDay(1).toEpochDay(),
-                    endEpochDayExclusive = month.plusMonths(1).atDay(1).toEpochDay(),
+                    endEpochDayExclusive = end.toEpochDay(),
                     statsScope = true,
                 ),
             )

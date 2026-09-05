@@ -29,11 +29,12 @@ import javax.inject.Inject
  * [remaining] alone can go negative (the month's plan is already blown).
  */
 data class SafeToSpend(
-    /** budget - spent - pendingCommitted - upcomingRecurring; negative when over. */
+    /** budget - spent - pendingCommitted - futureCommitted - upcomingRecurring; negative when over. */
     val remaining: BigDecimal,
     /** [remaining] spread over [daysLeft], floored; null when nothing remains. */
     val perDay: BigDecimal?,
     val budget: BigDecimal,
+    /** Spent from the first of the month through today (statistics spend). */
     val spent: BigDecimal,
     /** Pending recurring expenses of the month: committed but not confirmed yet. */
     val pendingCommitted: BigDecimal,
@@ -46,20 +47,28 @@ data class SafeToSpend(
      * (ADR 40): the figure is an estimate and the UI declares it.
      */
     val includesEstimates: Boolean = false,
+    /**
+     * Confirmed expenses already dated between tomorrow and month end (ADR 36):
+     * booked in the ledger, not spent yet, so they are committed money rather
+     * than part of [spent].
+     */
+    val futureCommitted: BigDecimal = BigDecimal.ZERO,
 )
 
 /**
  * The proactive dashboard figure: overall monthly budget minus what is
- * already spent (statistics spend, coherent with the budget card), minus the
- * month's pending recurring expenses (generated but unconfirmed: excluded
- * from spend and already behind the generation floor, so this is the only
- * place they can be accounted), minus the fixed recurring expense charges
- * still due before month end. Null when no overall budget exists in
- * [currency]: the figure is meaningless without a plan.
+ * already spent (statistics spend through today, coherent with the budget
+ * card), minus the month's pending recurring expenses (generated but
+ * unconfirmed: excluded from spend and already behind the generation floor,
+ * so this is the only place they can be accounted), minus the confirmed
+ * expenses dated later this month (in the ledger, not in any "so far" figure,
+ * ADR 36), minus the fixed recurring expense charges still due before month
+ * end. Null when no overall budget exists in [currency]: the figure is
+ * meaningless without a plan.
  *
  * Accounts excluded from the budget (`isIncludedInBudget = 0`) are left out of
  * every leg: their spend is already dropped by [observeStatsSpendTotal], and
- * here their pending expenses and upcoming recurring charges are filtered out
+ * here their pending, future and upcoming recurring charges are filtered out
  * too, so an excluded account never affects the figure.
  *
  * [SafeToSpend.perDay] divides the remainder over the days left (today
@@ -85,20 +94,27 @@ class ObserveSafeToSpendUseCase @Inject constructor(
         // conversion is off, per-(currency, day) rows converted at the rate
         // of their own day when it is on (ADR 40).
         val spendLeg: Flow<Pair<BigDecimal, Boolean>> = if (conversion.active) {
-            transactionRepository.observeSpendByCurrencyDay(windows.monthStart, windows.monthEnd)
+            transactionRepository.observeSpendByCurrencyDay(windows.monthStart, windows.todayEnd)
                 .map { rows -> spendInto(currency, rows, rates) }
         } else {
             transactionRepository
-                .observeStatsSpendTotal(windows.monthStart, windows.monthEnd, currency)
+                .observeStatsSpendTotal(windows.monthStart, windows.todayEnd, currency)
                 .map { it to false }
         }
+        // The two committed-but-not-spent sources travel together: the typed
+        // combine stops at five flows.
+        val committedLeg = combine(
+            transactionRepository.observePendingTransactions(),
+            transactionRepository.observeTransactionsFrom(today.plusDays(1)),
+            ::Pair,
+        )
         return combine(
             budgetRepository.observeBudgets(),
             spendLeg,
-            transactionRepository.observePendingTransactions(),
+            committedLeg,
             recurringRuleRepository.observeRules(),
             accountRepository.observeAccountsWithBalance(),
-        ) { budgets, (totalSpend, spendConverted), pending, rules, accounts ->
+        ) { budgets, (totalSpend, spendConverted), (pending, future), rules, accounts ->
             val overall = budgets.firstOrNull { it.isOverall && it.currency == currency }
                 ?: return@combine null
             val budgetExcludedAccountIds = accounts
@@ -107,7 +123,9 @@ class ObserveSafeToSpendUseCase @Inject constructor(
                 .toSet()
             val spent = totalSpend.negate().max(BigDecimal.ZERO)
             val (pendingCommitted, pendingConverted) =
-                pendingCommitted(pending, windows, currency, budgetExcludedAccountIds, rates)
+                committedExpenses(pending, windows, currency, budgetExcludedAccountIds, rates)
+            val (futureCommitted, futureConverted) =
+                committedExpenses(future, windows, currency, budgetExcludedAccountIds, rates)
             val budgetedRules = rules.filterNot { it.accountId in budgetExcludedAccountIds }
             val foreignRules = budgetedRules.any { it.currency != currency }
             val upcoming = UpcomingChargesCalculator
@@ -115,6 +133,7 @@ class ObserveSafeToSpendUseCase @Inject constructor(
             val remaining = overall.amount
                 .subtract(spent)
                 .subtract(pendingCommitted)
+                .subtract(futureCommitted)
                 .subtract(upcoming)
             val daysLeft = today.lengthOfMonth() - today.dayOfMonth + 1
             SafeToSpend(
@@ -125,8 +144,9 @@ class ObserveSafeToSpendUseCase @Inject constructor(
                 pendingCommitted = pendingCommitted,
                 upcomingRecurring = upcoming,
                 daysLeft = daysLeft,
-                includesEstimates = spendConverted || pendingConverted ||
+                includesEstimates = spendConverted || pendingConverted || futureConverted ||
                     (conversion.active && foreignRules),
+                futureCommitted = futureCommitted,
             )
         }
     }
@@ -154,19 +174,20 @@ class ObserveSafeToSpendUseCase @Inject constructor(
     }
 
     /**
-     * The month's pending expenses as a positive magnitude, excluding those
-     * charged to accounts left out of the budget. Foreign ones enter at the
-     * rate of their own day (ADR 40) or stay out without rates.
+     * The month's expenses among [transactions] (pending occurrences, or
+     * confirmed movements dated later in the month) as a positive magnitude,
+     * excluding those charged to accounts left out of the budget. Foreign ones
+     * enter at the rate of their own day (ADR 40) or stay out without rates.
      */
-    private fun pendingCommitted(
-        pending: List<Transaction>,
+    private fun committedExpenses(
+        transactions: List<Transaction>,
         windows: DashboardWindows,
         currency: Currency,
         budgetExcludedAccountIds: Set<Long>,
         rates: RateTable,
     ): Pair<BigDecimal, Boolean> {
         var converted = false
-        val committed = pending
+        val committed = transactions
             .filter { transaction ->
                 transaction.type == TransactionType.EXPENSE &&
                     transaction.accountId !in budgetExcludedAccountIds &&

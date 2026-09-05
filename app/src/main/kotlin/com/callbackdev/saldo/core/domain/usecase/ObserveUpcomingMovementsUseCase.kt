@@ -126,11 +126,4 @@ class ObserveUpcomingMovementsUseCase @Inject constructor(
             else -> UpcomingOrigin.MANUAL
         },
     )
-
-    /** Positive total of the [type] movements in [currency]; zero when none. */
-    private fun List<UpcomingMovement>.magnitudeOf(
-        type: TransactionType,
-        currency: Currency,
-    ): BigDecimal = filter { it.transaction.type == type && it.transaction.currency == currency }
-        .fold(BigDecimal.ZERO) { acc, item -> acc.add(item.amount.abs()) }
 }
