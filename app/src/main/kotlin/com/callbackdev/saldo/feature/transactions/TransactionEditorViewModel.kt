@@ -118,6 +118,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
         /** Read-only metadata: kept out of [snapshot] so it never marks the form dirty. */
         val isRecurring: Boolean = false,
         val recurringRuleName: String? = null,
+        val duplicateAccountReplaced: Boolean = false,
         val showValidation: Boolean = false,
     )
 
@@ -216,7 +217,12 @@ class TransactionEditorViewModel @AssistedInject constructor(
 
     init {
         val transactionId = route.transactionId
-        if (transactionId == null) preselectDefaultAccount() else load(transactionId)
+        val duplicateOfId = route.duplicateOfId
+        when {
+            transactionId != null -> load(transactionId)
+            duplicateOfId != null -> loadDuplicate(duplicateOfId)
+            else -> preselectDefaultAccount()
+        }
     }
 
     fun onTypeChanged(type: TransactionType) {
@@ -479,6 +485,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
             today = LocalDate.now(clock),
             isRecurring = current.isRecurring,
             recurringRuleName = current.recurringRuleName,
+            duplicateAccountReplaced = current.duplicateAccountReplaced,
             showValidation = current.showValidation,
         )
     }
@@ -583,6 +590,73 @@ class TransactionEditorViewModel @AssistedInject constructor(
                     isRefund = transaction.isRefund,
                     hasReminder = transaction.hasReminder,
                     lastReminderDate = transaction.lastReminderDate,
+                )
+            }
+            captureBaseline()
+        }
+    }
+
+    /**
+     * A new movement prefilled from [sourceId] (Fase 39, F2): everything the
+     * user chose on the original is copied, dated now; everything the app
+     * attached to the original stays there (its rule link and occurrence, its
+     * pending state, its reminder and watermark). An archived source account
+     * gives way to the default chain, and the form says so; an archived
+     * transfer destination is dropped, so the user picks one. The baseline is
+     * captured after the prefill: leaving the copy untouched asks nothing,
+     * saving it is always an explicit tap.
+     */
+    private fun loadDuplicate(sourceId: Long) {
+        viewModelScope.launch {
+            val source = transactionRepository.getTransaction(sourceId)
+            if (source == null) {
+                _events.send(TransactionEditorEvent.TransactionMissing)
+                return@launch
+            }
+            val tagIds = tagRepository.observeTagsForTransaction(sourceId).first()
+                .map { it.id }
+                .toSet()
+            val active = accountRepository.observeAccountsWithBalance().first()
+                .map { it.account }
+                .filter { !it.isArchived }
+            val sourceAccount = active.firstOrNull { it.id == source.accountId }
+            val fallback = sourceAccount ?: DefaultAccountResolver.resolve(
+                active,
+                userPreferences.defaultAccountId.first(),
+                userPreferences.lastUsedAccountId.first(),
+            )
+            val destination = source.transferAccountId
+                ?.takeIf { id -> active.any { it.id == id } && id != fallback?.id }
+            val now = LocalDateTime.now(clock)
+            form.update {
+                it.copy(
+                    isLoading = false,
+                    isNew = true,
+                    type = source.type,
+                    isTypePreset = true,
+                    isTypeLocked = source.type == TransactionType.ADJUSTMENT,
+                    amountInput = when (source.type) {
+                        TransactionType.ADJUSTMENT -> plainInput(source.amount)
+                        else -> plainInput(source.amount.abs())
+                    },
+                    toAmountInput = source.transferAmount
+                        ?.takeIf { destination != null }
+                        ?.let(::plainInput)
+                        .orEmpty(),
+                    accountId = fallback?.id,
+                    toAccountId = destination,
+                    categoryId = source.categoryId,
+                    date = now.toLocalDate(),
+                    time = now.toLocalTime(),
+                    description = source.description.orEmpty(),
+                    note = source.note.orEmpty(),
+                    selectedTagIds = tagIds,
+                    isExcludedFromStats = source.isExcludedFromStats,
+                    excludedBeforeCounterparty = source.counterparty == null && source.isExcludedFromStats,
+                    isCounterparty = source.counterparty != null,
+                    counterparty = source.counterparty.orEmpty(),
+                    isRefund = source.isRefund,
+                    duplicateAccountReplaced = sourceAccount == null,
                 )
             }
             captureBaseline()

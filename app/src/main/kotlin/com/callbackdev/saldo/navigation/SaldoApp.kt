@@ -178,6 +178,9 @@ fun SaldoApp(
                 onNavigateToEditTransaction = { id ->
                     nav.navigate(TransactionEditorRoute(id))
                 },
+                onNavigateToDuplicateTransaction = { id ->
+                    nav.navigate(TransactionEditorRoute(duplicateOfId = id))
+                },
                 onNavigateToAccounts = { nav.navigate(AccountsRoute) },
             )
         }
@@ -223,6 +226,7 @@ fun SaldoApp(
                     nav.navigate(TransactionEditorRoute(initialAccountId = accountId))
                 },
                 onNavigateToTransaction = { id -> nav.navigate(TransactionEditorRoute(id)) },
+                onNavigateToDuplicate = { id -> nav.navigate(TransactionEditorRoute(duplicateOfId = id)) },
             )
         }
         entry<AccountEditorRoute> { route ->
@@ -258,6 +262,8 @@ fun SaldoApp(
             TransactionEditorScreen(
                 route = route,
                 onNavigateBack = { nav.goBack() },
+                // The copy opens on top of the original's editor: back returns there.
+                onNavigateToDuplicate = { id -> nav.navigate(TransactionEditorRoute(duplicateOfId = id)) },
             )
         }
         entry<RecurrencesRoute> {

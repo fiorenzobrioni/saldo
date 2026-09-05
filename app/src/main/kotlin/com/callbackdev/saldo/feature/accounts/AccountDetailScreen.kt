@@ -71,6 +71,7 @@ import com.callbackdev.saldo.core.designsystem.theme.tabularNumbers
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
 import com.callbackdev.saldo.core.domain.model.DailyBalance
 import com.callbackdev.saldo.core.domain.model.SavingsGoalProgress
+import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
 import com.callbackdev.saldo.feature.dashboard.BalanceSparkline
 import com.callbackdev.saldo.feature.transactions.FilteredTotal
@@ -98,6 +99,7 @@ fun AccountDetailScreen(
     onNavigateToEdit: (Long) -> Unit,
     onNavigateToNewTransaction: (Long) -> Unit,
     onNavigateToTransaction: (Long) -> Unit,
+    onNavigateToDuplicate: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AccountDetailViewModel =
         hiltViewModel<AccountDetailViewModel, AccountDetailViewModel.Factory>(
@@ -217,6 +219,7 @@ fun AccountDetailScreen(
                 onNextMonth = viewModel::nextMonth,
                 onMovementClick = { onNavigateToTransaction(it.id) },
                 onMovementDelete = viewModel::deleteMovement,
+                onMovementDuplicate = { onNavigateToDuplicate(it.id) },
                 modifier = Modifier.fillMaxSize().padding(innerPadding),
             )
         }
@@ -308,6 +311,7 @@ private fun AccountDetailContent(
     onNextMonth: () -> Unit,
     onMovementClick: (TransactionListItem) -> Unit,
     onMovementDelete: (TransactionListItem) -> Unit,
+    onMovementDuplicate: (TransactionListItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -381,6 +385,11 @@ private fun AccountDetailContent(
                                 item = movement,
                                 onClick = { onMovementClick(movement) },
                                 onDelete = { onMovementDelete(movement) },
+                                onDuplicate = if (movement.transaction.type == TransactionType.ADJUSTMENT) {
+                                    null
+                                } else {
+                                    { onMovementDuplicate(movement) }
+                                },
                             )
                         }
                     }

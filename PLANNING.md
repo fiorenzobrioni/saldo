@@ -990,11 +990,11 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 
 > Le spese irregolari ma ripetitive (caffè, parcheggio, pranzo) si reinseriscono identiche, e oggi si riparte da zero o dal widget. È la forma più diretta di "zero frizione" che manca.
 
-- [ ] Azione "Duplica" nel menu dell'editor di un movimento esistente e nel menu contestuale (pressione prolungata) della riga del registro e del dettaglio del conto; lo swipe resta per eliminare
-- [ ] Apre l'editor in modalità creazione precompilato con tipo, importo, conto e destinazione, categoria, descrizione, nota, tag, controparte, flag esclusione e rimborso; data e ora di adesso. Mai copiati: `recurringRuleId`, `recurringOccurrenceDate`, `isPending`, promemoria e watermark, che appartengono all'originale
-- [ ] Route `TransactionEditorRoute(duplicateOfId = ...)`: il ViewModel carica l'originale e azzera l'id e i campi non copiabili; la baseline per il rilevamento delle modifiche non salvate si cattura dopo il prefill, così uscire senza toccare nulla non chiede conferma, mentre il salvataggio resta sempre esplicito
-- [ ] Un trasferimento cross-currency duplicato porta entrambi gli importi; un movimento su un conto archiviato si duplica sul conto predefinito e lo dichiara
-- [ ] Stringhe IT/EN; unit test (campi copiati e non copiati, data di oggi, dirty detection, conto archiviato)
+- [x] Azione "Duplica": icona nella top bar dell'editor di un movimento esistente (non per le rettifiche) e menu contestuale a pressione prolungata sulla riga del registro e del dettaglio del conto (`SwipeableTransactionRow.onDuplicate`, nullo per le rettifiche); lo swipe resta per eliminare
+- [x] Apre l'editor in modalità creazione precompilato con tipo, importo, conto e destinazione, categoria, descrizione, nota, tag, controparte, flag esclusione e rimborso; data e ora di adesso. Mai copiati: `recurringRuleId`, `recurringOccurrenceDate`, `isPending`, promemoria e watermark, che appartengono all'originale
+- [x] Route `TransactionEditorRoute(duplicateOfId = ...)`: `loadDuplicate` carica l'originale e azzera l'id e i campi non copiabili; la baseline si cattura dopo il prefill, così uscire senza toccare nulla non chiede conferma, mentre il salvataggio resta sempre esplicito. La copia si apre sopra l'editor dell'originale: indietro torna lì
+- [x] Un trasferimento cross-currency duplicato porta entrambi gli importi; un movimento su un conto archiviato si duplica sul conto della catena di default e un banner lo dichiara (`duplicateAccountReplaced`); una destinazione archiviata viene lasciata vuota da scegliere
+- [x] Stringhe IT/EN; unit test (campi copiati e non copiati, data e ora di adesso, baseline pulita, salvataggio come nuovo record, conto archiviato)
 
 ### F3 - Pausa di una regola ricorrente
 

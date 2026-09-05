@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.SwapVert
@@ -114,6 +115,7 @@ private enum class AmountField { PRIMARY, SECONDARY }
 fun TransactionEditorScreen(
     route: TransactionEditorRoute,
     onNavigateBack: () -> Unit,
+    onNavigateToDuplicate: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TransactionEditorViewModel =
         hiltViewModel<TransactionEditorViewModel, TransactionEditorViewModel.Factory>(
@@ -188,6 +190,19 @@ fun TransactionEditorScreen(
                 },
                 actions = {
                     if (!uiState.isNew) {
+                        // A copy of this movement as a new one, dated now (Fase 39,
+                        // F2). Not for adjustments: a balance restatement is not
+                        // something to repeat.
+                        val sourceId = route.transactionId
+                        if (sourceId != null && uiState.type != TransactionType.ADJUSTMENT) {
+                            IconButton(onClick = { onNavigateToDuplicate(sourceId) }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ContentCopy,
+                                    contentDescription =
+                                    stringResource(R.string.transaction_action_duplicate),
+                                )
+                            }
+                        }
                         // Deletes right away: the app shell shows an undo snackbar
                         // on the screen the editor returns to, so no confirm dialog.
                         IconButton(onClick = viewModel::delete) {
@@ -396,6 +411,10 @@ private fun EditorForm(
         }
     }
     Column(modifier = modifier) {
+        if (uiState.duplicateAccountReplaced) {
+            Spacer(Modifier.height(12.dp))
+            InfoBanner(text = stringResource(R.string.transaction_editor_duplicate_account_replaced))
+        }
         if (uiState.isRecurring) {
             Spacer(Modifier.height(12.dp))
             InfoBanner(

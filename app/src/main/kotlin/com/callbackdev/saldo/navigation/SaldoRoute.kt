@@ -91,6 +91,12 @@ data class CategoryEditorRoute(
  * [initialAccountId] preselects the account of a new movement (the account
  * detail's "new movement" action), ahead of the default-account chain; a
  * missing or archived account falls back to that chain.
+ *
+ * [duplicateOfId] opens the editor in create mode prefilled from an existing
+ * movement (Fase 39, F2): type, amounts, accounts, category, description, note,
+ * tags, counterparty and flags are copied, the date and time are now, and
+ * nothing that belongs to the original (its rule link, pending state, reminder
+ * and watermark) comes along. Ignored when [transactionId] is set.
  */
 @Serializable
 data class TransactionEditorRoute(
@@ -99,6 +105,7 @@ data class TransactionEditorRoute(
     val initialCounterparty: String? = null,
     val initialAmountInput: String? = null,
     val initialAccountId: Long? = null,
+    val duplicateOfId: Long? = null,
 ) : NavKey
 
 /**

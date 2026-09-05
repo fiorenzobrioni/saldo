@@ -411,6 +411,8 @@
     <string name="transaction_editor_recurring_banner">Generato dal movimento ricorrente «%1$s». Le modifiche valgono solo per questo movimento; la regola resta invariata.</string>
     <string name="transaction_editor_recurring_banner_generic">Generato da un movimento ricorrente. Le modifiche valgono solo per questo movimento; la regola resta invariata.</string>
     <string name="transaction_editor_delete">Elimina</string>
+    <string name="transaction_action_duplicate">Duplica</string>
+    <string name="transaction_editor_duplicate_account_replaced">Il conto originale è archiviato: questa copia è sul conto predefinito. Cambialo se serve.</string>
     <string name="keypad_backspace">Cancella l\'ultima cifra</string>
     <string name="keypad_clear">Azzera l\'importo</string>
     <string name="keypad_decimal_separator">Separatore decimale</string>

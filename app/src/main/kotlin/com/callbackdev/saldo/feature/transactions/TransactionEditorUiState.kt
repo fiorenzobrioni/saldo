@@ -58,6 +58,12 @@ data class TransactionEditorUiState(
     val isRecurring: Boolean = false,
     /** Name of the generating rule, when it could be resolved; for the banner. */
     val recurringRuleName: String? = null,
+    /**
+     * True when this new movement was prefilled from another one whose account
+     * is archived (Fase 39, F2): the default account took its place and the
+     * banner says so, since the copy is not quite the original.
+     */
+    val duplicateAccountReplaced: Boolean = false,
     /** Set on a failed save attempt to surface field errors. */
     val showValidation: Boolean = false,
 ) {
