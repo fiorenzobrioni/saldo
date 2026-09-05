@@ -9,6 +9,7 @@ import androidx.room.Update
 import com.callbackdev.saldo.core.database.entity.AccountEntity
 import com.callbackdev.saldo.core.database.relation.AccountBalanceAsOfRow
 import com.callbackdev.saldo.core.database.relation.AccountWithBalanceRow
+import com.callbackdev.saldo.core.database.relation.DailyNetRow
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -173,4 +174,64 @@ interface AccountDao {
         """,
     )
     fun observeInitialBalanceTotal(currency: String): Flow<Long>
+
+    /**
+     * Net effect per local day (ADR 7) of one account's movements on its own
+     * balance, limited to days in `[startEpochDay, endEpochDayExclusive)`: the
+     * account's own movements plus the incoming legs of transfers into it, every
+     * type counted, pending never. The per-account twin of
+     * [TransactionDao.observeDailyNetChanges], with no currency filter (an
+     * account has one currency by construction). Feeds the account detail
+     * sparkline.
+     */
+    @Query(
+        """
+        SELECT epochDay, SUM(deltaMinor) AS netMinor FROM (
+            SELECT
+                (timestampEpochMilli / 1000 + zoneOffsetSeconds) / 86400 AS epochDay,
+                amountMinor AS deltaMinor
+            FROM transactions
+            WHERE accountId = :accountId AND isPending = 0
+            UNION ALL
+            SELECT
+                (timestampEpochMilli / 1000 + zoneOffsetSeconds) / 86400 AS epochDay,
+                transferAmountMinor AS deltaMinor
+            FROM transactions
+            WHERE type = 'TRANSFER' AND transferAccountId = :accountId AND isPending = 0
+        )
+        WHERE epochDay >= :startEpochDay AND epochDay < :endEpochDayExclusive
+        GROUP BY epochDay
+        ORDER BY epochDay
+        """,
+    )
+    fun observeDailyNetChanges(
+        accountId: Long,
+        startEpochDay: Long,
+        endEpochDayExclusive: Long,
+    ): Flow<List<DailyNetRow>>
+
+    /**
+     * Net effect of every movement of one account whose local day precedes
+     * [startEpochDay], same rules as [observeDailyNetChanges]. NULL when
+     * nothing matches. Seeds the account detail's daily balance series.
+     */
+    @Query(
+        """
+        SELECT SUM(deltaMinor) FROM (
+            SELECT
+                (timestampEpochMilli / 1000 + zoneOffsetSeconds) / 86400 AS epochDay,
+                amountMinor AS deltaMinor
+            FROM transactions
+            WHERE accountId = :accountId AND isPending = 0
+            UNION ALL
+            SELECT
+                (timestampEpochMilli / 1000 + zoneOffsetSeconds) / 86400 AS epochDay,
+                transferAmountMinor AS deltaMinor
+            FROM transactions
+            WHERE type = 'TRANSFER' AND transferAccountId = :accountId AND isPending = 0
+        )
+        WHERE epochDay < :startEpochDay
+        """,
+    )
+    fun observeNetChangeBefore(accountId: Long, startEpochDay: Long): Flow<Long?>
 }

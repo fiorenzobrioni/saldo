@@ -36,6 +36,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.feature.about.AboutScreen
+import com.callbackdev.saldo.feature.accounts.AccountDetailScreen
 import com.callbackdev.saldo.feature.accounts.AccountEditorScreen
 import com.callbackdev.saldo.feature.applock.SecurityScreen
 import com.callbackdev.saldo.feature.backup.BackupScreen
@@ -145,7 +146,7 @@ fun SaldoApp(
             DashboardScreen(
                 modifier = topLevelModifier,
                 onNavigateToAccounts = { nav.navigate(AccountsRoute) },
-                onNavigateToAccount = { id -> nav.navigate(AccountEditorRoute(id)) },
+                onNavigateToAccount = { id -> nav.navigate(AccountDetailRoute(id)) },
                 onCreateFirstAccount = { nav.navigate(AccountEditorRoute()) },
                 onNavigateToNewTransaction = { type ->
                     nav.navigate(TransactionEditorRoute(initialTypeName = type.name))
@@ -209,8 +210,19 @@ fun SaldoApp(
             AccountsScreen(
                 onNavigateBack = { nav.goBack() },
                 onNavigateToNewAccount = { nav.navigate(AccountEditorRoute()) },
-                onNavigateToEditAccount = { id -> nav.navigate(AccountEditorRoute(id)) },
+                onNavigateToAccount = { id -> nav.navigate(AccountDetailRoute(id)) },
                 onNavigateToRates = { nav.navigate(ExchangeRatesRoute) },
+            )
+        }
+        entry<AccountDetailRoute> { route ->
+            AccountDetailScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
+                onNavigateToEdit = { id -> nav.navigate(AccountEditorRoute(id)) },
+                onNavigateToNewTransaction = { accountId ->
+                    nav.navigate(TransactionEditorRoute(initialAccountId = accountId))
+                },
+                onNavigateToTransaction = { id -> nav.navigate(TransactionEditorRoute(id)) },
             )
         }
         entry<AccountEditorRoute> { route ->

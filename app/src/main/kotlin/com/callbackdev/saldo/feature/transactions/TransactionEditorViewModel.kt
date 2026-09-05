@@ -509,7 +509,11 @@ class TransactionEditorViewModel @AssistedInject constructor(
             val active = accountRepository.observeAccountsWithBalance().first()
                 .map { it.account }
                 .filter { !it.isArchived }
-            val default = DefaultAccountResolver.resolve(active, defaultId, lastUsedId)
+            // The account the caller asked for (the account detail's "new
+            // movement") wins over the default chain; an archived or missing
+            // one falls through to it.
+            val requested = route.initialAccountId?.let { id -> active.firstOrNull { it.id == id } }
+            val default = requested ?: DefaultAccountResolver.resolve(active, defaultId, lastUsedId)
             if (default != null) {
                 form.update { if (it.accountId == null) it.copy(accountId = default.id) else it }
             }

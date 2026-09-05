@@ -25,6 +25,15 @@ data object SettingsRoute : NavKey
 data object AccountsRoute : NavKey
 
 /**
+ * One account in full (Fase 39): balance with its own 30-day history, the
+ * type-specific state (statement, loan, goal), its movements month by month
+ * and every account action. The destination of a tap on an account wherever
+ * one is listed; the editor is reached from its top bar.
+ */
+@Serializable
+data class AccountDetailRoute(val accountId: Long) : NavKey
+
+/**
  * Account editor: create mode when [accountId] is null, edit mode otherwise.
  * [initialTypeName] preselects the account type on creation (used by the savings
  * goal "create account" shortcut); it is an
@@ -78,6 +87,10 @@ data class CategoryEditorRoute(
  * The amount is a plain decimal string, sanitized to the chosen account's
  * currency by the editor; both are a starting point the user confirms, never a
  * silent write.
+ *
+ * [initialAccountId] preselects the account of a new movement (the account
+ * detail's "new movement" action), ahead of the default-account chain; a
+ * missing or archived account falls back to that chain.
  */
 @Serializable
 data class TransactionEditorRoute(
@@ -85,6 +98,7 @@ data class TransactionEditorRoute(
     val initialTypeName: String? = null,
     val initialCounterparty: String? = null,
     val initialAmountInput: String? = null,
+    val initialAccountId: Long? = null,
 ) : NavKey
 
 /**

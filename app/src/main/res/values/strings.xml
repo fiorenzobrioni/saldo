@@ -123,6 +123,19 @@
     <string name="accounts_snackbar_deleted">Account deleted</string>
     <string name="accounts_snackbar_adjusted">Adjustment of %1$s recorded</string>
     <string name="accounts_snackbar_statement_settled">Statement paid: %1$s transferred</string>
+    <!-- Account detail (Fase 39, F1) -->
+    <string name="account_detail_new_movement">New movement</string>
+    <string name="account_detail_more_actions">More actions</string>
+    <string name="account_detail_history_caption">Last 30 days</string>
+    <string name="account_detail_previous_month">Previous month</string>
+    <string name="account_detail_next_month">Next month</string>
+    <string name="account_detail_month_empty">No movements this month</string>
+    <plurals name="account_detail_month_count">
+        <item quantity="one">%1$d movement</item>
+        <item quantity="other">%1$d movements</item>
+    </plurals>
+    <string name="account_detail_goal_progress">%1$s saved of %2$s</string>
+    <string name="account_detail_goal_reached">Goal reached</string>
     <!-- Credit card row extras -->
     <string name="account_cc_utilisation_title">Utilisation</string>
     <string name="account_cc_utilisation_value">%1$s / %2$s · %3$d%%</string>

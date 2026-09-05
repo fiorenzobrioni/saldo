@@ -13,8 +13,8 @@ Il manuale cresce in modo incrementale. Gli argomenti già disponibili hanno un 
 
 ### Conti
 
-- 🏦 Conti e saldo: tipi di conto, saldo iniziale, inclusione nel saldo totale e nel budget, archiviazione.
-- 🔧 Rettifica saldo: allineare il saldo dell'app al saldo reale del conto.
+- 🏦 [Conti e saldo](conti-e-saldo.md): tipi di conto, saldo iniziale e saldo calcolato, inclusione nel saldo totale e nel budget, la lista e il dettaglio del conto, archiviazione.
+- 🔧 Rettifica saldo: allineare il saldo dell'app al saldo reale del conto (descritta in [Conti e saldo](conti-e-saldo.md)).
 - 🐖 Conto di risparmio: il recinto dei soldi messi da parte.
 - 💳 [Carte di credito a saldo](carte-di-credito.md): ciclo di addebito differito, estratto sul conto collegato, pagamenti fatti a mano e debito già maturato.
 - 📉 [Prestiti e finanziamenti](prestiti-e-finanziamenti.md): il debito residuo come conto, la rata come trasferimento ricorrente, rate mancanti stimate.

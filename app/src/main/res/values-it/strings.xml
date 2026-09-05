@@ -123,6 +123,20 @@
     <string name="accounts_snackbar_deleted">Conto eliminato</string>
     <string name="accounts_snackbar_adjusted">Rettifica di %1$s registrata</string>
     <string name="accounts_snackbar_statement_settled">Estratto pagato: %1$s trasferiti</string>
+    <!-- Dettaglio conto (Fase 39, F1) -->
+    <string name="account_detail_new_movement">Nuovo movimento</string>
+    <string name="account_detail_more_actions">Altre azioni</string>
+    <string name="account_detail_history_caption">Ultimi 30 giorni</string>
+    <string name="account_detail_previous_month">Mese precedente</string>
+    <string name="account_detail_next_month">Mese successivo</string>
+    <string name="account_detail_month_empty">Nessun movimento in questo mese</string>
+    <plurals name="account_detail_month_count">
+        <item quantity="one">%1$d movimento</item>
+        <item quantity="many">%1$d movimenti</item>
+        <item quantity="other">%1$d movimenti</item>
+    </plurals>
+    <string name="account_detail_goal_progress">%1$s risparmiati su %2$s</string>
+    <string name="account_detail_goal_reached">Obiettivo raggiunto</string>
     <!-- Credit card row extras -->
     <string name="account_cc_utilisation_title">Utilizzo</string>
     <string name="account_cc_utilisation_value">%1$s / %2$s · %3$d%%</string>

@@ -39,9 +39,6 @@ data class AccountsUiState(
     val activeGroups: List<AccountTypeGroup> = emptyList(),
     /** Archived accounts, sorted by type then name, shown in a single collapsed card. */
     val archived: List<AccountWithBalance> = emptyList(),
-    /** Account whose quick-actions sheet is open, or null. */
-    val selected: AccountWithBalance? = null,
-    val dialog: AccountsDialog? = null,
     /** Credit card statements waiting to be paid, keyed by account id. */
     val dueStatements: Map<Long, DueStatement> = emptyMap(),
     /** Repayment state of the active loan accounts, keyed by account id. */
@@ -62,7 +59,7 @@ data class AccountsUiState(
     fun loanProgress(accountId: Long): LoanProgress? = loanProgressById[accountId]
 }
 
-/** Modal flows on top of the accounts list. */
+/** Modal flows on top of the account detail (and shared with any account surface). */
 sealed interface AccountsDialog {
 
     /**
@@ -90,7 +87,7 @@ sealed interface AccountsDialog {
     ) : AccountsDialog
 }
 
-/** One-shot events consumed by the screen (snackbars). */
+/** One-shot events consumed by the accounts screens (snackbars), list and detail alike. */
 sealed interface AccountsEvent {
 
     /** Shown with an undo action that restores the account. */
