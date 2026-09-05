@@ -98,7 +98,10 @@ class StatsViewModel @Inject constructor(
             val periodEnd = range.endInclusive.plusDays(1).atStartOfDay(zone).toInstant()
             val months = trailingMonths(YearMonth.from(inputs.today))
             val trendStart = months.first().atDay(1).atStartOfDay(zone).toInstant()
-            val trendEnd = months.last().plusMonths(1).atDay(1).atStartOfDay(zone).toInstant()
+            // The trend's last month is the current one and stops at today: a
+            // future-dated movement joins the bars on its day, not before
+            // (ADR 36), the same rule the period range applies.
+            val trendEnd = inputs.today.plusDays(1).atStartOfDay(zone).toInstant()
             // Every aggregate collapses with its foreign residue right away
             // (ADR 40); with conversion off the residues are constants and
             // each merge is the identity, i.e. the pre-conversion figures.

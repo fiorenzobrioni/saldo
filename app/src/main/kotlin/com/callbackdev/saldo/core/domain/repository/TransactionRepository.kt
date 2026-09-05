@@ -304,10 +304,23 @@ interface TransactionRepository {
 
     /**
      * Signed sum of an account's own movements (source side only) in
-     * `[start, end)`, in [currency], confirmed movements only. The credit card
-     * statement amount owed for a closed cycle is the negation of this sum.
+     * `[start, end)`, in [currency], confirmed movements only. With
+     * [sumIncomingTransfers] it drives the credit card statement: charges on one
+     * side, payments received on the other.
      */
     suspend fun sumOwnMovements(
+        accountId: Long,
+        start: Instant,
+        end: Instant,
+        currency: Currency,
+    ): BigDecimal
+
+    /**
+     * Positive sum of the transfer legs landing in [accountId] in `[start, end)`,
+     * in [currency], confirmed movements only: for a credit card, the payments
+     * it received, whether posted by a settlement or transferred by hand.
+     */
+    suspend fun sumIncomingTransfers(
         accountId: Long,
         start: Instant,
         end: Instant,

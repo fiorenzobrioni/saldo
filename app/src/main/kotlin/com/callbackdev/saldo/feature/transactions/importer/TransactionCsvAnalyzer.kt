@@ -32,6 +32,12 @@ data class ImportContext(
     val columnLabels: Map<CsvField, String>,
     val typeLabels: Map<TransactionType, String>,
     val defaultCurrency: Currency,
+    /**
+     * The user's own decimal separator (`.` or `,`), the tie-breaker for a file
+     * whose amounts never settle their convention (only `"1,234"`-shaped cells
+     * or plain integers): the same rule the quick text entry applies (ADR 42).
+     */
+    val localeDecimalMark: Char = '.',
 )
 
 /**
@@ -54,7 +60,7 @@ class TransactionCsvAnalyzer @Inject constructor() {
         context: ImportContext,
         options: CsvImportOptions,
     ): CsvImportAnalysis {
-        val run = Run(mapping, context, options)
+        val run = Run(mapping, context, options, decimalMarkOf(dataRows, mapping, context))
         var rowNumber = 0
         for (row in dataRows) {
             if (row.all { it.isBlank() }) continue
@@ -110,11 +116,34 @@ class TransactionCsvAnalyzer @Inject constructor() {
         val isRefund: Boolean,
     )
 
+    /**
+     * The decimal convention of the whole file, settled once from every amount
+     * cell (the received-amount column included: one file, one convention) and
+     * falling back to the user's locale when the cells leave it open. Per cell
+     * the question is undecidable, `"1,234"` being one thousand in an English
+     * export and one and a bit in an Italian one, and guessing per cell divided
+     * such amounts by a thousand without a word.
+     */
+    private fun decimalMarkOf(
+        dataRows: List<List<String>>,
+        mapping: ColumnMapping,
+        context: ImportContext,
+    ): Char {
+        val cells = dataRows.asSequence().flatMap { row ->
+            listOfNotNull(
+                mapping.rawValue(row, CsvField.AMOUNT),
+                mapping.rawValue(row, CsvField.RECEIVED_AMOUNT),
+            )
+        }
+        return CsvFieldParsers.inferDecimalMark(cells.asIterable()) ?: context.localeDecimalMark
+    }
+
     /** Mutable state of a single [analyze] pass. */
     private inner class Run(
         private val mapping: ColumnMapping,
         private val context: ImportContext,
         private val options: CsvImportOptions,
+        private val decimalMark: Char,
     ) {
         private val accountsByName = context.accounts.associateBy { normalizeName(it.name) }
         private val categoriesByName = context.categories.associateBy { normalizeName(it.name) }
@@ -225,7 +254,7 @@ class TransactionCsvAnalyzer @Inject constructor() {
                 errors += RowErrorCode.MISSING_AMOUNT
                 return null
             }
-            val amount = parseAmount(raw)
+            val amount = parseAmount(raw, decimalMark)
             if (amount == null) {
                 errors += RowErrorCode.INVALID_AMOUNT
                 return null
@@ -320,7 +349,8 @@ class TransactionCsvAnalyzer @Inject constructor() {
                 ?.takeIf { it.isNotEmpty() }?.let(::parseCurrency)
             val toAccount = resolveAccount(toName, receivedCurrency, errors, adjustments) ?: return null
             val transferCurrency = receivedCurrency ?: toAccount.currency
-            val received = mapping.rawValue(row, CsvField.RECEIVED_AMOUNT)?.trim()?.let(::parseAmount)
+            val received = mapping.rawValue(row, CsvField.RECEIVED_AMOUNT)?.trim()
+                ?.let { parseAmount(it, decimalMark) }
             val transferAmount = when {
                 received != null -> received.abs()
                 transferCurrency == sourceCurrency -> amount.abs()

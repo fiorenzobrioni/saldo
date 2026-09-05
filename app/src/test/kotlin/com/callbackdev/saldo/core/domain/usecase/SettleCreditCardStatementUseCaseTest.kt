@@ -68,6 +68,13 @@ class SettleCreditCardStatementUseCaseTest {
         initialBalance = BigDecimal("1000.00"),
     )
 
+    /** The card received [total] in transfers over its whole life (settlements and manual payments). */
+    private fun paymentsReceived(total: BigDecimal) {
+        coEvery {
+            transactionRepository.sumIncomingTransfers(eq(1L), any(), any(), eq(eur))
+        } returns total
+    }
+
     @Test
     fun `settles the due cycle with a transfer and advances the watermark`() = runTest {
         coEvery { accountRepository.getAccount(1L) } returns card
@@ -75,6 +82,7 @@ class SettleCreditCardStatementUseCaseTest {
         coEvery {
             transactionRepository.sumOwnMovements(eq(1L), any(), any(), eq(eur))
         } returns BigDecimal("-90.00")
+        paymentsReceived(BigDecimal.ZERO)
         val slot = slot<Transaction>()
         coEvery { transactionRepository.upsert(capture(slot)) } returns 10L
 
@@ -98,6 +106,7 @@ class SettleCreditCardStatementUseCaseTest {
         coEvery {
             transactionRepository.sumOwnMovements(eq(1L), any(), any(), eq(eur))
         } returns BigDecimal.ZERO
+        paymentsReceived(BigDecimal.ZERO)
 
         val result = useCase(1L)
 
@@ -105,6 +114,98 @@ class SettleCreditCardStatementUseCaseTest {
         assertEquals(BigDecimal.ZERO, (result as StatementSettlement.Settled).amount)
         coVerify(exactly = 0) { transactionRepository.upsert(any()) }
         coVerify { accountRepository.updateSettlementWatermark(1L, LocalDate.of(2024, 2, 20)) }
+    }
+
+    @Test
+    fun `a payment made by hand before the due date lowers the statement instead of doubling`() = runTest {
+        // 90.00 charged in the Feb cycle, 60.00 already transferred to the card
+        // by the user: the settlement posts only the 30.00 still owed.
+        coEvery { accountRepository.getAccount(1L) } returns card
+        coEvery { accountRepository.getAccount(2L) } returns linked
+        coEvery {
+            transactionRepository.sumOwnMovements(eq(1L), any(), any(), eq(eur))
+        } returns BigDecimal("-90.00")
+        paymentsReceived(BigDecimal("60.00"))
+        val slot = slot<Transaction>()
+        coEvery { transactionRepository.upsert(capture(slot)) } returns 12L
+
+        val result = useCase(1L)
+
+        assertEquals(BigDecimal("30.00"), (result as StatementSettlement.Settled).amount)
+        assertEquals(BigDecimal("30.00"), slot.captured.transferAmount)
+        coVerify { accountRepository.updateSettlementWatermark(1L, LocalDate.of(2024, 2, 20)) }
+    }
+
+    @Test
+    fun `a statement fully paid by hand is consumed without a transfer`() = runTest {
+        coEvery { accountRepository.getAccount(1L) } returns card
+        coEvery { accountRepository.getAccount(2L) } returns linked
+        coEvery {
+            transactionRepository.sumOwnMovements(eq(1L), any(), any(), eq(eur))
+        } returns BigDecimal("-90.00")
+        paymentsReceived(BigDecimal("90.00"))
+
+        val result = useCase(1L)
+
+        assertEquals(BigDecimal.ZERO, (result as StatementSettlement.Settled).amount)
+        coVerify(exactly = 0) { transactionRepository.upsert(any()) }
+        coVerify { accountRepository.updateSettlementWatermark(1L, LocalDate.of(2024, 2, 20)) }
+    }
+
+    @Test
+    fun `credit left by an earlier cycle reduces the next statement`() = runTest {
+        // Two cycles owed (watermark before Jan 20). January ended in credit: a
+        // 50.00 refund and nothing spent, so the card is at +50.00 at its
+        // closing. February charged 140.00; the statements read 0 and 90.
+        val behind = card.copy(
+            creditCard = card.creditCard!!.copy(lastSettledClosing = LocalDate.of(2023, 12, 20)),
+        )
+        coEvery { accountRepository.getAccount(1L) } returns behind
+        coEvery { accountRepository.getAccount(2L) } returns linked
+        val januaryEnd = LocalDate.of(2024, 1, 21).atStartOfDay(zone).toInstant()
+        coEvery {
+            transactionRepository.sumOwnMovements(eq(1L), any(), match { it <= januaryEnd }, eq(eur))
+        } returns BigDecimal("50.00")
+        coEvery {
+            transactionRepository.sumOwnMovements(eq(1L), any(), match { it > januaryEnd }, eq(eur))
+        } returns BigDecimal("-90.00")
+        paymentsReceived(BigDecimal.ZERO)
+        val slot = slot<Transaction>()
+        coEvery { transactionRepository.upsert(capture(slot)) } returns 13L
+
+        val due = com.callbackdev.saldo.core.domain.creditcard.BillingCycleCalculator
+            .dueStatements(LocalDate.of(2024, 3, 25), behind.creditCard!!)
+        val amounts = useCase.statementAmounts(behind, due)
+        val result = useCase(1L)
+
+        assertEquals(listOf(BigDecimal.ZERO, BigDecimal("90.00")), amounts)
+        assertEquals(BigDecimal("90.00"), (result as StatementSettlement.Settled).amount)
+        assertEquals(LocalDate.of(2024, 2, 20), result.cycle.closing)
+    }
+
+    @Test
+    fun `payments settle the oldest cycle first and later cycles keep their own charges`() = runTest {
+        // January charged 100.00, February 140.00 more (240.00 through Feb 20);
+        // 130.00 was paid by hand: January is covered (100) and 30 of February.
+        val behind = card.copy(
+            creditCard = card.creditCard!!.copy(lastSettledClosing = LocalDate.of(2023, 12, 20)),
+        )
+        coEvery { accountRepository.getAccount(1L) } returns behind
+        coEvery { accountRepository.getAccount(2L) } returns linked
+        val januaryEnd = LocalDate.of(2024, 1, 21).atStartOfDay(zone).toInstant()
+        coEvery {
+            transactionRepository.sumOwnMovements(eq(1L), any(), match { it <= januaryEnd }, eq(eur))
+        } returns BigDecimal("-100.00")
+        coEvery {
+            transactionRepository.sumOwnMovements(eq(1L), any(), match { it > januaryEnd }, eq(eur))
+        } returns BigDecimal("-240.00")
+        paymentsReceived(BigDecimal("130.00"))
+
+        val due = com.callbackdev.saldo.core.domain.creditcard.BillingCycleCalculator
+            .dueStatements(LocalDate.of(2024, 3, 25), behind.creditCard!!)
+        val amounts = useCase.statementAmounts(behind, due)
+
+        assertEquals(listOf(BigDecimal.ZERO, BigDecimal("110.00")), amounts)
     }
 
     @Test
@@ -124,6 +225,7 @@ class SettleCreditCardStatementUseCaseTest {
         coEvery {
             transactionRepository.sumOwnMovements(eq(1L), any(), match { it > januaryEnd }, eq(eur))
         } returns BigDecimal("-140.00")
+        paymentsReceived(BigDecimal.ZERO)
         val slot = slot<Transaction>()
         coEvery { transactionRepository.upsert(capture(slot)) } returns 11L
 

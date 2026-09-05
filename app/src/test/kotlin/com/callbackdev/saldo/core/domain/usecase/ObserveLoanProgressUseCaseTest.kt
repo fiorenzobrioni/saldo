@@ -104,7 +104,9 @@ class ObserveLoanProgressUseCaseTest {
         assertEquals(LocalDate.of(2026, 8, 5), progress.nextInstallmentDate)
         // 8400 / 300 = 28 exact installments.
         assertEquals(28L, progress.remainingInstallments)
-        assertEquals(LocalDate.of(2028, 11, 15), progress.projectedPayoffDate)
+        // The 28th charge lands 27 months after the next one (August 5), not
+        // 28 months after today: anchoring on today named November 15.
+        assertEquals(LocalDate.of(2028, 11, 5), progress.projectedPayoffDate)
     }
 
     @Test

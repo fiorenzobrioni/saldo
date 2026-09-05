@@ -13,17 +13,40 @@ class StatsPeriodTest {
     private val today = LocalDate.of(2026, 7, 10)
 
     @Test
-    fun `month covers its whole calendar month`() {
+    fun `a past month covers its whole calendar month`() {
         val range = StatsPeriod.Month(YearMonth.of(2026, 2)).dateRange(today)
         assertEquals(LocalDate.of(2026, 2, 1), range.start)
         assertEquals(LocalDate.of(2026, 2, 28), range.endInclusive)
     }
 
     @Test
-    fun `year covers january 1st through december 31st`() {
+    fun `the current month stops at today so future-dated movements wait for their day`() {
+        val range = StatsPeriod.Month(YearMonth.of(2026, 7)).dateRange(today)
+        assertEquals(LocalDate.of(2026, 7, 1), range.start)
+        assertEquals(today, range.endInclusive)
+    }
+
+    @Test
+    fun `a past year covers january 1st through december 31st`() {
+        val range = StatsPeriod.Year(2025).dateRange(today)
+        assertEquals(LocalDate.of(2025, 1, 1), range.start)
+        assertEquals(LocalDate.of(2025, 12, 31), range.endInclusive)
+    }
+
+    @Test
+    fun `the current year stops at today`() {
         val range = StatsPeriod.Year(2026).dateRange(today)
         assertEquals(LocalDate.of(2026, 1, 1), range.start)
-        assertEquals(LocalDate.of(2026, 12, 31), range.endInclusive)
+        assertEquals(today, range.endInclusive)
+    }
+
+    @Test
+    fun `a period entirely in the future keeps a valid one-day range`() {
+        // Not reachable from the selector (isAtPresent stops it), but the range
+        // must never invert if a stale period outlives a midnight tick.
+        val range = StatsPeriod.Month(YearMonth.of(2026, 8)).dateRange(today)
+        assertEquals(LocalDate.of(2026, 8, 1), range.start)
+        assertEquals(LocalDate.of(2026, 8, 1), range.endInclusive)
     }
 
     @Test

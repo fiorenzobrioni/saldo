@@ -58,9 +58,9 @@ class ObserveBudgetProgressUseCase @Inject constructor(
         return if (conversion.active) {
             combine(
                 budgetRepository.observeBudgets(),
-                transactionRepository.observeSpendByCurrencyDay(windows.monthStart, windows.monthEnd),
+                transactionRepository.observeSpendByCurrencyDay(windows.monthStart, windows.todayEnd),
                 transactionRepository
-                    .observeCategorySpendByCurrencyDay(windows.monthStart, windows.monthEnd),
+                    .observeCategorySpendByCurrencyDay(windows.monthStart, windows.todayEnd),
                 categoryRepository.observeCategories(),
             ) { budgets, spendRows, categoryRows, categories ->
                 buildConvertedProgress(budgets, spendRows, categoryRows, categories, conversion)
@@ -69,9 +69,9 @@ class ObserveBudgetProgressUseCase @Inject constructor(
             combine(
                 budgetRepository.observeBudgets(),
                 transactionRepository
-                    .observeStatsSpendTotal(windows.monthStart, windows.monthEnd, currency),
+                    .observeStatsSpendTotal(windows.monthStart, windows.todayEnd, currency),
                 transactionRepository
-                    .observeCategorySpendTotals(windows.monthStart, windows.monthEnd, currency),
+                    .observeCategorySpendTotals(windows.monthStart, windows.todayEnd, currency),
                 categoryRepository.observeCategories(),
             ) { budgets, totalSpend, categorySpends, categories ->
                 buildProgress(

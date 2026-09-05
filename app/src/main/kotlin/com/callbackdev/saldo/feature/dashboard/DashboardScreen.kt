@@ -382,11 +382,13 @@ private fun DashboardContent(
                     )
                 },
                 onMonthClick = {
+                    // Month to date, like the card: a movement dated later this
+                    // month is not in the figure, so it is not in its list.
                     val firstOfMonth = uiState.date.withDayOfMonth(1)
                     onNavigateToFiltered(
                         FilteredTransactionsRoute(
                             startEpochDay = firstOfMonth.toEpochDay(),
-                            endEpochDayExclusive = firstOfMonth.plusMonths(1).toEpochDay(),
+                            endEpochDayExclusive = uiState.date.plusDays(1).toEpochDay(),
                         ),
                     )
                 },

@@ -173,6 +173,13 @@ private fun SafeToSpendBreakdown(
                 contentColor = contentColor,
             )
         }
+        if (safeToSpend.futureCommitted.signum() > 0) {
+            BreakdownRow(
+                label = stringResource(R.string.dashboard_sts_detail_future),
+                amount = MoneyFormatter.formatSigned(safeToSpend.futureCommitted.negate(), currency),
+                contentColor = contentColor,
+            )
+        }
         if (safeToSpend.upcomingRecurring.signum() > 0) {
             BreakdownRow(
                 label = stringResource(R.string.dashboard_sts_detail_upcoming),
@@ -266,7 +273,9 @@ private fun SafeToSpendContent(
             style = MaterialTheme.typography.bodyMedium.tabularNumbers(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        val committed = safeToSpend.upcomingRecurring.add(safeToSpend.pendingCommitted)
+        val committed = safeToSpend.upcomingRecurring
+            .add(safeToSpend.pendingCommitted)
+            .add(safeToSpend.futureCommitted)
         if (committed.signum() > 0) {
             Spacer(Modifier.height(2.dp))
             Text(

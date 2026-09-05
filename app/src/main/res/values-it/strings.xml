@@ -990,6 +990,7 @@
     <string name="dashboard_sts_detail_budget">Budget del mese</string>
     <string name="dashboard_sts_detail_spent">Speso finora</string>
     <string name="dashboard_sts_detail_pending">Da confermare</string>
+    <string name="dashboard_sts_detail_future">Datati più avanti nel mese</string>
     <string name="dashboard_sts_detail_upcoming">Ricorrenze entro fine mese</string>
     <string name="dashboard_sts_detail_remaining">Rimane per il mese</string>
     <string name="dashboard_sts_manage_budgets">Gestisci budget</string>

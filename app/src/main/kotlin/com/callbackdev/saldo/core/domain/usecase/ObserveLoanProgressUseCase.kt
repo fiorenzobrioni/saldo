@@ -78,7 +78,10 @@ class ObserveLoanProgressUseCase @Inject constructor(
             nextInstallmentAmount = next?.second?.amount,
             nextInstallmentDate = next?.first,
             remainingInstallments = remaining,
-            projectedPayoffDate = remaining?.let { today.plusMonths(it) },
+            // Anchored on the next installment, not on today: the last of the
+            // remaining charges lands remaining - 1 months after the next one,
+            // and counting from today could name a month too late.
+            projectedPayoffDate = remaining?.let { (next?.first ?: today).plusMonths(it - 1) },
         )
     }
 

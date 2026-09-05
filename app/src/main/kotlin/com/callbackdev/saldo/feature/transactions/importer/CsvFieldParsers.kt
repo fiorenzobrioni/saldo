@@ -23,17 +23,70 @@ object CsvFieldParsers {
      *
      * `"1.234,56"`, `"1,234.56"`, `"1234,56"`, `"1234.56"` and `"€ 1 234,56"`
      * all parse to `1234.56`; `"(50)"` parses to `-50`.
+     *
+     * A single separator followed by exactly three digits (`"1,234"`) is
+     * ambiguous on its own: this overload reads it as a decimal mark, the
+     * historical behavior. The import resolves the convention once per file
+     * with [inferDecimalMark] and calls the overload that takes it, so a
+     * thousands separator without decimals is never read as a decimal.
      */
-    fun parseAmount(raw: String): BigDecimal? {
+    fun parseAmount(raw: String): BigDecimal? = parseAmount(raw, decimalMark = null)
+
+    /**
+     * Parses [raw] with a known [decimalMark] (`.` or `,`): the other separator
+     * is grouping and is dropped wherever it appears; a repeated decimal mark
+     * makes the amount invalid. Null [decimalMark] falls back to the per-cell
+     * heuristic of the one-argument overload.
+     */
+    fun parseAmount(raw: String, decimalMark: Char?): BigDecimal? {
         val trimmed = raw.trim()
         if (trimmed.isEmpty()) return null
         val negative = trimmed.startsWith('-') || (trimmed.startsWith('(') && trimmed.endsWith(')'))
         val digitsOnly = trimmed.filter { it.isDigit() || it == '.' || it == ',' }
         if (digitsOnly.none { it.isDigit() }) return null
 
-        val normalized = normalizeDecimalMarks(digitsOnly)
+        val normalized = if (decimalMark == null) {
+            normalizeDecimalMarks(digitsOnly)
+        } else {
+            normalizeWithMark(digitsOnly, decimalMark) ?: return null
+        }
         val magnitude = normalized.toBigDecimalOrNull() ?: return null
         return if (negative) magnitude.negate() else magnitude
+    }
+
+    /**
+     * The decimal mark a whole column of raw amounts uses, or null when the
+     * cells do not settle it. Evidence, strongest first: a cell carrying both
+     * separators names the decimal (the last one); a cell with one separator
+     * followed by anything but three digits names it too (`"12,5"`, `"3.1415"`);
+     * a cell repeating one separator names the *grouping* (`"1.234.567"`). Cells
+     * with one separator and exactly three trailing digits are the ambiguous
+     * case and never decide. Conflicting evidence yields null: better an
+     * undecided column resolved by the locale than a coin flip per cell.
+     */
+    fun inferDecimalMark(cells: Iterable<String>): Char? {
+        val votes = mutableSetOf<Char>()
+        for (raw in cells) {
+            val digits = raw.filter { it.isDigit() || it == '.' || it == ',' }
+            val dots = digits.count { it == '.' }
+            val commas = digits.count { it == ',' }
+            when {
+                dots > 0 && commas > 0 ->
+                    votes += if (digits.lastIndexOf('.') > digits.lastIndexOf(',')) '.' else ','
+                dots == 1 && digits.substringAfterLast('.').length != GROUP_SIZE -> votes += '.'
+                commas == 1 && digits.substringAfterLast(',').length != GROUP_SIZE -> votes += ','
+                dots > 1 -> votes += ','
+                commas > 1 -> votes += '.'
+            }
+        }
+        return votes.singleOrNull()
+    }
+
+    /** With a known decimal mark: strip the grouping mark, refuse a repeated decimal mark. */
+    private fun normalizeWithMark(digits: String, decimalMark: Char): String? {
+        if (digits.count { it == decimalMark } > 1) return null
+        val grouping = if (decimalMark == '.') ',' else '.'
+        return digits.replace(grouping.toString(), "").replace(decimalMark, '.')
     }
 
     /** Collapses mixed dot/comma grouping into a plain `#.#` decimal string. */
@@ -51,6 +104,8 @@ object CsvFieldParsers {
         val grouping = if (decimalMark == '.') ',' else '.'
         return digits.replace(grouping.toString(), "").replace(decimalMark, '.')
     }
+
+    private const val GROUP_SIZE = 3
 
     /** Date formats accepted on import, tried in order; ISO first (the export format). */
     private val DATE_PATTERNS = listOf(

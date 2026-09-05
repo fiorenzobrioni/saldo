@@ -65,12 +65,12 @@ class BudgetThresholdWatcher @Inject constructor(
     private fun spendSignal(windows: DashboardWindows, currencyCode: String) = combine(
         transactionRepository.observeStatsSpendTotal(
             windows.monthStart,
-            windows.monthEnd,
+            windows.todayEnd,
             Currency.getInstance(currencyCode),
         ),
         transactionRepository.observeCategorySpendTotals(
             windows.monthStart,
-            windows.monthEnd,
+            windows.todayEnd,
             Currency.getInstance(currencyCode),
         ),
         ::Pair,

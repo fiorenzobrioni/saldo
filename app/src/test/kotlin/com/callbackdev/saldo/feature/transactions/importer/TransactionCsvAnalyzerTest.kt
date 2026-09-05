@@ -62,7 +62,8 @@ class TransactionCsvAnalyzerTest {
         categories: List<Category> = listOf(groceries),
         tags: List<Tag> = listOf(holiday),
         signatures: Set<String> = emptySet(),
-    ) = ImportContext(accounts, categories, tags, signatures, columnLabels, typeLabels, eur)
+        localeDecimalMark: Char = ',',
+    ) = ImportContext(accounts, categories, tags, signatures, columnLabels, typeLabels, eur, localeDecimalMark)
 
     private fun analyze(rows: List<List<String>>, context: ImportContext = context(), options: CsvImportOptions = CsvImportOptions()) =
         analyzer.analyze(rows, mapping, context, options)
@@ -76,6 +77,62 @@ class TransactionCsvAnalyzerTest {
         assertEquals("Checking", movement.accountName)
         assertEquals("Groceries", movement.categoryName)
         assertEquals(0, movement.amount.compareTo(BigDecimal("-12.50")))
+    }
+
+    @Test
+    fun `a thousands separator without decimals follows the convention the file settles`() {
+        // "-1.234,56" fixes the comma as the decimal mark for the whole file, so
+        // "-2.500" is two thousand five hundred, not two and a half.
+        val analysis = analyze(
+            listOf(
+                row(description = "Rent", amount = "-1.234,56"),
+                row(description = "Car", amount = "-2.500"),
+            ),
+            context(localeDecimalMark = '.'),
+        )
+        val amounts = analysis.importable.map { it.movement.amount }
+        assertEquals(0, amounts[0].compareTo(BigDecimal("-1234.56")))
+        assertEquals(0, amounts[1].compareTo(BigDecimal("-2500")))
+    }
+
+    @Test
+    fun `an english file with grouping commas keeps its thousands`() {
+        val analysis = analyze(
+            listOf(
+                row(description = "Salary", type = "Income", amount = "2,345.10"),
+                row(description = "Laptop", amount = "-1,299"),
+            ),
+            context(localeDecimalMark = ','),
+        )
+        val amounts = analysis.importable.map { it.movement.amount }
+        assertEquals(0, amounts[0].compareTo(BigDecimal("2345.10")))
+        assertEquals(0, amounts[1].compareTo(BigDecimal("-1299")))
+    }
+
+    @Test
+    fun `when the file never settles the convention the user's locale decides`() {
+        val rows = listOf(row(description = "Laptop", amount = "-1,299"))
+        val italian = analyze(rows, context(localeDecimalMark = ',')).importable.single().movement.amount
+        val english = analyze(rows, context(localeDecimalMark = '.')).importable.single().movement.amount
+        assertEquals(0, italian.compareTo(BigDecimal("-1.299")))
+        assertEquals(0, english.compareTo(BigDecimal("-1299")))
+    }
+
+    @Test
+    fun `the received amount of a transfer follows the same convention`() {
+        val analysis = analyze(
+            listOf(
+                row(description = "Rent", amount = "-1.234,56"),
+                row(
+                    type = "Transfer", toAccount = "Savings", amount = "-2.000",
+                    receivedAmount = "2.000", receivedCurrency = "EUR",
+                ),
+            ),
+            context(localeDecimalMark = '.'),
+        )
+        val transfer = analysis.importable.map { it.movement }.single { it.type == TransactionType.TRANSFER }
+        assertEquals(0, transfer.amount.compareTo(BigDecimal("-2000")))
+        assertEquals(0, transfer.transferAmount!!.compareTo(BigDecimal("2000")))
     }
 
     @Test

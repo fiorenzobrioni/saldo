@@ -90,8 +90,8 @@ class ProcessDueCreditCardStatementsUseCase @Inject constructor(
     /** Confirm mode: report each due cycle with something owed, without posting. */
     private suspend fun reportPending(card: Account, today: LocalDate): List<DueStatement> {
         val config = card.creditCard ?: return emptyList()
-        return BillingCycleCalculator.dueStatements(today, config).mapNotNull { cycle ->
-            val amount = settleStatement.statementAmount(card, cycle)
+        val due = BillingCycleCalculator.dueStatements(today, config)
+        return due.zip(settleStatement.statementAmounts(card, due)).mapNotNull { (cycle, amount) ->
             if (amount.signum() <= 0) return@mapNotNull null
             DueStatement(
                 accountId = card.id,

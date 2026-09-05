@@ -177,6 +177,28 @@ class SaldoDatabaseTest {
     }
 
     @Test
+    fun categoryTotalsIgnoreOrdinaryIncomesOfACategoryUsedForBoth() = runBlocking {
+        // A BOTH category: 100.00 of gifts given, 80.00 of gifts received. The
+        // income is not a refund, so the slice must read the full 100.00 of
+        // spend, like the trend bars do; netting it to 20.00 would understate
+        // the category and the ring's total (the bug the query once had).
+        val a = accountDao.insert(account(initialMinor = 100_000L))
+        val gifts = categoryDao.insert(
+            CategoryEntity(name = "Gifts", type = CategoryType.BOTH, color = 0xEF5350, icon = "gift"),
+        )
+        transactionDao.insert(movement(TransactionType.EXPENSE, -10_000L, a, categoryId = gifts))
+        transactionDao.insert(movement(TransactionType.INCOME, 8_000L, a, categoryId = gifts))
+
+        val observed = transactionDao.observeCategoryTotals(0L, Long.MAX_VALUE, "EUR").first().single()
+        val oneShot = transactionDao.getCategoryTotals(0L, Long.MAX_VALUE, "EUR").single()
+
+        assertEquals(-10_000L, observed.totalMinor)
+        assertEquals(1, observed.count)
+        assertEquals(-10_000L, oneShot.totalMinor)
+        assertEquals(1, oneShot.count)
+    }
+
+    @Test
     fun betweenFiltersByInstantRange() = runBlocking {
         val a = accountDao.insert(account(initialMinor = 0L))
         transactionDao.insert(movement(TransactionType.EXPENSE, -100L, a).copy(timestampEpochMilli = 1_000L))

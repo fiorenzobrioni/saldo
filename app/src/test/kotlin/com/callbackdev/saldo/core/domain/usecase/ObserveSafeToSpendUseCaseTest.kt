@@ -42,19 +42,24 @@ class ObserveSafeToSpendUseCaseTest {
     private val recurringRuleRepository = mockk<RecurringRuleRepository>()
     private val accountRepository = mockk<AccountRepository>()
 
+    /** The `[start, end)` window the spend leg was asked for, captured per run. */
+    private val spendWindow = mutableListOf<Instant>()
+
     private fun useCase(
         budgets: List<Budget> = listOf(overallBudget("500.00")),
         totalSpend: BigDecimal = BigDecimal.ZERO,
         pending: List<Transaction> = emptyList(),
+        future: List<Transaction> = emptyList(),
         rules: List<RecurringRule> = emptyList(),
         accounts: List<AccountWithBalance> = emptyList(),
         clock: Clock = this.clock,
     ): ObserveSafeToSpendUseCase {
         every { budgetRepository.observeBudgets() } returns flowOf(budgets)
         every {
-            transactionRepository.observeStatsSpendTotal(any(), any(), any())
+            transactionRepository.observeStatsSpendTotal(capture(spendWindow), capture(spendWindow), any())
         } returns flowOf(totalSpend)
         every { transactionRepository.observePendingTransactions() } returns flowOf(pending)
+        every { transactionRepository.observeTransactionsFrom(any()) } returns flowOf(future)
         every { recurringRuleRepository.observeRules() } returns flowOf(rules)
         every { accountRepository.observeAccountsWithBalance() } returns flowOf(accounts)
         return ObserveSafeToSpendUseCase(
@@ -95,6 +100,21 @@ class ObserveSafeToSpendUseCaseTest {
         zoneOffset = ZoneOffset.UTC,
         isPending = true,
         recurringRuleId = 9L,
+    )
+
+    /** A confirmed expense already dated in the future (ADR 36). */
+    private fun futureExpense(
+        amount: String,
+        day: LocalDate,
+        accountId: Long = 1L,
+        type: TransactionType = TransactionType.EXPENSE,
+    ) = Transaction(
+        type = type,
+        amount = BigDecimal(amount),
+        currency = eur,
+        accountId = accountId,
+        timestamp = LocalDateTime.of(day, java.time.LocalTime.NOON).toInstant(ZoneOffset.UTC),
+        zoneOffset = ZoneOffset.UTC,
     )
 
     private fun monthlyExpenseRule(amount: String, dayOfMonth: Int) = RecurringRule(
@@ -144,6 +164,45 @@ class ObserveSafeToSpendUseCaseTest {
         assertEquals(20, safeToSpend.daysLeft)
         // 255 / 20 = 12.75, floored at currency scale.
         assertEquals(BigDecimal("12.75"), safeToSpend.perDay)
+    }
+
+    @Test
+    fun `the spend leg stops at the end of today, not at the end of the month`() = runTest {
+        useCase(totalSpend = BigDecimal("-200.00")).invoke(eur).first()
+
+        // 12 July 2026 in Europe/Rome: the window is [1 July, 13 July).
+        assertEquals(LocalDate.of(2026, 7, 1).atStartOfDay(zone).toInstant(), spendWindow[0])
+        assertEquals(LocalDate.of(2026, 7, 13).atStartOfDay(zone).toInstant(), spendWindow[1])
+    }
+
+    @Test
+    fun `a confirmed expense dated later this month is committed, not spent`() = runTest {
+        val safeToSpend = useCase(
+            totalSpend = BigDecimal("-200.00"),
+            future = listOf(
+                futureExpense("-80.00", day = LocalDate.of(2026, 7, 25)),
+                // Next month's bill is not this month's commitment.
+                futureExpense("-60.00", day = LocalDate.of(2026, 8, 2)),
+                // Incomes and transfers dated ahead are not spending.
+                futureExpense("300.00", day = LocalDate.of(2026, 7, 27), type = TransactionType.INCOME),
+            ),
+        ).invoke(eur).first()!!
+
+        assertEquals(BigDecimal("200.00"), safeToSpend.spent)
+        assertEquals(BigDecimal("80.00"), safeToSpend.futureCommitted)
+        // 500 - 200 - 80
+        assertEquals(BigDecimal("220.00"), safeToSpend.remaining)
+    }
+
+    @Test
+    fun `a future expense on a budget-excluded account does not count`() = runTest {
+        val safeToSpend = useCase(
+            future = listOf(futureExpense("-80.00", day = LocalDate.of(2026, 7, 25), accountId = 2L)),
+            accounts = listOf(account(id = 2L, includedInBudget = false)),
+        ).invoke(eur).first()!!
+
+        assertEquals(BigDecimal.ZERO, safeToSpend.futureCommitted)
+        assertEquals(BigDecimal("500.00"), safeToSpend.remaining)
     }
 
     @Test

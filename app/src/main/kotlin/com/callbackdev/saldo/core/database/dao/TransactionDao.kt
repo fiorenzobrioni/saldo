@@ -167,17 +167,22 @@ interface TransactionDao {
     suspend fun getById(id: Long): TransactionEntity?
 
     /**
-     * Per-category signed totals for expenses and incomes in `[startMillis, endMillis)`,
-     * restricted to [currency]. Transfers and adjustments are excluded by the type
-     * filter (and carry no category); movements flagged out of statistics are skipped.
-     * Uncategorized movements group under a NULL categoryId row, so the ring and
-     * its center total cover the whole period's spend like the trend bars do.
+     * Per-category signed spend totals in `[startMillis, endMillis)`, restricted
+     * to [currency]: expenses plus refunds (INCOME with isRefund = 1), the same
+     * predicate as [observeCategorySpendTotals] and [observeAccountSpendTotals].
+     * Ordinary incomes never enter: a category of type BOTH would otherwise see
+     * its incomes offset its expenses and shrink its slice, while the trend bars
+     * count the two flows apart. Transfers and adjustments are excluded by the
+     * type filter (and carry no category); movements flagged out of statistics
+     * are skipped. Uncategorized movements group under a NULL categoryId row, so
+     * the ring and its center total cover the whole period's spend like the
+     * trend bars do.
      */
     @Query(
         """
         SELECT categoryId AS categoryId, SUM(amountMinor) AS totalMinor, COUNT(*) AS count
         FROM transactions
-        WHERE type IN ('EXPENSE', 'INCOME')
+        WHERE (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
             AND isExcludedFromStats = 0
             AND isPending = 0
             AND currency = :currency
@@ -580,12 +585,12 @@ interface TransactionDao {
             ) AS todayIncomeMinor,
             SUM(
                 CASE WHEN t.type = 'EXPENSE'
-                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :monthEnd
+                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :todayEnd
                 THEN t.amountMinor ELSE 0 END
             ) AS monthSpendMinor,
             SUM(
                 CASE WHEN t.type = 'INCOME'
-                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :monthEnd
+                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :todayEnd
                 THEN t.amountMinor ELSE 0 END
             ) AS monthIncomeMinor,
             SUM(
@@ -595,6 +600,7 @@ interface TransactionDao {
             ) AS monthToDateSpendMinor,
             SUM(
                 CASE WHEN t.type = 'EXPENSE' AND t.recurringRuleId IS NULL
+                    AND a.isIncludedInTotal = 1
                     AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :todayEnd
                 THEN t.amountMinor ELSE 0 END
             ) AS monthToDateNonRecurringSpendMinor,
@@ -614,7 +620,6 @@ interface TransactionDao {
         todayStart: Long,
         todayEnd: Long,
         monthStart: Long,
-        monthEnd: Long,
         previousStart: Long,
         previousToDateEnd: Long,
         currency: String,
@@ -650,12 +655,12 @@ interface TransactionDao {
         currency: String,
     ): StatsPeriodTotalsRow
 
-    /** One-shot twin of [observeCategoryTotals], for the monthly recap. */
+    /** One-shot twin of [observeCategoryTotals], for the monthly recap: spend rows only. */
     @Query(
         """
         SELECT categoryId AS categoryId, SUM(amountMinor) AS totalMinor, COUNT(*) AS count
         FROM transactions
-        WHERE type IN ('EXPENSE', 'INCOME')
+        WHERE (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
             AND isExcludedFromStats = 0
             AND isPending = 0
             AND currency = :currency
@@ -814,9 +819,10 @@ interface TransactionDao {
     /**
      * Signed sum of a single account's own movements in `[startMilli, endMilli)`,
      * confirmed only, in minor units. Only movements whose source is the account
-     * count (`accountId`), so incoming transfer legs (the statement settlement
-     * itself) are excluded. Drives the credit card statement amount: the amount
-     * owed for a closed cycle is the negation of this sum. Zero when none match.
+     * count (`accountId`); incoming transfer legs are summed apart by
+     * [sumIncomingTransfersInWindow]. Together the two drive the credit card
+     * statement: the charges up to a closing date on one side, every payment
+     * received on the other. Zero when none match.
      */
     @Query(
         """
@@ -827,4 +833,18 @@ interface TransactionDao {
     )
     suspend fun sumOwnMovementsInWindow(accountId: Long, startMilli: Long, endMilli: Long): Long
 
+    /**
+     * Positive sum, in minor units, of the transfer legs landing in the account
+     * in `[startMilli, endMilli)`, confirmed only: for a credit card, the
+     * payments made to it (statement settlements and manual transfers alike).
+     * Zero when none match.
+     */
+    @Query(
+        """
+        SELECT COALESCE(SUM(transferAmountMinor), 0) FROM transactions
+        WHERE type = 'TRANSFER' AND transferAccountId = :accountId AND isPending = 0
+            AND timestampEpochMilli >= :startMilli AND timestampEpochMilli < :endMilli
+        """,
+    )
+    suspend fun sumIncomingTransfersInWindow(accountId: Long, startMilli: Long, endMilli: Long): Long
 }

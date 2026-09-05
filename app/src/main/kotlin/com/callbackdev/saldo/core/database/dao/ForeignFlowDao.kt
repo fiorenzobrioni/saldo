@@ -27,8 +27,9 @@ interface ForeignFlowDao {
     /**
      * Foreign twin of [TransactionDao.observeDashboardTotals]: the same seven window sums,
      * broken down per (currency, local day). Bounded by the widest window
-     * (`previousStart` to `monthEnd`); a bucket outside a given sub-window
-     * contributes zero to that column, exactly like the CASE in the twin.
+     * (`previousStart` to `todayEnd`: every month figure is month-to-date, a
+     * future-dated movement waits for its day); a bucket outside a given
+     * sub-window contributes zero to that column, exactly like the CASE in the twin.
      */
     @Suppress("LongParameterList") // One instant per window boundary; a DAO cannot take a POJO.
     @Query(
@@ -47,12 +48,12 @@ interface ForeignFlowDao {
             ) AS todayIncomeMinor,
             SUM(
                 CASE WHEN t.type = 'EXPENSE'
-                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :monthEnd
+                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :todayEnd
                 THEN t.amountMinor ELSE 0 END
             ) AS monthSpendMinor,
             SUM(
                 CASE WHEN t.type = 'INCOME'
-                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :monthEnd
+                    AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :todayEnd
                 THEN t.amountMinor ELSE 0 END
             ) AS monthIncomeMinor,
             SUM(
@@ -62,6 +63,7 @@ interface ForeignFlowDao {
             ) AS monthToDateSpendMinor,
             SUM(
                 CASE WHEN t.type = 'EXPENSE' AND t.recurringRuleId IS NULL
+                    AND a.isIncludedInTotal = 1
                     AND t.timestampEpochMilli >= :monthStart AND t.timestampEpochMilli < :todayEnd
                 THEN t.amountMinor ELSE 0 END
             ) AS monthToDateNonRecurringSpendMinor,
@@ -75,7 +77,7 @@ interface ForeignFlowDao {
         INNER JOIN accounts a ON a.id = t.accountId
         WHERE t.isPending = 0 AND t.currency <> :currency AND t.type IN ('EXPENSE', 'INCOME')
             AND a.isArchived = 0
-            AND t.timestampEpochMilli >= :previousStart AND t.timestampEpochMilli < :monthEnd
+            AND t.timestampEpochMilli >= :previousStart AND t.timestampEpochMilli < :todayEnd
         GROUP BY t.currency, epochDay
         """,
     )
@@ -83,20 +85,22 @@ interface ForeignFlowDao {
         todayStart: Long,
         todayEnd: Long,
         monthStart: Long,
-        monthEnd: Long,
         previousStart: Long,
         previousToDateEnd: Long,
         currency: String,
     ): Flow<List<ForeignDashboardFlowsRow>>
 
-    /** Foreign twin of [TransactionDao.observeCategoryTotals], per (category, currency, local day). */
+    /**
+     * Foreign twin of [TransactionDao.observeCategoryTotals], per (category,
+     * currency, local day): spend rows only (expenses plus refunds), like the twin.
+     */
     @Query(
         """
         SELECT categoryId AS categoryId, currency AS currency,
             (timestampEpochMilli / 1000 + zoneOffsetSeconds) / 86400 AS epochDay,
             SUM(amountMinor) AS totalMinor, COUNT(*) AS count
         FROM transactions
-        WHERE type IN ('EXPENSE', 'INCOME')
+        WHERE (type = 'EXPENSE' OR (type = 'INCOME' AND isRefund = 1))
             AND isExcludedFromStats = 0
             AND isPending = 0
             AND currency <> :currency
