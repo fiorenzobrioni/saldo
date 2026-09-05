@@ -215,4 +215,22 @@ class CsvHeaderMapperTest {
         assertNull(CsvHeaderMapper.map(listOf("foo", "bar"), emptyMap()))
         assertNull(CsvHeaderMapper.map(listOf("date", "foo"), emptyMap()))
     }
+
+    @Test
+    fun `suggest keeps the partial matches a manual mapping starts from`() {
+        val suggested = CsvHeaderMapper.suggest(listOf("Data operazione", "Descrizione", "Importo EUR"), labels)
+
+        // Nothing matches "Data operazione" or "Importo EUR", but the description does.
+        assertEquals(mapOf(CsvField.DESCRIPTION to 1), suggested)
+        assertNull(CsvHeaderMapper.map(listOf("Data operazione", "Descrizione", "Importo EUR"), labels))
+    }
+
+    @Test
+    fun `a saved mapping rebuilds from field names and drops what it cannot place`() {
+        val mapping = ColumnMapping.fromNames(mapOf("DATE" to 0, "AMOUNT" to 2, "FUTURE_FIELD" to 3, "NOTE" to -1))
+
+        assertEquals(mapOf(CsvField.DATE to 0, CsvField.AMOUNT to 2), mapping.indexByField)
+        assertTrue(mapping.isComplete)
+        assertFalse(ColumnMapping.fromNames(mapOf("DATE" to 0)).isComplete)
+    }
 }

@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
 import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.ViewColumn
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -116,8 +117,10 @@ fun SettingsScreen(
     val defaultAccountId by viewModel.defaultAccountId.collectAsStateWithLifecycle()
     val firstDayOfWeek by viewModel.firstDayOfWeek.collectAsStateWithLifecycle()
     val appLockEnabled by viewModel.appLockEnabled.collectAsStateWithLifecycle()
+    val csvMappings by viewModel.csvMappings.collectAsStateWithLifecycle()
     var showCurrencyDialog by rememberSaveable { mutableStateOf(false) }
     var showDefaultAccountDialog by rememberSaveable { mutableStateOf(false) }
+    var showCsvMappingsDialog by rememberSaveable { mutableStateOf(false) }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     Scaffold(
@@ -423,6 +426,16 @@ fun SettingsScreen(
                     icon = Icons.Outlined.SettingsBackupRestore,
                     onClick = onNavigateToBackup,
                 )
+                SettingsEntry(
+                    title = stringResource(R.string.settings_csv_mappings),
+                    hint = if (csvMappings.isEmpty()) {
+                        stringResource(R.string.settings_csv_mappings_hint_none)
+                    } else {
+                        pluralStringResource(R.plurals.settings_csv_mappings_hint, csvMappings.size, csvMappings.size)
+                    },
+                    icon = Icons.Outlined.ViewColumn,
+                    onClick = { showCsvMappingsDialog = true },
+                )
             }
 
             SettingsSectionHeader(stringResource(R.string.settings_section_about))
@@ -446,6 +459,14 @@ fun SettingsScreen(
                 showCurrencyDialog = false
             },
             onDismiss = { showCurrencyDialog = false },
+        )
+    }
+
+    if (showCsvMappingsDialog) {
+        CsvMappingsDialog(
+            mappings = csvMappings,
+            onDelete = viewModel::onDeleteCsvMapping,
+            onDismiss = { showCsvMappingsDialog = false },
         )
     }
 

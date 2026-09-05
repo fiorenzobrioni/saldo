@@ -6,6 +6,8 @@ import com.callbackdev.saldo.core.common.applock.AppLockRepository
 import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
 import com.callbackdev.saldo.core.common.prefs.BackupReminderPreferences
+import com.callbackdev.saldo.core.common.prefs.CsvColumnMappingStore
+import com.callbackdev.saldo.core.common.prefs.SavedCsvMapping
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
@@ -29,7 +31,20 @@ class SettingsViewModel @Inject constructor(
     private val userPreferences: UserPreferencesRepository,
     accountRepository: AccountRepository,
     appLockRepository: AppLockRepository,
+    private val csvColumnMappingStore: CsvColumnMappingStore,
 ) : ViewModel() {
+
+    /** The saved CSV column mappings (Fase 39, F5), listed and deleted from Data. */
+    val csvMappings: StateFlow<List<SavedCsvMapping>> = csvColumnMappingStore.mappings
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+            initialValue = emptyList(),
+        )
+
+    fun onDeleteCsvMapping(name: String) {
+        viewModelScope.launch { csvColumnMappingStore.delete(name) }
+    }
 
     /** Whether the app lock is on; drives the Security entry's hint. */
     val appLockEnabled: StateFlow<Boolean> = appLockRepository.lockEnabled

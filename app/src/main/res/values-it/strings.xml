@@ -745,6 +745,19 @@
     <string name="settings_section_data">Dati</string>
     <string name="settings_backup">Backup</string>
     <string name="settings_backup_hint">Esporta, ripristina o cancella i tuoi dati</string>
+    <string name="settings_csv_mappings">Mappature CSV salvate</string>
+    <string name="settings_csv_mappings_hint_none">Nessuna: si creano importando un file con un\'intestazione non riconosciuta</string>
+    <plurals name="settings_csv_mappings_hint">
+        <item quantity="one">%1$d mappatura salvata</item>
+        <item quantity="many">%1$d mappature salvate</item>
+        <item quantity="other">%1$d mappature salvate</item>
+    </plurals>
+    <plurals name="settings_csv_mappings_columns">
+        <item quantity="one">%1$d colonna</item>
+        <item quantity="many">%1$d colonne</item>
+        <item quantity="other">%1$d colonne</item>
+    </plurals>
+    <string name="settings_csv_mappings_delete">Elimina la mappatura %1$s</string>
     <string name="settings_section_about">Informazioni</string>
     <string name="settings_about">Informazioni su Saldo</string>
     <string name="settings_about_hint">Versione %1$s</string>
@@ -900,6 +913,27 @@
     <string name="csv_import_error_no_rows">Il file ha un\'intestazione ma nessun movimento.</string>
     <string name="csv_import_error_too_many_rows">Il file ha troppe righe per una sola importazione. Suddividilo in file più piccoli.</string>
     <string name="csv_import_write_failed">Importazione non riuscita. I tuoi dati non sono stati modificati.</string>
+    <string name="csv_import_columns_auto">Colonne riconosciute dall\'intestazione</string>
+    <string name="csv_import_columns_saved">Colonne dalla mappatura salvata \"%1$s\"</string>
+    <string name="csv_import_edit_columns">Modifica colonne</string>
+    <string name="csv_mapping_title">Abbina le colonne</string>
+    <string name="csv_mapping_intro">L\'intestazione non è stata riconosciuta. Scegli quale colonna del file contiene ogni valore: data e importo sono obbligatori, il resto è facoltativo.</string>
+    <string name="csv_mapping_required_label">%1$s (obbligatoria)</string>
+    <string name="csv_mapping_column_unused">Non presente nel file</string>
+    <string name="csv_mapping_column_blank">Colonna %1$d</string>
+    <string name="csv_mapping_decimal_title">Separatore decimale</string>
+    <string name="csv_mapping_decimal_auto">Auto</string>
+    <string name="csv_mapping_decimal_comma">1.234,56</string>
+    <string name="csv_mapping_decimal_dot">1,234.56</string>
+    <string name="csv_mapping_decimal_auto_detected">Rilevato dal file: %1$s</string>
+    <string name="csv_mapping_decimal_auto_locale">Il file non lo stabilisce: decide la lingua del telefono</string>
+    <string name="csv_mapping_preview_title">Anteprima delle prime righe</string>
+    <string name="csv_mapping_preview_empty">Scegli le colonne data e importo per vedere l\'anteprima</string>
+    <string name="csv_mapping_preview_cell">%1$s: %2$s</string>
+    <string name="csv_mapping_preview_separator">" · "</string>
+    <string name="csv_mapping_save_as">Salva questa mappatura come (facoltativo)</string>
+    <string name="csv_mapping_save_as_hint">Es. Estratto Banca X. Verrà applicata da sola al prossimo file con la stessa intestazione.</string>
+    <string name="csv_mapping_continue">Continua</string>
 
     <!-- Schermata Informazioni -->
     <string name="about_title">Informazioni</string>

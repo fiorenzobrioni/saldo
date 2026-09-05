@@ -54,13 +54,18 @@ class TransactionCsvAnalyzer @Inject constructor() {
     /** Largest magnitude accepted for an amount; guards the minor-unit conversion. */
     private val maxAmount = BigDecimal("1000000000000")
 
+    /**
+     * [decimalMark] forces the file's decimal convention (a saved or manual
+     * mapping, Fase 39 F5); null lets the file settle it, see [decimalMarkOf].
+     */
     fun analyze(
         dataRows: List<List<String>>,
         mapping: ColumnMapping,
         context: ImportContext,
         options: CsvImportOptions,
+        decimalMark: Char? = null,
     ): CsvImportAnalysis {
-        val run = Run(mapping, context, options, decimalMarkOf(dataRows, mapping, context))
+        val run = Run(mapping, context, options, decimalMark ?: decimalMarkOf(dataRows, mapping, context))
         var rowNumber = 0
         for (row in dataRows) {
             if (row.all { it.isBlank() }) continue

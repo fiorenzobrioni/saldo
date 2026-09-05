@@ -80,6 +80,7 @@ import com.callbackdev.saldo.feature.transactions.export.CsvExportSheet
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.importer.CsvImportError
 import com.callbackdev.saldo.feature.transactions.importer.CsvImportSheet
+import com.callbackdev.saldo.feature.transactions.importer.CsvMappingCallbacks
 import java.time.LocalDate
 
 /** MIME types accepted by the CSV import picker; providers vary in how they type CSV. */
@@ -325,6 +326,13 @@ fun TransactionsScreen(
             onOptionsChange = viewModel::setImportOptions,
             onConfirm = viewModel::confirmImport,
             onDismiss = viewModel::dismissImport,
+            onEditMapping = viewModel::editImportMapping,
+            mapping = CsvMappingCallbacks(
+                onFieldChange = viewModel::setImportMappingField,
+                onDecimalMarkChange = viewModel::setImportDecimalMark,
+                onNameChange = viewModel::setImportMappingName,
+                onConfirm = viewModel::confirmImportMapping,
+            ),
         )
     }
 

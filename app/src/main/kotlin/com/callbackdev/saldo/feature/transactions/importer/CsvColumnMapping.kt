@@ -23,15 +23,33 @@ enum class CsvField {
 }
 
 /** Which physical column index backs each recognized [CsvField]. */
-data class ColumnMapping(private val indexByField: Map<CsvField, Int>) {
+data class ColumnMapping(val indexByField: Map<CsvField, Int>) {
 
     val mappedFields: Set<CsvField> get() = indexByField.keys
 
     fun has(field: CsvField): Boolean = field in indexByField
 
+    /** The minimum needed to read a movement: a date and an amount column. */
+    val isComplete: Boolean get() = has(CsvField.DATE) && has(CsvField.AMOUNT)
+
     /** Raw, untrimmed value of [field] in [row], or null when unmapped or short. */
     fun rawValue(row: List<String>, field: CsvField): String? =
         indexByField[field]?.let { row.getOrNull(it) }
+
+    companion object {
+        /**
+         * Rebuilds a mapping saved by field *name* (Fase 39, F5). A name this
+         * version does not know, or a negative index, is dropped rather than
+         * failing the whole mapping.
+         */
+        fun fromNames(fields: Map<String, Int>): ColumnMapping = ColumnMapping(
+            fields.entries.mapNotNull { (name, index) ->
+                CsvField.entries.firstOrNull { it.name == name }
+                    ?.takeIf { index >= 0 }
+                    ?.let { it to index }
+            }.toMap(),
+        )
+    }
 }
 
 /**
@@ -72,12 +90,20 @@ object CsvHeaderMapper {
 
     /**
      * Builds a [ColumnMapping] from [header], preferring the app's own
-     * [localizedLabels] and falling back to the built-in aliases. A field maps
-     * to the first column whose normalized text matches; later duplicate
-     * matches are ignored. Returns null when neither the date nor the amount
-     * column is recognized, the minimum needed to read a movement.
+     * [localizedLabels] and falling back to the built-in aliases. Returns null
+     * when neither the date nor the amount column is recognized, the minimum
+     * needed to read a movement; the partial matches are still available
+     * through [suggest], as the starting point of a manual mapping.
      */
-    fun map(header: List<String>, localizedLabels: Map<CsvField, String>): ColumnMapping? {
+    fun map(header: List<String>, localizedLabels: Map<CsvField, String>): ColumnMapping? =
+        ColumnMapping(suggest(header, localizedLabels)).takeIf { it.isComplete }
+
+    /**
+     * Every field whose header cell is recognized, complete or not. A field
+     * maps to the first column whose normalized text matches; later duplicate
+     * matches are ignored.
+     */
+    fun suggest(header: List<String>, localizedLabels: Map<CsvField, String>): Map<CsvField, Int> {
         val keys: Map<CsvField, Set<String>> = CsvField.entries.associateWith { field ->
             buildSet {
                 localizedLabels[field]?.let { add(normalize(it)) }
@@ -91,8 +117,7 @@ object CsvHeaderMapper {
             val field = CsvField.entries.firstOrNull { it !in indexByField && cell in keys.getValue(it) }
             if (field != null) indexByField[field] = index
         }
-        val mapping = ColumnMapping(indexByField)
-        return if (mapping.has(CsvField.DATE) && mapping.has(CsvField.AMOUNT)) mapping else null
+        return indexByField
     }
 
     /** Lowercases, strips accents, and drops everything but letters and digits. */

@@ -119,6 +119,19 @@ class TransactionCsvAnalyzerTest {
     }
 
     @Test
+    fun `a forced decimal mark overrides both the file and the locale`() {
+        // "-2.500" alone settles nothing: Italian reads two thousand five hundred,
+        // a forced dot reads two and a half.
+        val rows = listOf(row(description = "Car", amount = "-2.500"))
+        val auto = analyze(rows, context(localeDecimalMark = ',')).importable.single().movement.amount
+        val forced = analyzer
+            .analyze(rows, mapping, context(localeDecimalMark = ','), CsvImportOptions(), decimalMark = '.')
+            .importable.single().movement.amount
+        assertEquals(0, auto.compareTo(BigDecimal("-2500")))
+        assertEquals(0, forced.compareTo(BigDecimal("-2.500")))
+    }
+
+    @Test
     fun `the received amount of a transfer follows the same convention`() {
         val analysis = analyze(
             listOf(

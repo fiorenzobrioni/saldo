@@ -3,6 +3,7 @@ package com.callbackdev.saldo.core.common.prefs
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
+import com.callbackdev.saldo.core.domain.backup.CsvColumnMappingBackup
 import com.callbackdev.saldo.core.domain.backup.SettingsBackup
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -58,6 +59,14 @@ class SettingsBackupStoreTest {
             renewalReminderLeadDays = 7,
             backupReminderEnabled = true,
             backupReminderIntervalDays = 30,
+            csvColumnMappings = listOf(
+                CsvColumnMappingBackup(
+                    name = "Bank X",
+                    header = listOf("Data operazione", "Importo EUR"),
+                    fields = mapOf("DATE" to 0, "AMOUNT" to 1),
+                    decimalMark = ",",
+                ),
+            ),
             firstDayOfWeek = "SUNDAY",
             csvSeparator = "COMMA",
             backupEncryptionEnabled = true,
@@ -100,6 +109,30 @@ class SettingsBackupStoreTest {
         assertEquals(30, preferences.backupReminderPreferences.first().intervalDays)
         assertTrue(preferences.backupEncryptionEnabled.first())
         assertFalse(preferences.dashboardCardPreferences.first().showBudget)
+    }
+
+    @Test
+    fun `a broken saved mapping is dropped on restore, a stray decimal mark is cleared`() = runTest {
+        store.restoreSettings(
+            SettingsBackup(
+                csvColumnMappings = listOf(
+                    CsvColumnMappingBackup(name = " ", header = listOf("a"), fields = mapOf("DATE" to 0)),
+                    CsvColumnMappingBackup(name = "Neg", header = listOf("a"), fields = mapOf("DATE" to -1)),
+                    CsvColumnMappingBackup(
+                        name = "Ok",
+                        header = listOf("a"),
+                        fields = mapOf("DATE" to 0),
+                        decimalMark = ";",
+                    ),
+                ),
+            ),
+        )
+
+        val restored = store.snapshotSettings().csvColumnMappings
+
+        assertEquals(1, restored!!.size)
+        assertEquals("Ok", restored.single().name)
+        assertNull(restored.single().decimalMark)
     }
 
     @Test

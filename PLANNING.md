@@ -1018,10 +1018,10 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 
 > Quando il riconoscimento delle intestazioni fallisce l'import si ferma con "formato non riconosciuto". Gli export delle banche e delle app che non usano intestazioni note sono il caso d'uso dichiarato dell'import, e `ColumnMapping` esiste già.
 
-- [ ] Quando `CsvHeaderMapper.map` non trova data e importo (o su richiesta dall'anteprima), sheet di mappatura: per ogni campo un menu con le intestazioni del file, precompilato con i match trovati, data e importo obbligatori; anteprima delle prime tre righe con la mappatura applicata
-- [ ] Nella stessa sheet la convenzione decimale, precompilata con quella che `inferDecimalMark` ha settlato o con quella della lingua del telefono, modificabile quando il file resta ambiguo
-- [ ] La mappatura si salva per nome (es. "Estratto Banca X") in DataStore e viene riproposta quando l'intestazione coincide; lista gestibile in Impostazioni > Dati; nel backup come preferenza
-- [ ] Stringhe IT/EN; unit test: mappatura manuale applicata all'analisi, riconoscimento dell'intestazione salvata, convenzione decimale forzata
+- [x] `TransactionsCsvImporter.read` restituisce `NeedsMapping` (intestazione, righe, match parziali di `CsvHeaderMapper.suggest`) invece di "formato non riconosciuto"; la sheet passa allo stadio `CsvImportStage.Mapping`: per ogni campo un menu con le intestazioni del file (una colonna serve un campo alla volta), data e importo obbligatori, anteprima delle prime tre righe lette con la mappatura corrente; dall'anteprima "Modifica colonne" riapre la mappatura partendo dalle colonne in uso, conservando le opzioni scelte
+- [x] Nella sheet il separatore decimale: Auto (con accanto cosa `inferDecimalMark` rileva sulle colonne importo scelte, o "decide la lingua del telefono"), `1.234,56` o `1,234.56`; la scelta forzata passa all'analisi come `decimalMark` e prevale su file e lingua
+- [x] `CsvColumnMappingStore` (`core/common/prefs`, un valore JSON nelle preferenze utente): mappature per nome con intestazione, campi per *nome* (un campo sconosciuto viene scartato in lettura, non spezza la lista) e separatore forzato; salvare con lo stesso nome sostituisce; `read` applica da sola la mappatura la cui intestazione coincide con quella del file (confronto senza maiuscole e spazi, celle vuote finali ignorate) e la nomina nell'anteprima. Elenco con eliminazione in Impostazioni > Dati (`CsvMappingsDialog`); nel backup come `csvColumnMappings` (ADR 45), con sanificazione al ripristino
+- [x] Stringhe IT/EN; unit test: `suggest` con match parziali, ricostruzione da nomi con campo sconosciuto e indice negativo, separatore forzato che prevale, store (ricerca per intestazione, sostituzione per nome, cancellazione, codec tollerante), round-trip nel backup delle impostazioni e scarto delle mappature rotte
 
 ---
 

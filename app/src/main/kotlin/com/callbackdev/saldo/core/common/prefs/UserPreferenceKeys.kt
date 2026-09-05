@@ -34,6 +34,9 @@ internal object UserPreferenceKeys {
     val LAST_BACKUP_AT_EPOCH_MILLI = longPreferencesKey("last_backup_at_epoch_milli")
     val BACKUP_ENCRYPTION_ENABLED = booleanPreferencesKey("backup_encryption_enabled")
     val CSV_SEPARATOR = stringPreferencesKey("csv_separator")
+
+    /** JSON list of the saved CSV column mappings (Fase 39, F5), see [CsvColumnMappingStore]. */
+    val CSV_COLUMN_MAPPINGS = stringPreferencesKey("csv_column_mappings")
     val DASHBOARD_SHOW_BUDGET_CARD = booleanPreferencesKey("dashboard_show_budget_card")
     val DASHBOARD_SHOW_SAFE_TO_SPEND = booleanPreferencesKey("dashboard_show_safe_to_spend")
     val DASHBOARD_SHOW_RECENT_TRANSACTIONS = booleanPreferencesKey("dashboard_show_recent_transactions")
@@ -67,6 +70,7 @@ internal object UserPreferenceKeys {
         BACKUP_REMINDER_INTERVAL_DAYS,
         FIRST_DAY_OF_WEEK,
         CSV_SEPARATOR,
+        CSV_COLUMN_MAPPINGS,
         BACKUP_ENCRYPTION_ENABLED,
         DASHBOARD_SHOW_BUDGET_CARD,
         DASHBOARD_SHOW_SAFE_TO_SPEND,
