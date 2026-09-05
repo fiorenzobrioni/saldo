@@ -56,4 +56,5 @@ Il ripristino è disponibile anche al primo avvio: nella schermata di benvenuto,
 - I backup esportati da versioni precedenti di Saldo restano importabili, anche se non contengono le impostazioni: in quel caso i dati tornano al loro posto e le impostazioni di questo telefono non vengono cambiate.
 - La cifratura è una scelta per file: puoi tenerla spenta per il backup che archivi in casa e accenderla per quello che carichi su un servizio online.
 - Cambiare telefono: esporta un backup, copia il file sul telefono nuovo, installa Saldo e ripristina dal primo avvio.
+- **Promemoria di backup**: in Impostazioni > Notifiche puoi attivare un avviso quando l'ultimo backup è più vecchio di 7, 14 o 30 giorni (o se non ne hai mai fatto uno). L'avviso arriva una volta per scadenza e si ripete a ogni intervallo finché non esporti un nuovo backup; il tap apre direttamente questa schermata. È spento di default, come tutte le notifiche di Saldo.
 - Nella stessa schermata c'è anche **Cancella tutti i dati**, che riporta l'app a com'era il primo giorno. La conferma ricorda quando hai fatto l'ultimo backup, proprio perché è l'unico modo di tornare indietro.

@@ -71,6 +71,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.BuildConfig
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
+import com.callbackdev.saldo.core.common.prefs.BackupReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.designsystem.component.SettingsEntry
@@ -105,6 +106,7 @@ fun SettingsScreen(
 ) {
     val themePreferences by viewModel.themePreferences.collectAsStateWithLifecycle()
     val renewalReminder by viewModel.renewalReminderPreferences.collectAsStateWithLifecycle()
+    val backupReminder by viewModel.backupReminderPreferences.collectAsStateWithLifecycle()
     val dashboardCards by viewModel.dashboardCardPreferences.collectAsStateWithLifecycle()
     val balanceAccountsExpandedDefault by viewModel.balanceAccountsExpandedByDefault
         .collectAsStateWithLifecycle()
@@ -306,28 +308,46 @@ fun SettingsScreen(
                 val notificationPermissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission(),
                 ) { /* the reminder stays on either way; a denial just mutes it */ }
+                val ensureNotificationPermission = {
+                    val granted = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS,
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (!granted) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
                 SettingsSwitchRow(
                     title = stringResource(R.string.settings_renewal_reminder),
                     hint = stringResource(R.string.settings_renewal_reminder_hint),
                     checked = renewalReminder.enabled,
                     onCheckedChange = { enabled ->
                         viewModel.onRenewalReminderChanged(enabled)
-                        if (enabled) {
-                            val granted = ContextCompat.checkSelfPermission(
-                                context,
-                                Manifest.permission.POST_NOTIFICATIONS,
-                            ) == PackageManager.PERMISSION_GRANTED
-                            if (!granted) {
-                                notificationPermissionLauncher
-                                    .launch(Manifest.permission.POST_NOTIFICATIONS)
-                            }
-                        }
+                        if (enabled) ensureNotificationPermission()
                     },
                 )
                 if (renewalReminder.enabled) {
                     RenewalLeadDaysSelector(
                         selected = renewalReminder.leadDays,
                         onSelected = viewModel::onRenewalLeadDaysSelected,
+                        modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
+                    )
+                }
+                // Backup reminder (Fase 39, F4): the cheapest data protection an
+                // offline-first app can offer, still opt-in like every notification.
+                SettingsSwitchRow(
+                    title = stringResource(R.string.settings_backup_reminder),
+                    hint = stringResource(R.string.settings_backup_reminder_hint),
+                    checked = backupReminder.enabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.onBackupReminderChanged(enabled)
+                        if (enabled) ensureNotificationPermission()
+                    },
+                )
+                if (backupReminder.enabled) {
+                    BackupReminderIntervalSelector(
+                        selected = backupReminder.intervalDays,
+                        onSelected = viewModel::onBackupReminderIntervalSelected,
                         modifier = Modifier.padding(top = 4.dp, bottom = 8.dp),
                     )
                 }
@@ -605,6 +625,31 @@ private fun FirstDayOfWeekSelector(
                 ),
             ) {
                 Text(day.getDisplayName(TextStyle.SHORT, locale))
+            }
+        }
+    }
+}
+
+/** Interval choice for the backup reminder, shown only while it is enabled. */
+@Composable
+private fun BackupReminderIntervalSelector(
+    selected: Int,
+    onSelected: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val options = BackupReminderPreferences.allowedIntervalDays
+    SingleChoiceSegmentedButtonRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    ) {
+        options.forEachIndexed { index, days ->
+            SegmentedButton(
+                selected = selected == days,
+                onClick = { onSelected(days) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+            ) {
+                Text(pluralStringResource(R.plurals.settings_backup_interval_option, days, days))
             }
         }
     }

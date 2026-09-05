@@ -1010,9 +1010,9 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 
 > `lastBackupAtEpochMilli` esiste ed è mostrato nella schermata Backup. Per un'app offline-first senza cloud è la protezione dati più economica che manca.
 
-- [ ] Preferenza opt-in in Impostazioni > Notifiche (default off) con intervallo a scelta (7, 14, 30 giorni); canale di notifica dedicato; salvata nel backup come le altre preferenze (ADR 45)
-- [ ] Controllo nel worker giornaliero esistente: se l'ultimo backup è assente o più vecchio dell'intervallo e la scadenza corrente non è già stata notificata (watermark sulla data della scadenza, pattern delle notifiche di soglia), notifica; il tap apre la schermata Backup. Nessuna notifica se il registro è vuoto
-- [ ] Stringhe IT/EN; unit test: intervallo, backup assente, watermark che non rinotifica, riarmo dopo un nuovo backup, registro vuoto
+- [x] Preferenza opt-in in Impostazioni > Notifiche (default off, `BackupReminderPreferences`) con intervallo a scelta (7, 14, 30 giorni, default 14; un valore fuori lista viene riportato al più vicino); canale di notifica dedicato `backup_reminder` (`BackupReminderNotifier`); `backupReminderEnabled` e `backupReminderIntervalDays` nel backup delle impostazioni (ADR 45), mentre il giorno dell'ultima notifica resta locale all'installazione
+- [x] `CheckBackupReminderUseCase` nel worker giornaliero, dopo gli altri controlli: la scadenza corrente è l'ultimo multiplo dell'intervallo dall'ultimo backup; si notifica una volta per scadenza (watermark sul giorno della notifica: una scadenza già annunciata tace, la successiva parla il suo giorno), quindi un promemoria ignorato si ripete a ogni intervallo, non ogni giorno, e un nuovo backup sposta le scadenze e riarma da solo. Senza alcun backup la scadenza si conta dal promemoria precedente. Il tap apre la schermata Backup (`MainActivity.ACTION_OPEN_BACKUP`, gestito in `SaldoApp` come le quick action). Nessuna notifica senza conti: senza un conto non c'è nulla da proteggere
+- [x] Stringhe IT/EN; unit test: disattivato, nessun conto, backup mai fatto (subito e poi una volta per intervallo), backup più giovane e più vecchio dell'intervallo, stessa scadenza non rinotificata, scadenza successiva, riarmo dopo un nuovo backup, intervallo scelto; round-trip delle due preferenze nel backup delle impostazioni
 
 ### F5 - Import CSV: mappatura manuale delle colonne
 

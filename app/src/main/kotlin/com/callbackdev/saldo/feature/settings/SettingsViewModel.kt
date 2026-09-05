@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.applock.AppLockRepository
 import com.callbackdev.saldo.core.common.prefs.DashboardCardPreferences
 import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
+import com.callbackdev.saldo.core.common.prefs.BackupReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
@@ -86,6 +87,14 @@ class SettingsViewModel @Inject constructor(
                 initialValue = RenewalReminderPreferences(),
             )
 
+    val backupReminderPreferences: StateFlow<BackupReminderPreferences> =
+        userPreferences.backupReminderPreferences
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                initialValue = BackupReminderPreferences(),
+            )
+
     /** Visibility of the optional dashboard cards. */
     val dashboardCardPreferences: StateFlow<DashboardCardPreferences> =
         userPreferences.dashboardCardPreferences
@@ -148,6 +157,14 @@ class SettingsViewModel @Inject constructor(
 
     fun onRenewalLeadDaysSelected(days: Int) {
         viewModelScope.launch { userPreferences.setRenewalReminderLeadDays(days) }
+    }
+
+    fun onBackupReminderChanged(enabled: Boolean) {
+        viewModelScope.launch { userPreferences.setBackupReminderEnabled(enabled) }
+    }
+
+    fun onBackupReminderIntervalSelected(days: Int) {
+        viewModelScope.launch { userPreferences.setBackupReminderIntervalDays(days) }
     }
 
     fun onShowBudgetCardChanged(shown: Boolean) {

@@ -91,6 +91,8 @@ private const val SLIDE_DIVISOR = 6
 fun SaldoApp(
     quickAction: TransactionType? = null,
     onQuickActionHandled: () -> Unit = {},
+    openBackup: Boolean = false,
+    onOpenBackupHandled: () -> Unit = {},
 ) {
     // One back stack per tab (Nav3 multiple-back-stacks recipe): switching
     // tabs keeps every tab's ViewModels, scroll and filters alive.
@@ -105,6 +107,15 @@ fun SaldoApp(
         if (quickAction != null) {
             nav.navigate(TransactionEditorRoute(initialTypeName = quickAction.name))
             onQuickActionHandled()
+        }
+    }
+
+    // The backup reminder notification was tapped: land on the Backup screen,
+    // on top of whatever is showing, unless it is already there.
+    LaunchedEffect(openBackup) {
+        if (openBackup) {
+            if (nav.currentRoute != BackupRoute) nav.navigate(BackupRoute)
+            onOpenBackupHandled()
         }
     }
 

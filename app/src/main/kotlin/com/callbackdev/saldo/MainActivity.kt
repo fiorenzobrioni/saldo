@@ -74,6 +74,9 @@ class MainActivity : ComponentActivity() {
      */
     private val pendingQuickAction = MutableStateFlow<TransactionType?>(null)
 
+    /** The backup reminder notification was tapped: open the Backup screen once (Fase 39, F4). */
+    private val pendingOpenBackup = MutableStateFlow(false)
+
     override fun onStart() {
         super.onStart()
         // Staleness check for the ECB rate cache on every return to the
@@ -104,6 +107,7 @@ class MainActivity : ComponentActivity() {
             // overlapping with the periodic worker is harmless.
             applicationScope.launch { runCatching { processDueStatements() } }
             pendingQuickAction.value = quickActionFrom(intent)
+            pendingOpenBackup.value = intent?.action == ACTION_OPEN_BACKUP
         }
         setContent {
             val themePreferences by userPreferences.themePreferences
@@ -155,9 +159,12 @@ class MainActivity : ComponentActivity() {
                                 )
                                 LaunchGate.APP -> {
                                     val quickAction by pendingQuickAction.collectAsStateWithLifecycle()
+                                    val openBackup by pendingOpenBackup.collectAsStateWithLifecycle()
                                     SaldoApp(
                                         quickAction = quickAction,
                                         onQuickActionHandled = { pendingQuickAction.value = null },
+                                        openBackup = openBackup,
+                                        onOpenBackupHandled = { pendingOpenBackup.value = false },
                                     )
                                 }
                             }
@@ -173,6 +180,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         quickActionFrom(intent)?.let { pendingQuickAction.value = it }
+        if (intent.action == ACTION_OPEN_BACKUP) pendingOpenBackup.value = true
     }
 
     /** Maps a launcher shortcut intent to the movement type it opens, or null. */
@@ -187,5 +195,8 @@ class MainActivity : ComponentActivity() {
         const val ACTION_ADD_EXPENSE = "com.callbackdev.saldo.action.ADD_EXPENSE"
         const val ACTION_ADD_INCOME = "com.callbackdev.saldo.action.ADD_INCOME"
         const val ACTION_ADD_TRANSFER = "com.callbackdev.saldo.action.ADD_TRANSFER"
+
+        /** Set on the backup reminder's tap intent: the app opens on the Backup screen. */
+        const val ACTION_OPEN_BACKUP = "com.callbackdev.saldo.action.OPEN_BACKUP"
     }
 }

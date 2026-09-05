@@ -637,6 +637,14 @@
     </plurals>
     <string name="notif_confirm_body">Tocca per confermarli o saltarli.</string>
     <string name="notif_channel_upcoming_name">Rinnovi in arrivo</string>
+    <string name="notif_channel_backup_reminder_name">Promemoria backup</string>
+    <string name="notif_backup_reminder_title">È ora di fare un backup</string>
+    <string name="notif_backup_reminder_body_never">Non hai mai esportato un backup: i tuoi dati esistono solo su questo telefono. Tocca per esportarne uno.</string>
+    <plurals name="notif_backup_reminder_body_days">
+        <item quantity="one">L\'ultimo backup risale a %1$d giorno fa. Tocca per esportarne uno nuovo.</item>
+        <item quantity="many">L\'ultimo backup risale a %1$d giorni fa. Tocca per esportarne uno nuovo.</item>
+        <item quantity="other">L\'ultimo backup risale a %1$d giorni fa. Tocca per esportarne uno nuovo.</item>
+    </plurals>
     <plurals name="notif_upcoming_expense_title">
         <item quantity="one">%1$s si rinnova domani</item>
         <item quantity="many">%1$s si rinnova tra %2$d giorni</item>
@@ -717,6 +725,13 @@
         <item quantity="one">%1$d giorno</item>
         <item quantity="many">%1$d giorni</item>
         <item quantity="other">%1$d giorni</item>
+    </plurals>
+    <string name="settings_backup_reminder">Promemoria backup</string>
+    <string name="settings_backup_reminder_hint">Avvisa quando l\'ultimo backup è più vecchio dell\'intervallo scelto, o se non ne hai mai fatto uno</string>
+    <plurals name="settings_backup_interval_option">
+        <item quantity="one">Ogni giorno</item>
+        <item quantity="many">Ogni %1$d giorni</item>
+        <item quantity="other">Ogni %1$d giorni</item>
     </plurals>
     <string name="settings_theme_system">Sistema</string>
     <string name="settings_theme_light">Chiaro</string>

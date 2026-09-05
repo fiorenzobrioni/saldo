@@ -56,6 +56,8 @@ class SettingsBackupStoreTest {
             useDynamicColor = true,
             renewalReminderEnabled = true,
             renewalReminderLeadDays = 7,
+            backupReminderEnabled = true,
+            backupReminderIntervalDays = 30,
             firstDayOfWeek = "SUNDAY",
             csvSeparator = "COMMA",
             backupEncryptionEnabled = true,
@@ -84,6 +86,8 @@ class SettingsBackupStoreTest {
                 useDynamicColor = true,
                 renewalReminderEnabled = true,
                 renewalReminderLeadDays = 7,
+                backupReminderEnabled = true,
+                backupReminderIntervalDays = 30,
                 backupEncryptionEnabled = true,
                 dashboardShowBudget = false,
             ),
@@ -92,6 +96,8 @@ class SettingsBackupStoreTest {
         assertEquals(ThemeMode.DARK, preferences.themePreferences.first().mode)
         assertTrue(preferences.themePreferences.first().useDynamicColor)
         assertEquals(7, preferences.renewalReminderPreferences.first().leadDays)
+        assertTrue(preferences.backupReminderPreferences.first().enabled)
+        assertEquals(30, preferences.backupReminderPreferences.first().intervalDays)
         assertTrue(preferences.backupEncryptionEnabled.first())
         assertFalse(preferences.dashboardCardPreferences.first().showBudget)
     }

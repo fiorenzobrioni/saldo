@@ -3,6 +3,7 @@ package com.callbackdev.saldo
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
+import com.callbackdev.saldo.backup.BackupReminderNotifier
 import com.callbackdev.saldo.budget.BudgetNotifier
 import com.callbackdev.saldo.budget.BudgetThresholdWatcher
 import com.callbackdev.saldo.core.common.applock.AppLockLifecycleObserver
@@ -32,6 +33,9 @@ class SaldoApplication : Application(), Configuration.Provider {
     lateinit var creditCardNotifier: CreditCardNotifier
 
     @Inject
+    lateinit var backupReminderNotifier: BackupReminderNotifier
+
+    @Inject
     lateinit var budgetThresholdWatcher: BudgetThresholdWatcher
 
     @Inject
@@ -59,6 +63,7 @@ class SaldoApplication : Application(), Configuration.Provider {
         recurringNotifier.createChannels()
         budgetNotifier.createChannel()
         creditCardNotifier.createChannel()
+        backupReminderNotifier.createChannel()
         budgetThresholdWatcher.start(applicationScope)
         widgetRefreshWatcher.start(applicationScope)
         // Reacts to the first foreign account or a re-enabled conversion by

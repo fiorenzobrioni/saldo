@@ -620,6 +620,13 @@
     </plurals>
     <string name="notif_confirm_body">Tap to confirm or skip them.</string>
     <string name="notif_channel_upcoming_name">Upcoming renewals</string>
+    <string name="notif_channel_backup_reminder_name">Backup reminders</string>
+    <string name="notif_backup_reminder_title">Time to back up Saldo</string>
+    <string name="notif_backup_reminder_body_never">You have never exported a backup: your data lives only on this phone. Tap to export one.</string>
+    <plurals name="notif_backup_reminder_body_days">
+        <item quantity="one">Your last backup was %1$d day ago. Tap to export a new one.</item>
+        <item quantity="other">Your last backup was %1$d days ago. Tap to export a new one.</item>
+    </plurals>
     <plurals name="notif_upcoming_expense_title">
         <item quantity="one">%1$s renews tomorrow</item>
         <item quantity="other">%1$s renews in %2$d days</item>
@@ -696,6 +703,12 @@
     <plurals name="settings_lead_days_option">
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="settings_backup_reminder">Backup reminder</string>
+    <string name="settings_backup_reminder_hint">Get notified when your last backup is older than the chosen interval, or if you never made one</string>
+    <plurals name="settings_backup_interval_option">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %1$d days</item>
     </plurals>
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>

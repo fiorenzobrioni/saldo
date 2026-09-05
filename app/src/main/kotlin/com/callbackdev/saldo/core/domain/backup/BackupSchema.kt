@@ -87,6 +87,9 @@ data class SettingsBackup(
     val useDynamicColor: Boolean? = null,
     val renewalReminderEnabled: Boolean? = null,
     val renewalReminderLeadDays: Int? = null,
+    /** Fase 39 (F4): absent in older files. */
+    val backupReminderEnabled: Boolean? = null,
+    val backupReminderIntervalDays: Int? = null,
     /** [java.time.DayOfWeek] name; null keeps following the locale. */
     val firstDayOfWeek: String? = null,
     /** [com.callbackdev.saldo.core.common.prefs.CsvSeparator] name. */

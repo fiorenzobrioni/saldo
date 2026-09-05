@@ -24,6 +24,11 @@ internal object UserPreferenceKeys {
     val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
     val RENEWAL_REMINDER_ENABLED = booleanPreferencesKey("renewal_reminder_enabled")
     val RENEWAL_REMINDER_LEAD_DAYS = intPreferencesKey("renewal_reminder_lead_days")
+    val BACKUP_REMINDER_ENABLED = booleanPreferencesKey("backup_reminder_enabled")
+    val BACKUP_REMINDER_INTERVAL_DAYS = intPreferencesKey("backup_reminder_interval_days")
+
+    /** Day the backup reminder was last posted (epoch day). Install-local: not backed up. */
+    val BACKUP_REMINDER_NOTIFIED_EPOCH_DAY = longPreferencesKey("backup_reminder_notified_epoch_day")
     val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
     val FIRST_DAY_OF_WEEK = stringPreferencesKey("first_day_of_week")
     val LAST_BACKUP_AT_EPOCH_MILLI = longPreferencesKey("last_backup_at_epoch_milli")
@@ -46,8 +51,9 @@ internal object UserPreferenceKeys {
      * The keys a backup carries, and therefore the exact set a restore may
      * touch. Everything else in this store describes *this* install and must
      * survive a restore untouched: what account was used last, when this device
-     * last exported, whether its onboarding is done, the rate sync watermark and
-     * the recap teaser already dismissed here.
+     * last exported, whether its onboarding is done, the rate sync watermark,
+     * the day the backup reminder last fired and the recap teaser already
+     * dismissed here.
      */
     val backedUp: List<Preferences.Key<*>> = listOf(
         DEFAULT_ACCOUNT_ID,
@@ -57,6 +63,8 @@ internal object UserPreferenceKeys {
         USE_DYNAMIC_COLOR,
         RENEWAL_REMINDER_ENABLED,
         RENEWAL_REMINDER_LEAD_DAYS,
+        BACKUP_REMINDER_ENABLED,
+        BACKUP_REMINDER_INTERVAL_DAYS,
         FIRST_DAY_OF_WEEK,
         CSV_SEPARATOR,
         BACKUP_ENCRYPTION_ENABLED,

@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.callbackdev.saldo.backup.BackupReminderNotifier
 import com.callbackdev.saldo.budget.BudgetNotifier
+import com.callbackdev.saldo.core.domain.usecase.CheckBackupReminderUseCase
 import com.callbackdev.saldo.core.domain.usecase.CheckBudgetThresholdsUseCase
 import com.callbackdev.saldo.core.domain.usecase.CheckDueMovementRemindersUseCase
 import com.callbackdev.saldo.core.domain.usecase.CheckUpcomingRenewalsUseCase
@@ -35,6 +37,8 @@ class RecurringGenerationWorker @AssistedInject constructor(
     private val budgetNotifier: BudgetNotifier,
     private val processDueStatements: ProcessDueCreditCardStatementsUseCase,
     private val creditCardNotifier: CreditCardNotifier,
+    private val checkBackupReminder: CheckBackupReminderUseCase,
+    private val backupReminderNotifier: BackupReminderNotifier,
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result = runCatching {
@@ -53,6 +57,9 @@ class RecurringGenerationWorker @AssistedInject constructor(
         // No widget refresh here: the widget shows no totals, so a generated
         // movement changes nothing it draws.
         budgetNotifier.notify(checkBudgetThresholds())
+        // Last, and independent of the ledger work above: the opt-in reminder
+        // that the last backup export is getting old (Fase 39, F4).
+        backupReminderNotifier.notify(checkBackupReminder())
     }.fold(
         onSuccess = { Result.success() },
         onFailure = { Result.retry() },

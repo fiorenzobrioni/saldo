@@ -5,6 +5,8 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_ENCRYPTION_ENABLED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_ENABLED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_INTERVAL_DAYS
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BALANCE_ACCOUNTS_EXPANDED_DEFAULT
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CSV_SEPARATOR
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CURRENCY_CONVERSION_ENABLED
@@ -61,6 +63,8 @@ class SettingsBackupStore @Inject constructor(
             useDynamicColor = preferences[USE_DYNAMIC_COLOR],
             renewalReminderEnabled = preferences[RENEWAL_REMINDER_ENABLED],
             renewalReminderLeadDays = preferences[RENEWAL_REMINDER_LEAD_DAYS],
+            backupReminderEnabled = preferences[BACKUP_REMINDER_ENABLED],
+            backupReminderIntervalDays = preferences[BACKUP_REMINDER_INTERVAL_DAYS],
             firstDayOfWeek = preferences[FIRST_DAY_OF_WEEK],
             csvSeparator = preferences[CSV_SEPARATOR],
             backupEncryptionEnabled = preferences[BACKUP_ENCRYPTION_ENABLED],
@@ -94,6 +98,11 @@ class SettingsBackupStore @Inject constructor(
             preferences.setIfPresent(
                 RENEWAL_REMINDER_LEAD_DAYS,
                 settings.renewalReminderLeadDays?.takeIf(::isOfferedLeadTime),
+            )
+            preferences.setIfPresent(BACKUP_REMINDER_ENABLED, settings.backupReminderEnabled)
+            preferences.setIfPresent(
+                BACKUP_REMINDER_INTERVAL_DAYS,
+                settings.backupReminderIntervalDays?.takeIf(::isOfferedBackupInterval),
             )
             preferences.setIfPresent(
                 FIRST_DAY_OF_WEEK,
@@ -141,6 +150,9 @@ class SettingsBackupStore @Inject constructor(
 
     private fun isOfferedLeadTime(days: Int): Boolean =
         days in RenewalReminderPreferences.allowedLeadDays
+
+    private fun isOfferedBackupInterval(days: Int): Boolean =
+        days in BackupReminderPreferences.allowedIntervalDays
 
     /** A real day of the week is not enough: it has to be one Settings offers. */
     private fun isOfferedWeekStart(name: String): Boolean =
