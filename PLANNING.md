@@ -972,9 +972,9 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 - [x] **Documentazione**: README (installazione e build allineati all'ADR 47, Spendibile con la nuova voce, carte con i pagamenti manuali, Statistiche con la nota cassa/statistiche e "fino a oggi"), CLAUDE.md (schema di versione `2.2.<incremento>`), guida utente (nuova pagina [carte-di-credito.md](./docs/guida-utente/carte-di-credito.md); sezione "Due letture dello stesso mese: cassa e statistiche" in descrizione-generale.md), nota alla checkbox di verifica della Fase 13
 - [x] Verifica: `assembleDebug testDebugUnitTest lint detekt` verdi, `compileDebugAndroidTestKotlin` verde. I test strumentati aggiornati (`TransactionDaoUpcomingTest`, `SaldoDatabaseTest`) non sono stati eseguiti in locale (nessun device): vanno lanciati col workflow `instrumented-tests.yml`
 
-## Fase 39 - Funzionalità dalla review completa di settembre 2026
+## Fase 39 - Funzionalità dalla review completa di settembre 2026 (5 settembre 2026)
 
-> Le proposte della sezione 4 di [docs/review-completa-2026-09-05.md](./docs/review-completa-2026-09-05.md), promosse a fase con il criterio dell'uso quotidiano: costano poco, non introducono meccaniche di denaro nuove e chiudono domande che l'app oggi lascia senza risposta. Due proposte della review non compaiono qui perché assorbite dalla Fase 38 (estratto carta con i pagamenti manuali; movimenti futuri nello Spendibile). Nessuna ha ancora un ADR: ognuna elenca le decisioni da proporre come ADR all'avvio, prima dell'implementazione. Ordine consigliato: F1, F2, F3, F4, F5.
+> Le proposte della sezione 4 di [docs/review-completa-2026-09-05.md](./docs/review-completa-2026-09-05.md), promosse a fase con il criterio dell'uso quotidiano: costano poco, non introducono meccaniche di denaro nuove e chiudono domande che l'app oggi lascia senza risposta. Due proposte della review non compaiono qui perché assorbite dalla Fase 38 (estratto carta con i pagamenti manuali; movimenti futuri nello Spendibile). Implementate tutte e cinque il 5 settembre 2026 nell'ordine F1-F5, una per commit e per versione (2.2.2-2.2.6): F1 e F3 hanno prodotto gli ADR 49 e 50, le altre non hanno richiesto decisioni architetturali nuove.
 
 ### F1 - Dettaglio del conto
 

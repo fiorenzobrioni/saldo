@@ -137,6 +137,7 @@ app/src/main/kotlin/com/callbackdev/saldo/
 ├── MainActivity.kt          # activity host
 ├── MainViewModel.kt         # stato globale (tema, navigazione)
 ├── SaldoApplication.kt      # Application + Hilt entry point
+├── backup/                   # notifica del promemoria di backup
 ├── budget/                   # notifiche e watcher soglie budget
 ├── creditcard/               # notifiche carte di credito a saldo
 ├── recurring/                # worker e notifiche movimenti ricorrenti
