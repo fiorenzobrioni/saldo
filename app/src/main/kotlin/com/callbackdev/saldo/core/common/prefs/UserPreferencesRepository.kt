@@ -15,6 +15,9 @@ import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECENT_TRANSACTIONS
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECURRING
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_SAFE_TO_SPEND
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_ENABLED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_INTERVAL_DAYS
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_NOTIFIED_EPOCH_DAY
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_SAVINGS_GOALS
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_UPCOMING
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DEFAULT_ACCOUNT_ID
@@ -33,6 +36,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import java.time.DayOfWeek
+import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.WeekFields
 import java.util.Currency
@@ -63,6 +67,24 @@ data class RenewalReminderPreferences(
 
         /** The lead times offered in Settings, in days before the charge. */
         val allowedLeadDays: List<Int> = listOf(1, 2, 3, 7)
+    }
+}
+
+/**
+ * Backup reminder preferences (Fase 39, F4): a notification when the last
+ * backup export is older than [intervalDays], or when there has never been one.
+ * Off by default for the same reason as the renewal reminder: an unrequested
+ * notification after an update is worse than one extra Settings tap.
+ */
+data class BackupReminderPreferences(
+    val enabled: Boolean = false,
+    val intervalDays: Int = DEFAULT_INTERVAL_DAYS,
+) {
+    companion object {
+        const val DEFAULT_INTERVAL_DAYS = 14
+
+        /** The intervals offered in Settings, in days since the last backup. */
+        val allowedIntervalDays: List<Int> = listOf(7, 14, 30)
     }
 }
 
@@ -256,6 +278,34 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+    val backupReminderPreferences: Flow<BackupReminderPreferences> = dataStore.data.map { preferences ->
+        val storedInterval = preferences[BACKUP_REMINDER_INTERVAL_DAYS]
+        BackupReminderPreferences(
+            enabled = preferences[BACKUP_REMINDER_ENABLED] ?: false,
+            intervalDays = (storedInterval ?: BackupReminderPreferences.DEFAULT_INTERVAL_DAYS)
+                .coerceToAllowedIntervalDays(),
+        )
+    }.distinctUntilChanged()
+
+    suspend fun setBackupReminderEnabled(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[BACKUP_REMINDER_ENABLED] = enabled }
+    }
+
+    suspend fun setBackupReminderIntervalDays(days: Int) {
+        dataStore.edit { preferences ->
+            preferences[BACKUP_REMINDER_INTERVAL_DAYS] = days.coerceToAllowedIntervalDays()
+        }
+    }
+
+    /** Day the backup reminder was last posted on this install; null if never. */
+    val backupReminderNotifiedOn: Flow<LocalDate?> = dataStore.data
+        .map { preferences -> preferences[BACKUP_REMINDER_NOTIFIED_EPOCH_DAY]?.let(LocalDate::ofEpochDay) }
+        .distinctUntilChanged()
+
+    suspend fun setBackupReminderNotifiedOn(date: LocalDate) {
+        dataStore.edit { preferences -> preferences[BACKUP_REMINDER_NOTIFIED_EPOCH_DAY] = date.toEpochDay() }
+    }
+
     /**
      * Whether the first-launch onboarding has been completed. Null means the
      * key was never written: a fresh install, or an install that predates the
@@ -427,4 +477,9 @@ class UserPreferencesRepository @Inject constructor(
     private fun Int.coerceToAllowedLeadDays(): Int =
         RenewalReminderPreferences.allowedLeadDays.minByOrNull { kotlin.math.abs(it - this) }
             ?: RenewalReminderPreferences.DEFAULT_LEAD_DAYS
+
+    /** Snaps a stored or requested backup interval to the closest offered option. */
+    private fun Int.coerceToAllowedIntervalDays(): Int =
+        BackupReminderPreferences.allowedIntervalDays.minByOrNull { kotlin.math.abs(it - this) }
+            ?: BackupReminderPreferences.DEFAULT_INTERVAL_DAYS
 }

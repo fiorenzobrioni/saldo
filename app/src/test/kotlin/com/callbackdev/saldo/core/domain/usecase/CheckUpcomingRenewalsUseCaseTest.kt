@@ -57,6 +57,7 @@ class CheckUpcomingRenewalsUseCaseTest {
         lastReminder: LocalDate? = null,
         endDate: LocalDate? = null,
         isVariable: Boolean = false,
+        isPaused: Boolean = false,
     ) = RecurringRule(
         id = id,
         name = name,
@@ -71,7 +72,23 @@ class CheckUpcomingRenewalsUseCaseTest {
         isVariableAmount = isVariable,
         lastGeneratedDate = lastGenerated,
         lastReminderDate = lastReminder,
+        isPaused = isPaused,
     )
+
+    @Test
+    fun `a paused rule is neither announced nor watermarked`() = runTest {
+        // Same dates as the lead-distance case below, but paused.
+        val netflix = rule(
+            startDate = LocalDate.of(2026, 6, 12),
+            lastGenerated = LocalDate.of(2026, 6, 12),
+            isPaused = true,
+        )
+
+        val renewals = useCase(listOf(netflix)).invoke()
+
+        assertTrue(renewals.isEmpty())
+        assertTrue(reminderWrites.isEmpty())
+    }
 
     @Test
     fun `a charge exactly at the lead distance is reported and watermarked`() = runTest {

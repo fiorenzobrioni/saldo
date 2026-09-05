@@ -22,6 +22,8 @@ import com.callbackdev.saldo.core.domain.usecase.CarryOverCalculator
 import com.callbackdev.saldo.core.domain.usecase.DeleteFilteredTransactionsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ObserveConversionStateUseCase
 import com.callbackdev.saldo.feature.transactions.export.TransactionsCsvExporter
+import com.callbackdev.saldo.feature.transactions.importer.ColumnMapping
+import com.callbackdev.saldo.feature.transactions.importer.CsvField
 import com.callbackdev.saldo.feature.transactions.importer.CsvImportError
 import com.callbackdev.saldo.feature.transactions.importer.CsvImportOptions
 import com.callbackdev.saldo.feature.transactions.importer.CsvImportStage
@@ -49,6 +51,9 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.util.Currency
 import javax.inject.Inject
+
+/** Rows shown by the column-mapping preview. */
+private const val MAPPING_SAMPLE_ROWS = 3
 
 @HiltViewModel
 @Suppress("LongParameterList", "TooManyFunctions") // Hilt wiring + the ledger's filter/search/delete surface.
@@ -236,16 +241,32 @@ class TransactionsViewModel @Inject constructor(
     /** The parsed file kept between option toggles, so it is read only once. */
     private var parsedCsv: TransactionsCsvImporter.ParsedCsv? = null
 
-    /** Opens the picked CSV, then analyzes it with the default options. */
+    /** The header and rows of the file being imported, kept for the column-mapping stage. */
+    private var csvHeader: List<String> = emptyList()
+    private var csvRows: List<List<String>> = emptyList()
+
+    /** The safety options chosen so far; survive a trip to the mapping stage and back. */
+    private var importOptions = CsvImportOptions()
+
+    /** Opens the picked CSV, then analyzes it, or asks for the columns when the header is unknown. */
     fun importCsv(uri: Uri) {
         _importStage.value = CsvImportStage.Reading
+        importOptions = CsvImportOptions()
         viewModelScope.launch {
             val read = suspendRunCatching { csvImporter.read(uri) }
                 .getOrElse { TransactionsCsvImporter.ReadResult.Failure(CsvImportError.UNREADABLE) }
             when (read) {
                 is TransactionsCsvImporter.ReadResult.Success -> {
                     parsedCsv = read.parsed
-                    analyzeImport(CsvImportOptions())
+                    csvHeader = read.parsed.header
+                    csvRows = read.parsed.dataRows
+                    analyzeImport(importOptions)
+                }
+
+                is TransactionsCsvImporter.ReadResult.NeedsMapping -> {
+                    csvHeader = read.header
+                    csvRows = read.dataRows
+                    _importStage.value = mappingStage(read.suggested, decimalMark = null, name = "")
                 }
 
                 is TransactionsCsvImporter.ReadResult.Failure -> {
@@ -258,6 +279,7 @@ class TransactionsViewModel @Inject constructor(
 
     /** Re-runs the dry-run with new [options] (e.g. a toggled "create accounts"). */
     fun setImportOptions(options: CsvImportOptions) {
+        importOptions = options
         val current = _importStage.value
         if (current is CsvImportStage.Preview) {
             _importStage.value = current.copy(options = options, isBusy = true)
@@ -270,13 +292,76 @@ class TransactionsViewModel @Inject constructor(
         viewModelScope.launch {
             suspendRunCatching { csvImporter.analyze(parsed, options) }
                 .onSuccess { analysis ->
-                    _importStage.value = CsvImportStage.Preview(analysis, options)
+                    _importStage.value = CsvImportStage.Preview(analysis, options, mappingName = parsed.mappingName)
                 }
                 .onFailure {
                     parsedCsv = null
                     _importStage.value = null
                     _events.send(TransactionsEvent.CsvImportFileError(CsvImportError.UNREADABLE))
                 }
+        }
+    }
+
+    // --- Column mapping (Fase 39, F5) ---
+
+    private fun mappingStage(fields: Map<CsvField, Int>, decimalMark: Char?, name: String) =
+        CsvImportStage.Mapping(
+            header = csvHeader,
+            sampleRows = csvRows.filter { row -> row.any { it.isNotBlank() } }.take(MAPPING_SAMPLE_ROWS),
+            fields = fields,
+            decimalMark = decimalMark,
+            inferredDecimalMark = TransactionsCsvImporter.inferDecimalMark(csvRows, fields),
+            saveAsName = name,
+        )
+
+    /** Reopens the column mapping from the preview, starting from the columns in use. */
+    fun editImportMapping() {
+        if (_importStage.value !is CsvImportStage.Preview) return
+        val parsed = parsedCsv ?: return
+        _importStage.value = mappingStage(parsed.mapping.indexByField, parsed.decimalMark, parsed.mappingName.orEmpty())
+    }
+
+    /** Binds [field] to column [index], or unbinds it when null; a column serves one field at a time. */
+    fun setImportMappingField(field: CsvField, index: Int?) {
+        val current = _importStage.value as? CsvImportStage.Mapping ?: return
+        val fields = current.fields.filterValues { it != index }.toMutableMap()
+        if (index == null) fields.remove(field) else fields[field] = index
+        _importStage.value = current.copy(
+            fields = fields,
+            inferredDecimalMark = TransactionsCsvImporter.inferDecimalMark(csvRows, fields),
+        )
+    }
+
+    fun setImportDecimalMark(mark: Char?) {
+        val current = _importStage.value as? CsvImportStage.Mapping ?: return
+        _importStage.value = current.copy(decimalMark = mark)
+    }
+
+    fun setImportMappingName(name: String) {
+        val current = _importStage.value as? CsvImportStage.Mapping ?: return
+        _importStage.value = current.copy(saveAsName = name)
+    }
+
+    /**
+     * Applies the chosen columns: saves them under the given name, if any, then
+     * runs the dry-run. A failed save never blocks the import itself.
+     */
+    fun confirmImportMapping() {
+        val current = _importStage.value as? CsvImportStage.Mapping ?: return
+        if (!current.isComplete || current.isBusy) return
+        _importStage.value = current.copy(isBusy = true)
+        val name = current.saveAsName.trim().ifBlank { null }
+        val parsed = TransactionsCsvImporter.ParsedCsv(
+            header = csvHeader,
+            dataRows = csvRows,
+            mapping = ColumnMapping(current.fields),
+            decimalMark = current.decimalMark,
+            mappingName = name,
+        )
+        parsedCsv = parsed
+        viewModelScope.launch {
+            if (name != null) suspendRunCatching { csvImporter.saveMapping(name, parsed) }
+            analyzeImport(importOptions)
         }
     }
 
@@ -302,6 +387,8 @@ class TransactionsViewModel @Inject constructor(
     /** Closes the import sheet at any stage, discarding the cached file. */
     fun dismissImport() {
         parsedCsv = null
+        csvHeader = emptyList()
+        csvRows = emptyList()
         _importStage.value = null
     }
 

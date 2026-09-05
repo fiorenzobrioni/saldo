@@ -18,6 +18,7 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.usecase.DetectRecurrenceSuggestionsUseCase
+import com.callbackdev.saldo.core.domain.usecase.SetRecurringRulePausedUseCase
 import com.callbackdev.saldo.testing.MainDispatcherExtension
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -49,6 +50,7 @@ class RecurrencesViewModelTest {
     private val userPreferences = mockk<UserPreferencesRepository>()
     private val detectRecurrences = mockk<DetectRecurrenceSuggestionsUseCase>()
     private val scanStore = mockk<RecurrenceScanStore>()
+    private val setRecurringRulePaused = mockk<SetRecurringRulePausedUseCase>(relaxed = true)
 
     /** In-memory stand-ins for the scan store's persistence, like AppLockManagerTest does. */
     private val storedSnapshot = MutableStateFlow<RecurrenceScanSnapshot?>(null)
@@ -62,6 +64,7 @@ class RecurrencesViewModelTest {
         startDate: LocalDate,
         type: TransactionType = TransactionType.EXPENSE,
         endDate: LocalDate? = null,
+        isPaused: Boolean = false,
     ) = RecurringRule(
         id = id,
         name = name,
@@ -73,6 +76,7 @@ class RecurrencesViewModelTest {
         amount = BigDecimal(amount),
         dayOfReference = startDate.dayOfMonth,
         endDate = endDate,
+        isPaused = isPaused,
     )
 
     private val netflix =
@@ -151,6 +155,7 @@ class RecurrencesViewModelTest {
             userPreferences,
             detectRecurrences,
             scanStore,
+            setRecurringRulePaused,
             clock,
         )
     }
@@ -204,6 +209,40 @@ class RecurrencesViewModelTest {
             // 12.99 + 9.99; the insurance starting next quarter adds nothing.
             assertEquals(BigDecimal("22.98"), state.expenses.monthlyTotal)
             assertEquals(BigDecimal("275.76"), state.expenses.annualProjection)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a paused rule is listed last, has no next charge and is priced at zero`() = runTest {
+        // Netflix would sort first by next charge (7 Jul); paused it sinks below Spotify.
+        val pausedNetflix = netflix.copy(isPaused = true)
+        val viewModel = viewModel(listOf(pausedNetflix, spotify))
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            assertEquals(listOf("Spotify", "Netflix"), state.expenses.items.map { it.rule.name })
+            assertEquals(null, state.expenses.items.last().nextCharge)
+            assertEquals(1, state.expenses.activeCount)
+            assertEquals(BigDecimal("9.99"), state.expenses.monthlyTotal)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `the pause quick action delegates to the use case with the opposite state`() = runTest {
+        val viewModel = viewModel(listOf(netflix, spotify.copy(isPaused = true)))
+
+        viewModel.uiState.test {
+            val state = awaitLoaded()
+            val netflixItem = state.expenses.items.first { it.rule.name == "Netflix" }
+            val spotifyItem = state.expenses.items.first { it.rule.name == "Spotify" }
+
+            viewModel.onPauseToggled(netflixItem)
+            viewModel.onPauseToggled(spotifyItem)
+
+            coVerify { setRecurringRulePaused(netflixItem.rule, paused = true, any()) }
+            coVerify { setRecurringRulePaused(spotifyItem.rule, paused = false, any()) }
             cancelAndIgnoreRemainingEvents()
         }
     }

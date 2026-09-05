@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.ViewColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,17 +42,22 @@ import com.callbackdev.saldo.R
 
 /**
  * The guided CSV import surface. A single bottom sheet renders the current
- * [stage]: the file being read, the dry-run preview (counts, what will be
- * created, and the tolerated fixes, with the safety options the user can tune),
- * or the final report. The preview never touches data; only [onConfirm] does.
+ * [stage]: the file being read, the column mapping when the header is not
+ * recognized (or on request from the preview), the dry-run preview (counts,
+ * what will be created, and the tolerated fixes, with the safety options the
+ * user can tune), or the final report. The preview never touches data; only
+ * [onConfirm] does.
  */
 @OptIn(ExperimentalMaterial3Api::class)
+@Suppress("LongParameterList") // One callback per user action of the sheet.
 @Composable
 fun CsvImportSheet(
     stage: CsvImportStage,
     onOptionsChange: (CsvImportOptions) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    onEditMapping: () -> Unit,
+    mapping: CsvMappingCallbacks,
     modifier: Modifier = Modifier,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, modifier = modifier) {
@@ -62,7 +69,8 @@ fun CsvImportSheet(
         ) {
             when (stage) {
                 CsvImportStage.Reading -> ReadingContent()
-                is CsvImportStage.Preview -> PreviewContent(stage, onOptionsChange, onConfirm)
+                is CsvImportStage.Mapping -> CsvMappingContent(stage, mapping)
+                is CsvImportStage.Preview -> PreviewContent(stage, onOptionsChange, onConfirm, onEditMapping)
                 is CsvImportStage.Done -> DoneContent(stage.report, onDismiss)
             }
         }
@@ -89,6 +97,7 @@ private fun PreviewContent(
     stage: CsvImportStage.Preview,
     onOptionsChange: (CsvImportOptions) -> Unit,
     onConfirm: () -> Unit,
+    onEditMapping: () -> Unit,
 ) {
     val analysis = stage.analysis
     SheetTitle(stringResource(R.string.csv_import_title))
@@ -109,6 +118,8 @@ private fun PreviewContent(
     )
     Spacer(Modifier.height(16.dp))
     OutcomeStats(analysis)
+    Spacer(Modifier.height(10.dp))
+    ColumnsRow(mappingName = stage.mappingName, enabled = !stage.isBusy, onEdit = onEditMapping)
     if (analysis.newAccounts.isNotEmpty() || analysis.newCategories.isNotEmpty() ||
         analysis.newTags.isNotEmpty()
     ) {
@@ -147,6 +158,29 @@ private fun PreviewContent(
                     analysis.importableCount,
                 ),
             )
+        }
+    }
+}
+
+/** Where the columns came from (header names or a saved mapping) and the way to change them. */
+@Composable
+private fun ColumnsRow(mappingName: String?, enabled: Boolean, onEdit: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.Outlined.ViewColumn,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+        )
+        Spacer(Modifier.size(10.dp))
+        Text(
+            text = mappingName?.let { stringResource(R.string.csv_import_columns_saved, it) }
+                ?: stringResource(R.string.csv_import_columns_auto),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onEdit, enabled = enabled) {
+            Text(stringResource(R.string.csv_import_edit_columns))
         }
     }
 }
@@ -377,12 +411,12 @@ private fun CreatedLine(label: String, names: List<String>) {
 // --- Small building blocks ---
 
 @Composable
-private fun SheetTitle(text: String) {
+internal fun SheetTitle(text: String) {
     Text(text = text, style = MaterialTheme.typography.titleLarge)
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+internal fun SectionLabel(text: String) {
     Text(text = text, style = MaterialTheme.typography.labelLarge)
 }
 

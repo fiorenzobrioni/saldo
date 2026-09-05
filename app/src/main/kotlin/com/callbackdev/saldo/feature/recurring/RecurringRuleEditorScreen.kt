@@ -407,6 +407,16 @@ private fun EditorForm(
             onToggle = viewModel::onEndDateToggled,
             onDateClick = onEndDateClick,
         )
+        // A new rule starts running; pausing is a state of an existing one.
+        if (!uiState.isNew) {
+            Spacer(Modifier.height(4.dp))
+            SwitchRow(
+                title = stringResource(R.string.subscription_editor_paused),
+                subtitle = stringResource(R.string.subscription_editor_paused_hint),
+                checked = uiState.isPaused,
+                onToggle = viewModel::onPausedToggled,
+            )
+        }
         SectionLabel(stringResource(R.string.subscription_editor_section_color))
         SubscriptionColorPicker(selected = uiState.color, onColorSelected = viewModel::onColorSelected)
         SectionLabel(stringResource(R.string.subscription_editor_section_icon))

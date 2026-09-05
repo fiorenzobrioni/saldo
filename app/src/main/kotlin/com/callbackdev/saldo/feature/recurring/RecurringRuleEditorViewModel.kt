@@ -12,6 +12,7 @@ import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import com.callbackdev.saldo.core.domain.model.RecurrenceMode
 import com.callbackdev.saldo.core.domain.model.RecurringRule
+import com.callbackdev.saldo.core.domain.model.resumed
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.recurrence.RecurrenceCalculator
@@ -61,6 +62,8 @@ data class RecurringRuleEditorUiState(
     val endDate: LocalDate? = null,
     val mode: RecurrenceMode = RecurrenceMode.AUTOMATIC,
     val isVariableAmount: Boolean = false,
+    /** Editable only on an existing rule: a new rule starts running (Fase 39, F3). */
+    val isPaused: Boolean = false,
     val color: Int = CategoryVisuals.colors.first(),
     val icon: String = DEFAULT_ICON,
     val showValidation: Boolean = false,
@@ -234,6 +237,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
                 endDate = rule.endDate,
                 mode = rule.mode,
                 isVariableAmount = rule.isVariableAmount,
+                isPaused = rule.isPaused,
                 color = rule.color ?: CategoryVisuals.colors.first(),
                 icon = rule.icon ?: RecurringRuleEditorUiState.defaultIcon(rule.type),
             )
@@ -366,6 +370,9 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         )
     }
 
+    /** Pause or resume (Fase 39, F3); the watermark side of a resume is handled on save. */
+    fun onPausedToggled(paused: Boolean) = _uiState.update { it.copy(isPaused = paused) }
+
     fun onColorSelected(color: Int) = _uiState.update { it.copy(color = color) }
 
     fun onIconSelected(icon: String) {
@@ -449,6 +456,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
             endDate = state.endDate,
             mode = state.effectiveMode(),
             isVariableAmount = state.isVariableAmount,
+            isPaused = state.isPaused,
             color = state.color,
             icon = state.icon,
             note = base?.note,
@@ -459,7 +467,10 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
             transferAmount = leg.amount,
             transferCurrency = leg.currency,
         )
-        return rule.copy(lastGeneratedDate = seededWatermark(rule, base, today))
+        val seeded = rule.copy(lastGeneratedDate = seededWatermark(rule, base, today))
+        // Resuming through the switch means exactly what the hub's quick action
+        // means: from today on, without back-filling the pause.
+        return if (base?.isPaused == true && !seeded.isPaused) seeded.resumed(today) else seeded
     }
 
     /**
@@ -536,6 +547,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         val endDate: LocalDate?,
         val mode: RecurrenceMode,
         val isVariableAmount: Boolean,
+        val isPaused: Boolean,
         val color: Int,
         val icon: String,
     )
@@ -552,6 +564,7 @@ class RecurringRuleEditorViewModel @AssistedInject constructor(
         endDate = endDate,
         mode = mode,
         isVariableAmount = isVariableAmount,
+        isPaused = isPaused,
         color = color,
         icon = icon,
     )

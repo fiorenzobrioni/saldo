@@ -34,10 +34,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -98,15 +96,16 @@ import java.util.Currency
 
 /**
  * Account list: active accounts with their computed balance, a collapsible
- * archived section, quick actions per account (edit, adjust balance, archive,
- * delete) and an empty state for the first launch.
+ * archived section and an empty state for the first launch. A tap on an
+ * account opens its detail (Fase 39, F1), where every account action lives;
+ * the list keeps only the reorder and the statement call to action.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToNewAccount: () -> Unit,
-    onNavigateToEditAccount: (Long) -> Unit,
+    onNavigateToAccount: (Long) -> Unit,
     onNavigateToRates: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AccountsViewModel = hiltViewModel(),
@@ -118,27 +117,6 @@ fun AccountsScreen(
     LaunchedEffect(viewModel, resources) {
         viewModel.events.collect { event ->
             when (event) {
-                is AccountsEvent.AccountArchived -> {
-                    val result = snackbarHostState.showSnackbar(
-                        message = resources.getString(
-                            R.string.accounts_snackbar_archived,
-                            event.account.name,
-                        ),
-                        actionLabel = resources.getString(R.string.action_undo),
-                        duration = SnackbarDuration.Short,
-                    )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        viewModel.unarchive(event.account)
-                    }
-                }
-
-                is AccountsEvent.BalanceAdjusted -> snackbarHostState.showSnackbar(
-                    resources.getString(
-                        R.string.accounts_snackbar_adjusted,
-                        MoneyFormatter.formatSigned(event.delta, event.currency),
-                    ),
-                )
-
                 is AccountsEvent.StatementSettled -> snackbarHostState.showSnackbar(
                     resources.getString(
                         R.string.accounts_snackbar_statement_settled,
@@ -146,13 +124,16 @@ fun AccountsScreen(
                     ),
                 )
 
-                AccountsEvent.AccountDeleted -> snackbarHostState.showSnackbar(
-                    resources.getString(R.string.accounts_snackbar_deleted),
-                )
-
                 AccountsEvent.WriteFailed -> snackbarHostState.showSnackbar(
                     resources.getString(R.string.editor_write_failed),
                 )
+
+                // Raised by the account detail, not by the list: the shared
+                // event type keeps the two screens on one vocabulary.
+                is AccountsEvent.AccountArchived,
+                is AccountsEvent.BalanceAdjusted,
+                AccountsEvent.AccountDeleted,
+                -> Unit
             }
         }
     }
@@ -196,7 +177,7 @@ fun AccountsScreen(
 
             else -> AccountsList(
                 uiState = uiState,
-                onAccountClick = { viewModel.onAccountSelected(it.account.id) },
+                onAccountClick = { onNavigateToAccount(it.account.id) },
                 onSettleStatement = viewModel::settleStatement,
                 onReorder = viewModel::persistOrder,
                 onRatesClick = onNavigateToRates,
@@ -204,30 +185,6 @@ fun AccountsScreen(
             )
         }
     }
-
-    uiState.selected?.let { selected ->
-        AccountActionsSheet(
-            item = selected,
-            onDismiss = { viewModel.onAccountSelected(null) },
-            onEdit = {
-                viewModel.onAccountSelected(null)
-                onNavigateToEditAccount(selected.account.id)
-            },
-            onAdjustBalance = { viewModel.openAdjustBalance(selected) },
-            onArchive = { viewModel.archive(selected.account) },
-            onUnarchive = { viewModel.unarchive(selected.account) },
-            onDelete = { viewModel.requestDelete(selected.account) },
-        )
-    }
-
-    AccountsDialogHost(
-        dialog = uiState.dialog,
-        onAdjustInputChanged = viewModel::onAdjustInputChanged,
-        onConfirmAdjust = viewModel::confirmAdjustBalance,
-        onConfirmDelete = viewModel::confirmDelete,
-        onArchiveInstead = { viewModel.archive(it) },
-        onDismiss = viewModel::dismissDialog,
-    )
 }
 
 /**
@@ -740,7 +697,7 @@ internal fun AccountAvatar(
 }
 
 @Composable
-private fun accountSupportingText(account: Account, showType: Boolean): String {
+internal fun accountSupportingText(account: Account, showType: Boolean): String {
     val parts = buildList {
         // The active list carries a per-type header, so the type is dropped from
         // the row to avoid repeating it; the archived card has no header.

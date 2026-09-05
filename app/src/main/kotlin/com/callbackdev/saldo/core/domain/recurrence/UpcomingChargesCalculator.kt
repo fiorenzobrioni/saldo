@@ -35,6 +35,7 @@ object UpcomingChargesCalculator {
         return rules
             .filter { rule ->
                 rule.type == TransactionType.EXPENSE &&
+                    !rule.isPaused &&
                     !rule.isVariableAmount &&
                     rule.amount != null
             }

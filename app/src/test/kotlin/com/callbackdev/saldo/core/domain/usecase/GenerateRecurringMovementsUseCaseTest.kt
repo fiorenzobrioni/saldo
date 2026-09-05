@@ -98,6 +98,7 @@ class GenerateRecurringMovementsUseCaseTest {
         transferAccountId: Long? = null,
         transferAmount: BigDecimal? = null,
         transferCurrency: Currency? = null,
+        isPaused: Boolean = false,
     ) = RecurringRule(
         id = id,
         name = "Netflix",
@@ -116,9 +117,22 @@ class GenerateRecurringMovementsUseCaseTest {
         transferAccountId = transferAccountId,
         transferAmount = transferAmount,
         transferCurrency = transferCurrency,
+        isPaused = isPaused,
     )
 
     private fun Transaction.localDate(): LocalDate = timestamp.atOffset(zoneOffset).toLocalDate()
+
+    @Test
+    fun `a paused rule generates nothing and its watermark does not move`() = runTest {
+        val useCase = useCase(
+            listOf(rule(startDate = LocalDate.of(2026, 5, 7), lastGenerated = LocalDate.of(2026, 5, 7), isPaused = true)),
+        )
+
+        useCase()
+
+        assertTrue(generatedMovements.isEmpty())
+        assertTrue(advancedWatermarks.isEmpty())
+    }
 
     @Test
     fun `catches up every missed charge from the start date`() = runTest {

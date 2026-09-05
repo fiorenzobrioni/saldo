@@ -123,6 +123,20 @@
     <string name="accounts_snackbar_deleted">Conto eliminato</string>
     <string name="accounts_snackbar_adjusted">Rettifica di %1$s registrata</string>
     <string name="accounts_snackbar_statement_settled">Estratto pagato: %1$s trasferiti</string>
+    <!-- Dettaglio conto (Fase 39, F1) -->
+    <string name="account_detail_new_movement">Nuovo movimento</string>
+    <string name="account_detail_more_actions">Altre azioni</string>
+    <string name="account_detail_history_caption">Ultimi 30 giorni</string>
+    <string name="account_detail_previous_month">Mese precedente</string>
+    <string name="account_detail_next_month">Mese successivo</string>
+    <string name="account_detail_month_empty">Nessun movimento in questo mese</string>
+    <plurals name="account_detail_month_count">
+        <item quantity="one">%1$d movimento</item>
+        <item quantity="many">%1$d movimenti</item>
+        <item quantity="other">%1$d movimenti</item>
+    </plurals>
+    <string name="account_detail_goal_progress">%1$s risparmiati su %2$s</string>
+    <string name="account_detail_goal_reached">Obiettivo raggiunto</string>
     <!-- Credit card row extras -->
     <string name="account_cc_utilisation_title">Utilizzo</string>
     <string name="account_cc_utilisation_value">%1$s / %2$s · %3$d%%</string>
@@ -397,6 +411,8 @@
     <string name="transaction_editor_recurring_banner">Generato dal movimento ricorrente «%1$s». Le modifiche valgono solo per questo movimento; la regola resta invariata.</string>
     <string name="transaction_editor_recurring_banner_generic">Generato da un movimento ricorrente. Le modifiche valgono solo per questo movimento; la regola resta invariata.</string>
     <string name="transaction_editor_delete">Elimina</string>
+    <string name="transaction_action_duplicate">Duplica</string>
+    <string name="transaction_editor_duplicate_account_replaced">Il conto originale è archiviato: questa copia è sul conto predefinito. Cambialo se serve.</string>
     <string name="keypad_backspace">Cancella l\'ultima cifra</string>
     <string name="keypad_clear">Azzera l\'importo</string>
     <string name="keypad_decimal_separator">Separatore decimale</string>
@@ -474,6 +490,11 @@
     <string name="subscriptions_charged_on">addebito il %1$s</string>
     <string name="subscriptions_charge_today">Oggi</string>
     <string name="subscriptions_charge_tomorrow">Domani</string>
+    <string name="subscriptions_paused">In pausa</string>
+    <string name="subscriptions_action_pause">Metti in pausa</string>
+    <string name="subscriptions_action_resume">Riprendi</string>
+    <string name="subscriptions_row_more_actions">Altre azioni</string>
+    <string name="recurrences_write_failed">Qualcosa è andato storto. Riprova.</string>
     <string name="subscriptions_prorated_note">I costi non mensili sono ripartiti sul mese per il totale.</string>
     <string name="subscriptions_empty_title">Nessuna uscita ricorrente</string>
     <string name="subscriptions_empty_body">Aggiungi le tue spese ricorrenti per vedere quanto costano ogni mese e in un anno.</string>
@@ -551,6 +572,8 @@
     <string name="subscription_editor_end_date">Data di fine</string>
     <string name="subscription_editor_has_end_date">Con scadenza</string>
     <string name="subscription_editor_has_end_date_hint">La ricorrenza termina a una data scelta</string>
+    <string name="subscription_editor_paused">In pausa</string>
+    <string name="subscription_editor_paused_hint">Non viene registrato nulla e la regola resta fuori da totali e previsioni finché non la riprendi. Gli addebiti saltati nel frattempo non vengono recuperati.</string>
     <string name="subscription_editor_section_color">Colore</string>
     <string name="subscription_editor_section_icon">Icona</string>
     <string name="subscription_editor_color_option">Colore %1$d</string>
@@ -614,6 +637,14 @@
     </plurals>
     <string name="notif_confirm_body">Tocca per confermarli o saltarli.</string>
     <string name="notif_channel_upcoming_name">Rinnovi in arrivo</string>
+    <string name="notif_channel_backup_reminder_name">Promemoria backup</string>
+    <string name="notif_backup_reminder_title">È ora di fare un backup</string>
+    <string name="notif_backup_reminder_body_never">Non hai mai esportato un backup: i tuoi dati esistono solo su questo telefono. Tocca per esportarne uno.</string>
+    <plurals name="notif_backup_reminder_body_days">
+        <item quantity="one">L\'ultimo backup risale a %1$d giorno fa. Tocca per esportarne uno nuovo.</item>
+        <item quantity="many">L\'ultimo backup risale a %1$d giorni fa. Tocca per esportarne uno nuovo.</item>
+        <item quantity="other">L\'ultimo backup risale a %1$d giorni fa. Tocca per esportarne uno nuovo.</item>
+    </plurals>
     <plurals name="notif_upcoming_expense_title">
         <item quantity="one">%1$s si rinnova domani</item>
         <item quantity="many">%1$s si rinnova tra %2$d giorni</item>
@@ -695,6 +726,13 @@
         <item quantity="many">%1$d giorni</item>
         <item quantity="other">%1$d giorni</item>
     </plurals>
+    <string name="settings_backup_reminder">Promemoria backup</string>
+    <string name="settings_backup_reminder_hint">Avvisa quando l\'ultimo backup è più vecchio dell\'intervallo scelto, o se non ne hai mai fatto uno</string>
+    <plurals name="settings_backup_interval_option">
+        <item quantity="one">Ogni giorno</item>
+        <item quantity="many">Ogni %1$d giorni</item>
+        <item quantity="other">Ogni %1$d giorni</item>
+    </plurals>
     <string name="settings_theme_system">Sistema</string>
     <string name="settings_theme_light">Chiaro</string>
     <string name="settings_theme_dark">Scuro</string>
@@ -707,6 +745,19 @@
     <string name="settings_section_data">Dati</string>
     <string name="settings_backup">Backup</string>
     <string name="settings_backup_hint">Esporta, ripristina o cancella i tuoi dati</string>
+    <string name="settings_csv_mappings">Mappature CSV salvate</string>
+    <string name="settings_csv_mappings_hint_none">Nessuna: si creano importando un file con un\'intestazione non riconosciuta</string>
+    <plurals name="settings_csv_mappings_hint">
+        <item quantity="one">%1$d mappatura salvata</item>
+        <item quantity="many">%1$d mappature salvate</item>
+        <item quantity="other">%1$d mappature salvate</item>
+    </plurals>
+    <plurals name="settings_csv_mappings_columns">
+        <item quantity="one">%1$d colonna</item>
+        <item quantity="many">%1$d colonne</item>
+        <item quantity="other">%1$d colonne</item>
+    </plurals>
+    <string name="settings_csv_mappings_delete">Elimina la mappatura %1$s</string>
     <string name="settings_section_about">Informazioni</string>
     <string name="settings_about">Informazioni su Saldo</string>
     <string name="settings_about_hint">Versione %1$s</string>
@@ -862,6 +913,27 @@
     <string name="csv_import_error_no_rows">Il file ha un\'intestazione ma nessun movimento.</string>
     <string name="csv_import_error_too_many_rows">Il file ha troppe righe per una sola importazione. Suddividilo in file più piccoli.</string>
     <string name="csv_import_write_failed">Importazione non riuscita. I tuoi dati non sono stati modificati.</string>
+    <string name="csv_import_columns_auto">Colonne riconosciute dall\'intestazione</string>
+    <string name="csv_import_columns_saved">Colonne dalla mappatura salvata \"%1$s\"</string>
+    <string name="csv_import_edit_columns">Modifica colonne</string>
+    <string name="csv_mapping_title">Abbina le colonne</string>
+    <string name="csv_mapping_intro">L\'intestazione non è stata riconosciuta. Scegli quale colonna del file contiene ogni valore: data e importo sono obbligatori, il resto è facoltativo.</string>
+    <string name="csv_mapping_required_label">%1$s (obbligatoria)</string>
+    <string name="csv_mapping_column_unused">Non presente nel file</string>
+    <string name="csv_mapping_column_blank">Colonna %1$d</string>
+    <string name="csv_mapping_decimal_title">Separatore decimale</string>
+    <string name="csv_mapping_decimal_auto">Auto</string>
+    <string name="csv_mapping_decimal_comma">1.234,56</string>
+    <string name="csv_mapping_decimal_dot">1,234.56</string>
+    <string name="csv_mapping_decimal_auto_detected">Rilevato dal file: %1$s</string>
+    <string name="csv_mapping_decimal_auto_locale">Il file non lo stabilisce: decide la lingua del telefono</string>
+    <string name="csv_mapping_preview_title">Anteprima delle prime righe</string>
+    <string name="csv_mapping_preview_empty">Scegli le colonne data e importo per vedere l\'anteprima</string>
+    <string name="csv_mapping_preview_cell">%1$s: %2$s</string>
+    <string name="csv_mapping_preview_separator">" · "</string>
+    <string name="csv_mapping_save_as">Salva questa mappatura come (facoltativo)</string>
+    <string name="csv_mapping_save_as_hint">Es. Estratto Banca X. Verrà applicata da sola al prossimo file con la stessa intestazione.</string>
+    <string name="csv_mapping_continue">Continua</string>
 
     <!-- Schermata Informazioni -->
     <string name="about_title">Informazioni</string>

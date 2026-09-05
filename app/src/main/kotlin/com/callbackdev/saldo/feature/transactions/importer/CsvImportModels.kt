@@ -175,19 +175,51 @@ data class CsvImportReport(
  * The stage of the guided import shown to the user. Null (held by the screen)
  * means no import is in progress. The flow is [Reading] -> [Preview] (the
  * dry-run the user confirms or tunes) -> [Done] (the report), any step of which
- * can be dismissed to cancel.
+ * can be dismissed to cancel. [Mapping] steps in before the preview when the
+ * header is not recognized, and can be reopened from the preview (Fase 39, F5).
  */
 sealed interface CsvImportStage {
     /** The file is being opened and parsed. */
     data object Reading : CsvImportStage
 
-    /** The dry-run is ready; [isBusy] covers a re-analysis or the commit. */
+    /**
+     * The user matches the file's columns to the importer's fields. [fields]
+     * is the current choice, [decimalMark] the forced convention (null: let
+     * the file decide, which resolves to [inferredDecimalMark], or to the
+     * phone's language when that is null too). [saveAsName], when not blank,
+     * saves the mapping for the next file with the same header.
+     */
+    data class Mapping(
+        val header: List<String>,
+        val sampleRows: List<List<String>>,
+        val fields: Map<CsvField, Int>,
+        val decimalMark: Char? = null,
+        val inferredDecimalMark: Char? = null,
+        val saveAsName: String = "",
+        val isBusy: Boolean = false,
+    ) : CsvImportStage {
+        val isComplete: Boolean get() = CsvField.DATE in fields && CsvField.AMOUNT in fields
+    }
+
+    /**
+     * The dry-run is ready; [isBusy] covers a re-analysis or the commit.
+     * [mappingName] names the saved mapping the columns came from, if any.
+     */
     data class Preview(
         val analysis: CsvImportAnalysis,
         val options: CsvImportOptions,
         val isBusy: Boolean = false,
+        val mappingName: String? = null,
     ) : CsvImportStage
 
     /** The import finished; [report] details what was written. */
     data class Done(val report: CsvImportReport) : CsvImportStage
 }
+
+/** The actions of the column-mapping stage, grouped so the sheet's signature stays readable. */
+data class CsvMappingCallbacks(
+    val onFieldChange: (CsvField, Int?) -> Unit,
+    val onDecimalMarkChange: (Char?) -> Unit,
+    val onNameChange: (String) -> Unit,
+    val onConfirm: () -> Unit,
+)

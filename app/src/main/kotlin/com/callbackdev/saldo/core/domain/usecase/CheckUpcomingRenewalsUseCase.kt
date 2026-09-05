@@ -60,6 +60,8 @@ class CheckUpcomingRenewalsUseCase @Inject constructor(
     }
 
     private fun RecurringRule.upcomingRenewal(today: LocalDate, leadDays: Int): UpcomingRenewal? {
+        // A paused rule will not charge, so there is nothing to announce.
+        if (isPaused) return null
         // Same floor as the hub's "next charge": skip occurrences already generated,
         // so a charge that fired today is not announced as upcoming.
         val afterGenerated = lastGeneratedDate?.plusDays(1)

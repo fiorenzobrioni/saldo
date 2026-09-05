@@ -23,6 +23,7 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.usecase.DetectRecurrenceSuggestionsUseCase
+import com.callbackdev.saldo.core.domain.usecase.SetRecurringRulePausedUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -44,6 +45,9 @@ import javax.inject.Inject
 sealed interface RecurrencesEvent {
     /** The explicit scan failed: say so instead of silently showing the old result. */
     data object ScanFailed : RecurrencesEvent
+
+    /** Pausing or resuming a rule failed: the row keeps its previous state. */
+    data object WriteFailed : RecurrencesEvent
 }
 
 /**
@@ -63,6 +67,7 @@ class RecurrencesViewModel @Inject constructor(
     userPreferences: UserPreferencesRepository,
     private val detectRecurrenceSuggestions: DetectRecurrenceSuggestionsUseCase,
     private val recurrenceScanStore: RecurrenceScanStore,
+    private val setRecurringRulePaused: SetRecurringRulePausedUseCase,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -137,6 +142,19 @@ class RecurrencesViewModel @Inject constructor(
         viewModelScope.launch { recurrenceScanStore.dismiss(item.suggestion.key) }
     }
 
+    /**
+     * Pauses a running rule or resumes a paused one (Fase 39, F3). Resuming
+     * never back-fills the skipped occurrences: see [SetRecurringRulePausedUseCase].
+     */
+    fun onPauseToggled(item: SubscriptionItem) {
+        viewModelScope.launch {
+            val result = suspendRunCatching {
+                setRecurringRulePaused(item.rule, paused = !item.rule.isPaused, today = LocalDate.now(clock))
+            }
+            if (result.isFailure) _events.send(RecurrencesEvent.WriteFailed)
+        }
+    }
+
     @Suppress("LongParameterList") // One argument per combined source plus the resolved day.
     private fun buildState(
         rules: List<RecurringRule>,
@@ -165,7 +183,9 @@ class RecurrencesViewModel @Inject constructor(
                         transferAccount = accountById[rule.transferAccountId],
                     )
                 }
-                .sortedWith(sortOrder.comparator())
+                // Paused rules sink to the bottom of every sort: they are on file
+                // but not running, and the running ones are what the list is for.
+                .sortedWith(compareBy<SubscriptionItem> { it.rule.isPaused }.then(sortOrder.comparator()))
 
             // The explicit Settings choice keeps section totals consistent
             // with dashboard and stats; otherwise the section's own majority.
@@ -260,7 +280,8 @@ class RecurrencesViewModel @Inject constructor(
         account = account,
         category = category,
         monthlyEquivalent = RecurrenceCalculator.monthlyEquivalent(this) ?: BigDecimal.ZERO,
-        nextCharge = RecurrenceCalculator.nextOccurrence(this, nextChargeFloor(today)),
+        // A paused rule has no next charge: the row says "Paused" in its place.
+        nextCharge = if (isPaused) null else RecurrenceCalculator.nextOccurrence(this, nextChargeFloor(today)),
         transferAccount = transferAccount,
     )
 

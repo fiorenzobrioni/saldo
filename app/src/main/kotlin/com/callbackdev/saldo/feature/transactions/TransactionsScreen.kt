@@ -80,6 +80,7 @@ import com.callbackdev.saldo.feature.transactions.export.CsvExportSheet
 import com.callbackdev.saldo.feature.transactions.filter.DatePreset
 import com.callbackdev.saldo.feature.transactions.importer.CsvImportError
 import com.callbackdev.saldo.feature.transactions.importer.CsvImportSheet
+import com.callbackdev.saldo.feature.transactions.importer.CsvMappingCallbacks
 import java.time.LocalDate
 
 /** MIME types accepted by the CSV import picker; providers vary in how they type CSV. */
@@ -101,6 +102,7 @@ private val CSV_IMPORT_MIME_TYPES = arrayOf(
 fun TransactionsScreen(
     onNavigateToNewTransaction: (TransactionType) -> Unit,
     onNavigateToEditTransaction: (Long) -> Unit,
+    onNavigateToDuplicateTransaction: (Long) -> Unit,
     onNavigateToAccounts: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TransactionsViewModel = hiltViewModel(),
@@ -263,6 +265,7 @@ fun TransactionsScreen(
                             today = uiState.today,
                             onItemClick = { onNavigateToEditTransaction(it.id) },
                             onItemDelete = viewModel::delete,
+                            onItemDuplicate = { onNavigateToDuplicateTransaction(it.id) },
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -323,6 +326,13 @@ fun TransactionsScreen(
             onOptionsChange = viewModel::setImportOptions,
             onConfirm = viewModel::confirmImport,
             onDismiss = viewModel::dismissImport,
+            onEditMapping = viewModel::editImportMapping,
+            mapping = CsvMappingCallbacks(
+                onFieldChange = viewModel::setImportMappingField,
+                onDecimalMarkChange = viewModel::setImportDecimalMark,
+                onNameChange = viewModel::setImportMappingName,
+                onConfirm = viewModel::confirmImportMapping,
+            ),
         )
     }
 
@@ -500,6 +510,7 @@ private fun TransactionsList(
     today: LocalDate,
     onItemClick: (TransactionListItem) -> Unit,
     onItemDelete: (TransactionListItem) -> Unit,
+    onItemDuplicate: (TransactionListItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -518,6 +529,7 @@ private fun TransactionsList(
                     items = day.items,
                     onItemClick = onItemClick,
                     onItemDelete = onItemDelete,
+                    onItemDuplicate = onItemDuplicate,
                     modifier = Modifier.animateItem(),
                 )
             }
@@ -539,6 +551,7 @@ private fun TransactionDayCard(
     items: List<TransactionListItem>,
     onItemClick: (TransactionListItem) -> Unit,
     onItemDelete: (TransactionListItem) -> Unit,
+    onItemDuplicate: (TransactionListItem) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     SaldoCard(modifier = modifier.fillMaxWidth()) {
@@ -553,6 +566,12 @@ private fun TransactionDayCard(
                 item = item,
                 onClick = { onItemClick(item) },
                 onDelete = { onItemDelete(item) },
+                // A balance adjustment is not something to repeat.
+                onDuplicate = if (item.transaction.type == TransactionType.ADJUSTMENT) {
+                    null
+                } else {
+                    { onItemDuplicate(item) }
+                },
             )
         }
     }

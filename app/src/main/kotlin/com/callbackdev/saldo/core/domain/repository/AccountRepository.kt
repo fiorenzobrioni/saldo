@@ -3,6 +3,7 @@ package com.callbackdev.saldo.core.domain.repository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.model.DailyNet
 import kotlinx.coroutines.flow.Flow
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -52,6 +53,25 @@ interface AccountRepository {
      * balance-over-time statistic.
      */
     fun observeInitialBalanceTotal(currency: Currency): Flow<BigDecimal>
+
+    /**
+     * Net effect per local day (ADR 7) of one account's movements on its own
+     * balance, limited to days in `[start, endExclusive)`: own movements plus
+     * incoming transfer legs, pending excluded, in the account's [currency].
+     * Days without movements are absent.
+     */
+    fun observeDailyNetChanges(
+        accountId: Long,
+        currency: Currency,
+        start: LocalDate,
+        endExclusive: LocalDate,
+    ): Flow<List<DailyNet>>
+
+    /**
+     * Net effect of every movement of one account whose local day precedes
+     * [start], same rules as [observeDailyNetChanges]. Zero when nothing matches.
+     */
+    fun observeNetChangeBefore(accountId: Long, currency: Currency, start: LocalDate): Flow<BigDecimal>
 
     suspend fun getAccount(id: Long): Account?
 

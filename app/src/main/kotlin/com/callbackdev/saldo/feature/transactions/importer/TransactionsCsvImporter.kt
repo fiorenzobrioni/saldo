@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.Uri
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.di.IoDispatcher
+import com.callbackdev.saldo.core.common.prefs.CsvColumnMappingStore
+import com.callbackdev.saldo.core.common.prefs.SavedCsvMapping
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
@@ -52,49 +54,95 @@ class TransactionsCsvImporter @Inject constructor(
     private val transactionRunner: TransactionRunner,
     private val userPreferences: UserPreferencesRepository,
     private val analyzer: TransactionCsvAnalyzer,
+    private val mappingStore: CsvColumnMappingStore,
     private val clock: Clock,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
 
-    /** The rows and column mapping of a readable file, cached between toggles. */
+    /** The header, rows and column mapping of a readable file, cached between toggles. */
     data class ParsedCsv(
-        internal val dataRows: List<List<String>>,
-        internal val mapping: ColumnMapping,
+        val header: List<String>,
+        val dataRows: List<List<String>>,
+        val mapping: ColumnMapping,
+        /** A decimal mark forced by the user or by a saved mapping; null lets the file decide. */
+        val decimalMark: Char? = null,
+        /** Name of the saved mapping that produced [mapping]; null when matched automatically or picked by hand. */
+        val mappingName: String? = null,
     )
 
     /** Outcome of opening and structurally validating the picked file. */
     sealed interface ReadResult {
         data class Success(val parsed: ParsedCsv) : ReadResult
+
+        /**
+         * The file is readable but neither a saved mapping nor the header
+         * names locate the date and amount columns: the user picks them,
+         * starting from [suggested], the partial matches (Fase 39, F5).
+         */
+        data class NeedsMapping(
+            val header: List<String>,
+            val dataRows: List<List<String>>,
+            val suggested: Map<CsvField, Int>,
+        ) : ReadResult
+
         data class Failure(val error: CsvImportError) : ReadResult
     }
 
     /**
-     * Opens [uri], detects the separator, parses it and maps its header. Fails
-     * (without reading the rest) when the file is empty, has no recognizable
-     * header, carries no data rows, or exceeds [MAX_ROWS].
+     * Opens [uri], detects the separator, parses it and maps its header: a
+     * saved mapping made for this exact header wins, then the header names.
+     * Fails (without reading the rest) when the file is empty, carries no data
+     * rows, or exceeds [MAX_ROWS]; asks for a manual mapping when the header is
+     * not recognized.
      */
     suspend fun read(uri: Uri): ReadResult = withContext(ioDispatcher) {
         val text = readText(uri)
-        if (text.isBlank()) return@withContext ReadResult.Failure(CsvImportError.EMPTY_FILE)
-        val separator = CsvSeparatorSniffer.detect(text)
-        val records = CsvReader.parse(text, separator)
+        val records = if (text.isBlank()) emptyList() else CsvReader.parse(text, CsvSeparatorSniffer.detect(text))
         if (records.isEmpty()) return@withContext ReadResult.Failure(CsvImportError.EMPTY_FILE)
-        val mapping = CsvHeaderMapper.map(records.first(), columnLabels())
-            ?: return@withContext ReadResult.Failure(CsvImportError.UNRECOGNIZED_FORMAT)
+        val header = records.first()
         val dataRows = records.drop(1)
         val populated = dataRows.count { row -> row.any { it.isNotBlank() } }
         when {
             populated == 0 -> ReadResult.Failure(CsvImportError.NO_DATA_ROWS)
             populated > MAX_ROWS -> ReadResult.Failure(CsvImportError.TOO_MANY_ROWS)
-            else -> ReadResult.Success(ParsedCsv(dataRows, mapping))
+            else -> mapHeader(header, dataRows)
+        }
+    }
+
+    private suspend fun mapHeader(header: List<String>, dataRows: List<List<String>>): ReadResult {
+        val saved = mappingStore.findForHeader(header)
+        val savedMapping = saved?.let { ColumnMapping.fromNames(it.fields) }?.takeIf { it.isComplete }
+        if (saved != null && savedMapping != null) {
+            return ReadResult.Success(
+                ParsedCsv(header, dataRows, savedMapping, saved.decimalMark?.singleOrNull(), saved.name),
+            )
+        }
+        val labels = columnLabels()
+        val auto = CsvHeaderMapper.map(header, labels)
+        return if (auto != null) {
+            ReadResult.Success(ParsedCsv(header, dataRows, auto))
+        } else {
+            ReadResult.NeedsMapping(header, dataRows, CsvHeaderMapper.suggest(header, labels))
         }
     }
 
     /** Runs the pure analysis of [parsed] against the current data and [options]. */
     suspend fun analyze(parsed: ParsedCsv, options: CsvImportOptions): CsvImportAnalysis =
         withContext(ioDispatcher) {
-            analyzer.analyze(parsed.dataRows, parsed.mapping, buildContext(), options)
+            analyzer.analyze(parsed.dataRows, parsed.mapping, buildContext(), options, parsed.decimalMark)
         }
+
+    /** Saves [parsed]'s column mapping under [name], for the next file with the same header (Fase 39, F5). */
+    suspend fun saveMapping(name: String, parsed: ParsedCsv) {
+        mappingStore.save(
+            SavedCsvMapping(
+                name = name.trim(),
+                header = parsed.header,
+                fields = parsed.mapping.indexByField.mapKeys { it.key.name },
+                decimalMark = parsed.decimalMark?.toString(),
+            ),
+        )
+    }
 
     /**
      * Writes the analyzed result: creates the missing accounts, categories and
@@ -296,17 +344,29 @@ class TransactionsCsvImporter @Inject constructor(
     private fun normalizeName(text: String): String =
         text.trim().lowercase(Locale.ROOT).replace(WHITESPACE, " ")
 
-    private companion object {
+    companion object {
         /** Upper bound on data rows a single import will process. */
-        const val MAX_ROWS = 10_000
+        private const val MAX_ROWS = 10_000
+
+        /**
+         * The decimal convention the amount columns of [fields] settle over
+         * [dataRows], or null when they leave it open: what the mapping sheet
+         * shows next to "Auto" (Fase 39, F5). Same rule as the analysis.
+         */
+        fun inferDecimalMark(dataRows: List<List<String>>, fields: Map<CsvField, Int>): Char? {
+            val indices = listOfNotNull(fields[CsvField.AMOUNT], fields[CsvField.RECEIVED_AMOUNT])
+            if (indices.isEmpty()) return null
+            val cells = dataRows.asSequence().flatMap { row -> indices.mapNotNull { row.getOrNull(it) } }
+            return CsvFieldParsers.inferDecimalMark(cells.asIterable())
+        }
 
         /** Neutral Material Symbols icon for categories created on import. */
-        const val IMPORTED_CATEGORY_ICON = "category"
+        private const val IMPORTED_CATEGORY_ICON = "category"
 
-        val WHITESPACE = "\\s+".toRegex()
+        private val WHITESPACE = "\\s+".toRegex()
 
         /** Colours reused from the seed palette for categories created on import. */
-        val CATEGORY_PALETTE = listOf(
+        private val CATEGORY_PALETTE = listOf(
             0x5C6BC0, 0x66BB6A, 0xEF5350, 0x42A5F5, 0x26A69A,
             0xEC407A, 0xFFA726, 0xAB47BC, 0x8D6E63, 0x78909C,
         )

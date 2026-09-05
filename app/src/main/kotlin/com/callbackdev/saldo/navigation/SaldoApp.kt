@@ -36,6 +36,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.feature.about.AboutScreen
+import com.callbackdev.saldo.feature.accounts.AccountDetailScreen
 import com.callbackdev.saldo.feature.accounts.AccountEditorScreen
 import com.callbackdev.saldo.feature.applock.SecurityScreen
 import com.callbackdev.saldo.feature.backup.BackupScreen
@@ -90,6 +91,8 @@ private const val SLIDE_DIVISOR = 6
 fun SaldoApp(
     quickAction: TransactionType? = null,
     onQuickActionHandled: () -> Unit = {},
+    openBackup: Boolean = false,
+    onOpenBackupHandled: () -> Unit = {},
 ) {
     // One back stack per tab (Nav3 multiple-back-stacks recipe): switching
     // tabs keeps every tab's ViewModels, scroll and filters alive.
@@ -104,6 +107,15 @@ fun SaldoApp(
         if (quickAction != null) {
             nav.navigate(TransactionEditorRoute(initialTypeName = quickAction.name))
             onQuickActionHandled()
+        }
+    }
+
+    // The backup reminder notification was tapped: land on the Backup screen,
+    // on top of whatever is showing, unless it is already there.
+    LaunchedEffect(openBackup) {
+        if (openBackup) {
+            if (nav.currentRoute != BackupRoute) nav.navigate(BackupRoute)
+            onOpenBackupHandled()
         }
     }
 
@@ -145,7 +157,7 @@ fun SaldoApp(
             DashboardScreen(
                 modifier = topLevelModifier,
                 onNavigateToAccounts = { nav.navigate(AccountsRoute) },
-                onNavigateToAccount = { id -> nav.navigate(AccountEditorRoute(id)) },
+                onNavigateToAccount = { id -> nav.navigate(AccountDetailRoute(id)) },
                 onCreateFirstAccount = { nav.navigate(AccountEditorRoute()) },
                 onNavigateToNewTransaction = { type ->
                     nav.navigate(TransactionEditorRoute(initialTypeName = type.name))
@@ -176,6 +188,9 @@ fun SaldoApp(
                 },
                 onNavigateToEditTransaction = { id ->
                     nav.navigate(TransactionEditorRoute(id))
+                },
+                onNavigateToDuplicateTransaction = { id ->
+                    nav.navigate(TransactionEditorRoute(duplicateOfId = id))
                 },
                 onNavigateToAccounts = { nav.navigate(AccountsRoute) },
             )
@@ -209,8 +224,20 @@ fun SaldoApp(
             AccountsScreen(
                 onNavigateBack = { nav.goBack() },
                 onNavigateToNewAccount = { nav.navigate(AccountEditorRoute()) },
-                onNavigateToEditAccount = { id -> nav.navigate(AccountEditorRoute(id)) },
+                onNavigateToAccount = { id -> nav.navigate(AccountDetailRoute(id)) },
                 onNavigateToRates = { nav.navigate(ExchangeRatesRoute) },
+            )
+        }
+        entry<AccountDetailRoute> { route ->
+            AccountDetailScreen(
+                route = route,
+                onNavigateBack = { nav.goBack() },
+                onNavigateToEdit = { id -> nav.navigate(AccountEditorRoute(id)) },
+                onNavigateToNewTransaction = { accountId ->
+                    nav.navigate(TransactionEditorRoute(initialAccountId = accountId))
+                },
+                onNavigateToTransaction = { id -> nav.navigate(TransactionEditorRoute(id)) },
+                onNavigateToDuplicate = { id -> nav.navigate(TransactionEditorRoute(duplicateOfId = id)) },
             )
         }
         entry<AccountEditorRoute> { route ->
@@ -246,6 +273,8 @@ fun SaldoApp(
             TransactionEditorScreen(
                 route = route,
                 onNavigateBack = { nav.goBack() },
+                // The copy opens on top of the original's editor: back returns there.
+                onNavigateToDuplicate = { id -> nav.navigate(TransactionEditorRoute(duplicateOfId = id)) },
             )
         }
         entry<RecurrencesRoute> {

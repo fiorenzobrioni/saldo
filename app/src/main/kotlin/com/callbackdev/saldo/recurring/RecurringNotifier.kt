@@ -233,6 +233,8 @@ class RecurringNotifier @Inject constructor(
         const val ID_ACTIVITY = 1001
         const val ID_CONFIRM = 1002
         const val ID_UPCOMING = 1003
-        const val ID_MOVEMENT_REMINDER = 1004
+        // 1004/1005 belong to BudgetNotifier and 1006/1007 to CreditCardNotifier:
+        // a shared id would make one notification silently replace the other.
+        const val ID_MOVEMENT_REMINDER = 1008
     }
 }

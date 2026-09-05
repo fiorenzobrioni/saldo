@@ -5,7 +5,10 @@ import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_ENCRYPTION_ENABLED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_ENABLED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_INTERVAL_DAYS
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BALANCE_ACCOUNTS_EXPANDED_DEFAULT
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CSV_COLUMN_MAPPINGS
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CSV_SEPARATOR
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CURRENCY_CONVERSION_ENABLED
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_BUDGET_CARD
@@ -22,6 +25,7 @@ import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.RENEWAL_REMIND
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.RENEWAL_REMINDER_LEAD_DAYS
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.THEME_MODE
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.USE_DYNAMIC_COLOR
+import com.callbackdev.saldo.core.domain.backup.CsvColumnMappingBackup
 import com.callbackdev.saldo.core.domain.backup.SettingsBackup
 import com.callbackdev.saldo.core.domain.repository.SettingsBackupRepository
 import kotlinx.coroutines.flow.first
@@ -61,6 +65,11 @@ class SettingsBackupStore @Inject constructor(
             useDynamicColor = preferences[USE_DYNAMIC_COLOR],
             renewalReminderEnabled = preferences[RENEWAL_REMINDER_ENABLED],
             renewalReminderLeadDays = preferences[RENEWAL_REMINDER_LEAD_DAYS],
+            backupReminderEnabled = preferences[BACKUP_REMINDER_ENABLED],
+            backupReminderIntervalDays = preferences[BACKUP_REMINDER_INTERVAL_DAYS],
+            csvColumnMappings = CsvMappingCodec.decode(preferences[CSV_COLUMN_MAPPINGS])
+                .map { it.toBackup() }
+                .takeIf { it.isNotEmpty() },
             firstDayOfWeek = preferences[FIRST_DAY_OF_WEEK],
             csvSeparator = preferences[CSV_SEPARATOR],
             backupEncryptionEnabled = preferences[BACKUP_ENCRYPTION_ENABLED],
@@ -95,11 +104,18 @@ class SettingsBackupStore @Inject constructor(
                 RENEWAL_REMINDER_LEAD_DAYS,
                 settings.renewalReminderLeadDays?.takeIf(::isOfferedLeadTime),
             )
+            preferences.setIfPresent(BACKUP_REMINDER_ENABLED, settings.backupReminderEnabled)
+            preferences.setIfPresent(
+                BACKUP_REMINDER_INTERVAL_DAYS,
+                settings.backupReminderIntervalDays?.takeIf(::isOfferedBackupInterval),
+            )
             preferences.setIfPresent(
                 FIRST_DAY_OF_WEEK,
                 settings.firstDayOfWeek?.takeIf(::isOfferedWeekStart),
             )
             preferences.setIfPresent(CSV_SEPARATOR, settings.csvSeparator?.takeIf(::isKnownSeparator))
+            val mappings = settings.csvColumnMappings.orEmpty().mapNotNull { it.toSavedOrNull() }
+            if (mappings.isNotEmpty()) preferences[CSV_COLUMN_MAPPINGS] = CsvMappingCodec.encode(mappings)
             preferences.setIfPresent(BACKUP_ENCRYPTION_ENABLED, settings.backupEncryptionEnabled)
             preferences.setIfPresent(DASHBOARD_SHOW_BUDGET_CARD, settings.dashboardShowBudget)
             preferences.setIfPresent(DASHBOARD_SHOW_SAFE_TO_SPEND, settings.dashboardShowSafeToSpend)
@@ -132,6 +148,24 @@ class SettingsBackupStore @Inject constructor(
         keys.forEach { key -> remove(key as Preferences.Key<Any>) }
     }
 
+    private fun SavedCsvMapping.toBackup() = CsvColumnMappingBackup(name, header, fields, decimalMark)
+
+    /**
+     * A mapping worth restoring: named, made for a real header, binding at
+     * least one column at a valid index. A decimal mark that is neither `.`
+     * nor `,` is dropped, not the mapping.
+     */
+    private fun CsvColumnMappingBackup.toSavedOrNull(): SavedCsvMapping? {
+        val usable = name.isNotBlank() && header.isNotEmpty() && fields.isNotEmpty() && fields.values.all { it >= 0 }
+        if (!usable) return null
+        return SavedCsvMapping(
+            name = name.trim(),
+            header = header,
+            fields = fields,
+            decimalMark = decimalMark?.takeIf { it == "." || it == "," },
+        )
+    }
+
     private fun isKnownCurrency(code: String): Boolean =
         runCatching { Currency.getInstance(code) }.isSuccess
 
@@ -141,6 +175,9 @@ class SettingsBackupStore @Inject constructor(
 
     private fun isOfferedLeadTime(days: Int): Boolean =
         days in RenewalReminderPreferences.allowedLeadDays
+
+    private fun isOfferedBackupInterval(days: Int): Boolean =
+        days in BackupReminderPreferences.allowedIntervalDays
 
     /** A real day of the week is not enough: it has to be one Settings offers. */
     private fun isOfferedWeekStart(name: String): Boolean =

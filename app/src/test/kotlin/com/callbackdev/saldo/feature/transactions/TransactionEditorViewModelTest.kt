@@ -508,6 +508,102 @@ class TransactionEditorViewModelTest {
     }
 
     @Test
+    fun `duplicating copies what the user chose, dates the copy now and starts clean`() = runTest {
+        val source = Transaction(
+            id = 7L,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-12.50"),
+            currency = eur,
+            accountId = cash.id,
+            timestamp = Instant.parse("2026-06-01T10:00:00Z"),
+            zoneOffset = ZoneOffset.ofHours(2),
+            categoryId = groceries.id,
+            description = "Pizza",
+            note = "with friends",
+            isExcludedFromStats = true,
+            counterparty = "Luca",
+            recurringRuleId = 3L,
+            recurringOccurrenceDate = LocalDate.of(2026, 6, 1),
+            hasReminder = true,
+            lastReminderDate = LocalDate.of(2026, 5, 30),
+        )
+        coEvery { transactionRepository.getTransaction(7L) } returns source
+        every { tagRepository.observeTagsForTransaction(7L) } returns flowOf(listOf(Tag("work", id = 5L)))
+        val viewModel = viewModel(
+            route = TransactionEditorRoute(duplicateOfId = 7L),
+            tags = listOf(Tag("work", id = 5L)),
+        )
+        collectState(viewModel)
+
+        val state = viewModel.uiState.value
+        assertTrue(state.isNew)
+        assertEquals(TransactionType.EXPENSE, state.type)
+        assertEquals("12.5", state.amountInput)
+        assertEquals(cash, state.account)
+        assertEquals(groceries.id, state.categoryId)
+        assertEquals("Pizza", state.description)
+        assertEquals("with friends", state.note)
+        assertEquals(listOf(5L), state.selectedTags.map { it.id })
+        assertTrue(state.isCounterparty)
+        assertEquals("Luca", state.counterparty)
+        assertTrue(state.isExcludedFromStats)
+        // Dated now, not on the original's day; nothing of the original's own.
+        assertEquals(LocalDate.of(2026, 7, 8), state.date)
+        assertEquals(LocalTime.of(12, 15), state.time)
+        assertFalse(state.isRecurring)
+        assertFalse(state.hasReminder)
+        assertFalse(state.duplicateAccountReplaced)
+        // The prefill is the baseline: leaving untouched asks nothing.
+        assertFalse(viewModel.hasUnsavedChanges.value)
+
+        val slot = slot<Transaction>()
+        coEvery { transactionRepository.upsert(capture(slot)) } returns SAVED_ID
+        viewModel.save()
+
+        val saved = slot.captured
+        assertEquals(0L, saved.id)
+        assertEquals(BigDecimal("-12.50"), saved.amount)
+        assertEquals(cash.id, saved.accountId)
+        assertNull(saved.recurringRuleId)
+        assertNull(saved.recurringOccurrenceDate)
+        assertFalse(saved.isPending)
+        assertFalse(saved.hasReminder)
+        assertNull(saved.lastReminderDate)
+        assertEquals("Luca", saved.counterparty)
+    }
+
+    @Test
+    fun `duplicating from an archived account falls back to the default and says so`() = runTest {
+        val archived = account(id = 9L, archived = true)
+        val source = Transaction(
+            id = 7L,
+            type = TransactionType.TRANSFER,
+            amount = BigDecimal("-50.00"),
+            currency = eur,
+            accountId = archived.id,
+            timestamp = Instant.parse("2026-06-01T10:00:00Z"),
+            zoneOffset = ZoneOffset.ofHours(2),
+            transferAccountId = cash.id,
+            transferAmount = BigDecimal("50.00"),
+            transferCurrency = eur,
+        )
+        coEvery { transactionRepository.getTransaction(7L) } returns source
+        every { tagRepository.observeTagsForTransaction(7L) } returns flowOf(emptyList())
+        val viewModel = viewModel(
+            route = TransactionEditorRoute(duplicateOfId = 7L),
+            accounts = listOf(checking, cash, archived),
+            defaultAccountId = checking.id,
+        )
+        collectState(viewModel)
+
+        val state = viewModel.uiState.value
+        assertEquals(checking, state.account)
+        assertEquals(cash, state.toAccount)
+        assertEquals("50", state.amountInput)
+        assertTrue(state.duplicateAccountReplaced)
+    }
+
+    @Test
     fun `editing a generated movement surfaces the recurring flag and rule name`() = runTest {
         val existing = Transaction(
             id = 7L,

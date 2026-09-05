@@ -6,6 +6,7 @@ import com.callbackdev.saldo.core.database.mapper.toEntity
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
 import com.callbackdev.saldo.core.domain.model.AccountWithBalance
+import com.callbackdev.saldo.core.domain.model.DailyNet
 import com.callbackdev.saldo.core.domain.money.MoneyMapper
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import kotlinx.coroutines.flow.Flow
@@ -62,6 +63,26 @@ class RoomAccountRepository @Inject constructor(
     override fun observeInitialBalanceTotal(currency: Currency): Flow<BigDecimal> =
         accountDao.observeInitialBalanceTotal(currency.currencyCode)
             .map { MoneyMapper.toAmount(it, currency) }
+
+    override fun observeDailyNetChanges(
+        accountId: Long,
+        currency: Currency,
+        start: LocalDate,
+        endExclusive: LocalDate,
+    ): Flow<List<DailyNet>> =
+        accountDao.observeDailyNetChanges(
+            accountId = accountId,
+            startEpochDay = start.toEpochDay(),
+            endEpochDayExclusive = endExclusive.toEpochDay(),
+        ).map { rows -> rows.map { it.toDomain(currency) } }
+
+    override fun observeNetChangeBefore(
+        accountId: Long,
+        currency: Currency,
+        start: LocalDate,
+    ): Flow<BigDecimal> =
+        accountDao.observeNetChangeBefore(accountId, start.toEpochDay())
+            .map { MoneyMapper.toAmount(it ?: 0L, currency) }
 
     override suspend fun getAccount(id: Long): Account? = accountDao.getById(id)?.toDomain()
 

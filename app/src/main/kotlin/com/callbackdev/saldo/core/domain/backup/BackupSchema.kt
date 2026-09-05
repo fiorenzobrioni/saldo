@@ -87,6 +87,11 @@ data class SettingsBackup(
     val useDynamicColor: Boolean? = null,
     val renewalReminderEnabled: Boolean? = null,
     val renewalReminderLeadDays: Int? = null,
+    /** Fase 39 (F4): absent in older files. */
+    val backupReminderEnabled: Boolean? = null,
+    val backupReminderIntervalDays: Int? = null,
+    /** Fase 39 (F5): the saved CSV column mappings; absent or empty in older files. */
+    val csvColumnMappings: List<CsvColumnMappingBackup>? = null,
     /** [java.time.DayOfWeek] name; null keeps following the locale. */
     val firstDayOfWeek: String? = null,
     /** [com.callbackdev.saldo.core.common.prefs.CsvSeparator] name. */
@@ -101,6 +106,20 @@ data class SettingsBackup(
     val dashboardShowUpcoming: Boolean? = null,
     val dashboardShowRecapTeaser: Boolean? = null,
     val balanceAccountsExpandedByDefault: Boolean? = null,
+)
+
+/**
+ * A saved CSV column mapping (Fase 39, F5): importer field *names* to column
+ * indices, for a file with this header. Names, not enum ordinals, so a field
+ * this version does not know is dropped on restore instead of shifting the rest.
+ */
+@Serializable
+data class CsvColumnMappingBackup(
+    val name: String,
+    val header: List<String>,
+    val fields: Map<String, Int>,
+    /** `"."` or `","` when forced; null lets the file decide. */
+    val decimalMark: String? = null,
 )
 
 @Serializable
@@ -179,6 +198,8 @@ data class RecurringRuleBackup(
     val transferAccountId: Long? = null,
     val transferAmountMinor: Long? = null,
     val transferCurrency: String? = null,
+    /** Fase 39 (F3): absent in older backups, which only had active rules. */
+    val isPaused: Boolean = false,
 )
 
 @Serializable

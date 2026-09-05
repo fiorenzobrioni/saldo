@@ -57,7 +57,19 @@ Non serve che il file sia identico a quello esportato da Saldo. L'importazione a
 - **Decimali**: sono interpretati sia con la virgola sia con il punto; i separatori delle migliaia (`1.234,56` oppure `1,234.56`) vengono gestiti. Un importo tra parentesi, come `(50)`, è letto come negativo.
 - **Colonne per nome**: le colonne sono riconosciute dal nome dell'intestazione, non dalla posizione, quindi possono essere in qualsiasi ordine. Sono accettati sia i nomi italiani sia quelli inglesi (per esempio "Data"/"Date", "Importo"/"Amount", "Conto"/"Account"), oltre ad alcune varianti comuni. Le colonne che non servono vengono ignorate.
 - **Colonne minime**: bastano una colonna data e una colonna importo. Le altre sono facoltative.
+- **Intestazione non riconosciuta**: se data e importo non si trovano per nome, l'importazione non si ferma: si apre la mappatura manuale delle colonne (sezione seguente).
 - **Date**: sono riconosciuti i formati più comuni (`2026-07-08`, `08/07/2026`, `08-07-2026` e simili); un eventuale orario dopo la data viene ignorato.
+
+### Mappatura manuale delle colonne
+
+Quando l'intestazione del file non basta a trovare la colonna della data e quella dell'importo (tipico degli estratti bancari, con nomi come "Data operazione" o "Importo EUR"), la sheet chiede di abbinare le colonne a mano:
+
+- per ogni campo di Saldo un menu con le intestazioni del file, già compilato con quanto è stato riconosciuto; data e importo sono obbligatori, il resto facoltativo;
+- il separatore decimale: "Auto" usa quello che il file stabilisce da solo (mostrato accanto) o, se il file resta ambiguo, quello della lingua del telefono; `1.234,56` e `1,234.56` lo forzano;
+- l'anteprima delle prime righe lette con la mappatura corrente, per controllare prima di continuare;
+- un nome facoltativo per **salvare la mappatura** (es. "Estratto Banca X"): al prossimo file con la stessa intestazione viene applicata da sola, e l'anteprima lo dice. Dall'anteprima, "Modifica colonne" riapre la mappatura anche quando il riconoscimento è andato a buon fine.
+
+Le mappature salvate si vedono e si eliminano da Impostazioni > Dati > Mappature CSV salvate, e viaggiano nel backup insieme alle altre impostazioni.
 
 ### Regole intelligenti sulle righe
 

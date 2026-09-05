@@ -432,6 +432,67 @@ class RecurringRuleEditorViewModelTest {
     }
 
     @Test
+    fun `pausing from the editor persists the flag and keeps the watermark`() = runTest {
+        val existing = RecurringRule(
+            id = 7L,
+            name = "Disney+",
+            type = TransactionType.EXPENSE,
+            currency = eur,
+            accountId = 1L,
+            frequency = RecurrenceFrequency.MONTHLY,
+            startDate = LocalDate.of(2026, 1, 18),
+            amount = BigDecimal("8.99"),
+            dayOfReference = 18,
+            lastGeneratedDate = LocalDate.of(2026, 6, 18),
+        )
+        coEvery { recurringRuleRepository.getRule(7L) } returns existing
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 7L
+
+        val viewModel = viewModel(route = RecurringRuleEditorRoute(ruleId = 7L))
+        assertFalse(viewModel.uiState.value.isPaused)
+        viewModel.hasUnsavedChanges.test {
+            assertFalse(awaitItem())
+            viewModel.onPausedToggled(true)
+            assertTrue(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+        viewModel.save()
+
+        assertTrue(saved.captured.isPaused)
+        assertEquals(LocalDate.of(2026, 6, 18), saved.captured.lastGeneratedDate)
+    }
+
+    @Test
+    fun `resuming from the editor moves the watermark to yesterday instead of back-filling`() = runTest {
+        val existing = RecurringRule(
+            id = 7L,
+            name = "Disney+",
+            type = TransactionType.EXPENSE,
+            currency = eur,
+            accountId = 1L,
+            frequency = RecurrenceFrequency.MONTHLY,
+            startDate = LocalDate.of(2026, 1, 18),
+            amount = BigDecimal("8.99"),
+            dayOfReference = 18,
+            lastGeneratedDate = LocalDate.of(2026, 3, 18),
+            isPaused = true,
+        )
+        coEvery { recurringRuleRepository.getRule(7L) } returns existing
+        val saved = slot<RecurringRule>()
+        coEvery { recurringRuleRepository.upsert(capture(saved)) } returns 7L
+
+        val viewModel = viewModel(route = RecurringRuleEditorRoute(ruleId = 7L))
+        assertTrue(viewModel.uiState.value.isPaused)
+        viewModel.onPausedToggled(false)
+        viewModel.save()
+
+        assertFalse(saved.captured.isPaused)
+        // April, May and June stay unrecorded: the pause meant "skip", not "later".
+        assertEquals(today.minusDays(1), saved.captured.lastGeneratedDate)
+    }
+
+    @Test
     fun `editing preserves the reminder watermark so an edit does not re-notify`() = runTest {
         val existing = RecurringRule(
             id = 7L,

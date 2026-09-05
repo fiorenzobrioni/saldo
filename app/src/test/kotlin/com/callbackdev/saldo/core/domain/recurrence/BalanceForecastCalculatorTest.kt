@@ -29,6 +29,7 @@ class BalanceForecastCalculatorTest {
         currency: Currency = eur,
         lastGenerated: LocalDate? = null,
         isVariable: Boolean = false,
+        isPaused: Boolean = false,
     ) = RecurringRule(
         id = id,
         name = "rule-$id",
@@ -41,6 +42,7 @@ class BalanceForecastCalculatorTest {
         dayOfReference = dayOfReference,
         isVariableAmount = isVariable,
         lastGeneratedDate = lastGenerated,
+        isPaused = isPaused,
     )
 
     private fun forecast(
@@ -72,6 +74,15 @@ class BalanceForecastCalculatorTest {
     @Test
     fun `the last day of the month yields no forecast`() {
         assertTrue(forecast(today = LocalDate.of(2026, 7, 31)).isEmpty())
+    }
+
+    @Test
+    fun `a paused rule leaves the projection flat`() {
+        // The 20th is ahead of the 10th, but a paused rule will not charge.
+        val points = forecast(balance = "100.00", rules = listOf(rule(isPaused = true)))
+
+        assertEquals(BigDecimal("100.00"), points.first().balance)
+        assertEquals(BigDecimal("100.00"), points.last().balance)
     }
 
     @Test

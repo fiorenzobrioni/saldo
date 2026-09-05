@@ -34,7 +34,7 @@ import com.callbackdev.saldo.core.database.entity.TransactionTagCrossRef
  * a migration (a reset that forces a reinstall on the test device), but that is
  * a deliberate exception, not the default.
  */
-const val SALDO_DATABASE_VERSION = 4
+const val SALDO_DATABASE_VERSION = 5
 
 @Database(
     entities = [

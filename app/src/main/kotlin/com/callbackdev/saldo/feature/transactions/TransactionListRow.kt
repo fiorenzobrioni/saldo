@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.feature.transactions
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,11 +11,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -25,7 +29,10 @@ import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +59,11 @@ import com.callbackdev.saldo.core.domain.model.isRecurring
  * A movement row that can be swiped away (end to start) to delete it. Flat, so
  * it sits inside a day's grouped card: the opaque foreground hides the delete
  * background until swiped, and the parent card clips the rounded corners.
+ *
+ * A long press opens the row's context menu, which today holds one action:
+ * [onDuplicate], the shortcut that opens a new movement prefilled from this one
+ * (Fase 39, F2). Null hides the menu, for the rows that cannot be duplicated
+ * (balance adjustments) or the lists that do not offer it.
  */
 @Composable
 internal fun SwipeableTransactionRow(
@@ -59,10 +71,12 @@ internal fun SwipeableTransactionRow(
     onClick: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
+    onDuplicate: (() -> Unit)? = null,
 ) {
     val currentOnDelete by rememberUpdatedState(onDelete)
     val haptics = LocalHapticFeedback.current
     val dismissState = rememberSwipeToDismissBoxState()
+    var menuOpen by remember { mutableStateOf(false) }
     // Trigger the delete when the row settles in the dismissed state, observing
     // the state instead of vetoing it from a callback (confirmValueChange is
     // deprecated). Only the end-to-start direction is enabled below, and the box
@@ -97,18 +111,44 @@ internal fun SwipeableTransactionRow(
         },
         modifier = modifier,
     ) {
-        Surface(
-            onClick = onClick,
-            color = SaldoCardDefaults.containerColor,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            TransactionRowContent(
-                item = item,
-                modifier = Modifier.padding(
-                    horizontal = SaldoDimens.rowPaddingHorizontal,
-                    vertical = SaldoDimens.rowPaddingVertical,
-                ),
-            )
+        Box {
+            Surface(
+                color = SaldoCardDefaults.containerColor,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .combinedClickable(
+                        onClick = onClick,
+                        onLongClick = onDuplicate?.let {
+                            {
+                                haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                menuOpen = true
+                            }
+                        },
+                        onLongClickLabel = onDuplicate?.let {
+                            stringResource(R.string.transaction_action_duplicate)
+                        },
+                    ),
+            ) {
+                TransactionRowContent(
+                    item = item,
+                    modifier = Modifier.padding(
+                        horizontal = SaldoDimens.rowPaddingHorizontal,
+                        vertical = SaldoDimens.rowPaddingVertical,
+                    ),
+                )
+            }
+            if (onDuplicate != null) {
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.transaction_action_duplicate)) },
+                        leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                        onClick = {
+                            menuOpen = false
+                            onDuplicate()
+                        },
+                    )
+                }
+            }
         }
     }
 }

@@ -180,6 +180,7 @@ object BalanceForecastCalculator {
         rules
             .filter { rule ->
                 (rule.type == TransactionType.EXPENSE || rule.type == TransactionType.INCOME) &&
+                    !rule.isPaused &&
                     !rule.isVariableAmount &&
                     rule.amount != null
             }
