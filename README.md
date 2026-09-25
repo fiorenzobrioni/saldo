@@ -22,17 +22,24 @@ Un'app Android moderna, offline-first e privacy-first per il tracciamento delle 
 <div align="center">
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/screenshot-1.jpg" width="260" alt="Dashboard"><br><em>Dashboard</em></td>
-    <td align="center"><img src="docs/screenshots/screenshot-2.jpg" width="260" alt="Movimenti"><br><em>Movimenti</em></td>
-    <td align="center"><img src="docs/screenshots/screenshot-3.jpg" width="260" alt="Statistiche"><br><em>Statistiche</em></td>
+    <td align="center"><img src="docs/screenshots/dashboard.png" width="260" alt="Dashboard: saldo totale con andamento e stima a fine mese, conti, spendibile oggi, spese di oggi e del mese"><br><em>Dashboard</em></td>
+    <td align="center"><img src="docs/screenshots/dashboard-cards.png" width="260" alt="Dashboard: confronto mensile, budget, obiettivo di risparmio, crediti e debiti"><br><em>Budget e obiettivi</em></td>
+    <td align="center"><img src="docs/screenshots/dashboard-dark.png" width="260" alt="Dashboard in tema scuro"><br><em>Tema scuro</em></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/screenshot-4.jpg" width="260" alt="Movimenti ricorrenti"><br><em>Ricorrenti</em></td>
-    <td align="center"><img src="docs/screenshots/screenshot-5.jpg" width="260" alt="Tassi di cambio"><br><em>Tassi di cambio</em></td>
-    <td align="center"><img src="docs/screenshots/screenshot-6.jpg" width="260" alt="Widget"><br><em>Widget</em></td>
+    <td align="center"><img src="docs/screenshots/transactions.png" width="260" alt="Movimenti del mese raggruppati per giorno, con i totali del periodo"><br><em>Movimenti</em></td>
+    <td align="center"><img src="docs/screenshots/stats.png" width="260" alt="Statistiche: spese del mese per categoria"><br><em>Statistiche</em></td>
+    <td align="center"><img src="docs/screenshots/recurrences.png" width="260" alt="Movimenti ricorrenti: totale del mese, proiezione annua, prossimi addebiti"><br><em>Ricorrenti</em></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/screenshots/exchange-rates.png" width="260" alt="Tassi di cambio BCE con convertitore rapido e andamento recente"><br><em>Tassi di cambio</em></td>
+    <td align="center"><img src="docs/screenshots/widgets.png" width="260" alt="I due widget sulla home: barra spesa/entrata e griglia delle categorie"><br><em>Widget</em></td>
+    <td align="center"><img src="docs/screenshots/quick-entry.png" width="260" alt="Inserimento rapido dal widget: categoria scelta, tastierino, importo"><br><em>Inserimento rapido</em></td>
   </tr>
 </table>
 </div>
+
+Le immagini sono disegnate dall'app stessa su dati d'esempio realistici (la barra di stato del telefono non compare) e si rigenerano con un comando, descritto in [Build](#build).
 
 ## Cos'è Saldo
 
@@ -104,7 +111,7 @@ Requisiti: Android 13 (API 33) o superiore. Dalla 2.2.0 l'APK pubblicato è una 
 - **MVVM + Use Cases + Repository**, **Hilt** (DI), **KSP**
 - **WorkManager** (ricorrenze, backup), **Vico** (grafici), **RemoteViews** (widget home)
 - minSdk **33** (Android 13), target SDK 36
-- Test: JUnit 5 (unit test JVM), JUnit 4 + Compose UI Test (strumentati), MockK, Turbine
+- Test: JUnit 5 (unit test JVM), JUnit 4 + Compose UI Test (strumentati), MockK, Turbine; Robolectric per gli screenshot del README
 
 ```text
 UI (Compose) → ViewModel → Use Cases → Repository → Room DB - DataStore - Backup/Export
@@ -129,6 +136,12 @@ Verifica completa (build, unit test, lint, analisi statica):
 ```
 
 La CI (GitHub Actions) esegue gli stessi task su ogni push e allega l'APK di debug come artefatto della build, più una build release minificata firmata con la chiave di debug per gli smoke test. La release la pubblica il workflow `release.yml` al push di un tag `vX.Y.Z`: ripete la verifica, costruisce l'APK release firmato con la chiave di rilascio (custodita fuori dal repository e iniettata come secret) e crea la release GitHub con le note di `docs/release-notes/vX.Y.Z.md`.
+
+Screenshot del README (`docs/screenshots/`): li disegna il test `ReadmeScreenshots`, che fa girare l'app su Robolectric con un registro d'esempio e una data fissa. Parte solo su richiesta, la CI non lo esegue:
+
+```bash
+./gradlew testDebugUnitTest -PupdateScreenshots --tests "*.ReadmeScreenshots"
+```
 
 ## Struttura del progetto
 
