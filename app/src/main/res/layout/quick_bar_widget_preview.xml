@@ -9,9 +9,8 @@
     preview that undersells the widget is as wrong as one that oversells it.
 
     Same rules as quick_add_widget_preview.xml: only resources, only views
-    RemoteViews accepts, colours from res/values(-night) rather than
-    ?android:attr, and the wash as android:alpha over a dynamic surface there is
-    no build-time value to pre-blend against.
+    RemoteViews accepts, colours from res/values rather than ?android:attr, the
+    default card of the family (ADR 52), and the wash as android:alpha over it.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"

@@ -9,9 +9,9 @@
 
     Every tinted surface is an ImageView behind its content rather than a
     background on the container: setColorFilter is the only tint a RemoteViews
-    can apply, and it only reaches an ImageView. The shapes are solid white, so
-    the SRC_ATOP filter reproduces the colour handed to it exactly - which is
-    also why WidgetPalette pre-blends its washes instead of sending alpha.
+    can apply, and it only reaches an ImageView. The filter is always opaque and a
+    wash's strength is the ImageView's image alpha, so a wash composites over
+    the card behind it rather than over the white shape (see WidgetPalette).
 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
@@ -30,7 +30,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:paddingHorizontal="12dp"
+        android:paddingHorizontal="14dp"
         android:paddingVertical="8dp">
 
         <LinearLayout

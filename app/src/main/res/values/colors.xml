@@ -2,6 +2,12 @@
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
 
+    <!-- The notifications' accent (ADR 52, after Chiaro's of 23 set 2026): the small
+         icon's disc and the app name in the header. The launcher icon's own blue, the
+         wallet's base tone: the one colour a user has already seen the app wear
+         before opening it. -->
+    <color name="notification_accent">#1A73E8</color>
+
     <!-- Launcher shortcut icon backgrounds, drawn from the brand palette so the
          adaptive icons stay on-brand and legible under any launcher mask. -->
     <color name="shortcut_expense_background">#BA1A1A</color>
@@ -9,66 +15,63 @@
     <color name="shortcut_transfer_background">#00696D</color>
 
     <!--
-        Ink and surface of the static widget previews shown in the launcher's
-        widget picker (res/layout/quick_*_widget_preview.xml).
+        The widget card and the static picker previews (ADR 52), and the one
+        place their hexes live outside WidgetCardColor.kt: a previewLayout has
+        no composition and no theme to read from (the launcher inflates it in a
+        restricted context and never runs a line of our code), so the values are
+        baked, and baked here rather than across the layouts.
 
-        System dynamic-palette resources rather than ?android:attr/textColorPrimary,
-        because a previewLayout is not inflated with our theme: AppWidgetHostView
-        builds a plain application context (createApplicationContext with
-        CONTEXT_RESTRICTED), which has no theme resource, so the framework falls
-        back to Theme.DeviceDefault.Light for anything read with ?android:attr -
-        near-black ink, invisible on a dark picker sheet. Resources *are*
-        resolved against the launcher's configuration, so a values-night variant
-        is what actually follows the launcher's light/dark mode.
+        The card is the family's default one: widgetCardContainer(BLUE), flat,
+        the value Chiaro's and Passo's previews bake too, so the three apps'
+        widgets look like one family in the picker. It is also the fill the
+        placed widget is inflated with before its first bind (widget_bg.xml).
+        No values-night variant: a card colour is the same in both themes, and
+        so are the inks it carries. WidgetPreviewColorsTest checks the card
+        against the Kotlin table.
 
-        The tones mirror what the placed widget draws under Material You: the
-        surface is the widgetBackground token (secondaryContainer, tone 90+5 in
-        light and 30-10 in dark, hence accent2 at tones 95/20), the inks are
-        onSurface (neutral1 at 10/90) and onSurfaceVariant (neutral2 at 30/80).
+        The inks are Chiaro's white pair over a card colour (WidgetInk.OVER_COLOR):
+        white, and white at 75% for the quiet one. The selected half of the type
+        selector is a white pill with the card's own blue as its ink.
     -->
-    <color name="widget_preview_surface">@android:color/system_accent2_50</color>
-    <color name="widget_preview_ink">@android:color/system_neutral1_900</color>
-    <color name="widget_preview_ink_muted">@android:color/system_neutral2_700</color>
+    <color name="widget_preview_card">#FF0F3B6B</color>
+    <color name="widget_preview_ink">#FFFFFFFF</color>
+    <color name="widget_preview_ink_muted">#BFFFFFFF</color>
+    <color name="widget_preview_pill">#FFFFFFFF</color>
+    <color name="widget_preview_pill_ink">#FF0F3B6B</color>
 
-    <!-- The bar preview's two accents, mirroring the real buttons (error red
-         and the brand's income green). Fixed brand values rather than system
-         tokens: the dynamic palette carries no red, and the income green is a
-         brand choice the system palette cannot express. -->
-    <color name="widget_preview_expense">#BA1A1A</color>
-    <color name="widget_preview_income">#3E6837</color>
+    <!-- The bar preview's two accents, as the placed bar draws them on a card
+         colour: the dark theme's error red and income green, the set made to
+         read on a dark ground. -->
+    <color name="widget_preview_expense">#FFB4AB</color>
+    <color name="widget_preview_income">#A4D397</color>
 
     <!--
         What a placed widget's tinted shapes are baked with, seen only in the raw
         initialLayout the host inflates before the first bind lands (see
-        widget_tile_bg_wide.xml for why the value is cosmetic). A muted step off
-        the container colour, so that moment reads as a widget filling in.
+        widget_tile_bg_wide.xml for why the value is cosmetic): white at a wash's
+        strength over the blue card, flattened, so that moment reads as a card
+        filling in. Opaque on purpose: SRC_ATOP multiplies the tint by the
+        shape's own alpha, so a translucent value here would thin every tinted
+        shape on the placed widget too.
     -->
-    <color name="widget_placeholder">#DCD2EA</color>
-
-    <color name="widget_preview_pill">@android:color/system_accent1_600</color>
-    <color name="widget_preview_pill_ink">@android:color/system_accent1_50</color>
+    <color name="widget_placeholder">#FF355A83</color>
 
     <!--
         The grid preview's category accents: the first seven colours of the
         default seed (DefaultCategories.kt), in seed order, next to the glyphs of
-        the same seven categories.
-
-        Fixed hex and no values-night variant on purpose, because that is exactly
-        how the placed widget draws them: a category's colour is the one its user
-        picked, so the ink is the same on both branches and only the wash behind
-        it differs - which the layout gets from android:alpha over the surface,
-        not from a second set of colours.
+        the same seven categories, lifted 40% towards white as the placed widget
+        lifts them on a card colour (WidgetPalette.categoryInk): the seed's
+        mid-tones would sink into the dark card.
 
         Still only resources, so the preview stays correct by construction and
         costs nothing to keep so (ADR 37): nothing here is read from the database
-        or rasterized at runtime. It is what a fresh install actually shows,
-        which is the honest thing to advertise in the picker.
+        or rasterized at runtime.
     -->
-    <color name="widget_preview_cat_home">#5C6BC0</color>
-    <color name="widget_preview_cat_rent">#7E57C2</color>
-    <color name="widget_preview_cat_groceries">#66BB6A</color>
-    <color name="widget_preview_cat_dining">#EF5350</color>
-    <color name="widget_preview_cat_transport">#42A5F5</color>
-    <color name="widget_preview_cat_fuel">#26A69A</color>
-    <color name="widget_preview_cat_health">#EC407A</color>
+    <color name="widget_preview_cat_home">#9DA6D9</color>
+    <color name="widget_preview_cat_rent">#B29ADA</color>
+    <color name="widget_preview_cat_groceries">#A3D6A6</color>
+    <color name="widget_preview_cat_dining">#F59896</color>
+    <color name="widget_preview_cat_transport">#8EC9F9</color>
+    <color name="widget_preview_cat_fuel">#7DCAC2</color>
+    <color name="widget_preview_cat_health">#F48CAF</color>
 </resources>

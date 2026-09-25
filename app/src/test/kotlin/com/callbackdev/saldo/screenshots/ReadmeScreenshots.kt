@@ -33,19 +33,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.designsystem.theme.SaldoTheme
+import com.callbackdev.saldo.core.designsystem.theme.WidgetCardColor
+import com.callbackdev.saldo.core.domain.model.CategoryType
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
+import com.callbackdev.saldo.feature.guide.GuideScreen
 import com.callbackdev.saldo.feature.rates.ExchangeRatesScreen
 import com.callbackdev.saldo.feature.recurring.RecurrencesScreen
 import com.callbackdev.saldo.feature.widget.ActionSizes
 import com.callbackdev.saldo.feature.widget.QuickAddWidgetConfig
+import com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigScreen
+import com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigUiState
 import com.callbackdev.saldo.feature.widget.QuickAddWidgetDataLoader
 import com.callbackdev.saldo.feature.widget.QuickEntryRoute
 import com.callbackdev.saldo.feature.widget.QuickEntrySheet
 import com.callbackdev.saldo.feature.widget.QuickEntryViewModel
 import com.callbackdev.saldo.feature.widget.WidgetRenderer
 import com.callbackdev.saldo.feature.widget.WidgetSize
+import com.callbackdev.saldo.feature.widget.resolveWidgetTheme
 import com.callbackdev.saldo.feature.widget.wideGridHeight
 import com.callbackdev.saldo.navigation.SaldoApp
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -105,6 +113,9 @@ class ReadmeScreenshots {
 
     @Inject
     lateinit var categories: CategoryRepository
+
+    @Inject
+    lateinit var accounts: AccountRepository
 
     @Inject
     @ApplicationContext
@@ -196,6 +207,51 @@ class ReadmeScreenshots {
         save("widgets")
     }
 
+    /** The guide, from the card at the top of Settings: its opening and the map of the four screens. */
+    @Test
+    fun guide() {
+        show { GuideScreen(onNavigateBack = {}) }
+        quiet()
+        save("guide")
+    }
+
+    /**
+     * The grid widget's own settings, as the launcher's reconfigure flow opens
+     * them: the real widget at the top, then its background, colour and opacity.
+     */
+    @Test
+    fun widgetSettings() {
+        val config = QuickAddWidgetConfig()
+        val state = runBlocking {
+            QuickAddWidgetConfigUiState(
+                isLoading = false,
+                config = config,
+                accounts = accounts.observeAccounts().first().filter { !it.isArchived },
+                categories = categories.observeCategories(CategoryType.EXPENSE).first(),
+            )
+        }
+        val theme = resolveWidgetTheme(context, ThemePreferences(), config)
+        show {
+            QuickAddWidgetConfigScreen(
+                state = state,
+                isBar = false,
+                theme = theme,
+                onAccountSelected = {},
+                onTypeSelected = {},
+                onShowAppShortcutChanged = {},
+                onButtonsSelected = {},
+                onCustomCategoriesChanged = {},
+                onCategoryToggled = {},
+                onPinnedReordered = {},
+                onLookChanged = {},
+                onConfirm = {},
+                onCancel = {},
+            )
+        }
+        quiet()
+        save("widget-settings")
+    }
+
     /**
      * What a tap on the widget's "Ristoranti & Bar" tile opens: the quick-entry
      * sheet over the home screen, with an amount half typed on its keypad.
@@ -271,19 +327,23 @@ class ReadmeScreenshots {
 
     /** The two widget shapes as the launcher gets them: the real `RemoteViews`. */
     private fun homeScreenWidgets(): HomeWidgets {
-        val snapshot = runBlocking { widgetData.loadShared(QuickAddWidgetConfig()) }
-        fun render(size: WidgetSize) = WidgetRenderer.render(
-            context = context,
-            appWidgetId = 1,
-            data = snapshot.data,
-            palette = snapshot.theme.palette,
-            size = size,
-        )
+        fun render(config: QuickAddWidgetConfig, size: WidgetSize): RemoteViews {
+            val snapshot = runBlocking { widgetData.loadShared(config) }
+            return WidgetRenderer.render(
+                context = context,
+                appWidgetId = 1,
+                data = snapshot.data,
+                palette = snapshot.theme.palette,
+                size = size,
+            )
+        }
         val grid = WidgetSize(WIDE_WIDGET_DP, wideGridHeight(GRID_ROWS))
         return HomeWidgets(
-            bar = render(ActionSizes[1]),
+            // The bar in another of the six colours, the grid on the default
+            // blue: the picture shows the choice as well as the widgets.
+            bar = render(QuickAddWidgetConfig(cardColor = WidgetCardColor.PLUM), ActionSizes[1]),
             barHeightDp = ActionSizes[1].height,
-            grid = render(grid),
+            grid = render(QuickAddWidgetConfig(), grid),
             gridHeightDp = grid.height,
         )
     }

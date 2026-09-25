@@ -14,6 +14,38 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-09-25 - Fase 41: widget, notifiche e guida nello stile di Chiaro e Passo
+
+**Fatto:** Saldo veste widget e notifiche come le app sorelle e ha una guida nell'app nella loro forma (ADR 52), versione 2.2.7 (`versionCode` 187).
+
+- Widget: la card di Chiaro (angolo 24 dp, 14 dp di margine laterale), sfondo chiaro, scuro, come il telefono o uno dei sei colori di Chiaro, opacità a passi del 5%, regola degli inchiostri pura (`WidgetInk.kt`). Default la card blu piena. Le icone delle categorie su un colore sono schiarite del 40% verso il bianco.
+- Impostazioni del widget nei gruppi di Chiaro e Passo: in cima il widget vero (il `RemoteViews` di `WidgetRenderer` applicato in un `AndroidView`, con i tocchi assorbiti), poi Sfondo (quattro righe con campione, sei colori, opacità) e Contenuto. Il mock Compose dell'anteprima è sparito.
+- Anteprime del picker sulla card blu con inchiostri bianchi, come quelle di Chiaro e Passo; la variante `values-night` dei colori delle anteprime è stata rimossa.
+- Notifiche: small icon `ic_stat_saldo` (il portafoglio dell'icona), accento `notification_accent` (il blu dell'icona), frase nella notifica chiusa e storia in quella aperta (`SaldoNotifications`), ore di quiete 22-7. Ricorrenze, rinnovi e scadenze elencano i movimenti con importo e giorno (al massimo cinque righe, poi "e altri N"); gli estratti dicono ciclo e scadenza del pagamento; il backup dice la data dell'ultimo. I budget hanno un corpo espanso con una barra per budget (quattro al massimo) e la banda del mese trascorso come secondary progress, più quanto resta e a che ritmo al giorno (`BudgetMonth`).
+- Guida: `GuideScreen` su `GuideRoute`, card in cima alle Impostazioni, dieci capitoli con la prosa di Chiaro e due esempi disegnati dai componenti dell'app (tre movimenti, una barra di budget).
+- Screenshot: `widgets.png` e `quick-entry.png` rigenerati, `widget-settings.png` e `guide.png` aggiunti; README, guida utente (aggiunta rapida) e PLANNING aggiornati.
+- Proposte per un'icona dell'app omogenea con Chiaro e Passo, presentate al committente e non applicate.
+
+**Decisioni:**
+
+- **Opacità senza listener.** La Fase 37 aveva tolto lo slider perché un widget trasparente chiedeva un listener sullo sfondo del telefono. Qui il suggerimento dello sfondo si legge solo al render e solo quando serve (sotto il 50% su "come il telefono" o su un colore): l'ADR 37 resta intatto e un widget trasparente aggiorna l'inchiostro al redraw successivo, compromesso scritto nell'ADR 52 e nella guida utente.
+- **Colore opaco più image alpha** al posto del pre-blend: il pre-blend componeva sopra uno sfondo noto, cosa impossibile con una card trasparente. `setColorFilter` riceve il colore opaco, `setImageAlpha` la trasparenza.
+- **Chiave dell'aspetto riusata** per lo sfondo: SYSTEM, LIGHT e DARK hanno lo stesso significato, quindi un widget configurato mantiene la scelta; uno mai configurato passa alla card blu.
+- **"Come il telefono" segue il telefono**, non il tema dell'app: il widget vive sulla home.
+- **Margine verticale della griglia a 8 dp**: 14 dp come Chiaro faceva uscire la riga delle tessere dall'altezza minima della griglia (120 dp), `WidgetLayoutTest` lo ha segnalato.
+
+**Problemi:**
+
+- Il colore segnaposto delle forme tinte era traslucido: `SRC_ATOP` moltiplica la tinta per l'alpha della forma, quindi pillola e tessere uscivano sbiadite anche dopo il bind. Il segnaposto ora è opaco.
+- Nel layout espanso del budget le righe incluse con `<include>` avrebbero condiviso gli id: ogni riga è un `RemoteViews` annidato aggiunto con `addView`. Verificato con un test Robolectric temporaneo che la vista si applica (tint list e secondary progress sono metodi remotabili) e sta sotto i 256 dp (154 dp per un budget con la sua storia).
+- Detekt: nome del file del colore (`WidgetCardColor.kt`) e due righe lunghe. Lint: due stringhe della guida con "80%" letterale, marcate `formatted="false"`.
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt` verde; test nuovi `WidgetInkTest`, `WidgetPaletteTest`, `WidgetPreviewColorsTest`, `BudgetMonthTest`, `QuickAddWidgetPrefsTest` aggiornato. Screenshot rigenerati e guardati uno per uno. Eseguito nel sandbox cloud, nessun device: resta aperta la verifica su telefono (Fase 41).
+
+**Prossimo:** verifica su device di widget (chiaro, scuro, trasparente, due launcher), notifiche espanse e guida; scelta dell'icona fra le proposte.
+
+---
+
 ## 2026-09-25 - Fase 40: screenshot del README generati dai test
 
 **Fatto:** la classe `ReadmeScreenshots` (test JVM su Robolectric con Hilt) disegna l'app vera su un registro d'esempio realistico e salva nove PNG in `docs/screenshots/`: Dashboard (vista iniziale, card sotto il saldo, tema scuro), Movimenti, Statistiche, Ricorrenze, Tassi di cambio, i due widget sulla home e l'inserimento rapido. Il README mostra i nuovi PNG in una tabella 3x3; i sei JPG presi dal telefono, fermi alla release pubblicata, sono stati cancellati. Regola permanente nel CLAUDE.md. Dipendenze nuove di solo test, approvate dall'utente: Robolectric 4.17, `hilt-android-testing`, Compose UI Test sul source set JVM, `junit-vintage-engine`. Nessun file di `app/src/main` toccato, nessun bump di versione (l'APK non cambia).

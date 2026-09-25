@@ -191,6 +191,10 @@ data object SecurityRoute : NavKey
 @Serializable
 data object BackupRoute : NavKey
 
+/** The in-app guide (ADR 52), reached from the card at the top of Settings. */
+@Serializable
+data object GuideRoute : NavKey
+
 /** About screen (version, license, credits), reached from Settings. */
 @Serializable
 data object AboutRoute : NavKey

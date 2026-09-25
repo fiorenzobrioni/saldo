@@ -107,8 +107,19 @@ class QuickAddWidgetConfigViewModel @Inject constructor(
         config.update { it.copy(buttons = buttons) }
     }
 
-    fun onAppearanceSelected(appearance: WidgetAppearance) {
-        config.update { it.copy(appearance = appearance) }
+    /**
+     * The card's ground, colour and opacity, from the settings' background
+     * group: only those three fields are taken, so a stale copy of the rest of
+     * the configuration can never undo a choice made in another group.
+     */
+    fun onLookChanged(look: QuickAddWidgetConfig) {
+        config.update {
+            it.copy(
+                background = look.background,
+                cardColor = look.cardColor,
+                opacityPct = look.opacityPct.coerceIn(0, FullOpacity),
+            )
+        }
     }
 
     fun onCategoryToggled(categoryId: Long) {

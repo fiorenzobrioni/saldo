@@ -1,20 +1,17 @@
 package com.callbackdev.saldo.backup
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.app.NotificationChannelCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
 import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.domain.usecase.BackupReminder
+import com.callbackdev.saldo.notifications.SaldoNotifications
+import com.callbackdev.saldo.notifications.SaldoNotifications.quietAtNight
+import com.callbackdev.saldo.notifications.SaldoNotifications.story
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -40,40 +37,31 @@ class BackupReminderNotifier @Inject constructor(
         )
     }
 
-    // Guarded by hasNotificationPermission(); lint's flow analysis is intraprocedural.
+    // Guarded by hasPermission(); lint's flow analysis is intraprocedural.
     @SuppressLint("MissingPermission")
     fun notify(reminder: BackupReminder?) {
-        if (reminder == null || !hasNotificationPermission()) return
+        if (reminder == null || !SaldoNotifications.hasPermission(context)) return
         val body = reminder.daysSince
             ?.let { days -> context.resources.getQuantityString(R.plurals.notif_backup_reminder_body_days, days, days) }
             ?: context.getString(R.string.notif_backup_reminder_body_never)
-        val notification = NotificationCompat.Builder(context, CHANNEL_REMINDER)
-            .setSmallIcon(R.drawable.ic_notification)
+        val details = buildList {
+            reminder.lastBackupDate?.let { date ->
+                val locale = context.resources.configuration.locales[0]
+                val day = date.format(DateTimeFormatter.ofPattern(DAY_PATTERN, locale))
+                add(context.getString(R.string.notif_backup_last, day))
+            }
+            add(context.getString(R.string.notif_backup_where))
+        }
+        val notification = SaldoNotifications.builder(
+            context = context,
+            channelId = CHANNEL_REMINDER,
+            contentIntent = SaldoNotifications.openApp(context, REQUEST_OPEN_BACKUP, MainActivity.ACTION_OPEN_BACKUP),
+        )
             .setContentTitle(context.getString(R.string.notif_backup_reminder_title))
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setContentIntent(openBackupIntent())
-            .setAutoCancel(true)
+            .story(body, details)
+            .quietAtNight()
             .build()
         NotificationManagerCompat.from(context).notify(ID_REMINDER, notification)
-    }
-
-    /** POST_NOTIFICATIONS is a runtime permission from API 33; older versions grant it implicitly. */
-    private fun hasNotificationPermission(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-
-    private fun openBackupIntent(): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java)
-            .setAction(MainActivity.ACTION_OPEN_BACKUP)
-            .setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        return PendingIntent.getActivity(
-            context,
-            REQUEST_OPEN_BACKUP,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
     }
 
     private companion object {
@@ -82,5 +70,6 @@ class BackupReminderNotifier @Inject constructor(
         /** Distinct from every other notifier's ids (1001..1008), so nothing replaces it. */
         const val ID_REMINDER = 1009
         const val REQUEST_OPEN_BACKUP = 1
+        const val DAY_PATTERN = "d MMMM yyyy"
     }
 }

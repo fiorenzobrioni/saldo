@@ -4,8 +4,8 @@
 
     Static and complete: the picker never asks the app for anything, so a placed
     widget, an app update and a reboot leave it exactly as it is (ADR 37). It is
-    also only resources - shape drawables, exported vector glyphs and colours
-    with a values-night variant - so it is correct by construction and costs
+    also only resources - shape drawables, exported vector glyphs and colours -
+    so it is correct by construction and costs
     nothing to keep so. Nothing here is read from the database or rasterized at
     runtime.
 
@@ -16,17 +16,17 @@
     eight blank rounded rectangles, which read as a widget still loading rather
     than as the widget the user is about to place.
 
-    The wash is android:alpha over the surface rather than a second set of
-    colours: the surface is a dynamic system token, so there is no build-time
-    value to pre-blend against - and unlike the placed widget, a static layout
-    can simply carry view alpha.
+    It is dressed as the default card (ADR 52): Chiaro's blue with its 24dp
+    corner and 14dp side insets, white ink, the category colours lifted as the placed
+    widget lifts them on a card colour. The wash is android:alpha over the card,
+    as the placed widget's is image alpha.
 
     Only views RemoteViews accepts (LinearLayout, FrameLayout, TextView,
     ImageView): the host inflates this the same way it inflates a widget, and
     anything richer has already proved unreliable here once (adaptive icons
     rendered as a full squircle on one button and as nothing on the other).
 
-    Colours come from res/values(-night)/colors.xml, never from ?android:attr: a
+    Colours come from res/values/colors.xml, never from ?android:attr: a
     previewLayout is inflated with a plain application context whose theme falls
     back to Theme.DeviceDefault.Light, so theme attributes gave near-black ink on
     a dark picker sheet.
@@ -36,7 +36,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/widget_preview_background"
     android:orientation="vertical"
-    android:paddingHorizontal="12dp"
+    android:paddingHorizontal="14dp"
     android:paddingVertical="8dp">
 
     <LinearLayout

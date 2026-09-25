@@ -189,9 +189,10 @@ class QuickAddWidgetDataLoaderTest {
     @Test
     fun `the shared snapshot carries the resolved theme with the data`() = runTest {
         val snapshot = loader().loadShared(QuickAddWidgetConfig())
-        // Forced light: both branches must be the same scheme, or the launcher
-        // could flip a widget its user pinned to one side.
-        assertEquals(snapshot.theme.lightScheme, snapshot.theme.darkScheme)
+        // The default card: a colour is the same ground on both branches, or
+        // the launcher could flip a widget its user dressed one way.
+        assertEquals(WidgetBackground.COLOR, snapshot.theme.background)
+        assertEquals(snapshot.theme.palette.background.light, snapshot.theme.palette.background.dark)
     }
 
     /**

@@ -1,17 +1,9 @@
 package com.callbackdev.saldo.recurring
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.app.NotificationChannelCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
-import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -19,7 +11,14 @@ import com.callbackdev.saldo.core.domain.repository.TransactionRepository
 import com.callbackdev.saldo.core.domain.usecase.DueMovementReminder
 import com.callbackdev.saldo.core.domain.usecase.GeneratedMovement
 import com.callbackdev.saldo.core.domain.usecase.UpcomingRenewal
+import com.callbackdev.saldo.notifications.SaldoNotifications
+import com.callbackdev.saldo.notifications.SaldoNotifications.quietAtNight
+import com.callbackdev.saldo.notifications.SaldoNotifications.story
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.math.BigDecimal
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Currency
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -31,8 +30,11 @@ import javax.inject.Singleton
  * ("Netflix renews in 3 days"). Tapping any of them opens the app, where the
  * pending movements can be confirmed or skipped.
  *
- * On API 33+ posting is a no-op until the user grants POST_NOTIFICATIONS, so no
- * permission check is needed here.
+ * In the family's idiom (see [SaldoNotifications]): collapsed, a title with the
+ * count or the name and one sentence; expanded, the same sentence and under it
+ * the movements themselves, one per line with its amount, so opening the
+ * notification answers "which ones?" without opening the app. Posting is a
+ * silent no-op until POST_NOTIFICATIONS is granted.
  */
 @Singleton
 class RecurringNotifier @Inject constructor(
@@ -78,6 +80,7 @@ class RecurringNotifier @Inject constructor(
                     autoCount,
                 ),
                 body = context.getString(R.string.notif_activity_body),
+                details = lines(generated.filterNot { it.isPending }.map { it.line() }),
             )
         }
         if (pendingCount > 0) {
@@ -90,6 +93,8 @@ class RecurringNotifier @Inject constructor(
                     pendingCount,
                 ),
                 body = context.getString(R.string.notif_confirm_body),
+                // This batch's: the older ones already had their notification.
+                details = lines(generated.filter { it.isPending }.map { it.line() }),
             )
         }
     }
@@ -109,6 +114,7 @@ class RecurringNotifier @Inject constructor(
                 title = renewal.title(),
                 body = renewal.amount?.let { MoneyFormatter.format(it, renewal.currency) }
                     ?: context.getString(R.string.notif_upcoming_body_variable),
+                details = listOf(context.getString(R.string.notif_due_on, renewal.dueDate.spoken())),
             )
 
             else -> post(
@@ -120,6 +126,7 @@ class RecurringNotifier @Inject constructor(
                     renewals.size,
                 ),
                 body = renewals.joinToString(separator = ", ") { it.ruleName },
+                details = lines(renewals.map { upcomingLine(it.ruleName, it.dueDate, it.amount, it.currency) }),
             )
         }
     }
@@ -147,6 +154,7 @@ class RecurringNotifier @Inject constructor(
                     reminder.transaction.amount.abs(),
                     reminder.transaction.currency,
                 ),
+                details = listOf(context.getString(R.string.notif_due_on, reminder.dueDate.spoken())),
             )
 
             else -> post(
@@ -158,6 +166,16 @@ class RecurringNotifier @Inject constructor(
                     reminders.size,
                 ),
                 body = reminders.joinToString(separator = ", ") { it.label() },
+                details = lines(
+                    reminders.map {
+                        upcomingLine(
+                            it.label(),
+                            it.dueDate,
+                            it.transaction.amount.abs(),
+                            it.transaction.currency,
+                        )
+                    },
+                ),
             )
         }
     }
@@ -195,35 +213,49 @@ class RecurringNotifier @Inject constructor(
         }
     }
 
-    // Guarded by hasNotificationPermission(); lint's flow analysis is intraprocedural.
-    @SuppressLint("MissingPermission")
-    private fun post(id: Int, channelId: String, title: String, body: String) {
-        if (!hasNotificationPermission()) return
-        val notification = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setContentIntent(openAppIntent())
-            .setAutoCancel(true)
-            .build()
-        NotificationManagerCompat.from(context).notify(id, notification)
+    /** One generated movement: its rule's name and what it moved. */
+    private fun GeneratedMovement.line(): String = amount
+        ?.let { context.getString(R.string.notif_movement_line, ruleName, MoneyFormatter.format(it, currency)) }
+        ?: context.getString(R.string.notif_movement_line_variable, ruleName)
+
+    /** Something falling due: its name, the day, and the amount when it is known. */
+    private fun upcomingLine(name: String, date: LocalDate, amount: BigDecimal?, currency: Currency): String =
+        amount
+            ?.let { money ->
+                context.getString(
+                    R.string.notif_upcoming_line,
+                    name,
+                    date.spoken(),
+                    MoneyFormatter.format(money, currency),
+                )
+            }
+            ?: context.getString(R.string.notif_upcoming_line_variable, name, date.spoken())
+
+    /**
+     * At most [MAX_LINES] lines, then how many more: the system cuts a long body
+     * at the bottom, and a count said is better than lines lost without a word.
+     */
+    private fun lines(all: List<String>): List<String> {
+        if (all.size <= MAX_LINES) return all
+        val rest = all.size - (MAX_LINES - 1)
+        return all.take(MAX_LINES - 1) +
+            context.resources.getQuantityString(R.plurals.notif_more_lines, rest, rest)
     }
 
-    /** POST_NOTIFICATIONS is a runtime permission from API 33; older versions grant it implicitly. */
-    private fun hasNotificationPermission(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
+    /** "sabato 28 settembre": the day as a sentence says it. */
+    private fun LocalDate.spoken(): String =
+        format(DateTimeFormatter.ofPattern(DAY_PATTERN, context.resources.configuration.locales[0]))
 
-    private fun openAppIntent(): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java)
-            .setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        return PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+    // Guarded by hasPermission(); lint's flow analysis is intraprocedural.
+    @SuppressLint("MissingPermission")
+    private fun post(id: Int, channelId: String, title: String, body: String, details: List<String>) {
+        if (!SaldoNotifications.hasPermission(context)) return
+        val notification = SaldoNotifications.builder(context, channelId)
+            .setContentTitle(title)
+            .story(body, details)
+            .quietAtNight()
+            .build()
+        NotificationManagerCompat.from(context).notify(id, notification)
     }
 
     private companion object {
@@ -236,5 +268,9 @@ class RecurringNotifier @Inject constructor(
         // 1004/1005 belong to BudgetNotifier and 1006/1007 to CreditCardNotifier:
         // a shared id would make one notification silently replace the other.
         const val ID_MOVEMENT_REMINDER = 1008
+
+        /** Five facts under the headline, as in Chiaro's expanded bodies. */
+        const val MAX_LINES = 5
+        const val DAY_PATTERN = "EEEE d MMMM"
     }
 }

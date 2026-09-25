@@ -168,7 +168,6 @@ internal object WidgetRenderer {
                 text = context.getString(R.string.widget_quick_add_expense),
                 glyph = ExpenseIcon,
                 ink = palette.expenseInk,
-                wash = palette.expenseWash,
                 type = TransactionType.EXPENSE,
                 accountId = data.pinnedAccountId,
             )
@@ -184,7 +183,6 @@ internal object WidgetRenderer {
                 text = context.getString(R.string.widget_quick_add_income),
                 glyph = IncomeIcon,
                 ink = palette.incomeInk,
-                wash = palette.incomeWash,
                 type = TransactionType.INCOME,
                 accountId = data.pinnedAccountId,
             )
@@ -203,7 +201,7 @@ internal object WidgetRenderer {
             )
             setViewLayoutWidth(R.id.widget_action_shortcut_icon, mark.toFloat(), TypedValue.COMPLEX_UNIT_DIP)
             setViewLayoutHeight(R.id.widget_action_shortcut_icon, mark.toFloat(), TypedValue.COMPLEX_UNIT_DIP)
-            setColor(R.id.widget_action_shortcut_bg, "setColorFilter", palette.neutralWash)
+            paintWash(R.id.widget_action_shortcut_bg, palette.neutralWash)
             setImageViewBitmap(
                 R.id.widget_action_shortcut_icon,
                 CategoryIconBitmaps.appMark(context, AppShortcutIcon, context.px(mark)),
@@ -227,11 +225,10 @@ internal object WidgetRenderer {
         text: String,
         glyph: ImageVector,
         ink: WidgetColor,
-        wash: WidgetColor,
         type: TransactionType,
         accountId: Long?,
     ) {
-        setColor(background, "setColorFilter", wash)
+        paintWash(background, ink)
         setImageViewBitmap(icon, CategoryIconBitmaps.glyph(glyph, context.px(GlyphRasterSize)))
         // Tinted here rather than baked into the mask, so the launcher flips
         // the shade with the system theme on its own.
@@ -344,7 +341,10 @@ internal object WidgetRenderer {
         // segmented control; INVISIBLE rather than GONE so the pill keeps its
         // width and the selector does not jump as the type changes.
         setViewVisibility(background, if (selected) View.VISIBLE else View.INVISIBLE)
-        if (selected) setColor(background, "setColorFilter", palette.pillFill)
+        if (selected) {
+            setColor(background, "setColorFilter", palette.pillFill)
+            setInt(background, "setImageAlpha", OpaqueImageAlpha)
+        }
         setTextViewText(label, text)
         setColor(label, "setTextColor", if (selected) palette.pillInk else palette.pillIdleInk)
         setContentDescription(label, text)
@@ -369,7 +369,6 @@ internal object WidgetRenderer {
             index = index,
             glyph = CategoryVisuals.icon(category.icon),
             ink = palette.categoryInk(accent),
-            wash = palette.categoryWash(accent),
             label = category.name,
             description = context.getString(R.string.widget_quick_add_category_a11y, category.name),
         )
@@ -409,7 +408,6 @@ internal object WidgetRenderer {
             index = index,
             glyph = MoreIcon,
             ink = palette.moreInk,
-            wash = palette.moreWash,
             label = context.getString(R.string.widget_quick_add_open),
             description = context.getString(R.string.widget_quick_add_open_a11y),
         )
@@ -437,11 +435,11 @@ internal object WidgetRenderer {
         index: Int,
         glyph: ImageVector,
         ink: WidgetColor,
-        wash: WidgetColor,
         label: String,
         description: String,
     ) {
-        setColor(TileBackgroundIds[index], "setColorFilter", wash)
+        // The wash is the ink itself, thinned: a tile reads as its glyph's.
+        paintWash(TileBackgroundIds[index], ink)
         setImageViewBitmap(
             TileIconIds[index],
             CategoryIconBitmaps.glyph(glyph, context.px(GlyphRasterSize)),
@@ -454,8 +452,20 @@ internal object WidgetRenderer {
         }
     }
 
+    /**
+     * The card: its ground opaque, its solidity as the image alpha, so a
+     * see-through card lets the wallpaper through instead of paling towards the
+     * white shape it tints (see [WidgetPalette]).
+     */
     private fun RemoteViews.paintBackground(palette: WidgetPalette) {
         setColor(R.id.widget_background, "setColorFilter", palette.background)
+        setInt(R.id.widget_background, "setImageAlpha", palette.backgroundAlpha)
+    }
+
+    /** A tonal fill: [color] at the app's wash strength over whatever is behind it. */
+    private fun RemoteViews.paintWash(viewId: Int, color: WidgetColor) {
+        setColor(viewId, "setColorFilter", color)
+        setInt(viewId, "setImageAlpha", WashImageAlpha)
     }
 
     /** The day/night pair the launcher resolves on its own, whatever theme it wakes in. */
@@ -544,6 +554,8 @@ internal object WidgetRenderer {
 
     /** The mark above the "open Saldo to get started" text of the taller sizes. */
     private const val SetupMarkSize = 36
+
+    private const val OpaqueImageAlpha = 255
 
     /** The setup layout is the same on every instance, so they can share one intent. */
     private const val SETUP_REQUEST = 0
