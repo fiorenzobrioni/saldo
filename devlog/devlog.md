@@ -14,26 +14,28 @@ Formato suggerito per ogni voce:
 
 ---
 
-## 2026-09-25 - Fase 40: screenshot del README generati dai test (prototipo Dashboard)
+## 2026-09-25 - Fase 40: screenshot del README generati dai test
 
-**Fatto:** la classe `ReadmeScreenshots` (test JVM su Robolectric con Hilt) disegna l'app vera su un registro d'esempio realistico e salva i PNG in `docs/screenshots/`. Prototipo sulla Dashboard: vista iniziale in tema chiaro e scuro, e una seconda vista con le card sotto il saldo (confronto mensile, budget, obiettivo, crediti e debiti). Dipendenze nuove di solo test, approvate dall'utente: Robolectric 4.17, `hilt-android-testing`, Compose UI Test sul source set JVM, `junit-vintage-engine`. Nessun file di `app/src/main` toccato, nessun bump di versione (l'APK non cambia).
+**Fatto:** la classe `ReadmeScreenshots` (test JVM su Robolectric con Hilt) disegna l'app vera su un registro d'esempio realistico e salva nove PNG in `docs/screenshots/`: Dashboard (vista iniziale, card sotto il saldo, tema scuro), Movimenti, Statistiche, Ricorrenze, Tassi di cambio, i due widget sulla home e l'inserimento rapido. Il README mostra i nuovi PNG in una tabella 3x3; i sei JPG presi dal telefono, fermi alla release pubblicata, sono stati cancellati. Regola permanente nel CLAUDE.md. Dipendenze nuove di solo test, approvate dall'utente: Robolectric 4.17, `hilt-android-testing`, Compose UI Test sul source set JVM, `junit-vintage-engine`. Nessun file di `app/src/main` toccato, nessun bump di versione (l'APK non cambia).
 
 **Decisioni:**
 
-- **App vera, non schermate isolate (ADR 51).** Le schermate di Saldo leggono il proprio ViewModel via Hilt, quindi il test rende `SaldoApp` con un grafo Hilt di test invece di passare uno stato inventato come fa Passo. Sono sostituiti solo database (in memoria, col seed delle categorie localizzate), orologio (fisso) e file delle preferenze (uno nuovo per test: il delegate `preferencesDataStore` è un singleton di processo).
-- **Dati prodotti dal codice dell'app.** `SampleLedger` scrive con i repository; le ricorrenze le genera `GenerateRecurringMovementsUseCase` e i pagamenti della carta (auto-post) `ProcessDueCreditCardStatementsUseCase`, come all'avvio dell'app. Le spese piccole vengono da un `Random` con seed fisso: stesso registro a ogni run.
+- **App vera, non schermate isolate (ADR 51).** Le schermate di Saldo leggono il proprio ViewModel via Hilt, quindi il test rende `SaldoApp` (o la singola schermata spinta sopra una tab) con un grafo Hilt di test invece di passare uno stato inventato come fa Passo. Sono sostituiti solo database (in memoria, col seed delle categorie localizzate), orologio (fisso su giovedì 24 settembre 2026, 18:40) e file delle preferenze (uno nuovo per test: il delegate `preferencesDataStore` è un singleton di processo).
+- **Dati prodotti dal codice dell'app.** `SampleLedger` scrive con i repository; le ricorrenze le genera `GenerateRecurringMovementsUseCase` e i pagamenti della carta (auto-post) `ProcessDueCreditCardStatementsUseCase`, come all'avvio dell'app. Le spese piccole e l'andamento dei tassi vengono da un `Random` con seed fisso: stesso registro a ogni run. Un conto in sterline ("Conto UK") mette in scena la multi-valuta: popola "Le tue valute" nei Tassi di cambio e porta il saldo totale in Dashboard a un valore stimato "≈".
+- **Widget dalle `RemoteViews` vere.** `WidgetRenderer.render` (visibile al test, stesso modulo) con i dati di `QuickAddWidgetDataLoader`, applicato dentro un `AndroidView` su uno sfondo sfumato: è il layout che riceve il launcher, non l'anteprima Compose della configurazione.
 - **Solo su richiesta.** Senza `-PupdateScreenshots` il `Test` di Gradle esclude la classe (`filter.excludeTestsMatching`), non si limita a saltarla: così la CI non scarica né avvia Robolectric.
-- **Cattura con `View.draw` sul decor view** invece di `captureToImage()`: quest'ultimo aspetta un frame hardware che Robolectric non consegna alla finestra della `HiltTestActivity`.
+- **Cattura a mano.** `captureToImage()` aspetta un frame hardware che Robolectric non consegna alla finestra della `HiltTestActivity`; il test disegna con `View.draw` le root view di tutte le finestre del processo (lette da `WindowManagerGlobal`), che include la bottom sheet dell'inserimento rapido.
 
 **Problemi:**
 
 - Robolectric con l'immagine SDK 36 accede a interni del JDK che Java 21 tiene chiusi (`jdk.internal.access`): fissato a SDK 35 come in Passo.
 - La `HiltTestActivity` sta nei sorgenti di test e il manifest dell'app non la dichiara: la registra una rule nel package manager di Robolectric, col flag di accelerazione hardware e il tema dell'app.
+- I tasti del tastierino si distinguono dal campo importo, che mostra le stesse cifre, escludendo il nodo con la descrizione "Importo" (la virgola ha una descrizione propria, quindi non basta escludere ogni nodo descritto).
 - Maven Central risponde 429 dal sandbox cloud, anche per il download a runtime di `android-all` da parte di Robolectric: aggiunto `gradle/google-maven-mirror.init.gradle.kts` (opt-in, copiato da Passo).
 
-**Verifica:** `./gradlew testDebugUnitTest -PupdateScreenshots --tests "*.ReadmeScreenshots"` genera i tre PNG, identici byte per byte fra due run; `./gradlew assembleDebug testDebugUnitTest lint detekt` verde, con la classe esclusa dal run e le immagini non toccate. Eseguito nel sandbox cloud, nessun device.
+**Verifica:** `./gradlew testDebugUnitTest -PupdateScreenshots --tests "*.ReadmeScreenshots"` genera i nove PNG, identici byte per byte fra due run; immagini controllate una per una. `./gradlew assembleDebug testDebugUnitTest lint detekt` verde, con la classe esclusa dal run e le immagini non toccate. Eseguito nel sandbox cloud, nessun device.
 
-**Prossimo:** le altre schermate del README (Movimenti, Statistiche, Ricorrenze, Tassi di cambio, widget), poi README e regola permanente nel CLAUDE.md.
+**Prossimo:** nessun passo aperto nella fase; le schermate nuove delle fasi future aggiungono il proprio screenshot secondo la regola del CLAUDE.md.
 
 ---
 

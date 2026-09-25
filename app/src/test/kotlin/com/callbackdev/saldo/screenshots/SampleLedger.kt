@@ -6,6 +6,7 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.visuals.AccountVisuals
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.AccountType
+import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CreditCardConfig
 import com.callbackdev.saldo.core.domain.model.RecurrenceFrequency
 import com.callbackdev.saldo.core.domain.model.RecurringRule
@@ -14,7 +15,9 @@ import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.BudgetRepository
+import com.callbackdev.saldo.core.domain.rates.ExchangeRate
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
+import com.callbackdev.saldo.core.domain.repository.ExchangeRateRepository
 import com.callbackdev.saldo.core.domain.repository.RecurringRuleRepository
 import com.callbackdev.saldo.core.domain.repository.SavingsGoalRepository
 import com.callbackdev.saldo.core.domain.repository.TransactionRepository
@@ -23,6 +26,7 @@ import com.callbackdev.saldo.core.domain.usecase.ProcessDueCreditCardStatementsU
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import java.math.BigDecimal
+import java.math.MathContext
 import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -34,9 +38,10 @@ import javax.inject.Inject
 
 /**
  * The README screenshots' sample ledger: one plausible person in Milan, from
- * July to Thursday 24 September 2026, 18:40. Four accounts, a salary, rent,
- * bills and subscriptions, three months of everyday spending (August has the
- * summer holiday), a budget, a savings goal, a friend who owes a dinner.
+ * July to Thursday 24 September 2026, 18:40. Five accounts (one in pounds), a
+ * salary, rent, bills and subscriptions, three months of everyday spending
+ * (August has the summer holiday), a budget, a savings goal, a friend who owes
+ * a dinner, and the ECB rates of the last quarter.
  *
  * Written through the app's own repositories, and the recurring movements and
  * the credit card payments are produced by the app's own use cases, so every
@@ -51,11 +56,13 @@ class SampleLedger @Inject constructor(
     private val rules: RecurringRuleRepository,
     private val budgets: BudgetRepository,
     private val goals: SavingsGoalRepository,
+    private val exchangeRates: ExchangeRateRepository,
     private val generateRecurring: GenerateRecurringMovementsUseCase,
     private val processStatements: ProcessDueCreditCardStatementsUseCase,
 ) {
     private val eur = Currency.getInstance("EUR")
-    private lateinit var categoryIds: Map<String, Long>
+    private val gbp = Currency.getInstance("GBP")
+    private lateinit var seededCategories: Map<String, Category>
 
     private var checking = 0L
     private var travelFund = 0L
@@ -63,7 +70,7 @@ class SampleLedger @Inject constructor(
     private var cash = 0L
 
     suspend fun seed() {
-        categoryIds = categories.observeCategories().first().associate { it.name to it.id }
+        seededCategories = categories.observeCategories().first().associateBy { it.name }
         seedAccounts()
         seedRules()
         seedEverydaySpending()
@@ -74,6 +81,7 @@ class SampleLedger @Inject constructor(
         generateRecurring(TODAY)
         processStatements(TODAY)
         seedPlans()
+        seedExchangeRates()
     }
 
     private suspend fun seedAccounts() {
@@ -91,6 +99,9 @@ class SampleLedger @Inject constructor(
             ),
         )
         cash = account("Contanti", AccountType.CASH, "85.00")
+        // Left over from a year in London: the one foreign balance, counted in
+        // the total at the ECB rate (ADR 40).
+        account("Conto UK", AccountType.CHECKING, "640.00", currency = gbp)
     }
 
     /** An account as the editor creates it, with its type's preset icon and color. */
@@ -99,11 +110,12 @@ class SampleLedger @Inject constructor(
         type: AccountType,
         initialBalance: String,
         creditCard: CreditCardConfig? = null,
+        currency: Currency = eur,
     ): Long = accounts.upsert(
         Account(
             name = name,
             type = type,
-            currency = eur,
+            currency = currency,
             initialBalance = money(initialBalance),
             color = AccountVisuals.defaultColorFor(type),
             icon = AccountVisuals.defaultIconFor(type),
@@ -144,6 +156,8 @@ class SampleLedger @Inject constructor(
                 transferAccountId = travelFund,
                 transferAmount = money("200.00"),
                 transferCurrency = eur,
+                color = AccountVisuals.defaultColorFor(AccountType.SAVINGS),
+                icon = AccountVisuals.defaultIconFor(AccountType.SAVINGS),
             ),
         )
     }
@@ -239,6 +253,30 @@ class SampleLedger @Inject constructor(
         )
     }
 
+    /**
+     * The ECB reference rates the app would have cached by now: every working
+     * day of the last quarter, each currency drifting from about its level of
+     * the time (sample values, not historical ones) by a seeded random walk.
+     */
+    private suspend fun seedExchangeRates() {
+        val random = Random(SEED)
+        val levels = EcbLevels.mapValues { (_, level) -> BigDecimal(level) }.toMutableMap()
+        val rates = mutableListOf<ExchangeRate>()
+        var day = TODAY.minusDays(RATE_HISTORY_DAYS)
+        while (day <= TODAY) {
+            if (day.dayOfWeek.value <= 5) {
+                levels.replaceAll { _, level ->
+                    // At most 0.4% a day either way, rounded to the ECB's five digits.
+                    val drift = BigDecimal.valueOf(random.nextInt(81) - 40L, 4)
+                    level.multiply(BigDecimal.ONE + drift).round(MathContext(5))
+                }
+                levels.forEach { (code, level) -> rates += ExchangeRate(code, day, level) }
+            }
+            day = day.plusDays(1)
+        }
+        exchangeRates.store(rates)
+    }
+
     private suspend fun rule(
         name: String,
         @StringRes categoryName: Int,
@@ -249,6 +287,8 @@ class SampleLedger @Inject constructor(
         frequency: RecurrenceFrequency = RecurrenceFrequency.MONTHLY,
         start: LocalDate = firstOccurrence(day),
     ) {
+        // The avatar a user would pick in the editor: the category's own.
+        val category = seeded(categoryName)
         rules.upsert(
             RecurringRule(
                 name = name,
@@ -258,8 +298,10 @@ class SampleLedger @Inject constructor(
                 frequency = frequency,
                 startDate = start,
                 amount = money(amount),
-                categoryId = category(categoryName),
+                categoryId = category.id,
                 dayOfReference = day,
+                color = category.color,
+                icon = category.icon,
             ),
         )
     }
@@ -327,8 +369,10 @@ class SampleLedger @Inject constructor(
         )
     }
 
-    private fun category(@StringRes name: Int): Long =
-        checkNotNull(categoryIds[context.getString(name)]) { "No seeded category ${context.getString(name)}" }
+    private fun category(@StringRes name: Int): Long = seeded(name).id
+
+    private fun seeded(@StringRes name: Int): Category =
+        checkNotNull(seededCategories[context.getString(name)]) { "No seeded category ${context.getString(name)}" }
 
     private fun money(amount: String): BigDecimal = BigDecimal(amount).setScale(2)
 
@@ -346,6 +390,19 @@ class SampleLedger @Inject constructor(
         val clock: Clock = Clock.fixed(LocalDateTime.of(TODAY, LocalTime.of(18, 40)).atZone(ZONE).toInstant(), ZONE)
 
         private const val SEED = 24_09_2026L
+        private const val RATE_HISTORY_DAYS = 92L
+
+        /** Euro reference rates, roughly at their late-2026 levels: one euro buys this much. */
+        private val EcbLevels = mapOf(
+            "USD" to "1.1720", "JPY" to "173.10", "CZK" to "24.350", "DKK" to "7.4640",
+            "GBP" to "0.86900", "HUF" to "391.20", "PLN" to "4.2610", "RON" to "5.0780",
+            "SEK" to "10.980", "CHF" to "0.93500", "ISK" to "143.90", "NOK" to "11.680",
+            "TRY" to "48.600", "AUD" to "1.7760", "BRL" to "6.2800", "CAD" to "1.6230",
+            "CNY" to "8.3550", "HKD" to "9.1150", "IDR" to "19350", "ILS" to "3.9400",
+            "INR" to "103.20", "KRW" to "1628.0", "MXN" to "21.700", "MYR" to "4.9500",
+            "NZD" to "1.9950", "PHP" to "66.800", "SGD" to "1.5050", "THB" to "37.600",
+            "ZAR" to "20.450",
+        )
         private val HOLIDAY = LocalDate.of(2026, 8, 8)..LocalDate.of(2026, 8, 16)
     }
 }
