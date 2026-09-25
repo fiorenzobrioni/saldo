@@ -99,6 +99,10 @@ android {
         buildConfig = true
     }
 
+    // Robolectric (README screenshots) renders with the merged resources: strings,
+    // fonts, themes.
+    testOptions.unitTests.isIncludeAndroidResources = true
+
     // Exposes the exported Room schemas to MigrationTestHelper (instrumented tests).
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
 }
@@ -121,6 +125,22 @@ ksp {
 detekt {
     config.setFrom(rootProject.file("config/detekt/detekt.yml"))
     buildUponDefaultConfig = true
+}
+
+// The README's screenshots (docs/screenshots) are drawn by the `ReadmeScreenshots`
+// test, and only on request: `./gradlew testDebugUnitTest -PupdateScreenshots`.
+// Without the property the class is left out of the run altogether, so CI and an
+// ordinary test run never start Robolectric nor rewrite a committed image.
+if (providers.gradleProperty("updateScreenshots").isPresent) {
+    val screenshots = rootProject.layout.projectDirectory.dir("docs/screenshots").asFile.absolutePath
+    tasks.withType<Test>().configureEach {
+        systemProperty("saldo.readmeScreenshots", screenshots)
+        outputs.upToDateWhen { false }
+    }
+} else {
+    tasks.withType<Test>().configureEach {
+        filter.excludeTestsMatching("*.ReadmeScreenshots")
+    }
 }
 
 tasks.withType<Detekt>().configureEach {
@@ -183,6 +203,15 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
+
+    // README screenshots (JVM, JUnit 4 on Robolectric, run only with -PupdateScreenshots)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.robolectric)
+    testImplementation(libs.hilt.android.testing)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testRuntimeOnly(libs.junit.vintage.engine)
+    kspTest(libs.hilt.compiler)
 
     // Instrumented tests (JUnit 4, required by Compose UI Test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
