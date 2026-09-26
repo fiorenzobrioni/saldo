@@ -1,6 +1,7 @@
 package com.callbackdev.saldo.feature.widget
 
 import androidx.datastore.preferences.core.mutablePreferencesOf
+import com.callbackdev.saldo.core.designsystem.theme.WidgetCardColor
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -37,7 +38,9 @@ class QuickAddWidgetPrefsTest {
             accountId = 7L,
             type = TransactionType.INCOME,
             pinnedCategoryIds = listOf(3L, 1L, 9L),
-            appearance = WidgetAppearance.DARK,
+            background = WidgetBackground.COLOR,
+            cardColor = WidgetCardColor.CLAY,
+            opacityPct = 55,
             buttons = WidgetActionButtons.INCOME_ONLY,
             showAppShortcut = false,
         )
@@ -49,7 +52,9 @@ class QuickAddWidgetPrefsTest {
         assertEquals(7L, config.accountId)
         assertEquals(TransactionType.INCOME, config.type)
         assertEquals(listOf(3L, 1L, 9L), config.pinnedCategoryIds)
-        assertEquals(WidgetAppearance.DARK, config.appearance)
+        assertEquals(WidgetBackground.COLOR, config.background)
+        assertEquals(WidgetCardColor.CLAY, config.cardColor)
+        assertEquals(55, config.opacityPct)
         assertEquals(WidgetActionButtons.INCOME_ONLY, config.buttons)
         assertTrue(!config.showAppShortcut)
         assertTrue(config.usesCustomCategories)
@@ -119,18 +124,47 @@ class QuickAddWidgetPrefsTest {
         assertTrue(!QuickAddWidgetPrefs.read(preferences, id).usesCustomCategories)
     }
 
+    /** The family's default: Chiaro's and Passo's solid blue card. */
     @Test
-    fun `an unconfigured widget follows the system theme`() {
-        assertEquals(
-            WidgetAppearance.SYSTEM,
-            QuickAddWidgetPrefs.read(mutablePreferencesOf(), id).appearance,
-        )
+    fun `an unconfigured widget wears the family's solid blue card`() {
+        val config = QuickAddWidgetPrefs.read(mutablePreferencesOf(), id)
+        assertEquals(WidgetBackground.COLOR, config.background)
+        assertEquals(WidgetCardColor.BLUE, config.cardColor)
+        assertEquals(FullOpacity, config.opacityPct)
     }
 
     @Test
-    fun `an unknown appearance falls back to following the system`() {
-        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.appearance(id) to "NEON")
-        assertEquals(WidgetAppearance.SYSTEM, QuickAddWidgetPrefs.read(preferences, id).appearance)
+    fun `an unknown background or colour falls back to the default card`() {
+        val preferences = mutablePreferencesOf(
+            QuickAddWidgetPrefs.background(id) to "NEON",
+            QuickAddWidgetPrefs.cardColor(id) to "MAUVE",
+        )
+        val config = QuickAddWidgetPrefs.read(preferences, id)
+        assertEquals(WidgetBackground.COLOR, config.background)
+        assertEquals(WidgetCardColor.BLUE, config.cardColor)
+    }
+
+    /**
+     * The background lives under the old appearance's key, whose three values
+     * name the same grounds today: a widget configured before the family's dress
+     * keeps the choice its user made.
+     */
+    @Test
+    fun `a widget configured before the family's dress keeps its light or dark card`() {
+        listOf("SYSTEM" to WidgetBackground.SYSTEM, "LIGHT" to WidgetBackground.LIGHT, "DARK" to WidgetBackground.DARK)
+            .forEach { (stored, expected) ->
+                val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.background(id) to stored)
+                assertEquals(expected, QuickAddWidgetPrefs.read(preferences, id).background)
+                assertEquals(FullOpacity, QuickAddWidgetPrefs.read(preferences, id).opacityPct)
+            }
+    }
+
+    @Test
+    fun `an opacity out of range is clamped rather than trusted`() {
+        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.opacity(id) to 140)
+        assertEquals(FullOpacity, QuickAddWidgetPrefs.read(preferences, id).opacityPct)
+        val negative = mutablePreferencesOf(QuickAddWidgetPrefs.opacity(id) to -5)
+        assertEquals(0, QuickAddWidgetPrefs.read(negative, id).opacityPct)
     }
 
     /**
@@ -211,15 +245,13 @@ class QuickAddWidgetPrefsTest {
 
     /**
      * TRANSPARENT was a selector option before the widget went solid-only; a
-     * widget configured back then must read as a value the UI still offers,
-     * never as one it no longer does.
+     * widget configured back then reads as the phone's card, as it did under
+     * the previous build, never as a value the settings do not offer.
      */
     @Test
-    fun `a legacy transparent appearance reads as following the system`() {
-        val preferences = mutablePreferencesOf(
-            QuickAddWidgetPrefs.appearance(id) to WidgetAppearance.TRANSPARENT.name,
-        )
-        assertEquals(WidgetAppearance.SYSTEM, QuickAddWidgetPrefs.read(preferences, id).appearance)
+    fun `a legacy transparent appearance reads as the phone's card`() {
+        val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.background(id) to "TRANSPARENT")
+        assertEquals(WidgetBackground.SYSTEM, QuickAddWidgetPrefs.read(preferences, id).background)
     }
 
     /** On by default (user's call); an explicit off must survive the read. */

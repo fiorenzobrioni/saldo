@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The expanded body of a budget notification (ADR 52, after Chiaro's
+     notification_expanded.xml): the title, the collapsed sentence as its headline,
+     then one bar per budget, the picture a budget says faster than its lines. Each
+     bar is how much of the budget is spent, in the level's colour, over a lighter
+     band that reaches as far as the month has gone: spending ahead of the month
+     shows no band, spending behind it shows how much room the calendar still gives.
+     The name and the figures are words beside the bar, so the colour is never the
+     only signal. The system decorates it (header, icon, time) on every version this
+     app runs on; the text takes the notification's own appearances, so it follows
+     the system's day and night like any standard notification. Kept under the
+     platform's 256 dp ceiling for an expanded custom view: two lines of headline,
+     at most four bars, a caption, and three lines of details. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/notif_title"
+        style="@style/TextAppearance.Compat.Notification.Title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/notif_headline"
+        style="@style/TextAppearance.Compat.Notification.Line2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="2" />
+
+    <!-- One notification_budget_row per budget, added at bind time
+         (RemoteViews.addView keeps each row's ids its own). -->
+    <LinearLayout
+        android:id="@+id/notif_budget_rows"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
+
+    <TextView
+        android:id="@+id/notif_caption"
+        style="@style/TextAppearance.Compat.Notification.Info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/notif_budget_bar_caption" />
+
+    <TextView
+        android:id="@+id/notif_details"
+        style="@style/TextAppearance.Compat.Notification"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:lineSpacingMultiplier="1.1"
+        android:maxLines="3" />
+</LinearLayout>

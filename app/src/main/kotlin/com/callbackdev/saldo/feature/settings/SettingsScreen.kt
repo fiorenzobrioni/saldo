@@ -8,6 +8,11 @@ import android.content.ComponentName
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -102,6 +107,7 @@ fun SettingsScreen(
     onNavigateToBackup: () -> Unit,
     onNavigateToAbout: () -> Unit,
     onNavigateToRates: () -> Unit,
+    onNavigateToGuide: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -136,6 +142,7 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
+            GuideCard(onNavigateToGuide)
             SettingsSectionHeader(stringResource(R.string.settings_section_preferences))
             SettingsGroup {
                 SettingsEntry(
@@ -487,6 +494,36 @@ fun SettingsScreen(
  * Radio-list picker for the editor's preselected account: "Automatic" (the
  * last used one) first, then the active accounts.
  */
+/**
+ * The way to the guide, first in the list as in Chiaro's and Passo's Settings:
+ * the place a user comes back to the day the question arrives.
+ */
+@Composable
+private fun GuideCard(onOpenGuide: () -> Unit) {
+    Surface(
+        onClick = onOpenGuide,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Icon(Icons.Outlined.Info, contentDescription = null, modifier = Modifier.size(24.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp), modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_guide), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.settings_guide_note), style = MaterialTheme.typography.bodyMedium)
+            }
+            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null)
+        }
+    }
+}
+
 @Composable
 private fun DefaultAccountDialog(
     accounts: List<Account>,

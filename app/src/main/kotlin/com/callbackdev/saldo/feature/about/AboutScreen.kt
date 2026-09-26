@@ -133,7 +133,7 @@ private fun AppIdentity(modifier: Modifier = Modifier) {
  * adaptive-icon foreground draws on a 108dp canvas of which the visible masked
  * area is the central 72dp, so scaling the image to size * 108/72 inside a box
  * of [LOGO_SIZE] crops to that window and fills it, with the transparent margins
- * overflowing harmlessly. The wallet sits straight on the screen.
+ * overflowing harmlessly. The mark sits straight on the screen.
  */
 @Composable
 private fun AppLogo(modifier: Modifier = Modifier) {

@@ -998,6 +998,31 @@
     <!-- Budget notifications and dashboard card -->
     <string name="dashboard_budget_title">Budgets</string>
     <string name="dashboard_budget_empty">No budgets yet · tap to add one</string>
+    <string name="notif_budget_row_value">%1$s of %2$s</string>
+    <string name="notif_budget_line">%1$s: %2$d%% · %3$s of %4$s</string>
+    <string name="notif_budget_left">%1$s left: about %2$s a day.</string>
+    <string name="notif_budget_left_last_day">%1$s left for today, the last day of the month.</string>
+    <string name="notif_budget_over_by">Over the limit by %1$s.</string>
+    <plurals name="notif_budget_days_left">
+        <item quantity="one">%d day to the end of the month, today included.</item>
+        <item quantity="other">%d days to the end of the month, today included.</item>
+    </plurals>
+    <string name="notif_budget_month_elapsed">Month gone by: %1$d%%.</string>
+    <string name="notif_budget_bar_caption">The lighter part of a bar is the month gone by.</string>
+    <string name="notif_movement_line">%1$s · %2$s</string>
+    <string name="notif_movement_line_variable">%1$s · variable amount</string>
+    <plurals name="notif_more_lines">
+        <item quantity="one">and %d more</item>
+        <item quantity="other">and %d more</item>
+    </plurals>
+    <string name="notif_due_on">Due %1$s.</string>
+    <string name="notif_upcoming_line">%1$s · %2$s · %3$s</string>
+    <string name="notif_upcoming_line_variable">%1$s · %2$s · variable amount</string>
+    <string name="notif_statement_cycle">Statement from %1$s to %2$s.</string>
+    <string name="notif_statement_payment_due">Payment due %1$s.</string>
+    <string name="notif_statement_line">%1$s · %2$s</string>
+    <string name="notif_backup_last">Last backup: %1$s.</string>
+    <string name="notif_backup_where">A backup is one file, and it goes where you choose.</string>
     <string name="notif_channel_budget_name">Budget alerts</string>
     <string name="notif_budget_warning_title">%1$s: %2$d%% used</string>
     <string name="notif_budget_exceeded_title">%1$s exceeded (%2$d%%)</string>
@@ -1211,10 +1236,23 @@
     <string name="widget_config_custom_categories">Choose the categories</string>
     <string name="widget_config_custom_categories_caption">Pick and order them by hand. Off, the widget follows the order of your Categories screen.</string>
     <string name="widget_config_pinned">Categories on the widget</string>
-    <string name="widget_config_appearance">Background</string>
-    <string name="widget_config_appearance_system">System</string>
-    <string name="widget_config_appearance_light">Light</string>
-    <string name="widget_config_appearance_dark">Dark</string>
+    <string name="widget_config_background">Background</string>
+    <string name="widget_bg_light">Light</string>
+    <string name="widget_bg_dark">Dark</string>
+    <string name="widget_bg_system">Same as the phone</string>
+    <string name="widget_bg_color">A colour</string>
+    <string name="widget_color_blue">Blue</string>
+    <string name="widget_color_azure">Light blue</string>
+    <string name="widget_color_green">Green</string>
+    <string name="widget_color_teal">Sea green</string>
+    <string name="widget_color_plum">Violet</string>
+    <string name="widget_color_clay">Terracotta</string>
+    <string name="widget_config_opacity">Background opacity</string>
+    <string name="widget_opacity_full">Solid</string>
+    <string name="widget_opacity_transparent">See-through</string>
+    <string name="widget_opacity_percent">%1$d%%</string>
+    <string name="widget_config_content">Content</string>
+    <string name="widget_config_preview_caption">Tapping the widget here does nothing: it is a preview.</string>
     <string name="widget_config_save_error">The widget settings could not be saved</string>
     <string name="widget_config_preview_a11y">Preview of the widget with the current settings</string>
     <string name="widget_config_app_shortcut">App icon</string>
@@ -1373,4 +1411,97 @@
     <string name="tags_delete_confirm">Delete</string>
     <string name="tags_snackbar_merged">Tags merged into “%1$s”</string>
     <string name="tags_snackbar_deleted">Tag “%1$s” deleted</string>
+    <!-- The guide (ADR 52) -->
+    <string name="guide_title">The guide</string>
+    <string name="guide_intro">Saldo keeps the accounts of your money on your phone: you write the movements, in a few seconds, and the app tells you how much you have, where it went and how much you can still spend. This guide walks through the four screens, says what each one answers, and points out the things worth knowing that a screen cannot say out loud.</string>
+    <string name="guide_map_title">The four screens</string>
+    <string name="guide_map_dashboard">How you stand today: the balance, the month, what you can still spend.</string>
+    <string name="guide_map_transactions">Every movement recorded, to search and filter.</string>
+    <string name="guide_map_stats">Where the money goes, month by month and category by category.</string>
+    <string name="guide_map_settings">Accounts, categories, recurrences, budgets, backup and your preferences.</string>
+    <string name="guide_map_note">What you set up once and then works by itself, such as an account, a recurrence or a budget, lives in Settings.</string>
+
+    <string name="guide_movements_title">Movements</string>
+    <string name="guide_movements_p1">Everything that happens to your money is a movement, and you write the movements: Saldo does not connect to your bank. An expense takes from an account, an income adds to one, and both have a category: they are what the statistics are made of.</string>
+    <string name="guide_sample_expense">Expense</string>
+    <string name="guide_sample_income">Income</string>
+    <string name="guide_sample_transfer">Transfer</string>
+    <string name="guide_movements_caption">An example: the types are told apart by sign and icon before colour.</string>
+    <string name="guide_movements_transfer_title">A transfer is not an expense</string>
+    <string name="guide_movements_transfer_body">Moving money between two of your accounts is one movement, with an account it leaves and one it reaches. It is neither an expense nor an income, and it always stays out of the statistics and the budget.</string>
+    <string name="guide_movements_adjustment_title">The balance adjustment</string>
+    <string name="guide_movements_adjustment_body">When the app\'s balance no longer matches the real one, write the real balance and Saldo records the difference. The account is back in line and the statistics stay clean.</string>
+    <string name="guide_movements_future_title">Movements with a future date</string>
+    <string name="guide_movements_future_body">The car tax due in three weeks is recorded when you know it. It counts in the account\'s balance, but it leaves today\'s figures alone until its day comes; the Upcoming screen gathers them all, with the recurrences waiting for you.</string>
+    <string name="guide_movements_people_title">Lending is not spending</string>
+    <string name="guide_movements_people_body">An expense marked as a loan to someone leaves the account but not the statistics, and getting it back is not an income. The Debts and credits screen keeps the count for each person, partial repayments included.</string>
+
+    <string name="guide_balance_title">The balance</string>
+    <string name="guide_balance_p1">An account\'s balance is not a stored number: it is always the opening balance plus all its movements. That is why fixing or deleting a movement updates it by itself, and why it can never drift.</string>
+    <string name="guide_balance_today_title">As of today</string>
+    <string name="guide_balance_today_body">When an account has movements with a future date, what is really available today appears under the balance.</string>
+    <string name="guide_balance_debts_title">Credit cards and loans</string>
+    <string name="guide_balance_debts_body">A debt is an account with a negative balance that shrinks. Paying the card\'s statement or the mortgage\'s instalment is a transfer, not an expense: the expenses were counted when you made them, and counting them again would double them.</string>
+    <string name="guide_balance_switches_title">In the total, in the budget</string>
+    <string name="guide_balance_switches_body">Each account says whether it counts in the Total balance and whether its expenses use up the budget. A savings account starts outside the budget, a loan outside the total.</string>
+    <string name="guide_balance_currencies_title">More currencies</string>
+    <string name="guide_balance_currencies_body">An account in a foreign currency counts in the totals at its converted value, always marked as an estimate (≈). The rate is the only thing Saldo downloads, and without a network the last known one holds.</string>
+
+    <string name="guide_dashboard_title">Dashboard</string>
+    <string name="guide_dashboard_p1">The Dashboard answers in five seconds: how much you have in all, what went out and came in today and this month, what is about to arrive. Its cards are chosen in Settings.</string>
+    <string name="guide_dashboard_two_readings_title">Two readings of the same month</string>
+    <string name="guide_dashboard_two_readings_body">The Today and Month cards say how much money really went out and came in. The Statistics and the budgets say how much you consumed: they leave out loans and excluded movements, and a refund lowers the spending instead of being an income. When the two figures differ it is not a mistake: they answer two different questions.</string>
+    <string name="guide_dashboard_spendable_title">Safe to spend today</string>
+    <string name="guide_dashboard_spendable_body">With an overall budget, it is what is left of the month once the spending, the movements to confirm, those already dated later in the month and the coming recurrences are taken out. The arithmetic opens under the figure, line by line.</string>
+    <string name="guide_dashboard_forecast_title">The end of the month</string>
+    <string name="guide_dashboard_forecast_body">The balance expected at the end of the month starts from today\'s and adds everything known on the day it arrives. It is an estimate and says so: a recurrence with a variable amount has no figure to forecast and stays out.</string>
+
+    <string name="guide_stats_title">Statistics</string>
+    <string name="guide_stats_p1">The Statistics show where the money goes: by category, month by month, income against expenses. They count expenses and income and nothing else: transfers and adjustments never enter.</string>
+    <string name="guide_stats_refunds_title">Refunds</string>
+    <string name="guide_stats_refunds_body">An income marked as a refund does not count as income: it lowers the spending of its category in the month it arrives. If half a dinner comes back to you, you spent the other half.</string>
+    <string name="guide_stats_recap_title">The month, told</string>
+    <string name="guide_stats_recap_body">Once a month is over, the recap tells it in a few pages: how much you spent, where, how it went against the month before.</string>
+
+    <string name="guide_budget_title">Budgets and goals</string>
+    <string name="guide_budget_p1">A budget is a cap for the calendar month, overall or for one category, and it starts again on the 1st. It measures real spending: refunds lower it, transfers and accounts left out of the budget do not count.</string>
+    <string name="guide_sample_budget_name">Groceries</string>
+    <string name="guide_sample_budget_share">%1$d%%</string>
+    <string name="guide_sample_budget_amounts">%1$s of %2$s</string>
+    <string name="guide_budget_caption">An example: the percentage and the figures beside the bar, because colour is never the only signal.</string>
+    <string name="guide_budget_alerts_title">Two alerts a month</string>
+    <string name="guide_budget_alerts_body" formatted="false">At 80% and past the limit a notification arrives, one per threshold and per month. Opened, it says what is left and at what pace per day, and how much of the month has gone by.</string>
+    <string name="guide_budget_goals_title">Savings goals</string>
+    <string name="guide_budget_goals_body">A goal lives on a savings account and moves with its real balance: it says how much to set aside each month to get there in time.</string>
+
+    <string name="guide_recurring_title">Recurrences</string>
+    <string name="guide_recurring_p1">A recurrence is a rule that records a movement at regular intervals: the subscription every month, the salary on the 27th, the saving put aside. If the phone was off, Saldo catches up on the missed dates the next time it starts.</string>
+    <string name="guide_recurring_modes_title">By itself or with a confirmation</string>
+    <string name="guide_recurring_modes_body">An automatic rule records the movement on its date and tells you. A rule with confirmation prepares it and waits: you confirm it or skip it. A bill that changes every time is always to confirm, with the real amount.</string>
+    <string name="guide_recurring_pause_title">Paused</string>
+    <string name="guide_recurring_pause_body">A paused rule does not generate or remind, and stays out of every forecast. When it resumes it starts from the next date: what fell in the pause is not recovered, because it did not happen.</string>
+    <string name="guide_recurring_upcoming_title">Before it comes</string>
+    <string name="guide_recurring_upcoming_body">If you ask for it in Settings, a reminder tells you a few days before a renewal or a deadline you marked.</string>
+
+    <string name="guide_quick_title">Quick add</string>
+    <string name="guide_quick_p1">Recording an expense is what you do most often, so it has more than one door: the shortcuts on the app\'s icon, the widget on the home screen, the tile in the quick settings. The widget and the tile open a small screen over the one you are using, with the keypad ready.</string>
+    <string name="guide_quick_text_title">Writing it in one line</string>
+    <string name="guide_quick_text_body">«12.50 pizza yesterday» becomes amount, description and date, and the category is suggested from what you wrote before. The text fills in and never saves by itself; when it is not sure, it stays quiet rather than guess.</string>
+    <string name="guide_quick_widget_title">The widget</string>
+    <string name="guide_quick_widget_body">Two shapes, a grid of categories and a bar with Expense and Income, dressed like Chiaro\'s and Passo\'s widgets: a light card, a dark one, one that follows the phone or one of six colours, at the opacity you choose. It shows no balances and does not redraw when you record a movement, so it costs nothing to whoever keeps it on the home screen.</string>
+
+    <string name="guide_notifications_title">Notifications</string>
+    <string name="guide_notifications_p1" formatted="false">Saldo writes to you only about what you asked for or what concerns you: a recurring movement recorded or waiting for you, a budget at 80% or past its limit, the card\'s statement, a renewal coming, the backup reminder.</string>
+    <string name="guide_notifications_expand_title">Opened, they say more</string>
+    <string name="guide_notifications_expand_body">Closed, a notification says one sentence with the figure that matters. Opened, under the same sentence it puts the rest: which movements, what is left, by when.</string>
+    <string name="guide_notifications_night_title">Quiet at night</string>
+    <string name="guide_notifications_night_body">Between 22:00 and 7:00 notifications still arrive, but without sound or vibration: nothing Saldo has to say cannot wait for the morning.</string>
+
+    <string name="guide_data_title">Your data</string>
+    <string name="guide_data_p1">Everything stays on the phone. There is no account to create and nothing to sign up for; the only request to the network is for exchange rates, only if you have accounts in another currency, and it carries none of your data.</string>
+    <string name="guide_data_p2">The backup is a single file, with the movements and the settings, and it goes where you choose. You can protect it with a passphrase: without it nobody opens the file, Saldo included, and there is no way to recover it.</string>
+    <string name="guide_data_p3">The app lock asks for a PIN or a fingerprint when you come back to the app, at once or after the time you choose, and hides the content in the recent apps screen.</string>
+
+    <string name="settings_guide">How Saldo works</string>
+    <string name="settings_guide_note">The four screens, the movements, the balance and your data</string>
 </resources>

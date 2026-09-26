@@ -1,21 +1,18 @@
 package com.callbackdev.saldo.creditcard
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.app.NotificationChannelCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
-import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.money.MoneyFormatter
 import com.callbackdev.saldo.core.domain.usecase.DueStatement
+import com.callbackdev.saldo.notifications.SaldoNotifications
+import com.callbackdev.saldo.notifications.SaldoNotifications.quietAtNight
+import com.callbackdev.saldo.notifications.SaldoNotifications.story
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -24,8 +21,10 @@ import javax.inject.Singleton
  * auto-post card has been charged, and a confirmation one when a confirm-mode
  * card has a statement waiting to be paid (tapping opens the app, where the
  * dashboard card settles it). One notification per kind with a fixed id,
- * replaced on repost. Like the other notifiers, posting is a silent no-op until
- * POST_NOTIFICATIONS is granted.
+ * replaced on repost. In the family's idiom (see [SaldoNotifications]): the
+ * collapsed sentence is the amount; expanded, the cycle it covers and, for a
+ * statement to pay, the day it is due. Like the other notifiers, posting is a
+ * silent no-op until POST_NOTIFICATIONS is granted.
  */
 @Singleton
 class CreditCardNotifier @Inject constructor(
@@ -60,6 +59,18 @@ class CreditCardNotifier @Inject constructor(
                     if (auto) R.string.notif_statement_posted_body else R.string.notif_statement_confirm_body,
                     MoneyFormatter.format(single.amount, single.currency),
                 ),
+                details = buildList {
+                    add(
+                        context.getString(
+                            R.string.notif_statement_cycle,
+                            single.cycle.start.spoken(),
+                            single.cycle.closing.spoken(),
+                        ),
+                    )
+                    if (!auto) {
+                        add(context.getString(R.string.notif_statement_payment_due, single.cycle.paymentDue.spoken()))
+                    }
+                },
             )
 
             else -> post(
@@ -74,44 +85,37 @@ class CreditCardNotifier @Inject constructor(
                     statements.size,
                 ),
                 body = statements.joinToString(separator = ", ") { it.cardName },
+                details = statements.map {
+                    context.getString(
+                        R.string.notif_statement_line,
+                        it.cardName,
+                        MoneyFormatter.format(it.amount, it.currency),
+                    )
+                },
             )
         }
     }
 
-    // Guarded by hasNotificationPermission(); lint's flow analysis is intraprocedural.
+    /** "28 settembre": a day of the cycle as a sentence says it. */
+    private fun LocalDate.spoken(): String =
+        format(DateTimeFormatter.ofPattern(DAY_PATTERN, context.resources.configuration.locales[0]))
+
+    // Guarded by hasPermission(); lint's flow analysis is intraprocedural.
     @SuppressLint("MissingPermission")
-    private fun post(id: Int, title: String, body: String) {
-        if (!hasNotificationPermission()) return
-        val notification = NotificationCompat.Builder(context, CHANNEL_STATEMENT)
-            .setSmallIcon(R.drawable.ic_notification)
+    private fun post(id: Int, title: String, body: String, details: List<String>) {
+        if (!SaldoNotifications.hasPermission(context)) return
+        val notification = SaldoNotifications.builder(context, CHANNEL_STATEMENT)
             .setContentTitle(title)
-            .setContentText(body)
-            .setContentIntent(openAppIntent())
-            .setAutoCancel(true)
+            .story(body, details)
+            .quietAtNight()
             .build()
         NotificationManagerCompat.from(context).notify(id, notification)
-    }
-
-    /** POST_NOTIFICATIONS is a runtime permission from API 33; older versions grant it implicitly. */
-    private fun hasNotificationPermission(): Boolean =
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-            PackageManager.PERMISSION_GRANTED
-
-    private fun openAppIntent(): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java)
-            .setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        return PendingIntent.getActivity(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
     }
 
     private companion object {
         const val CHANNEL_STATEMENT = "credit_card_statement"
         const val ID_POSTED = 1006
         const val ID_CONFIRM = 1007
+        const val DAY_PATTERN = "d MMMM"
     }
 }

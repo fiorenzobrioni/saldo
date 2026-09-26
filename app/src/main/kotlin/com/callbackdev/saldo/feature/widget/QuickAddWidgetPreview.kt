@@ -1,204 +1,140 @@
 package com.callbackdev.saldo.feature.widget
 
-import androidx.compose.foundation.Image
+import android.appwidget.AppWidgetManager
+import android.widget.FrameLayout
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MoreHoriz
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.callbackdev.saldo.R
-import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
-import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
-import com.callbackdev.saldo.core.domain.model.Category
 
 /**
- * A live preview of the widget above its own settings, so the light/dark
- * choice is judged by looking rather than by placing the widget and going
- * back.
+ * The widget above its own settings, drawn by the same [WidgetRenderer] the
+ * launcher receives - the `RemoteViews` applied to a view in this process - so
+ * what the settings show cannot drift from what gets placed (Chiaro and Passo
+ * draw their settings previews the same way, through the real composition).
  *
- * It shows the widget's own palette, not the screen's: on a light phone with a
- * dark widget the preview is dark, which is the whole point of the control it
- * sits under. The card behind it stands in for the wallpaper around the widget.
+ * The ground behind it stands in for the wallpaper: a soft two-tone wash, so a
+ * see-through card shows that it is one. Taps are swallowed: the real widget's
+ * intents are bound on these views, and a preview that opened the quick-entry
+ * sheet would be a surprise.
  */
 @Composable
-fun QuickAddWidgetPreview(
+internal fun QuickAddWidgetPreview(
+    data: QuickAddWidgetData,
     theme: QuickAddWidgetTheme,
-    categories: List<Category>,
-    showAppShortcut: Boolean,
-    bar: Boolean = false,
+    bar: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val description = stringResource(R.string.widget_config_preview_a11y)
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(if (bar) PreviewBarHeight else PreviewHeight)
-            .clip(RoundedCornerShape(PreviewCorner))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .semantics { contentDescription = description },
-    ) {
-        Column(
+    val wallpaper = Brush.linearGradient(
+        listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.tertiaryContainer),
+    )
+    Column(modifier = modifier.fillMaxWidth()) {
+        BoxWithConstraints(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(PreviewInset)
-                // The same rounding the launcher gives the real widget.
-                .clip(RoundedCornerShape(dimensionResource(android.R.dimen.system_app_widget_background_radius)))
-                .background(theme.previewBackground)
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(WallpaperCorner))
+                .background(wallpaper)
+                .padding(WallpaperInset)
+                .semantics { contentDescription = description },
         ) {
-            if (bar) {
-                PreviewBarRow(theme, showAppShortcut)
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    PreviewPill(stringResource(R.string.widget_quick_add_expense), theme, selected = true)
-                    PreviewPill(stringResource(R.string.widget_quick_add_income), theme, selected = false)
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    categories.take(PreviewTiles).forEach { category ->
-                        PreviewTile(CategoryVisuals.color(category.color), CategoryVisuals.icon(category.icon))
-                    }
-                    PreviewTile(theme.previewScheme.primary, Icons.Outlined.MoreHoriz)
-                }
-            }
-        }
-    }
-}
-
-/** The bar's shape: the two accent buttons and, when asked, the app square. */
-@Composable
-private fun PreviewBarRow(theme: QuickAddWidgetTheme, showAppShortcut: Boolean) {
-    val money = if (theme.previewDark) theme.darkMoney else theme.lightMoney
-    Row(
-        modifier = Modifier.fillMaxSize(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        PreviewActionButton(
-            label = stringResource(R.string.widget_quick_add_expense),
-            accent = theme.previewScheme.error,
-            modifier = Modifier.weight(1f),
-        )
-        PreviewActionButton(
-            label = stringResource(R.string.widget_quick_add_income),
-            accent = money.income,
-            modifier = Modifier.weight(1f),
-        )
-        if (showAppShortcut) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(theme.previewScheme.onSurfaceVariant.copy(alpha = WashAlpha)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Image(
-                    painter = painterResource(AppShortcutIcon),
-                    contentDescription = null,
-                    modifier = Modifier.size(34.dp),
+            val size = previewSize(maxWidth.value, data, bar)
+            val palette = theme.palette
+            Box(modifier = Modifier.fillMaxWidth().height(size.height.dp)) {
+                AndroidView(
+                    factory = { FrameLayout(it) },
+                    update = { host ->
+                        val views = WidgetRenderer.render(
+                            context = context,
+                            appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID,
+                            data = data,
+                            palette = palette,
+                            size = size,
+                        )
+                        host.removeAllViews()
+                        host.addView(views.apply(context, host))
+                    },
+                    modifier = Modifier.matchParentSize(),
+                )
+                // Above the widget, so the hit test ends here and no bound
+                // intent fires.
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .pointerInput(Unit) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+                                }
+                            }
+                        },
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun PreviewActionButton(
-    label: String,
-    accent: Color,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .fillMaxHeight()
-            .clip(RoundedCornerShape(14.dp))
-            .background(accent.copy(alpha = WashAlpha)),
-        contentAlignment = Alignment.Center,
-    ) {
         Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = accent,
-            maxLines = 1,
+            text = stringResource(R.string.widget_config_preview_caption),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp, start = 4.dp),
         )
     }
 }
 
+/**
+ * The size the preview is rendered for: the width it has, and the height of
+ * the layout the placed widget opens at - one row for the bar, the wide grid at
+ * the rows its categories fill, up to its default three.
+ */
+private fun previewSize(widthDp: Float, data: QuickAddWidgetData, bar: Boolean): WidgetSize {
+    if (bar) return WidgetSize(widthDp, BarPreviewHeight)
+    val rows = ((data.categories.size + 1 + WideColumns - 1) / WideColumns).coerceIn(1, PreviewGridRows)
+    return WidgetSize(maxOf(widthDp, WideMinWidth), wideGridHeight(rows))
+}
+
+private const val BarPreviewHeight = 72f
+private const val PreviewGridRows = 3
+private val WallpaperCorner = 28.dp
+private val WallpaperInset = 16.dp
+
+/** Remembers the preview's data for the settings as they stand. */
 @Composable
-private fun PreviewPill(label: String, theme: QuickAddWidgetTheme, selected: Boolean) {
-    Box(
-        modifier = Modifier
-            .height(30.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (selected) theme.previewScheme.primary else theme.previewScheme.surfaceVariant)
-            .padding(horizontal = 12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (selected) theme.previewScheme.onPrimary else theme.previewScheme.onSurfaceVariant,
-            maxLines = 1,
+internal fun rememberPreviewData(state: QuickAddWidgetConfigUiState): QuickAddWidgetData =
+    remember(state.config, state.categories, state.accounts) {
+        val config = state.config
+        val pinned = state.selectedAccount
+        val categories = if (config.usesCustomCategories) {
+            config.pinnedCategoryIds.mapNotNull { id -> state.categories.firstOrNull { it.id == id } }
+        } else {
+            state.categories
+        }
+        QuickAddWidgetData(
+            type = config.type,
+            categories = categories,
+            hasAccounts = state.accounts.isNotEmpty(),
+            pinnedAccountId = pinned?.id,
+            pinnedAccountName = pinned?.name,
+            buttons = config.buttons,
+            showAppShortcut = config.showAppShortcut,
         )
     }
-}
-
-@Composable
-private fun PreviewTile(color: Color, icon: ImageVector) {
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(AvatarShape)
-            // The same wash the widget wears.
-            .background(color.copy(alpha = WashAlpha)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(25.dp),
-        )
-    }
-}
-
-private const val PreviewTiles = 3
-private val PreviewHeight = 140.dp
-
-/** The bar preview: one launcher row, not a shrunken grid. */
-private val PreviewBarHeight = 96.dp
-private val PreviewCorner = 16.dp
-private val PreviewInset = 12.dp

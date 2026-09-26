@@ -96,7 +96,12 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                 // Resolved by the same function the widget uses, so the preview
                 // cannot drift from what actually gets drawn - and remembered on
                 // its real inputs, so it is not rebuilt on every recomposition.
-                val theme = remember(themePreferences, state.config.appearance) {
+                val theme = remember(
+                    themePreferences,
+                    state.config.background,
+                    state.config.cardColor,
+                    state.config.opacityPct,
+                ) {
                     resolveWidgetTheme(
                         context = this@QuickAddWidgetConfigActivity,
                         preferences = themePreferences,
@@ -113,7 +118,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     onCustomCategoriesChanged = viewModel::onCustomCategoriesChanged,
                     onCategoryToggled = viewModel::onCategoryToggled,
                     onPinnedReordered = viewModel::onPinnedReordered,
-                    onAppearanceSelected = viewModel::onAppearanceSelected,
+                    onLookChanged = viewModel::onLookChanged,
                     onButtonsSelected = viewModel::onButtonsSelected,
                     onConfirm = ::confirm,
                     onCancel = ::finish,

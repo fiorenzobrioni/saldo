@@ -3,8 +3,10 @@ package com.callbackdev.saldo.feature.widget
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.callbackdev.saldo.core.designsystem.theme.WidgetCardColor
 import com.callbackdev.saldo.core.domain.model.TransactionType
 
 /**
@@ -43,7 +45,16 @@ data class QuickAddWidgetConfig(
      * hand-picked subset in a hand-picked order.
      */
     val pinnedCategoryIds: List<Long> = emptyList(),
-    val appearance: WidgetAppearance = WidgetAppearance.SYSTEM,
+    /**
+     * What the card is painted on. The default is the family's (Chiaro's since
+     * its 21 Sep 2026 review, and Passo's): a solid blue card, so a Saldo widget
+     * placed beside theirs matches them before anybody configures anything.
+     */
+    val background: WidgetBackground = WidgetBackground.COLOR,
+    /** Kept while another background is picked, so coming back finds it. */
+    val cardColor: WidgetCardColor = WidgetCardColor.BLUE,
+    /** How solid the card is, 0 to 100 in steps of 5; the ink never thins. */
+    val opacityPct: Int = FullOpacity,
     val buttons: WidgetActionButtons = WidgetActionButtons.BOTH,
     /**
      * The app icon beside the two buttons of the single-row layout. On by
@@ -78,22 +89,11 @@ enum class WidgetActionButtons {
     }
 }
 
-/**
- * How a placed widget picks its palette. A widget lives on the wallpaper,
- * not inside the app, so it can legitimately need a different answer from the
- * one Settings gives the app: light app, dark wallpaper. The background is
- * always the solid app surface of the chosen side - the opacity slider and the
- * wallpaper-hint ink are gone on purpose (a translucent widget needed a
- * wallpaper listener and a full redraw on every wallpaper change, for a
- * surface that is meant to be a static entry point).
- *
- * [TRANSPARENT] is a legacy stored value only: it was the fourth selector
- * option before the opacity slider existed (itself since removed), and widgets
- * configured back then still carry it. [QuickAddWidgetPrefs.read] normalizes it
- * to [SYSTEM]; nothing writes it anymore and the settings screen no longer
- * offers it.
- */
-enum class WidgetAppearance { SYSTEM, LIGHT, DARK, TRANSPARENT }
+/** A solid card: below [InkTrustFloorPct] the ink has to ask the wallpaper. */
+const val FullOpacity: Int = 100
+
+/** The opacity slider's step, Chiaro's and Passo's. */
+const val OpacityStep: Int = 5
 
 
 /**
@@ -109,7 +109,14 @@ object QuickAddWidgetPrefs {
     fun accountId(appWidgetId: Int) = longPreferencesKey(key(ACCOUNT_ID, appWidgetId))
     fun type(appWidgetId: Int) = stringPreferencesKey(key(TYPE, appWidgetId))
     fun pinnedCategoryIds(appWidgetId: Int) = stringPreferencesKey(key(PINNED, appWidgetId))
-    fun appearance(appWidgetId: Int) = stringPreferencesKey(key(APPEARANCE, appWidgetId))
+    /**
+     * What the card is painted on. The key is the old appearance's: its values
+     * SYSTEM, LIGHT and DARK mean the same grounds today, so a widget configured
+     * before the family's dress keeps its choice (see [decode] for the rest).
+     */
+    fun background(appWidgetId: Int) = stringPreferencesKey(key(APPEARANCE, appWidgetId))
+    fun cardColor(appWidgetId: Int) = stringPreferencesKey(key(CARD_COLOR, appWidgetId))
+    fun opacity(appWidgetId: Int) = intPreferencesKey(key(OPACITY, appWidgetId))
     fun buttons(appWidgetId: Int) = stringPreferencesKey(key(BUTTONS, appWidgetId))
     fun showAppShortcut(appWidgetId: Int) = booleanPreferencesKey(key(SHORTCUT, appWidgetId))
 
@@ -127,11 +134,18 @@ object QuickAddWidgetPrefs {
     private const val BUTTONS = "quick_add_buttons"
     private const val SHORTCUT = "quick_add_show_app_shortcut"
     private const val CURRENT_TYPE = "quick_add_current_type"
+    private const val CARD_COLOR = "quick_add_card_color"
+    private const val OPACITY = "quick_add_opacity"
+
+    /** The pre-slider "transparent" appearance, which a widget may still store. */
+    private const val LEGACY_TRANSPARENT = "TRANSPARENT"
 
     private fun key(name: String, appWidgetId: Int) = "${name}_$appWidgetId"
 
     fun read(preferences: Preferences, appWidgetId: Int): QuickAddWidgetConfig = decode(
-        appearance = preferences[appearance(appWidgetId)],
+        background = preferences[background(appWidgetId)],
+        cardColor = preferences[cardColor(appWidgetId)],
+        opacity = preferences[opacity(appWidgetId)],
         accountId = preferences[accountId(appWidgetId)],
         type = preferences[type(appWidgetId)],
         currentType = preferences[currentType(appWidgetId)],
@@ -142,7 +156,9 @@ object QuickAddWidgetPrefs {
 
     /** The Glance-era per-instance file, whose keys carried no id. */
     fun readLegacy(preferences: Preferences): QuickAddWidgetConfig = decode(
-        appearance = preferences[stringPreferencesKey(APPEARANCE)],
+        background = preferences[stringPreferencesKey(APPEARANCE)],
+        cardColor = null,
+        opacity = null,
         accountId = preferences[longPreferencesKey(ACCOUNT_ID)],
         type = preferences[stringPreferencesKey(TYPE)],
         currentType = preferences[stringPreferencesKey(CURRENT_TYPE)],
@@ -157,7 +173,9 @@ object QuickAddWidgetPrefs {
         preferences[currentType(appWidgetId)] = config.effectiveType.name
         preferences[pinnedCategoryIds(appWidgetId)] =
             config.pinnedCategoryIds.joinToString(SEPARATOR)
-        preferences[appearance(appWidgetId)] = config.appearance.name
+        preferences[background(appWidgetId)] = config.background.name
+        preferences[cardColor(appWidgetId)] = config.cardColor.name
+        preferences[opacity(appWidgetId)] = config.opacityPct.coerceIn(0, FullOpacity)
         preferences[buttons(appWidgetId)] = config.buttons.name
         preferences[showAppShortcut(appWidgetId)] = config.showAppShortcut
     }
@@ -167,14 +185,18 @@ object QuickAddWidgetPrefs {
         preferences.remove(type(appWidgetId))
         preferences.remove(currentType(appWidgetId))
         preferences.remove(pinnedCategoryIds(appWidgetId))
-        preferences.remove(appearance(appWidgetId))
+        preferences.remove(background(appWidgetId))
+        preferences.remove(cardColor(appWidgetId))
+        preferences.remove(opacity(appWidgetId))
         preferences.remove(buttons(appWidgetId))
         preferences.remove(showAppShortcut(appWidgetId))
     }
 
     @Suppress("LongParameterList")
     private fun decode(
-        appearance: String?,
+        background: String?,
+        cardColor: String?,
+        opacity: Int?,
         accountId: Long?,
         type: String?,
         currentType: String?,
@@ -182,9 +204,6 @@ object QuickAddWidgetPrefs {
         buttons: String?,
         showAppShortcut: Boolean?,
     ): QuickAddWidgetConfig {
-        val storedAppearance = appearance?.let { stored ->
-            WidgetAppearance.entries.firstOrNull { it.name == stored }
-        } ?: WidgetAppearance.SYSTEM
         return QuickAddWidgetConfig(
             accountId = accountId?.takeIf { it != NO_ACCOUNT },
             type = type?.movementType() ?: TransactionType.EXPENSE,
@@ -193,17 +212,28 @@ object QuickAddWidgetPrefs {
                 ?.split(SEPARATOR)
                 ?.mapNotNull(String::toLongOrNull)
                 .orEmpty(),
-            // The pre-slider TRANSPARENT value reads back as a solid
-            // system-following background: transparency is not offered anymore.
-            appearance = when (storedAppearance) {
-                WidgetAppearance.TRANSPARENT -> WidgetAppearance.SYSTEM
-                else -> storedAppearance
-            },
+            background = decodeBackground(background),
+            cardColor = cardColor?.let { stored ->
+                WidgetCardColor.entries.firstOrNull { it.name == stored }
+            } ?: WidgetCardColor.BLUE,
+            opacityPct = (opacity ?: FullOpacity).coerceIn(0, FullOpacity),
             buttons = buttons?.let { stored ->
                 WidgetActionButtons.entries.firstOrNull { it.name == stored }
             } ?: WidgetActionButtons.BOTH,
             showAppShortcut = showAppShortcut ?: true,
         )
+    }
+
+    /**
+     * Absent means a widget nobody configured: the family's default card. The
+     * old appearance's "transparent" (offered before an opacity slider existed,
+     * itself removed before this dress) reads back as the phone's card, as it
+     * did under the previous build; an unknown value is the default card.
+     */
+    private fun decodeBackground(stored: String?): WidgetBackground = when (stored) {
+        null -> WidgetBackground.COLOR
+        LEGACY_TRANSPARENT -> WidgetBackground.SYSTEM
+        else -> WidgetBackground.entries.firstOrNull { it.name == stored } ?: WidgetBackground.COLOR
     }
 
     private fun String.movementType(): TransactionType? =

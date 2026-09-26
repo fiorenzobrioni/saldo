@@ -2,33 +2,43 @@
 
 package com.callbackdev.saldo.feature.widget
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -43,22 +53,32 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
 import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.component.ReorderableListState
+import com.callbackdev.saldo.core.designsystem.component.SettingsGroup
+import com.callbackdev.saldo.core.designsystem.component.SettingsSectionHeader
 import com.callbackdev.saldo.core.designsystem.component.rememberReorderableListState
 import com.callbackdev.saldo.core.designsystem.component.reorderableHandle
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
+import com.callbackdev.saldo.core.designsystem.theme.WidgetCardColor
+import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
+import com.callbackdev.saldo.core.designsystem.theme.widgetCardContainer
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import kotlinx.coroutines.flow.first
+import kotlin.math.roundToInt
 
 /**
  * The widget's optional setup, in two flavors served by the same activity: the
@@ -80,11 +100,12 @@ fun QuickAddWidgetConfigScreen(
     onCustomCategoriesChanged: (Boolean) -> Unit,
     onCategoryToggled: (Long) -> Unit,
     onPinnedReordered: (List<Long>) -> Unit,
-    onAppearanceSelected: (WidgetAppearance) -> Unit,
+    onLookChanged: (QuickAddWidgetConfig) -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
     Scaffold(
+        containerColor = MaterialTheme.saldoSurfaces.canvas,
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.widget_config_title)) },
@@ -154,63 +175,68 @@ fun QuickAddWidgetConfigScreen(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            contentPadding = PaddingValues(bottom = 24.dp),
         ) {
             item(key = "preview") {
                 // The preview leads: every control below changes what is drawn
                 // here, so the choice is made by looking rather than by placing
                 // the widget and coming back.
                 QuickAddWidgetPreview(
+                    data = rememberPreviewData(state),
                     theme = theme,
-                    categories = state.categories,
-                    showAppShortcut = state.config.showAppShortcut,
                     bar = isBar,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
                 )
             }
-            item(key = "appearance") {
-                Section(stringResource(R.string.widget_config_appearance)) {
-                    AppearanceSelector(state.config.appearance, onAppearanceSelected)
+            item(key = "background") {
+                SettingsSectionHeader(stringResource(R.string.widget_config_background))
+                SettingsGroup {
+                    BackgroundChoices(state.config, theme.dress, onLookChanged)
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                    OpacityRow(state.config.opacityPct) { onLookChanged(state.config.copy(opacityPct = it)) }
+                }
+            }
+            item(key = "content") {
+                SettingsSectionHeader(stringResource(R.string.widget_config_content))
+                SettingsGroup {
+                    if (!isBar) {
+                        Section(stringResource(R.string.widget_config_type)) {
+                            TypeSelector(state.config.type, onTypeSelected)
+                        }
+                    }
+                    Section(stringResource(R.string.widget_config_account)) {
+                        AccountChips(state.accounts, state.config.accountId, onAccountSelected)
+                    }
+                    if (isBar) {
+                        Section(stringResource(R.string.widget_config_buttons)) {
+                            ButtonsSelector(state.config.buttons, onButtonsSelected)
+                        }
+                        SwitchRow(
+                            title = stringResource(R.string.widget_config_app_shortcut),
+                            subtitle = stringResource(R.string.widget_config_app_shortcut_caption),
+                            checked = state.config.showAppShortcut,
+                            onCheckedChange = onShowAppShortcutChanged,
+                        )
+                    } else {
+                        SwitchRow(
+                            title = stringResource(R.string.widget_config_custom_categories),
+                            subtitle = stringResource(R.string.widget_config_custom_categories_caption),
+                            checked = state.config.usesCustomCategories,
+                            onCheckedChange = onCustomCategoriesChanged,
+                        )
+                    }
                 }
             }
             if (!isBar) {
-                item(key = "type") {
-                    Section(stringResource(R.string.widget_config_type)) {
-                        TypeSelector(state.config.type, onTypeSelected)
-                    }
-                }
-            }
-            item(key = "account") {
-                Section(stringResource(R.string.widget_config_account)) {
-                    AccountChips(state.accounts, state.config.accountId, onAccountSelected)
-                }
-            }
-            if (isBar) {
-                item(key = "buttons") {
-                    Section(stringResource(R.string.widget_config_buttons)) {
-                        ButtonsSelector(state.config.buttons, onButtonsSelected)
-                    }
-                }
-                item(key = "shortcut") {
-                    SwitchRow(
-                        title = stringResource(R.string.widget_config_app_shortcut),
-                        subtitle = stringResource(R.string.widget_config_app_shortcut_caption),
-                        checked = state.config.showAppShortcut,
-                        onCheckedChange = onShowAppShortcutChanged,
-                    )
-                }
-            } else {
-                item(key = "custom-categories") {
-                    SwitchRow(
-                        title = stringResource(R.string.widget_config_custom_categories),
-                        subtitle = stringResource(R.string.widget_config_custom_categories_caption),
-                        checked = state.config.usesCustomCategories,
-                        onCheckedChange = onCustomCategoriesChanged,
-                    )
-                }
                 if (state.config.usesCustomCategories) {
                     item(key = "pinned-header") {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+                        ) {
                             Text(
                                 text = stringResource(R.string.widget_config_pinned),
                                 style = MaterialTheme.typography.titleSmall,
@@ -244,7 +270,7 @@ fun QuickAddWidgetConfigScreen(
                                 key = category.id,
                                 index = { listState.indexOfKey(currentKey) },
                             ),
-                            modifier = rowModifier,
+                            modifier = rowModifier.padding(horizontal = 16.dp),
                         )
                     }
                     item(key = "pinned-add") {
@@ -348,7 +374,10 @@ private fun PinnedCategoryRow(
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
         Text(text = title, style = MaterialTheme.typography.titleSmall)
         content()
     }
@@ -453,7 +482,7 @@ private fun SwitchRow(
     onCheckedChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
@@ -469,33 +498,172 @@ private fun SwitchRow(
     }
 }
 
+/** Matches the widget's own tile wash. */
+private const val AvatarWashAlpha = 0.16f
+
+/** What the background question offers, in Chiaro's order less its sky, as Passo offers it. */
+internal val WidgetBackgroundChoices: List<Pair<WidgetBackground, Int>> = listOf(
+    WidgetBackground.LIGHT to R.string.widget_bg_light,
+    WidgetBackground.DARK to R.string.widget_bg_dark,
+    WidgetBackground.SYSTEM to R.string.widget_bg_system,
+    WidgetBackground.COLOR to R.string.widget_bg_color,
+)
+
+/** Chiaro's six, in Chiaro's order. Every [WidgetCardColor] has its swatch. */
+internal val WidgetCardColorChoices: List<Pair<WidgetCardColor, Int>> = listOf(
+    WidgetCardColor.BLUE to R.string.widget_color_blue,
+    WidgetCardColor.AZURE to R.string.widget_color_azure,
+    WidgetCardColor.GREEN to R.string.widget_color_green,
+    WidgetCardColor.TEAL to R.string.widget_color_teal,
+    WidgetCardColor.PLUM to R.string.widget_color_plum,
+    WidgetCardColor.CLAY to R.string.widget_color_clay,
+)
+
 /**
- * Three options, not four: "transparent" is no longer offered - the widget
- * always sits on a solid app surface, so it never has to watch the wallpaper
- * to stay readable. Legacy widgets that still store it read back as SYSTEM
- * (see [QuickAddWidgetPrefs.read]).
+ * What kind of card, each row with a swatch of the ground it paints; and, once
+ * "A colour" is picked, which colour, as a strip of swatches with the chosen
+ * one's name under it (a swatch is never the only label). Chiaro's and Passo's
+ * group, row for row.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AppearanceSelector(selected: WidgetAppearance, onSelect: (WidgetAppearance) -> Unit) {
-    val options = listOf(
-        WidgetAppearance.SYSTEM to stringResource(R.string.widget_config_appearance_system),
-        WidgetAppearance.LIGHT to stringResource(R.string.widget_config_appearance_light),
-        WidgetAppearance.DARK to stringResource(R.string.widget_config_appearance_dark),
-    )
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        options.forEachIndexed { index, (appearance, label) ->
-            SegmentedButton(
-                selected = appearance == selected,
-                onClick = { onSelect(appearance) },
-                shape = SegmentedButtonDefaults.itemShape(index, options.size),
-                icon = {},
+private fun BackgroundChoices(
+    config: QuickAddWidgetConfig,
+    dress: WidgetDress,
+    onChange: (QuickAddWidgetConfig) -> Unit,
+) {
+    Column(Modifier.selectableGroup()) {
+        WidgetBackgroundChoices.forEach { (background, label) ->
+            ChoiceRow(
+                label = stringResource(label),
+                selected = config.background == background,
+                onPick = { onChange(config.copy(background = background)) },
             ) {
-                Text(text = label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                val shape = RoundedCornerShape(10.dp)
+                val swatch = Modifier
+                    .size(width = 44.dp, height = 30.dp)
+                    .clip(shape)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
+                if (background == WidgetBackground.SYSTEM) {
+                    // The phone's choice, drawn as both of its answers on a diagonal.
+                    Canvas(swatch) {
+                        drawRect(dress.lightScheme.surface)
+                        drawPath(
+                            Path().apply {
+                                moveTo(size.width, 0f)
+                                lineTo(size.width, size.height)
+                                lineTo(0f, size.height)
+                                close()
+                            },
+                            dress.darkScheme.surface,
+                        )
+                    }
+                } else {
+                    Box(swatch.background(dress.ground(background, config.cardColor, night = false)))
+                }
             }
         }
     }
+    if (config.background == WidgetBackground.COLOR) {
+        ColorSwatches(config.cardColor) { onChange(config.copy(cardColor = it)) }
+    }
 }
 
-/** Matches the widget's own tile wash. */
-private const val AvatarWashAlpha = 0.16f
+@Composable
+private fun ColorSwatches(selected: WidgetCardColor, onPick: (WidgetCardColor) -> Unit) {
+    Column(modifier = Modifier.padding(start = 56.dp, end = 16.dp, bottom = 12.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.selectableGroup()) {
+            WidgetCardColorChoices.forEach { (color, label) ->
+                val chosen = color == selected
+                val name = stringResource(label)
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .border(
+                            width = if (chosen) 2.dp else 0.dp,
+                            color = if (chosen) MaterialTheme.colorScheme.primary else Color.Transparent,
+                            shape = CircleShape,
+                        )
+                        .padding(if (chosen) 4.dp else 0.dp)
+                        .clip(CircleShape)
+                        .background(widgetCardContainer(color))
+                        .selectable(selected = chosen, onClick = { onPick(color) }, role = Role.RadioButton)
+                        .semantics { contentDescription = name },
+                ) {
+                    if (chosen) {
+                        // Every card colour is a dark ground under white ink.
+                        Icon(
+                            imageVector = Icons.Outlined.Check,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            }
+        }
+        Text(
+            text = stringResource(WidgetCardColorChoices.first { it.first == selected }.second),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 6.dp),
+        )
+    }
+}
+
+@Composable
+private fun ChoiceRow(
+    label: String,
+    selected: Boolean,
+    onPick: () -> Unit,
+    trailing: @Composable () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, onClick = onPick, role = Role.RadioButton)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+        )
+        trailing()
+    }
+}
+
+/**
+ * How solid the card is: the name and the value on one line, the slider under
+ * them, in steps of 5%. The value is said in words at the two ends.
+ */
+@Composable
+private fun OpacityRow(pct: Int, onChange: (Int) -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = stringResource(R.string.widget_config_opacity),
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = when (pct) {
+                    FullOpacity -> stringResource(R.string.widget_opacity_full)
+                    0 -> stringResource(R.string.widget_opacity_transparent)
+                    else -> stringResource(R.string.widget_opacity_percent, pct)
+                },
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Slider(
+            value = pct.toFloat(),
+            onValueChange = { raw -> onChange((raw / OpacityStep).roundToInt() * OpacityStep) },
+            valueRange = 0f..FullOpacity.toFloat(),
+            steps = FullOpacity / OpacityStep - 1,
+        )
+    }
+}
