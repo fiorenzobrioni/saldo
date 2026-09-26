@@ -81,6 +81,16 @@ class RecurrenceCalculatorTest {
     }
 
     @Test
+    fun `four-monthly steps by four months and clamps short months`() {
+        val r = rule(RecurrenceFrequency.FOUR_MONTHLY, LocalDate.of(2025, 10, 31))
+        assertEquals(LocalDate.of(2025, 10, 31), RecurrenceCalculator.occurrence(r, 0))
+        // February 2026 has 28 days; June returns to its own clamp, October to the 31st.
+        assertEquals(LocalDate.of(2026, 2, 28), RecurrenceCalculator.occurrence(r, 1))
+        assertEquals(LocalDate.of(2026, 6, 30), RecurrenceCalculator.occurrence(r, 2))
+        assertEquals(LocalDate.of(2026, 10, 31), RecurrenceCalculator.occurrence(r, 3))
+    }
+
+    @Test
     fun `semiannual steps by six months`() {
         val r = rule(RecurrenceFrequency.SEMIANNUAL, LocalDate.of(2026, 1, 15))
         assertEquals(LocalDate.of(2026, 7, 15), RecurrenceCalculator.occurrence(r, 1))
@@ -242,6 +252,9 @@ class RecurrenceCalculatorTest {
 
         val quarterly = rule(RecurrenceFrequency.QUARTERLY, LocalDate.of(2026, 1, 1), amount = BigDecimal("30.00"))
         assertEquals(BigDecimal("10.00"), RecurrenceCalculator.monthlyEquivalent(quarterly))
+
+        val fourMonthly = rule(RecurrenceFrequency.FOUR_MONTHLY, LocalDate.of(2026, 1, 1), amount = BigDecimal("120.00"))
+        assertEquals(BigDecimal("30.00"), RecurrenceCalculator.monthlyEquivalent(fourMonthly))
     }
 
     @Test

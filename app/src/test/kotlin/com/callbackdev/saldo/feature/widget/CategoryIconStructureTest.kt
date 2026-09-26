@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
  * the pixels are checked in an instrumented test; what runs here in CI is the
  * structural half: every mapped icon must be something the renderer can draw.
  *
- * This is the guard that fires when someone adds a 41st icon of a shape the
+ * This is the guard that fires when someone adds an icon of a shape the
  * renderer does not handle - a stroke-only path, or a group transform - before
  * it ships as a blank tile on someone's home screen.
  */

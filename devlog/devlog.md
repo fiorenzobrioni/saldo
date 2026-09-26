@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-09-26 - Fase 42: frequenza quadrimestrale e otto icone nuove
+
+**Fatto:** versione 2.2.9 (`versionCode` 189).
+
+- Frequenza quadrimestrale per le ricorrenze: `RecurrenceFrequency.FOUR_MONTHLY` (passo di 4 mesi in `RecurrenceCalculator.stepMonths`, 3 occorrenze l'anno in `occurrencesPerYear`), etichetta IT/EN, compare nel menu della frequenza fra trimestrale e semestrale. Guida utente aggiornata.
+- Otto icone aggiunte al set di `CategoryVisuals`, subito dopo quelle delle utenze esistenti (telefono, wifi, cloud): `electric_bolt` (elettricità), `local_fire_department` (gas), `water_drop` (acqua), `recycling` (rifiuti), `shield` (assicurazione), `train` (abbonamento ai trasporti), `newspaper` (giornali e riviste), `medication` (farmaci).
+
+**Decisioni:**
+
+- **Nessuna migration.** La frequenza è persistita come nome dell'enum (converter Room e backup), quindi un valore in più non cambia lo schema. Un backup con una regola quadrimestrale non si ripristina su una versione precedente alla 2.2.9, che non conosce il valore: il formato resta alla versione 1 perché l'aggiunta non rompe la lettura dei file esistenti.
+- **Il set di icone è uno solo**: l'editor delle ricorrenze usa lo stesso di categorie e obiettivi di risparmio, quindi le icone nuove compaiono anche lì. Per il gas la fiamma (`local_fire_department`): l'icona `gas_meter` di Material Symbols non esiste nella libreria `material-icons-extended` del progetto.
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt` verde; test nuovi in `RecurrenceCalculatorTest` (passo quadrimestrale con clamp dei mesi corti, equivalente mensile); `CategoryIconStructureTest` passa sulle otto icone nuove (disegnabili dal renderer del widget). Nessuno screenshot del README mostra la griglia delle icone o il menu della frequenza. Nessun device.
+
+---
+
 ## 2026-09-26 - Fase 41: la nuova icona dell'app
 
 **Fatto:** l'icona scelta fra le proposte (variante D3, ADR 53) è applicata, versione 2.2.8 (`versionCode` 188). L'anello di Chiaro sul fondo caldo `#F7F4EE`, diviso in due metà (entrate in verde acqua sopra, uscite in rosso mattone tenue sotto), interrotto da una moneta ambra in basso a destra e da un taglio sottile alla seconda giunzione. Lo disegna `tools/draw_launcher_icon.py`, che scrive primo piano e strato monocromatico dell'icona adattiva, i due pezzi dell'animazione del benvenuto (`ic_app_icon_ring`, `ic_app_icon_coin`) e l'icona di stato `ic_stat_saldo`; i tre pezzi del portafoglio sono stati cancellati. L'accento delle notifiche passa al verde acqua scuro `#12807D`, i badge dell'onboarding prendono i colori delle due metà, e l'animazione del benvenuto è rifatta: l'anello entra con un quarto di giro e la moneta cade nel suo spazio con un piccolo rimbalzo (niente movimento con le animazioni di sistema spente).

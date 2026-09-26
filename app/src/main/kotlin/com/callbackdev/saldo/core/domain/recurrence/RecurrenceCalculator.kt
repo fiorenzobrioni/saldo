@@ -34,6 +34,7 @@ object RecurrenceCalculator {
         RecurrenceFrequency.MONTHLY -> 1
         RecurrenceFrequency.BIMONTHLY -> 2
         RecurrenceFrequency.QUARTERLY -> 3
+        RecurrenceFrequency.FOUR_MONTHLY -> 4
         RecurrenceFrequency.SEMIANNUAL -> 6
         RecurrenceFrequency.ANNUAL -> MONTHS_PER_YEAR
         RecurrenceFrequency.DAILY, RecurrenceFrequency.WEEKLY -> null
@@ -171,6 +172,7 @@ object RecurrenceCalculator {
         RecurrenceFrequency.MONTHLY -> BigDecimal(12)
         RecurrenceFrequency.BIMONTHLY -> BigDecimal(6)
         RecurrenceFrequency.QUARTERLY -> BigDecimal(4)
+        RecurrenceFrequency.FOUR_MONTHLY -> BigDecimal(3)
         RecurrenceFrequency.SEMIANNUAL -> BigDecimal(2)
         RecurrenceFrequency.ANNUAL -> BigDecimal.ONE
     }

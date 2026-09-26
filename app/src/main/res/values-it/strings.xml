@@ -468,6 +468,7 @@
     <string name="recurrence_monthly">Mensile</string>
     <string name="recurrence_bimonthly">Bimestrale</string>
     <string name="recurrence_quarterly">Trimestrale</string>
+    <string name="recurrence_four_monthly">Quadrimestrale</string>
     <string name="recurrence_semiannual">Semestrale</string>
     <string name="recurrence_annual">Annuale</string>
     <string name="recurrences_title">Movimenti ricorrenti</string>
