@@ -12,8 +12,9 @@ import androidx.compose.material.icons.outlined.ChildCare
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Commute
 import androidx.compose.material.icons.outlined.Computer
-import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.CurrencyExchange
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.ElectricBolt
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.HealthAndSafety
@@ -22,23 +23,30 @@ import androidx.compose.material.icons.outlined.HomeWork
 import androidx.compose.material.icons.outlined.LiveTv
 import androidx.compose.material.icons.outlined.LocalBar
 import androidx.compose.material.icons.outlined.LocalCafe
+import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.LocalGasStation
+import androidx.compose.material.icons.outlined.Medication
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.MusicNote
-import androidx.compose.material.icons.outlined.Pets
+import androidx.compose.material.icons.outlined.Newspaper
 import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material.icons.outlined.Pets
 import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.Recycling
 import androidx.compose.material.icons.outlined.Redeem
 import androidx.compose.material.icons.outlined.RequestQuote
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.School
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material.icons.outlined.ShoppingCart
-import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material.icons.outlined.Spa
+import androidx.compose.material.icons.outlined.SportsEsports
 import androidx.compose.material.icons.outlined.Subscriptions
+import androidx.compose.material.icons.outlined.Train
 import androidx.compose.material.icons.outlined.VolunteerActivism
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material.icons.outlined.Work
 import androidx.compose.ui.graphics.Color
@@ -117,6 +125,14 @@ object CategoryVisuals {
         "phone" to Icons.Outlined.Phone,
         "wifi" to Icons.Outlined.Wifi,
         "cloud" to Icons.Outlined.Cloud,
+        "electric_bolt" to Icons.Outlined.ElectricBolt,
+        "local_fire_department" to Icons.Outlined.LocalFireDepartment,
+        "water_drop" to Icons.Outlined.WaterDrop,
+        "recycling" to Icons.Outlined.Recycling,
+        "shield" to Icons.Outlined.Shield,
+        "train" to Icons.Outlined.Train,
+        "newspaper" to Icons.Outlined.Newspaper,
+        "medication" to Icons.Outlined.Medication,
         "directions_car" to Icons.Outlined.DirectionsCar,
         "category" to Icons.Outlined.Category,
     )

@@ -10,6 +10,7 @@ enum class RecurrenceFrequency {
     MONTHLY,
     BIMONTHLY,
     QUARTERLY,
+    FOUR_MONTHLY,
     SEMIANNUAL,
     ANNUAL,
 }

@@ -1056,6 +1056,13 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 - [x] Icona scelta (D3, ADR 53) applicata: `tools/draw_launcher_icon.py` scrive primo piano, monocromatica, i due pezzi dell'animazione del benvenuto e `ic_stat_saldo`; fondo `#F7F4EE`, accento delle notifiche verde acqua, badge dell'onboarding nei colori delle due metà, animazione del benvenuto rifatta (l'anello gira in posizione, la moneta cade nel suo spazio)
 - [ ] Verifica su device: widget su due launcher in chiaro, scuro e trasparente; notifiche chiuse ed espanse, barre del budget; guida; nuova icona su più launcher e come icona a tema, animazione del benvenuto
 
+## Fase 42 - Frequenza quadrimestrale e nuove icone (26 settembre 2026)
+
+> Richiesta utente: la frequenza quadrimestrale mancava fra quelle dei movimenti ricorrenti, e l'editor delle ricorrenze chiedeva più icone, fra cui Elettricità, Gas e Acqua. Nessun cambio di schema: la frequenza è salvata per nome (DB e backup), le icone per chiave.
+
+- [x] `RecurrenceFrequency.FOUR_MONTHLY` fra trimestrale e semestrale: passo di 4 mesi con il clamp dei mesi corti, 3 addebiti l'anno nell'equivalente mensile, etichetta "Quadrimestrale" / "Every 4 months"; test in `RecurrenceCalculatorTest`
+- [x] Otto icone nel set condiviso di `CategoryVisuals` (editor delle ricorrenze, delle categorie e degli obiettivi): elettricità (`electric_bolt`), gas (`local_fire_department`), acqua (`water_drop`), rifiuti (`recycling`), assicurazione (`shield`), treno (`train`), giornali (`newspaper`), farmaci (`medication`); `CategoryIconStructureTest` le copre per il widget
+
 ---
 
 # Fasi da valutare

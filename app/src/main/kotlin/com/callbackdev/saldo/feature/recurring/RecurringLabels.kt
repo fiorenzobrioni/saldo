@@ -13,6 +13,7 @@ fun RecurrenceFrequency.labelRes(): Int = when (this) {
     RecurrenceFrequency.MONTHLY -> R.string.recurrence_monthly
     RecurrenceFrequency.BIMONTHLY -> R.string.recurrence_bimonthly
     RecurrenceFrequency.QUARTERLY -> R.string.recurrence_quarterly
+    RecurrenceFrequency.FOUR_MONTHLY -> R.string.recurrence_four_monthly
     RecurrenceFrequency.SEMIANNUAL -> R.string.recurrence_semiannual
     RecurrenceFrequency.ANNUAL -> R.string.recurrence_annual
 }

@@ -47,6 +47,7 @@ Ogni regola ha una frequenza e una data di partenza (chiamata "Primo addebito", 
 - Mensile
 - Bimestrale (ogni 2 mesi)
 - Trimestrale (ogni 3 mesi)
+- Quadrimestrale (ogni 4 mesi)
 - Semestrale (ogni 6 mesi)
 - Annuale
 

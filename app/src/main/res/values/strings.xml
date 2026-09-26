@@ -459,6 +459,7 @@
     <string name="recurrence_monthly">Monthly</string>
     <string name="recurrence_bimonthly">Every 2 months</string>
     <string name="recurrence_quarterly">Quarterly</string>
+    <string name="recurrence_four_monthly">Every 4 months</string>
     <string name="recurrence_semiannual">Semi-annual</string>
     <string name="recurrence_annual">Yearly</string>
     <string name="recurrences_title">Recurring transactions</string>
