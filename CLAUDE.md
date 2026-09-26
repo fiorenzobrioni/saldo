@@ -62,6 +62,7 @@ Quando scrivi, modifichi o generi testo per i file di documentazione del reposit
 - Nessuna stringa hardcoded: tutto in `strings.xml` (values + values-it) fin da subito.
 - Commit: Conventional Commits (`feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`).
 - Accessibilità: contentDescription sugli elementi interattivi; spese/entrate distinte anche da segno/icona, non solo dal colore.
+- **Icona dell'app**: la disegna `tools/draw_launcher_icon.py` (ADR 53), che scrive i due strati dell'icona adattiva, i pezzi dell'animazione del benvenuto (`ic_app_icon_*`) e `ic_stat_saldo`. Per cambiarla si modifica lo script e lo si riesegue (`python3 tools/draw_launcher_icon.py`), mai i file XML generati.
 - Se esistono mockup in `docs/design/`, usali come **riferimento di layout e gerarchia** per le schermate corrispondenti — non come spec al pixel. Implementa sempre con componenti Material 3; non tradurre né importare mai HTML/CSS/JS provenienti dai mockup.
 
 ## Qualità e verifica

@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
-     The mark: Chiaro's ring in two halves (income above, expenses below), cut by an amber
-     coin at the lower right and by a thin band at the other junction. Everything sits
-     inside the 33-unit safe circle of every launcher mask (ring edge 26, coin edge 29.2). -->
+     The welcome page's first piece: the foreground's ring alone, on the same canvas. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
@@ -24,12 +22,4 @@
         </aapt:attr>
     </path>
 </group>
-<path android:fillType="evenOdd" android:pathData="M 61.89,67.50 a 8.20,8.20 0 1,0 16.40,0 a 8.20,8.20 0 1,0 -16.40,0 z M 63.79,67.50 a 6.30,6.30 0 1,0 12.60,0 a 6.30,6.30 0 1,0 -12.60,0 z M 65.09,67.50 a 5.00,5.00 0 1,0 10.00,0 a 5.00,5.00 0 1,0 -10.00,0 z">
-    <aapt:attr name="android:fillColor">
-        <gradient android:type="linear" android:startX="64.09" android:startY="61.50" android:endX="76.09" android:endY="73.50">
-            <item android:offset="0" android:color="#FFFFC658"/>
-            <item android:offset="1" android:color="#FFEF8618"/>
-        </gradient>
-    </aapt:attr>
-</path>
 </vector>

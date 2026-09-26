@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-09-26 - Fase 41: la nuova icona dell'app
+
+**Fatto:** l'icona scelta fra le proposte (variante D3, ADR 53) è applicata, versione 2.2.8 (`versionCode` 188). L'anello di Chiaro sul fondo caldo `#F7F4EE`, diviso in due metà (entrate in verde acqua sopra, uscite in rosso mattone tenue sotto), interrotto da una moneta ambra in basso a destra e da un taglio sottile alla seconda giunzione. Lo disegna `tools/draw_launcher_icon.py`, che scrive primo piano e strato monocromatico dell'icona adattiva, i due pezzi dell'animazione del benvenuto (`ic_app_icon_ring`, `ic_app_icon_coin`) e l'icona di stato `ic_stat_saldo`; i tre pezzi del portafoglio sono stati cancellati. L'accento delle notifiche passa al verde acqua scuro `#12807D`, i badge dell'onboarding prendono i colori delle due metà, e l'animazione del benvenuto è rifatta: l'anello entra con un quarto di giro e la moneta cade nel suo spazio con un piccolo rimbalzo (niente movimento con le animazioni di sistema spente).
+
+**Decisioni:**
+
+- **Il percorso di scelta.** Quattro proposte (A anello verde acqua, B anello blu, C entrate e uscite, D budget), poi varianti della C: verde e rosso puri collassano sullo stesso oliva nella simulazione di deuteranopia e mezza icona rossa si legge "in rosso"; il pesca non è piaciuto al committente; fra rosso tenue, rosa antico e mattone ha scelto il mattone, che si lega all'ambra della moneta e resta distinto dal verde acqua anche in scala di grigi meglio delle altre due.
+- **Il taglio alla seconda giunzione** esiste per l'icona a tema: senza colori le due metà diventerebbero un anello solo.
+- **Script e non XML a mano**, come in Passo: le sei geometrie condivise (anello, moneta, spazio, taglio) vivono in un posto solo e i cinque file restano allineati per costruzione.
+
+**Verifica:** i cinque file generati renderizzati e controllati (primo piano, monocromatico, i due pezzi sovrapposti, icona di stato); `widgets.png` e `quick-entry.png` rigenerati per il nuovo segno sul pulsante dell'app del widget; `./gradlew assembleDebug testDebugUnitTest lint detekt` verde. Nessun device.
+
+**Prossimo:** verifica su device dell'icona su più launcher, come icona a tema, e dell'animazione del benvenuto.
+
+---
+
 ## 2026-09-25 - Fase 41: widget, notifiche e guida nello stile di Chiaro e Passo
 
 **Fatto:** Saldo veste widget e notifiche come le app sorelle e ha una guida nell'app nella loro forma (ADR 52), versione 2.2.7 (`versionCode` 187).

@@ -1,42 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Themed/monochrome variant (Android 13+ "themed icons"): same silhouette as
-    ic_launcher_foreground, single white fill with alpha for layering since
-    the system applies its own tint at runtime. Kept in sync with the foreground:
-    same scale/upward-nudge wrapper, staggered cards behind the wallet, darker
-    pocket band rendered as a lower-alpha overlay, and the thumb-notch scoop cut
-    into the pocket's top edge (no clasp button here either).
--->
+<!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
+     The themed icon (Android 13+): the foreground's shapes in one ink, which the system
+     tints. The cut keeps the two halves apart where the colours are gone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <group
-        android:pivotX="54"
-        android:pivotY="54"
-        android:scaleX="0.84"
-        android:scaleY="0.84"
-        android:translateY="-3">
-
-        <path
-            android:fillColor="#FFFFFF"
-            android:fillAlpha="0.55"
-            android:pathData="M34,30 H62 A4,4 0 0 1 66,34 V52 A4,4 0 0 1 62,56 H34 A4,4 0 0 1 30,52 V34 A4,4 0 0 1 34,30 Z" />
-
-        <path
-            android:fillColor="#FFFFFF"
-            android:fillAlpha="0.55"
-            android:pathData="M48,37 H74 A4,4 0 0 1 78,41 V56 A4,4 0 0 1 74,60 H48 A4,4 0 0 1 44,56 V41 A4,4 0 0 1 48,37 Z" />
-
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M34,48 H74 A10,10 0 0 1 84,58 V74 A10,10 0 0 1 74,84 H34 A10,10 0 0 1 24,74 V58 A10,10 0 0 1 34,48 Z" />
-
-        <path
-            android:fillColor="#FFFFFF"
-            android:fillAlpha="0.35"
-            android:pathData="M24,64 H45 A9,9 0 0 0 63,64 H84 V74 A10,10 0 0 1 74,84 H34 A10,10 0 0 1 24,74 Z" />
-    </group>
+<group>
+    <clip-path android:pathData="M 0,0 H 108.00 V 108.00 H 0 Z M 58.89,67.50 a 11.20,11.20 0 1,0 22.40,0 a 11.20,11.20 0 1,0 -22.40,0 z M 44.74,47.93 L 29.42,35.07 L 31.09,33.08 L 46.41,45.93 Z"/>
+    <path android:pathData="M 33.00,54.00 a 21.00,21.00 0 1,0 42.00,0 a 21.00,21.00 0 1,0 -42.00,0 z" android:strokeWidth="10.00" android:strokeColor="#FF000000" android:fillColor="#00000000"/>
+</group>
+<path android:fillType="evenOdd" android:fillColor="#FF000000" android:pathData="M 61.89,67.50 a 8.20,8.20 0 1,0 16.40,0 a 8.20,8.20 0 1,0 -16.40,0 z M 63.79,67.50 a 6.30,6.30 0 1,0 12.60,0 a 6.30,6.30 0 1,0 -12.60,0 z M 65.09,67.50 a 5.00,5.00 0 1,0 10.00,0 a 5.00,5.00 0 1,0 -10.00,0 z"/>
 </vector>
