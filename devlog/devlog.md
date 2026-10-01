@@ -24,7 +24,7 @@ Formato suggerito per ogni voce:
 - **Note brevi**, in punti di una riga, come i README della famiglia: cosa c'è di nuovo, cosa cambia, cosa è corretto, come installare e verificare.
 - **Migration 4-5 prima del tag**: la 2.3.0 è la prima release con lo schema v5 (`isPaused` sulle regole ricorrenti), e l'ADR 26 chiede i test strumentati prima di pubblicare un cambio di schema. Lanciato il workflow "Instrumented tests" sul branch della release.
 
-**Verifica:** estrazione dei link delle note verificata con le sostituzioni del workflow di release (nessun link relativo superstite). Esito dei test strumentati nella voce successiva o nella PR della release.
+**Verifica:** estrazione dei link delle note verificata con le sostituzioni del workflow di release (nessun link relativo superstite). Workflow "Instrumented tests" (emulatore API 34, suite completa, migration 4-5 compresa) verde sul commit della release ([run 36837223184](https://github.com/fiorenzobrioni/saldo/actions/runs/36837223184)); CI del push verde.
 
 ---
 
