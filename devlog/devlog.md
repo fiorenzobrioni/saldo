@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-01 - README e screenshot in inglese
+
+**Fatto:** il `README.md` di root tradotto in inglese, con la stessa struttura della voce precedente; gli screenshot del README rigenerati in inglese. `ReadmeScreenshots` gira ora con `en-GB` (qualifier e `Locale.UK`) e `SampleLedger` ha descrizioni, conti e regole in inglese (Rent, Salary, Current account, ...); i nomi dei negozi e dei locali restano quelli, gli importi restano in euro. Aggiornate le istruzioni: `CLAUDE.md` (README e screenshot in inglese, note di rilascio in inglese dalla 2.3.0) e `docs/CLAUDE.md` (le due eccezioni alla lingua italiana).
+
+**Decisioni:**
+
+- **README in inglese** (committente): uniforme con Chiaro e Passo. Saldo non ha nulla di specifico per l'Italia: le risorse di base sono inglesi, la valuta principale è qualsiasi valuta ISO, i tassi BCE coprono una trentina di valute. Limiti noti, non bloccanti: l'inserimento testuale e il riconoscimento automatico del CSV capiscono italiano e inglese.
+- **`en-GB` con euro**, come le schermate di Chiaro: un utente europeo, orari a 24 ore. I termini del README seguono le stringhe inglesi dell'app (Transactions, Safe to spend today, Credits and debts, Recurring transactions).
+- **Restano in italiano** VISION, PLANNING, devlog e guida utente; il README lo dichiara accanto ai link. Le note di rilascio già pubblicate non si traducono.
+
+**Verifica:** `./gradlew testDebugUnitTest -PupdateScreenshots --tests "*.ReadmeScreenshots"` (con lo script del mirror), undici immagini rigenerate e guardate prima del commit.
+
+---
+
 ## 2026-10-01 - README nella struttura comune della famiglia
 
 **Fatto:** il `README.md` riscritto sulla struttura condivisa con Chiaro e Passo, in vista della release 2.3.0: intestazione con gli stessi badge e il link al download, "Cos'è Saldo", le schermate in una tabella a tre colonne con didascalie di una riga, le funzionalità in punti di una riga (il dettaglio resta in `docs/guida-utente/`), principi, installazione con checksum, impronta del certificato e aggiornamenti, roadmap, build, stack, struttura, documentazione, la famiglia, licenza. `release.yml` pubblica anche `saldo-vX.Y.Z.apk.sha256`.

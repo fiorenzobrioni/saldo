@@ -85,10 +85,10 @@ class SampleLedger @Inject constructor(
     }
 
     private suspend fun seedAccounts() {
-        checking = account("Conto corrente", AccountType.CHECKING, "3850.00")
-        travelFund = account("Fondo viaggi", AccountType.SAVINGS, "900.00")
+        checking = account("Current account", AccountType.CHECKING, "3850.00")
+        travelFund = account("Travel fund", AccountType.SAVINGS, "900.00")
         card = account(
-            "Carta di credito", AccountType.CREDIT_CARD, "0.00",
+            "Credit card", AccountType.CREDIT_CARD, "0.00",
             CreditCardConfig(
                 statementClosingDay = 25,
                 paymentDueDay = 10,
@@ -98,10 +98,10 @@ class SampleLedger @Inject constructor(
                 lastSettledClosing = LocalDate.of(2026, 6, 25),
             ),
         )
-        cash = account("Contanti", AccountType.CASH, "85.00")
+        cash = account("Cash", AccountType.CASH, "85.00")
         // Left over from a year in London: the one foreign balance, counted in
         // the total at the ECB rate (ADR 40).
-        account("Conto UK", AccountType.CHECKING, "640.00", currency = gbp)
+        account("UK account", AccountType.CHECKING, "640.00", currency = gbp)
     }
 
     /** An account as the editor creates it, with its type's preset icon and color. */
@@ -126,26 +126,26 @@ class SampleLedger @Inject constructor(
     )
 
     private suspend fun seedRules() {
-        rule("Affitto", R.string.seed_category_rent_mortgage, "720.00", day = 1, account = checking)
+        rule("Rent", R.string.seed_category_rent_mortgage, "720.00", day = 1, account = checking)
         rule(
-            "Stipendio", R.string.seed_category_salary, "2450.00", day = 27, account = checking,
+            "Salary", R.string.seed_category_salary, "2450.00", day = 27, account = checking,
             type = TransactionType.INCOME,
         )
-        rule("Abbonamento Netflix", R.string.seed_category_subscriptions, "13.99", day = 3, account = card)
-        rule("Palestra", R.string.seed_category_health, "45.00", day = 5, account = card)
+        rule("Netflix", R.string.seed_category_subscriptions, "13.99", day = 3, account = card)
+        rule("Gym", R.string.seed_category_health, "45.00", day = 5, account = card)
         rule("Spotify", R.string.seed_category_subscriptions, "11.99", day = 8, account = card)
-        rule("Fibra internet", R.string.seed_category_bills_utilities, "27.90", day = 15, account = checking)
+        rule("Fibre broadband", R.string.seed_category_bills_utilities, "27.90", day = 15, account = checking)
         rule(
-            "Luce e gas", R.string.seed_category_bills_utilities, "94.20", day = 20, account = checking,
+            "Electricity and gas", R.string.seed_category_bills_utilities, "94.20", day = 20, account = checking,
             frequency = RecurrenceFrequency.BIMONTHLY,
         )
         rule(
-            "Assicurazione auto", R.string.seed_category_car_fuel, "486.00", day = 12, account = checking,
+            "Car insurance", R.string.seed_category_car_fuel, "486.00", day = 12, account = checking,
             frequency = RecurrenceFrequency.ANNUAL, start = LocalDate.of(2026, 10, 12),
         )
         rules.upsert(
             RecurringRule(
-                name = "Fondo viaggi",
+                name = "Travel fund",
                 type = TransactionType.TRANSFER,
                 currency = eur,
                 accountId = checking,
@@ -165,8 +165,8 @@ class SampleLedger @Inject constructor(
     /** Groceries twice a week, coffee at the bar, a dinner out most weeks, fuel twice a month. */
     private suspend fun seedEverydaySpending() {
         val random = Random(SEED)
-        val shops = listOf("Esselunga", "Coop", "Lidl", "Mercato rionale")
-        val dinners = listOf("Pizzeria Da Gino", "Sushi Zen", "Trattoria del Ponte", "Aperitivo")
+        val shops = listOf("Esselunga", "Coop", "Lidl", "Local market")
+        val dinners = listOf("Pizzeria Da Gino", "Sushi Zen", "Trattoria del Ponte", "Drinks")
         var day = LocalDate.of(2026, 7, 1)
         while (day < TODAY) {
             val holiday = day in HOLIDAY
@@ -177,7 +177,7 @@ class SampleLedger @Inject constructor(
                 )
             }
             if (!holiday && day.dayOfWeek.value <= 5 && random.nextInt(10) < 3) {
-                expense("Bar", R.string.seed_category_dining, cents(random, 130, 450), day, 8, account = cash)
+                expense("Coffee", R.string.seed_category_dining, cents(random, 130, 450), day, 8, account = cash)
             }
             if (!holiday && day.dayOfWeek.value == 5 && random.nextInt(10) < 7) {
                 expense(
@@ -186,7 +186,7 @@ class SampleLedger @Inject constructor(
                 )
             }
             if (!holiday && day.dayOfMonth in setOf(4, 18)) {
-                expense("Carburante", R.string.seed_category_car_fuel, cents(random, 5_500, 7_000), day, 12, checking)
+                expense("Fuel", R.string.seed_category_car_fuel, cents(random, 5_500, 7_000), day, 12, checking)
             }
             day = day.plusDays(1)
         }
@@ -195,25 +195,25 @@ class SampleLedger @Inject constructor(
     private suspend fun seedOneOffs() {
         // Cash withdrawals: transfers, never spending.
         listOf(LocalDate.of(2026, 7, 6), LocalDate.of(2026, 8, 3), LocalDate.of(2026, 9, 7)).forEach {
-            transfer("Prelievo", "100.00", it, from = checking, to = cash)
+            transfer("Cash withdrawal", "100.00", it, from = checking, to = cash)
         }
         expense("Amazon", R.string.seed_category_shopping, "34.90", LocalDate.of(2026, 7, 12), 20, card)
-        expense("Treno Milano-Bologna", R.string.seed_category_travel, "39.90", LocalDate.of(2026, 7, 17), 7, card)
-        expense("Farmacia", R.string.seed_category_health, "18.40", LocalDate.of(2026, 7, 22), 17, cash)
-        expense("Concerto", R.string.seed_category_entertainment, "55.00", LocalDate.of(2026, 7, 25), 22, card)
+        expense("Train Milan-Bologna", R.string.seed_category_travel, "39.90", LocalDate.of(2026, 7, 17), 7, card)
+        expense("Pharmacy", R.string.seed_category_health, "18.40", LocalDate.of(2026, 7, 22), 17, cash)
+        expense("Concert", R.string.seed_category_entertainment, "55.00", LocalDate.of(2026, 7, 25), 22, card)
         // The summer holiday in Puglia.
-        expense("Traghetto e autostrada", R.string.seed_category_travel, "86.50", LocalDate.of(2026, 8, 8), 9, card)
+        expense("Ferry and tolls", R.string.seed_category_travel, "86.50", LocalDate.of(2026, 8, 8), 9, card)
         expense("Masseria Le Pietre", R.string.seed_category_travel, "640.00", LocalDate.of(2026, 8, 8), 15, card)
-        expense("Ristorante sul mare", R.string.seed_category_dining, "72.00", LocalDate.of(2026, 8, 10), 21, card)
-        expense("Lido", R.string.seed_category_entertainment, "30.00", LocalDate.of(2026, 8, 11), 10, cash)
-        expense("Spesa in vacanza", R.string.seed_category_groceries, "48.70", LocalDate.of(2026, 8, 12), 18, card)
-        expense("Regalo per Anna", R.string.seed_category_gifts_given, "40.00", LocalDate.of(2026, 8, 20), 18, card)
+        expense("Seaside restaurant", R.string.seed_category_dining, "72.00", LocalDate.of(2026, 8, 10), 21, card)
+        expense("Beach club", R.string.seed_category_entertainment, "30.00", LocalDate.of(2026, 8, 11), 10, cash)
+        expense("Holiday groceries", R.string.seed_category_groceries, "48.70", LocalDate.of(2026, 8, 12), 18, card)
+        expense("Gift for Anna", R.string.seed_category_gifts_given, "40.00", LocalDate.of(2026, 8, 20), 18, card)
         expense("Zara", R.string.seed_category_shopping, "45.95", LocalDate.of(2026, 8, 29), 16, card)
         // September.
         expense("Decathlon", R.string.seed_category_shopping, "59.99", LocalDate.of(2026, 9, 6), 11, card)
-        income("Progetto sito web", R.string.seed_category_freelance, "420.00", LocalDate.of(2026, 9, 11), 10, checking)
+        income("Website project", R.string.seed_category_freelance, "420.00", LocalDate.of(2026, 9, 11), 10, checking)
         expense("Cinema", R.string.seed_category_entertainment, "17.00", LocalDate.of(2026, 9, 13), 21, card)
-        expense("Farmacia", R.string.seed_category_health, "12.90", LocalDate.of(2026, 9, 17), 18, cash)
+        expense("Pharmacy", R.string.seed_category_health, "12.90", LocalDate.of(2026, 9, 17), 18, cash)
         // Paid for Luca's share of a dinner: a loan, out of the statistics (ADR 34).
         transactions.upsert(
             Transaction(
@@ -224,7 +224,7 @@ class SampleLedger @Inject constructor(
                 timestamp = at(LocalDate.of(2026, 9, 19), 22, 30).toInstant(),
                 zoneOffset = at(LocalDate.of(2026, 9, 19), 22, 30).offset,
                 categoryId = category(R.string.seed_category_dining),
-                description = "Cena di compleanno",
+                description = "Birthday dinner",
                 isExcludedFromStats = true,
                 counterparty = "Luca",
             ),
@@ -232,8 +232,8 @@ class SampleLedger @Inject constructor(
     }
 
     private suspend fun seedToday() {
-        expense("Bar", R.string.seed_category_dining, "1.80", TODAY, 8, cash, minute = 10)
-        expense("Pranzo", R.string.seed_category_dining, "11.50", TODAY, 13, checking, minute = 5)
+        expense("Coffee", R.string.seed_category_dining, "1.80", TODAY, 8, cash, minute = 10)
+        expense("Lunch", R.string.seed_category_dining, "11.50", TODAY, 13, checking, minute = 5)
         expense("Esselunga", R.string.seed_category_groceries, "46.35", TODAY, 18, card, minute = 5)
     }
 
@@ -244,7 +244,7 @@ class SampleLedger @Inject constructor(
         budgets.upsertCategoryBudget(category(R.string.seed_category_shopping), money("150.00"), eur)
         goals.upsert(
             SavingsGoal(
-                name = "Viaggio in Giappone",
+                name = "Trip to Japan",
                 targetAmount = money("3500.00"),
                 currency = eur,
                 accountId = travelFund,

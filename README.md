@@ -2,10 +2,10 @@
 
 # 💶 Saldo
 
-**Capire dove vanno i soldi, in modo chiaro e immediato.**
+**See where your money goes, clearly and at a glance.**
 
-Un'app Android per il tracciamento delle spese personali, offline-first e privacy-first.
-Gratuita, senza account, senza pubblicità, senza tracciamento, senza collegamento alla banca.
+An offline-first, privacy-first Android app for tracking personal expenses.
+Free, no account, no ads, no tracking, no link to your bank.
 
 ![Platform](https://img.shields.io/badge/platform-Android-2E6B3E?labelColor=FCFAF6)
 ![Release](https://img.shields.io/github/v/release/fiorenzobrioni/saldo?label=release&labelColor=FCFAF6&color=2E6B3E)
@@ -16,192 +16,194 @@ Gratuita, senza account, senza pubblicità, senza tracciamento, senza collegamen
 ![Compose](https://img.shields.io/badge/UI-Compose%20Material%203-007DB6?labelColor=FCFAF6)
 ![Account](https://img.shields.io/badge/account-none%20needed-2E6B3E?labelColor=FCFAF6)
 
-[**⬇️ Scarica l'ultima versione**](https://github.com/fiorenzobrioni/saldo/releases/latest)
+[**⬇️ Download the latest release**](https://github.com/fiorenzobrioni/saldo/releases/latest)
 
 </div>
 
-## Cos'è Saldo
+## What Saldo is
 
-Saldo è un expense tracker, non un'app di home banking: registra spese, entrate e
-trasferimenti, tiene il saldo di ogni conto (banca, carte, contanti, wallet) e mostra dove
-vanno i soldi. Una spesa si registra in 2-3 tap.
+Saldo is an expense tracker, not a banking app: it records expenses, income and transfers,
+keeps the balance of every account (bank, cards, cash, wallets) and shows where the money
+goes. An expense takes 2 or 3 taps.
 
-Nessun collegamento ai conti bancari, nessun server, nessuna registrazione: i dati restano sul
-dispositivo. Il saldo di un conto è sempre calcolato dai movimenti, mai salvato a parte.
+No link to your bank, no server, no sign-up: the data stays on the device. An account's
+balance is always computed from its transactions, never stored on its own.
 
-## Schermate
+## Screenshots
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/screenshots/dashboard.png" width="250" alt="Dashboard: saldo totale con andamento e stima a fine mese, conti, spendibile oggi, spese di oggi e del mese"><br><sub><b>Dashboard</b>: il saldo e il mese a colpo d'occhio</sub></td>
-    <td align="center" width="33%"><img src="docs/screenshots/dashboard-cards.png" width="250" alt="Dashboard: confronto mensile, budget, obiettivo di risparmio, crediti e debiti"><br><sub><b>Budget e obiettivi</b>, nelle schede</sub></td>
-    <td align="center" width="33%"><img src="docs/screenshots/dashboard-dark.png" width="250" alt="Dashboard in tema scuro"><br><sub><b>Tema scuro</b></sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/dashboard.png" width="250" alt="Dashboard: total balance with its trend and the month-end estimate, accounts, safe to spend today, today's and this month's spending"><br><sub><b>Dashboard</b>: the balance and the month at a glance</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/dashboard-cards.png" width="250" alt="Dashboard: month comparison, budgets, savings goal, credits and debts"><br><sub><b>Budgets and goals</b>, on their cards</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/dashboard-dark.png" width="250" alt="Dashboard in the dark theme"><br><sub><b>Dark theme</b></sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/transactions.png" width="250" alt="Movimenti del mese raggruppati per giorno, con i totali del periodo"><br><sub><b>Movimenti</b>, giorno per giorno</sub></td>
-    <td align="center"><img src="docs/screenshots/stats.png" width="250" alt="Statistiche: spese del mese per categoria"><br><sub><b>Statistiche</b> per categoria</sub></td>
-    <td align="center"><img src="docs/screenshots/recurrences.png" width="250" alt="Movimenti ricorrenti: totale del mese, proiezione annua, prossimi addebiti"><br><sub><b>Ricorrenti</b>: totale e proiezione annua</sub></td>
+    <td align="center"><img src="docs/screenshots/transactions.png" width="250" alt="The month's transactions grouped by day, with the period's totals"><br><sub><b>Transactions</b>, day by day</sub></td>
+    <td align="center"><img src="docs/screenshots/stats.png" width="250" alt="Statistics: the month's spending by category"><br><sub><b>Statistics</b> by category</sub></td>
+    <td align="center"><img src="docs/screenshots/recurrences.png" width="250" alt="Recurring transactions: the month's total, the yearly projection, the next charges"><br><sub><b>Recurring</b>: total and yearly projection</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/widgets.png" width="250" alt="I due widget sulla home: barra spesa/entrata e griglia delle categorie"><br><sub><b>Due widget</b> di aggiunta rapida</sub></td>
-    <td align="center"><img src="docs/screenshots/quick-entry.png" width="250" alt="Inserimento rapido dal widget: categoria scelta, tastierino, importo"><br><sub><b>Inserimento rapido</b>, senza aprire l'app</sub></td>
-    <td align="center"><img src="docs/screenshots/widget-settings.png" width="250" alt="Impostazioni del widget: anteprima dal vivo, sfondo chiaro, scuro, come il telefono o uno dei sei colori, opacità"><br><sub><b>Impostazioni del widget</b>, con anteprima</sub></td>
+    <td align="center"><img src="docs/screenshots/widgets.png" width="250" alt="The two widgets on a home screen: the expense and income bar, and the category grid"><br><sub><b>Two quick-add widgets</b></sub></td>
+    <td align="center"><img src="docs/screenshots/quick-entry.png" width="250" alt="Quick entry from the widget: the chosen category, the keypad, the amount"><br><sub><b>Quick entry</b>, without opening the app</sub></td>
+    <td align="center"><img src="docs/screenshots/widget-settings.png" width="250" alt="Widget settings: a live preview, a light, dark or system background or one of six colours, the opacity"><br><sub><b>Widget settings</b>, with a live preview</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/exchange-rates.png" width="250" alt="Tassi di cambio BCE con convertitore rapido e andamento recente"><br><sub><b>Tassi di cambio</b> BCE e convertitore</sub></td>
-    <td align="center"><img src="docs/screenshots/guide.png" width="250" alt="La guida: le quattro schermate e a cosa risponde ognuna"><br><sub><b>La guida</b>, nell'app</sub></td>
+    <td align="center"><img src="docs/screenshots/exchange-rates.png" width="250" alt="ECB exchange rates with a quick converter and the recent trend"><br><sub><b>Exchange rates</b> from the ECB, and a converter</sub></td>
+    <td align="center"><img src="docs/screenshots/guide.png" width="250" alt="The guide: the four screens and what each one answers"><br><sub><b>The guide</b>, in the app</sub></td>
     <td></td>
   </tr>
 </table>
 
-Disegnate dalle schermate dell'app su dati d'esempio realistici, in italiano (l'app parla anche
-inglese). La barra di stato del telefono non compare. Il comando che le rigenera è in
+Drawn by the app's own screens from realistic sample data, in English (the app also speaks
+Italian). The phone's status bar is not in the pictures. The command that redraws them is in
 [Build](#build).
 
-## Funzionalità
+## Features
 
-- 📊 **Dashboard**: saldo totale con andamento e stima a fine mese, spese di oggi e del mese, ultimi movimenti.
-- 💸 **Movimenti**: spese, entrate e trasferimenti in 2-3 tap, con tastierino dedicato, note, tag e duplicazione.
-- 🏦 **Conti**: corrente, risparmio, prepagata, carta di credito, contanti, wallet, ognuno con la sua schermata di dettaglio.
-- 💳 **Carte di credito a saldo**: ciclo di chiusura e addebito, estratto da pagare con un tap.
-- 📉 **Prestiti e finanziamenti**: debito residuo, rate pagate e rate mancanti.
-- 🔁 **Ricorrenti**: abbonamenti, stipendio, accantonamenti, con conferma o in automatico, e pausa.
-- ⏳ **In arrivo**: movimenti futuri e occorrenze da confermare, in una sola lista.
-- 💰 **Budget**: un tetto mensile e tetti per categoria, con avvisi all'80% e al 100%.
-- 🟢 **Spendibile oggi**: quanto resta da spendere nel budget, con il dettaglio del calcolo.
-- 🎯 **Obiettivi di risparmio**: un traguardo su un conto di risparmio, con il versamento mensile suggerito.
-- 🤝 **Crediti e debiti**: soldi prestati o ricevuti da persone, fuori dalle statistiche di spesa.
-- 📈 **Statistiche**: spese per categoria, trend mensile, entrate e uscite, andamento del saldo.
-- ✨ **Saldo Wrapped**: il racconto del mese appena chiuso, condivisibile come immagine.
-- 🌍 **Multi-valuta**: ogni movimento nella sua valuta, equivalenti stimati con i tassi BCE.
-- 🏠 **Widget e Impostazioni rapide**: una spesa registrata senza aprire l'app, anche scritta in una riga ("12,50 pizza ieri").
-- 💾 **Backup**: su un file tuo, anche cifrato con passphrase, con promemoria opzionale.
-- 📥 **CSV**: export dei movimenti filtrati, import con riconoscimento del formato o mappatura manuale.
-- 🔒 **Blocco app**: PIN, impronta o volto, contenuto nascosto nelle app recenti.
-- 🔔 **Notifiche**: ricorrenze, budget, estratti carta, scadenze, in silenzio fra le 22 e le 7.
-- 📖 **La guida**: le quattro schermate e quello che una schermata non può dire da sola.
-- 🎨 **Aspetto**: chiaro o scuro, colori dell'app o dinamici del telefono.
-- 🇮🇹 🇬🇧 **Italiano e inglese**, con il selettore di lingua per app del sistema.
+- 📊 **Dashboard**: total balance with its trend and month-end estimate, today's and this month's spending, latest transactions.
+- 💸 **Transactions**: expenses, income and transfers in 2 or 3 taps, with a built-in keypad, notes, tags and duplication.
+- 🏦 **Accounts**: current, savings, prepaid, credit card, cash, wallet, each with its own detail screen.
+- 💳 **Credit cards**: closing and payment days, the statement paid with one tap.
+- 📉 **Loans**: the debt left, the installments paid and those still to come.
+- 🔁 **Recurring transactions**: subscriptions, salary, savings transfers, confirmed or automatic, and they can be paused.
+- ⏳ **Upcoming**: future transactions and occurrences to confirm, in one list.
+- 💰 **Budgets**: a monthly cap and caps per category, with alerts at 80% and 100%.
+- 🟢 **Safe to spend today**: what is left in the budget, with the calculation shown.
+- 🎯 **Savings goals**: a target on a savings account, with the monthly amount it needs.
+- 🤝 **Credits and debts**: money lent to or borrowed from people, kept out of the spending statistics.
+- 📈 **Statistics**: spending by category, monthly trend, income against expenses, balance over time.
+- ✨ **Saldo Wrapped**: the story of the month just closed, shareable as an image.
+- 🌍 **Multi-currency**: every transaction in its own currency, converted with the ECB reference rates.
+- 🏠 **Widgets and Quick Settings**: an expense recorded without opening the app, even typed in one line ("12.50 pizza yesterday").
+- 💾 **Backup**: to a file of yours, optionally encrypted with a passphrase, with an optional reminder.
+- 📥 **CSV**: export of the filtered transactions, import with format detection or manual column mapping.
+- 🔒 **App lock**: PIN, fingerprint or face, content hidden in recent apps.
+- 🔔 **Notifications**: recurring transactions, budgets, card statements, due dates, silent between 22:00 and 7:00.
+- 📖 **The guide**: the four screens, and what a screen cannot say on its own.
+- 🎨 **Appearance**: light or dark, the app's colours or the phone's dynamic ones.
+- 🇬🇧 🇮🇹 **English and Italian**, through the system per-app language picker.
 
-Il manuale completo, una pagina per funzionalità, è in [docs/guida-utente/](./docs/guida-utente/).
+The full user guide, one page per feature, is in [docs/guida-utente/](./docs/guida-utente/)
+(in Italian).
 
-## Principi
+## Principles
 
 | | |
 |---|---|
-| 🔌 **Offline-first** | ogni funzione core funziona senza rete; senza rete i cambi BCE usano l'ultimo tasso noto |
-| 🔒 **Privacy-first** | nessun dato lascia il dispositivo senza un'azione esplicita, nessuna telemetria. L'unica richiesta di rete è quella dei tassi BCE, senza dati dell'utente e disattivabile |
-| 🚫 **Zero backend** | nessun server proprietario, nessun account |
-| ⚡ **Zero frizione** | registrare una spesa richiede al massimo 2-3 tap |
-| 🧮 **Conti esatti** | importi in centesimi e `BigDecimal`, mai numeri in virgola mobile; il saldo è sempre calcolato dai movimenti |
-| 📊 **Statistiche oneste** | trasferimenti, rettifiche e prestiti a persone restano fuori dalle statistiche di spesa |
+| 🔌 **Offline-first** | every core feature works without a network; offline, conversions use the last known ECB rate |
+| 🔒 **Privacy-first** | no data leaves the device without an explicit action, no telemetry. The only network request is the ECB rates, which carries no user data and can be turned off |
+| 🚫 **Zero backend** | no server of its own, no account |
+| ⚡ **Zero friction** | recording an expense takes at most 2 or 3 taps |
+| 🧮 **Exact money** | amounts in cents and `BigDecimal`, never floating point; a balance is always computed from its transactions |
+| 📊 **Honest statistics** | transfers, adjustments and loans to people stay out of the spending statistics |
 
-## Installazione
+## Install
 
-Android 13 (API 33) o superiore.
+Android 13 (API 33) or newer.
 
-1. Scarica `saldo-vX.Y.Z.apk` dall'[ultima release](https://github.com/fiorenzobrioni/saldo/releases/latest).
-2. Aprilo dal telefono e autorizza l'installazione da questa sorgente quando Android lo chiede.
-3. Al primo avvio scegli valuta e primo conto, oppure ripristina un backup.
+1. Download `saldo-vX.Y.Z.apk` from the [latest release](https://github.com/fiorenzobrioni/saldo/releases/latest).
+2. Open it on the phone and allow installs from that source when Android asks.
+3. On the first run, pick a currency and a first account, or restore a backup.
 
-**Verifica del download.** Metti l'APK e il suo file `.sha256` nella stessa cartella ed esegui
-`sha256sum -c saldo-vX.Y.Z.apk.sha256`. Per verificare che l'APK sia autentico, confronta il
-suo certificato di firma (`apksigner verify --print-certs`, o AppVerifier sul telefono) con
-questa impronta SHA-256:
+**Verify the download.** Put the APK and its `.sha256` file in one folder and run
+`sha256sum -c saldo-vX.Y.Z.apk.sha256`. To check that the APK is genuine, compare its signing
+certificate (`apksigner verify --print-certs`, or AppVerifier on the phone) with this SHA-256
+fingerprint:
 
 ```
 17:6C:88:E2:21:93:87:89:71:5C:CB:65:F1:73:F2:CA:90:09:9A:BF:B6:16:55:C1:BF:FA:F4:DE:98:E8:F8:7E
 ```
 
-**Aggiornamenti.** Saldo non controlla da sola se ci sono aggiornamenti: usa le notifiche
-"Watch, Custom, Releases" di GitHub, oppure [Obtainium](https://github.com/ImranR98/Obtainium).
-Dalla 2.2.0 ogni versione si installa sopra la precedente senza perdere i dati. Le versioni fino
-alla 2.1.0 erano firmate con un'altra chiave: per passare da una di quelle serve disinstallare,
-quindi prima esporta un backup e ripristinalo al primo avvio. Le note di ogni versione sono in
+**Updates.** Saldo does not check for updates itself. Use GitHub's "Watch, Custom, Releases"
+notifications, or [Obtainium](https://github.com/ImranR98/Obtainium). From 2.2.0 on, every
+release installs over the previous one and keeps your data. Versions up to 2.1.0 were signed
+with another key: moving from one of them needs an uninstall, so export a backup first and
+restore it on the first run. The notes of each version are in
 [docs/release-notes/](./docs/release-notes/).
 
 ## Roadmap
 
-- **v3.0**: budget con periodo personalizzato e riporto, acquisti a rate, spesa divisa su più
-  categorie, ricerca con suggerimenti.
+- **v3.0**: budgets with a custom period and rollover, installment purchases, an expense split
+  across categories, search with suggestions.
 
-Il piano completo, con le decisioni architetturali e le idee ancora da valutare, è in
-[PLANNING.md](./PLANNING.md).
+The full plan, with the architecture decisions and the ideas still to weigh, is in
+[PLANNING.md](./PLANNING.md) (in Italian).
 
 ## Build
 
-Richiede JDK 21 e l'Android SDK (Android Studio stabile va bene).
+Requires JDK 21 and the Android SDK (a stable Android Studio works).
 
 ```bash
-./gradlew assembleDebug                              # app/build/outputs/apk/debug/
-./gradlew assembleDebug testDebugUnitTest lint detekt  # la verifica completa, come in CI
+./gradlew assembleDebug                                # app/build/outputs/apk/debug/
+./gradlew assembleDebug testDebugUnitTest lint detekt  # the full check, as in CI
 ```
 
-Per una build minificata installabile da provare:
-`./gradlew assembleRelease -PsignReleaseWithDebugKey`. È firmata con la chiave di debug
-committata in `keystore/`, di proposito, così le build della CI e di ogni macchina condividono
-una sola firma. Le build debug hanno `applicationIdSuffix ".debug"` e si installano accanto
-alla release.
+For an installable minified build to test with:
+`./gradlew assembleRelease -PsignReleaseWithDebugKey`. It is signed with the debug key
+committed in `keystore/`, on purpose, so builds from CI and any machine share one signature.
+Debug builds carry `applicationIdSuffix ".debug"` and install side by side with the release.
 
-La CI esegue test, lint e detekt **prima** di produrre gli APK. Un tag `vX.Y.Z` ripete la
-verifica, poi pubblica l'APK firmato con la chiave di rilascio, il suo checksum e il mapping
-R8, con le note di `docs/release-notes/vX.Y.Z.md` come testo della release.
+CI runs the tests, lint and detekt **before** building the APKs. A `vX.Y.Z` tag runs the same
+check, then publishes the APK signed with the release key, its checksum and the R8 mapping,
+with `docs/release-notes/vX.Y.Z.md` as the release notes.
 
-Screenshot del README:
+README screenshots:
 `./gradlew testDebugUnitTest -PupdateScreenshots --tests "*.ReadmeScreenshots"`.
 
-## Stack tecnico
+## Tech stack
 
-- **Kotlin** 2.3, **Jetpack Compose** con Material 3, Gradle 8.14 e AGP 8.13, minSdk **33**
-  (Android 13), target e compile SDK **36**
-- **Room** (persistenza), **DataStore** (impostazioni), **Hilt**, **Coroutines** e **Flow**, **KSP**
-- **WorkManager** (ricorrenze, promemoria), **RemoteViews** (widget), **Vico** (grafici)
-- **Navigation 3**, MVVM con use case solo dove c'è logica di dominio reale
-- Test: JUnit 5 sulla JVM (mapper degli importi, ricorrenze, saldi, backup), JUnit 4 e Compose
-  UI Test strumentati, Robolectric per gli screenshot del README
+- **Kotlin** 2.3, **Jetpack Compose** with Material 3, Gradle 8.14 and AGP 8.13, minSdk **33**
+  (Android 13), target and compile SDK **36**
+- **Room** (persistence), **DataStore** (settings), **Hilt**, **Coroutines** and **Flow**, **KSP**
+- **WorkManager** (recurring transactions, reminders), **RemoteViews** (widgets), **Vico** (charts)
+- **Navigation 3**, MVVM with use cases only where there is real domain logic
+- Tests: JUnit 5 on the JVM (amount mapping, recurrences, balances, backup), JUnit 4 and
+  Compose UI tests on a device, Robolectric for the README screenshots
 
 ```text
-Compose UI → ViewModel → Use Case → Repository → Room, DataStore, backup ed export
+Compose UI → ViewModel → Use case → Repository → Room, DataStore, backup and export
 ```
 
-## Struttura del progetto
+## Project structure
 
 ```text
 saldo/
 ├── app/src/main/kotlin/com/callbackdev/saldo/
 │   ├── core/
-│   │   ├── common/         # utility condivise
-│   │   ├── database/       # Room: entità, DAO, migrazioni
-│   │   ├── designsystem/   # tema Material 3, componenti condivisi
-│   │   └── domain/         # modelli e logica di dominio
-│   ├── feature/            # una cartella per schermata: dashboard, transactions, accounts, ...
-│   ├── navigation/         # route NavKey, scaffold, bottom bar
-│   └── notifications/      # stile comune delle notifiche
-├── docs/                   # guida utente, note di rilascio, screenshot
-├── devlog/                 # registro storico dello sviluppo
-├── tools/                  # lo script dell'icona
-└── keystore/               # la chiave di debug condivisa (committata di proposito)
+│   │   ├── common/         # shared utilities
+│   │   ├── database/       # Room: entities, DAOs, migrations
+│   │   ├── designsystem/   # Material 3 theme, shared components
+│   │   └── domain/         # models and domain logic
+│   ├── feature/            # one folder per screen: dashboard, transactions, accounts, ...
+│   ├── navigation/         # NavKey routes, scaffold, bottom bar
+│   └── notifications/      # the shared notification style
+├── docs/                   # user guide, release notes, screenshots
+├── devlog/                 # the development log
+├── tools/                  # the launcher icon script
+└── keystore/               # the shared debug key (deliberately committed)
 ```
 
-## Documentazione di progetto
+## Project documentation
 
-| File | Contenuto |
+The project documents are in Italian.
+
+| File | Contents |
 |---|---|
-| [VISION.md](./VISION.md) | il prodotto: cos'è, per chi e perché |
-| [PLANNING.md](./PLANNING.md) | roadmap a fasi, decisioni architetturali (ADR), stato di avanzamento |
-| [docs/release-notes/](./docs/release-notes/) | le note di ogni versione pubblicata |
-| [devlog/](./devlog/) | il registro storico dello sviluppo |
-| [CLAUDE.md](./CLAUDE.md) | le regole operative per lo sviluppo assistito da AI |
+| [VISION.md](./VISION.md) | the product: what it is, who it is for, and why |
+| [PLANNING.md](./PLANNING.md) | the phased roadmap, the architecture decisions (ADRs), progress |
+| [docs/release-notes/](./docs/release-notes/) | the notes of every published version |
+| [devlog/](./devlog/) | the development log |
+| [CLAUDE.md](./CLAUDE.md) | the operating rules for AI-assisted development in this repo |
 
-## La famiglia
+## The family
 
-Saldo è una di tre app essenziali con lo stesso aspetto e le stesse regole:
-[Chiaro](https://github.com/fiorenzobrioni/chiaro) (meteo) e
-[Passo](https://github.com/fiorenzobrioni/passo) (passi).
+Saldo is one of three focused apps with the same look and the same rules:
+[Chiaro](https://github.com/fiorenzobrioni/chiaro) (weather) and
+[Passo](https://github.com/fiorenzobrioni/passo) (steps).
 
-## Licenza
+## License
 
 [GPL-3.0](./LICENSE) © 2026 Fiorenzo Brioni
 
-[Inter](https://github.com/rsms/inter) sotto SIL Open Font License 1.1: vedi
+[Inter](https://github.com/rsms/inter) under the SIL Open Font License 1.1: see
 [licenses/inter/OFL.txt](./licenses/inter/OFL.txt).
