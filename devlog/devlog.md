@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-01 - Release 2.3.0: versione e note di rilascio
+
+**Fatto:** `versionName` 2.3.0, `versionCode` 190. Note di rilascio in `docs/release-notes/v2.3.0.md`, in inglese (prima release con le note in inglese, come i CHANGELOG di Chiaro e Passo). Schema delle build di test in `CLAUDE.md` portato a `2.3.<incremento>`.
+
+**Decisioni:**
+
+- **2.3.0 e non 2.2.1**: dalla 2.2.0 ci sono funzionalità nuove (Fase 39, Fasi 41 e 42) oltre ai fix della Fase 38, quindi un salto di minor per SemVer; i nomi 2.2.1-2.2.9 erano già stati usati dalle build di test.
+- **Note brevi**, in punti di una riga, come i README della famiglia: cosa c'è di nuovo, cosa cambia, cosa è corretto, come installare e verificare.
+- **Migration 4-5 prima del tag**: la 2.3.0 è la prima release con lo schema v5 (`isPaused` sulle regole ricorrenti), e l'ADR 26 chiede i test strumentati prima di pubblicare un cambio di schema. Lanciato il workflow "Instrumented tests" sul branch della release.
+
+**Verifica:** estrazione dei link delle note verificata con le sostituzioni del workflow di release (nessun link relativo superstite). Esito dei test strumentati nella voce successiva o nella PR della release.
+
+---
+
 ## 2026-10-01 - README e screenshot in inglese
 
 **Fatto:** il `README.md` di root tradotto in inglese, con la stessa struttura della voce precedente; gli screenshot del README rigenerati in inglese. `ReadmeScreenshots` gira ora con `en-GB` (qualifier e `Locale.UK`) e `SampleLedger` ha descrizioni, conti e regole in inglese (Rent, Salary, Current account, ...); i nomi dei negozi e dei locali restano quelli, gli importi restano in euro. Aggiornate le istruzioni: `CLAUDE.md` (README e screenshot in inglese, note di rilascio in inglese dalla 2.3.0) e `docs/CLAUDE.md` (le due eccezioni alla lingua italiana).
