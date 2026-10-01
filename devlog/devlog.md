@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-01 - README nella struttura comune della famiglia
+
+**Fatto:** il `README.md` riscritto sulla struttura condivisa con Chiaro e Passo, in vista della release 2.3.0: intestazione con gli stessi badge e il link al download, "Cos'è Saldo", le schermate in una tabella a tre colonne con didascalie di una riga, le funzionalità in punti di una riga (il dettaglio resta in `docs/guida-utente/`), principi, installazione con checksum, impronta del certificato e aggiornamenti, roadmap, build, stack, struttura, documentazione, la famiglia, licenza. `release.yml` pubblica anche `saldo-vX.Y.Z.apk.sha256`.
+
+**Decisioni:**
+
+- **Punti brevi** (richiesta del committente): le descrizioni lunghe scoraggiavano la lettura; ogni funzione ha la sua pagina nella guida utente.
+- **Il README resta in italiano**, come il resto della documentazione di Saldo; Chiaro e Passo restano in inglese.
+- **Impronta del certificato** letta dall'APK della 2.2.0 con `apksigner verify --print-certs`. Corretto il nome del file da scaricare, che il README dava come `saldo-<versione>-release.apk` mentre il workflow pubblica `saldo-vX.Y.Z.apk`.
+
+**Verifica:** solo documentazione e workflow di release; link relativi e immagini del README controllati sul repository.
+
+---
+
 ## 2026-09-26 - Fase 42: frequenza quadrimestrale e otto icone nuove
 
 **Fatto:** versione 2.2.9 (`versionCode` 189).
