@@ -71,6 +71,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
+import java.util.Currency
 import java.util.Locale
 import java.util.TimeZone
 import javax.inject.Inject
@@ -92,7 +93,7 @@ import javax.inject.Inject
 @Config(
     application = HiltTestApplication::class,
     sdk = [35],
-    qualifiers = "it-rIT-w393dp-h852dp-xhdpi",
+    qualifiers = "en-rGB-w393dp-h852dp-xhdpi",
 )
 class ReadmeScreenshots {
 
@@ -126,7 +127,7 @@ class ReadmeScreenshots {
     @Before
     fun setUp() {
         assumeTrue("Run with -PupdateScreenshots", output != null)
-        Locale.setDefault(Locale.ITALY)
+        Locale.setDefault(Locale.UK)
         TimeZone.setDefault(TimeZone.getTimeZone(SampleLedger.ZONE))
         hilt.inject()
         runBlocking { ledger.seed() }
@@ -181,14 +182,14 @@ class ReadmeScreenshots {
                 onNavigateToSuggestedRule = {},
             )
         }
-        waitFor("Affitto")
+        waitFor("Rent")
         save("recurrences")
     }
 
     @Test
     fun exchangeRates() {
         show { ExchangeRatesScreen(onNavigateBack = {}) }
-        waitFor("Sterlina britannica")
+        waitFor(Currency.getInstance("GBP").getDisplayName(Locale.UK))
         // A price seen abroad, typed on the converter's keypad, then the keypad
         // put away so the board shows.
         compose.onNode(hasContentDescription(context.getString(R.string.editor_amount))).performClick()
@@ -253,7 +254,7 @@ class ReadmeScreenshots {
     }
 
     /**
-     * What a tap on the widget's "Ristoranti & Bar" tile opens: the quick-entry
+     * What a tap on the widget's dining tile opens: the quick-entry
      * sheet over the home screen, with an amount half typed on its keypad.
      */
     @Test
@@ -272,7 +273,7 @@ class ReadmeScreenshots {
             )
         }
         waitFor(diningName)
-        pressKeys("1", "2", ",", "5", "0")
+        pressKeys("1", "2", ".", "5", "0")
         quiet()
         save("quick-entry")
     }
@@ -285,7 +286,7 @@ class ReadmeScreenshots {
 
     private fun showApp(dark: Boolean = false) {
         show(dark = dark) { SaldoApp() }
-        waitFor("Conto corrente")
+        waitFor("Current account")
     }
 
     private fun show(dark: Boolean = false, applyBackground: Boolean = true, content: @Composable () -> Unit) {

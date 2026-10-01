@@ -14,6 +14,48 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-01 - Release 2.3.0: versione e note di rilascio
+
+**Fatto:** `versionName` 2.3.0, `versionCode` 190. Note di rilascio in `docs/release-notes/v2.3.0.md`, in inglese (prima release con le note in inglese, come i CHANGELOG di Chiaro e Passo). Schema delle build di test in `CLAUDE.md` portato a `2.3.<incremento>`.
+
+**Decisioni:**
+
+- **2.3.0 e non 2.2.1**: dalla 2.2.0 ci sono funzionalità nuove (Fase 39, Fasi 41 e 42) oltre ai fix della Fase 38, quindi un salto di minor per SemVer; i nomi 2.2.1-2.2.9 erano già stati usati dalle build di test.
+- **Note brevi**, in punti di una riga, come i README della famiglia: cosa c'è di nuovo, cosa cambia, cosa è corretto, come installare e verificare.
+- **Migration 4-5 prima del tag**: la 2.3.0 è la prima release con lo schema v5 (`isPaused` sulle regole ricorrenti), e l'ADR 26 chiede i test strumentati prima di pubblicare un cambio di schema. Lanciato il workflow "Instrumented tests" sul branch della release.
+
+**Verifica:** estrazione dei link delle note verificata con le sostituzioni del workflow di release (nessun link relativo superstite). Workflow "Instrumented tests" (emulatore API 34, suite completa, migration 4-5 compresa) verde sul commit della release ([run 36837223184](https://github.com/fiorenzobrioni/saldo/actions/runs/36837223184)); CI del push verde.
+
+---
+
+## 2026-10-01 - README e screenshot in inglese
+
+**Fatto:** il `README.md` di root tradotto in inglese, con la stessa struttura della voce precedente; gli screenshot del README rigenerati in inglese. `ReadmeScreenshots` gira ora con `en-GB` (qualifier e `Locale.UK`) e `SampleLedger` ha descrizioni, conti e regole in inglese (Rent, Salary, Current account, ...); i nomi dei negozi e dei locali restano quelli, gli importi restano in euro. Aggiornate le istruzioni: `CLAUDE.md` (README e screenshot in inglese, note di rilascio in inglese dalla 2.3.0) e `docs/CLAUDE.md` (le due eccezioni alla lingua italiana).
+
+**Decisioni:**
+
+- **README in inglese** (committente): uniforme con Chiaro e Passo. Saldo non ha nulla di specifico per l'Italia: le risorse di base sono inglesi, la valuta principale è qualsiasi valuta ISO, i tassi BCE coprono una trentina di valute. Limiti noti, non bloccanti: l'inserimento testuale e il riconoscimento automatico del CSV capiscono italiano e inglese.
+- **`en-GB` con euro**, come le schermate di Chiaro: un utente europeo, orari a 24 ore. I termini del README seguono le stringhe inglesi dell'app (Transactions, Safe to spend today, Credits and debts, Recurring transactions).
+- **Restano in italiano** VISION, PLANNING, devlog e guida utente; il README lo dichiara accanto ai link. Le note di rilascio già pubblicate non si traducono.
+
+**Verifica:** `./gradlew testDebugUnitTest -PupdateScreenshots --tests "*.ReadmeScreenshots"` (con lo script del mirror), undici immagini rigenerate e guardate prima del commit.
+
+---
+
+## 2026-10-01 - README nella struttura comune della famiglia
+
+**Fatto:** il `README.md` riscritto sulla struttura condivisa con Chiaro e Passo, in vista della release 2.3.0: intestazione con gli stessi badge e il link al download, "Cos'è Saldo", le schermate in una tabella a tre colonne con didascalie di una riga, le funzionalità in punti di una riga (il dettaglio resta in `docs/guida-utente/`), principi, installazione con checksum, impronta del certificato e aggiornamenti, roadmap, build, stack, struttura, documentazione, la famiglia, licenza. `release.yml` pubblica anche `saldo-vX.Y.Z.apk.sha256`.
+
+**Decisioni:**
+
+- **Punti brevi** (richiesta del committente): le descrizioni lunghe scoraggiavano la lettura; ogni funzione ha la sua pagina nella guida utente.
+- **Il README resta in italiano**, come il resto della documentazione di Saldo; Chiaro e Passo restano in inglese.
+- **Impronta del certificato** letta dall'APK della 2.2.0 con `apksigner verify --print-certs`. Corretto il nome del file da scaricare, che il README dava come `saldo-<versione>-release.apk` mentre il workflow pubblica `saldo-vX.Y.Z.apk`.
+
+**Verifica:** solo documentazione e workflow di release; link relativi e immagini del README controllati sul repository.
+
+---
+
 ## 2026-09-26 - Fase 42: frequenza quadrimestrale e otto icone nuove
 
 **Fatto:** versione 2.2.9 (`versionCode` 189).

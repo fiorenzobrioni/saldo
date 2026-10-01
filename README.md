@@ -2,205 +2,208 @@
 
 # 💶 Saldo
 
-**Capire dove vanno i soldi, in modo chiaro e immediato.**
+**See where your money goes, clearly and at a glance.**
 
-Un'app Android moderna, offline-first e privacy-first per il tracciamento delle spese personali.
+An offline-first, privacy-first Android app for tracking personal expenses.
+Free, no account, no ads, no tracking, no link to your bank.
 
-![Platform](https://img.shields.io/badge/platform-Android-3DDC84?logo=android&logoColor=white)
-![Min SDK](https://img.shields.io/badge/minSdk-33-blue)
-![Kotlin](https://img.shields.io/badge/Kotlin-100%25-7F52FF?logo=kotlin&logoColor=white)
-![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?logo=jetpackcompose&logoColor=white)
-![License](https://img.shields.io/badge/license-GPL--3.0-blue)
-![Release](https://img.shields.io/github/v/release/fiorenzobrioni/saldo?label=release)
+![Platform](https://img.shields.io/badge/platform-Android-2E6B3E?labelColor=FCFAF6)
+![Release](https://img.shields.io/github/v/release/fiorenzobrioni/saldo?label=release&labelColor=FCFAF6&color=2E6B3E)
+![CI](https://img.shields.io/github/actions/workflow/status/fiorenzobrioni/saldo/ci.yml?branch=main&label=CI&labelColor=FCFAF6&color=2E6B3E)
+![License](https://img.shields.io/badge/license-GPL--3.0-007DB6?labelColor=FCFAF6)
+![minSdk](https://img.shields.io/badge/minSdk-33-70569C?labelColor=FCFAF6)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.3-F1A000?labelColor=FCFAF6)
+![Compose](https://img.shields.io/badge/UI-Compose%20Material%203-007DB6?labelColor=FCFAF6)
+![Account](https://img.shields.io/badge/account-none%20needed-2E6B3E?labelColor=FCFAF6)
 
-[**⬇️ Scarica l'ultima versione**](https://github.com/fiorenzobrioni/saldo/releases/latest)
+[**⬇️ Download the latest release**](https://github.com/fiorenzobrioni/saldo/releases/latest)
 
 </div>
 
-## Schermate
+## What Saldo is
 
-<div align="center">
+Saldo is an expense tracker, not a banking app: it records expenses, income and transfers,
+keeps the balance of every account (bank, cards, cash, wallets) and shows where the money
+goes. An expense takes 2 or 3 taps.
+
+No link to your bank, no server, no sign-up: the data stays on the device. An account's
+balance is always computed from its transactions, never stored on its own.
+
+## Screenshots
+
 <table>
   <tr>
-    <td align="center"><img src="docs/screenshots/dashboard.png" width="260" alt="Dashboard: saldo totale con andamento e stima a fine mese, conti, spendibile oggi, spese di oggi e del mese"><br><em>Dashboard</em></td>
-    <td align="center"><img src="docs/screenshots/dashboard-cards.png" width="260" alt="Dashboard: confronto mensile, budget, obiettivo di risparmio, crediti e debiti"><br><em>Budget e obiettivi</em></td>
-    <td align="center"><img src="docs/screenshots/dashboard-dark.png" width="260" alt="Dashboard in tema scuro"><br><em>Tema scuro</em></td>
+    <td align="center" width="33%"><img src="docs/screenshots/dashboard.png" width="250" alt="Dashboard: total balance with its trend and the month-end estimate, accounts, safe to spend today, today's and this month's spending"><br><sub><b>Dashboard</b>: the balance and the month at a glance</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/dashboard-cards.png" width="250" alt="Dashboard: month comparison, budgets, savings goal, credits and debts"><br><sub><b>Budgets and goals</b>, on their cards</sub></td>
+    <td align="center" width="33%"><img src="docs/screenshots/dashboard-dark.png" width="250" alt="Dashboard in the dark theme"><br><sub><b>Dark theme</b></sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/transactions.png" width="260" alt="Movimenti del mese raggruppati per giorno, con i totali del periodo"><br><em>Movimenti</em></td>
-    <td align="center"><img src="docs/screenshots/stats.png" width="260" alt="Statistiche: spese del mese per categoria"><br><em>Statistiche</em></td>
-    <td align="center"><img src="docs/screenshots/recurrences.png" width="260" alt="Movimenti ricorrenti: totale del mese, proiezione annua, prossimi addebiti"><br><em>Ricorrenti</em></td>
+    <td align="center"><img src="docs/screenshots/transactions.png" width="250" alt="The month's transactions grouped by day, with the period's totals"><br><sub><b>Transactions</b>, day by day</sub></td>
+    <td align="center"><img src="docs/screenshots/stats.png" width="250" alt="Statistics: the month's spending by category"><br><sub><b>Statistics</b> by category</sub></td>
+    <td align="center"><img src="docs/screenshots/recurrences.png" width="250" alt="Recurring transactions: the month's total, the yearly projection, the next charges"><br><sub><b>Recurring</b>: total and yearly projection</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/exchange-rates.png" width="260" alt="Tassi di cambio BCE con convertitore rapido e andamento recente"><br><em>Tassi di cambio</em></td>
-    <td align="center"><img src="docs/screenshots/widgets.png" width="260" alt="I due widget sulla home: barra spesa/entrata e griglia delle categorie"><br><em>Widget</em></td>
-    <td align="center"><img src="docs/screenshots/quick-entry.png" width="260" alt="Inserimento rapido dal widget: categoria scelta, tastierino, importo"><br><em>Inserimento rapido</em></td>
+    <td align="center"><img src="docs/screenshots/widgets.png" width="250" alt="The two widgets on a home screen: the expense and income bar, and the category grid"><br><sub><b>Two quick-add widgets</b></sub></td>
+    <td align="center"><img src="docs/screenshots/quick-entry.png" width="250" alt="Quick entry from the widget: the chosen category, the keypad, the amount"><br><sub><b>Quick entry</b>, without opening the app</sub></td>
+    <td align="center"><img src="docs/screenshots/widget-settings.png" width="250" alt="Widget settings: a live preview, a light, dark or system background or one of six colours, the opacity"><br><sub><b>Widget settings</b>, with a live preview</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/widget-settings.png" width="260" alt="Impostazioni del widget: anteprima dal vivo, sfondo chiaro, scuro, come il telefono o uno dei sei colori, opacità"><br><em>Impostazioni del widget</em></td>
-    <td align="center"><img src="docs/screenshots/guide.png" width="260" alt="La guida: le quattro schermate e a cosa risponde ognuna"><br><em>La guida</em></td>
+    <td align="center"><img src="docs/screenshots/exchange-rates.png" width="250" alt="ECB exchange rates with a quick converter and the recent trend"><br><sub><b>Exchange rates</b> from the ECB, and a converter</sub></td>
+    <td align="center"><img src="docs/screenshots/guide.png" width="250" alt="The guide: the four screens and what each one answers"><br><sub><b>The guide</b>, in the app</sub></td>
     <td></td>
   </tr>
 </table>
-</div>
 
-Le immagini sono disegnate dall'app stessa su dati d'esempio realistici (la barra di stato del telefono non compare) e si rigenerano con un comando, descritto in [Build](#build).
+Drawn by the app's own screens from realistic sample data, in English (the app also speaks
+Italian). The phone's status bar is not in the pictures. The command that redraws them is in
+[Build](#build).
 
-## Cos'è Saldo
+## Features
 
-Saldo è un **expense tracker evoluto**, non un'app di home banking: aiuta a monitorare spese ed entrate, tenere sotto controllo il saldo dei propri conti (banca, carte, contanti, wallet) e capire le proprie abitudini di spesa. Nessun collegamento ai conti bancari, nessun server esterno, nessuna registrazione: **i dati restano sul dispositivo**.
+- 📊 **Dashboard**: total balance with its trend and month-end estimate, today's and this month's spending, latest transactions.
+- 💸 **Transactions**: expenses, income and transfers in 2 or 3 taps, with a built-in keypad, notes, tags and duplication.
+- 🏦 **Accounts**: current, savings, prepaid, credit card, cash, wallet, each with its own detail screen.
+- 💳 **Credit cards**: closing and payment days, the statement paid with one tap.
+- 📉 **Loans**: the debt left, the installments paid and those still to come.
+- 🔁 **Recurring transactions**: subscriptions, salary, savings transfers, confirmed or automatic, and they can be paused.
+- ⏳ **Upcoming**: future transactions and occurrences to confirm, in one list.
+- 💰 **Budgets**: a monthly cap and caps per category, with alerts at 80% and 100%.
+- 🟢 **Safe to spend today**: what is left in the budget, with the calculation shown.
+- 🎯 **Savings goals**: a target on a savings account, with the monthly amount it needs.
+- 🤝 **Credits and debts**: money lent to or borrowed from people, kept out of the spending statistics.
+- 📈 **Statistics**: spending by category, monthly trend, income against expenses, balance over time.
+- ✨ **Saldo Wrapped**: the story of the month just closed, shareable as an image.
+- 🌍 **Multi-currency**: every transaction in its own currency, converted with the ECB reference rates.
+- 🏠 **Widgets and Quick Settings**: an expense recorded without opening the app, even typed in one line ("12.50 pizza yesterday").
+- 💾 **Backup**: to a file of yours, optionally encrypted with a passphrase, with an optional reminder.
+- 📥 **CSV**: export of the filtered transactions, import with format detection or manual column mapping.
+- 🔒 **App lock**: PIN, fingerprint or face, content hidden in recent apps.
+- 🔔 **Notifications**: recurring transactions, budgets, card statements, due dates, silent between 22:00 and 7:00.
+- 📖 **The guide**: the four screens, and what a screen cannot say on its own.
+- 🎨 **Appearance**: light or dark, the app's colours or the phone's dynamic ones.
+- 🇬🇧 🇮🇹 **English and Italian**, through the system per-app language picker.
 
-## Funzionalità
+The full user guide, one page per feature, is in [docs/guida-utente/](./docs/guida-utente/)
+(in Italian).
 
-- 👋 **Onboarding al primo avvio** - benvenuto, scelta della valuta, primo conto e, per chi torna, ripristino diretto da un backup
-- 📖 **La guida nell'app** - dalla card in cima alle Impostazioni, un giro delle quattro schermate e di quello che una schermata non può dire da sola (un trasferimento non è una spesa, il saldo è sempre calcolato, Dashboard e Statistiche leggono lo stesso mese in due modi, un movimento futuro aspetta il suo giorno), con esempi disegnati dai componenti dell'app. Stessa forma della guida di Chiaro e Passo
-- 📊 **Dashboard "Oggi"** - saldo totale con andamento degli ultimi 30 giorni (mini-grafico nella scheda principale, con una sottile linea puntinata a quota zero quando l'andamento la attraversa) e proiezione a fine mese come coda tratteggiata (stima che parte dal saldo di oggi e applica, nel giorno in cui cadono, ricorrenze in arrivo, movimenti futuri già registrati e movimenti ricorrenti da confermare, più la media di spesa giornaliera), spese del giorno e del mese fino a oggi (sui conti attivi: gli archiviati restano fuori, come dal saldo totale; un movimento già registrato con data futura entra nel giorno in cui cade), ultimi movimenti: tutto in 5 secondi, e ogni scheda apre il proprio dettaglio con un tap. La barra in alto mostra un saluto e la data del giorno; scorrendo, quando la scheda del saldo esce dallo schermo, la barra passa a mostrare il saldo totale compatto, che resta quindi sempre visibile. Una scheda **Confronto mensile** sovrappone l'andamento del mese corrente (fino a oggi) a quello del mese scorso, entrambi come variazione netta dal primo giorno del mese, con tre righe di riferimento in chiusura (variazione del mese corrente, cioè il punto dove finisce la linea, spesa a questo punto del mese scorso e differenza con segno); un chevron nell'intestazione restringe la card al solo grafico (scelta ricordata tra un'apertura e l'altra), la card si può nascondere dalle Impostazioni come le altre, e un tap apre le Statistiche. Se hai già registrato movimenti con data futura, una riga "ad oggi" sotto la cifra indica il saldo effettivamente disponibile oggi (quello rappresentato dal grafico); la stessa riga compare anche sotto il singolo conto nel dettaglio della scheda, ma solo per i conti il cui saldo differisce da quello di oggi
-- ✨ **Recap mensile "Saldo Wrapped"** - a inizio mese, il racconto del mese appena concluso in schermate a storia: netto, spese e confronto col mese prima, top categorie, record (spesa più grande, giorno più attivo), entrate vs uscite e quota risparmiata. Generato interamente sul dispositivo e condivisibile come immagine; raggiungibile anche dalle Statistiche per ogni mese passato
-- 💸 **Movimenti** - spese, entrate e trasferimenti tra conti, registrabili in 2-3 tap: importo, categoria e conto stanno tutti sulla prima schermata, senza scorrere. Il pulsante di aggiunta è lo stesso in Dashboard e in Movimenti: un FAB a tre azioni (Spesa, Entrata, Trasferimento) che apre l'editor con il tipo già selezionato, sempre visibile (senza conti porta alla creazione del primo conto). Data e ora stanno in un unico pulsante diviso in due: tocchi la data per il calendario, l'ora per l'orologio; oltre alla descrizione puoi allegare una nota lunga (nascosta dietro "Aggiungi una nota" finché non serve, e ritrovabile con la ricerca); l'eliminazione dall'editor si annulla con un tap (undo), senza finestra di conferma. **Duplica**: dall'editor di un movimento, o con una pressione prolungata sulla sua riga nel registro e nel dettaglio del conto, apri un nuovo movimento già compilato come quello (importo, conto, categoria, descrizione, nota, tag, controparte) ma datato adesso, da confermare con Salva
-- 🔢 **Tastierino importi dell'app** - gli importi si digitano su un tastierino integrato, non sulla tastiera del telefono: tasti grandi, virgola della tua lingua, migliaia raggruppate mentre scrivi e si chiude quando non serve: si ritira da solo appena scorri il resto del modulo, così categorie e campi opzionali riprendono lo spazio. Funziona con TalkBack, con una tastiera fisica e il pressione prolungata sull'importo incolla
-- ⚡ **Scorciatoie dalla schermata home** - pressione prolungata sull'icona dell'app per una nuova spesa, una nuova entrata o un trasferimento, senza passare dalla Dashboard
-- 🏠 **Widget di aggiunta rapida, in due forme** - registri una spesa senza aprire l'app, e li aggiungi alla home direttamente dalle impostazioni di Saldo (o dal menu widget della schermata home, dove compaiono come due widget distinti). La **griglia** (fino a 4x3): tocchi la categoria e si apre una piccola schermata sopra la home, col tastierino già pronto, importo e Salva; le categorie seguono l'ordine della schermata Categorie, oppure sono quelle che scegli e riordini tu trascinandole; ingrandendola le righe crescono con lo spazio fino a mostrarle tutte, con il selettore Spesa/Entrata. La **barra** (una riga): due bottoni Spesa ed Entrata che si dividono la larghezza, con un bottone quadrato con l'icona dell'app accanto (attivo di default, disattivabile), e la scelta di tenere entrambi i bottoni o uno solo. Ogni widget può registrare su un conto diverso: se lo fissi a un conto, il widget ne mostra il nome. L'aspetto è quello dei widget di Chiaro e Passo, le app sorelle, e si configura per singolo widget: la card con gli angoli da 24 dp, sfondo chiaro, scuro, come il telefono (segue il passaggio chiaro/scuro all'istante) o uno dei sei colori della famiglia, con l'opacità regolabile a passi del 5%; il testo resta leggibile anche su una card trasparente, perché sotto il 50% di opacità il colore dell'inchiostro lo decide lo sfondo del telefono. Di default il widget è la card blu piena della famiglia. Le impostazioni mostrano in cima il widget vero, disegnato come lo riceve il launcher, mentre decidi. Nel menu widget della home le due anteprime mostrano il widget com'è davvero, sulla stessa card blu delle app sorelle, con categorie, icone e colori di esempio. I widget sono punti di ingresso statici: niente saldi né totali, così si aggiornano solo quando cambi conti, categorie o tema, non a ogni movimento
-- 📌 **Pulsante nelle Impostazioni rapide** - un pulsante "Aggiungi spesa" da aggiungere alla tendina del telefono: un tap apre la stessa piccola schermata del widget col tastierino già pronto, sul conto predefinito e con la categoria più usata già selezionata, da qualunque schermata ti trovi. A telefono bloccato chiede prima lo sblocco (e il blocco app di Saldo resta valido); come i widget, non mostra dati e non consuma nulla a riposo
-- ⌨️ **Inserimento rapido testuale** - nella schermata rapida del widget e del pulsante rapido puoi anche scrivere tutto in una riga: "12,50 pizza ieri" compila importo, descrizione e data, e la categoria viene suggerita dai nomi delle tue categorie o da come hai classificato quella parola in passato (mai da un dizionario: migliora con l'uso). Tutto resta correggibile prima di salvare: se l'importo è ambiguo il tastierino resta in attesa, se il suggerimento non è netto la categoria non cambia, e una tua scelta manuale non viene mai scavalcata. Capisce "ieri", i giorni della settimana e le date brevi ("3/7") nella lingua del telefono, interamente offline
-- 🏦 **Conti multipli** - con tipi espliciti (conto corrente, conto di risparmio, carta prepagata, carta di credito, contanti, wallet digitale) e una descrizione d'uso per ciascuno direttamente nell'editor; alla creazione icona, colore e valuta vengono preimpostati (icona e colore in base al tipo, la valuta è quella principale dell'app), finché non li scegli a mano; saldo iniziale, rettifica saldo, archiviazione e due interruttori indipendenti di inclusione: nel saldo totale e nel calcolo del budget. L'elenco è raggruppato per tipo conto (conto corrente per primo), ogni sezione ha un'intestazione con il sottototale del gruppo (e il saldo "ad oggi" quando differisce) e i conti si possono riordinare a mano trascinandoli all'interno del proprio tipo (l'ordine scelto vale anche nel dettaglio della card Saldo totale in Dashboard). Per i conti con movimenti datati nel futuro, sotto il saldo compare una riga "ad oggi" con il saldo effettivamente disponibile oggi. Un tap su un conto (dalla lista o dal dettaglio della card Saldo totale) apre la sua **schermata di dettaglio**: saldo con il mini-grafico degli ultimi 30 giorni, la scheda del tipo (estratto della carta da pagare, residuo e rate del prestito, obiettivo del conto di risparmio), i movimenti del conto un mese alla volta con i totali del mese, e tutte le azioni sul conto (nuovo movimento già sul conto, modifica, rettifica saldo, archiviazione, eliminazione)
-- 🐖 **Conto di risparmio** - il recinto dei soldi messi da parte: si alimenta con trasferimenti, conta nel patrimonio ma di default resta fuori dal budget, così attingere ai risparmi non consuma il budget del mese
-- 💳 **Carte di credito a saldo** - un tipo di conto dedicato per le carte ad addebito differito: le spese si accumulano come saldo negativo nel ciclo e vengono addebitate in un'unica soluzione sul conto collegato. Ciclo con giorno di chiusura e giorno di addebito configurabili, addebito automatico o con conferma alla scadenza, barra di utilizzo opzionale rispetto al fido, e scheda in Dashboard/Conti per pagare l'estratto con un tap. L'estratto tiene conto dei pagamenti già fatti: un trasferimento verso la carta registrato a mano prima della scadenza riduce l'importo proposto (o addebitato), e un ciclo chiuso in credito riduce quello successivo. Il saldo parte sempre da zero: il debito già maturato si inserisce con la rettifica saldo e viene addebitato col prossimo estratto
-- 📉 **Prestiti e finanziamenti** - un tipo di conto per prestiti, finanziamenti e mutui: il saldo iniziale è il debito residuo di oggi dichiarato dalla banca (col segno meno) e ogni rata è un trasferimento, tipicamente ricorrente, dal conto di pagamento, quindi resta fuori dalle statistiche di spesa. La scheda del conto mostra quanto hai rimborsato, il residuo, la prossima rata e una stima delle rate mancanti; a debito azzerato suggerisce l'archiviazione. Di default resta fuori dal saldo totale e dal budget (includerlo è una scelta esplicita); niente calcolo di interessi né piani di ammortamento, il riallineamento si fa con la rettifica saldo
-- 🔁 **Movimenti ricorrenti** - uscite ricorrenti (abbonamenti, affitto, assicurazioni), entrate ricorrenti (stipendio, affitti attivi) e trasferimenti ricorrenti (accantonamenti tra conti) con registrazione automatica o con conferma, hub dedicato con totale mensile e proiezione annua per tab, notifica di pre-rinnovo opzionale ("Netflix si rinnova tra 3 giorni") con anticipo configurabile. Una regola programmata per iniziare dopo il mese in corso è già in elenco con la sua prima data, ma non entra nel totale mensile finché non arriva il suo mese. Una regola si può **mettere in pausa** (interruttore nell'editor o pressione prolungata sulla riga dell'hub): resta in elenco con l'etichetta "In pausa" ma non genera movimenti, non notifica e non entra in totali, spendibile e previsioni; alla ripresa riparte da oggi senza recuperare gli addebiti saltati. I trasferimenti tra valute diverse chiedono l'importo ricevuto a ogni occorrenza; i trasferimenti verso il conto di risparmio alimentano la scheda "Risparmio pianificato" (X/mese). Nell'elenco movimenti i record generati da una regola ricorrente portano un piccolo segno (🔁) e in modifica un banner lo indica con il nome della regola. Dall'hub, la riga "Cerca ricorrenze non registrate" analizza su richiesta gli ultimi 12 mesi e propone gli abbonamenti e le bollette che registri a mano con cadenza regolare: un tap sul suggerimento apre l'editor della regola già precompilato, la X lo scarta per sempre. La ricerca parte solo da quel tap, mai da sola, e avviene interamente sul dispositivo
-- ⏳ **In arrivo** - una sola lista di cosa sta per succedere: movimenti con data futura (tuoi o generati da una regola) e occorrenze ancora da confermare, raggruppati per giorno, con i due totali in uscita e in entrata tenuti separati. La coda "da confermare" è un filtro di questa schermata, non un posto diverso. Un movimento futuro non tocca statistiche, budget, spendibile e schede Oggi/Mese finché non arriva il suo giorno, ma incide sul saldo del conto e compare nella coda tratteggiata del mini-grafico. Su un movimento datato in avanti puoi attivare **Ricordamelo**: una notifica prima della scadenza, con lo stesso anticipo del pre-rinnovo, così una scadenza una tantum (bollo auto, IMU, rata) non ha bisogno di una regola annuale finta. Scheda opzionale in Dashboard
-- 💰 **Budget mensili** - un tetto complessivo per il mese e tetti per singole categorie di spesa, con barre di avanzamento verde/giallo/rosso e avvisi all'80% e al 100%. Il budget complessivo resta in cima; i budget per categoria sono ordinati dal più vicino al tetto, con i pari merito (a inizio mese) in ordine alfabetico di categoria
-- 🟢 **Spendibile oggi** - quanto puoi ancora spendere restando nel budget: tiene conto di quanto speso fino a oggi, dei movimenti da confermare, dei movimenti già registrati con una data più avanti nel mese e degli addebiti ricorrenti in arrivo entro fine mese, ciascuno con la propria riga nel dettaglio del calcolo
-- 🎯 **Obiettivi di risparmio** - un traguardo su un conto di risparmio: il risparmiato è il saldo reale del conto, che alimenti con i trasferimenti (manuali o ricorrenti). Con data obiettivo opzionale, suggerimento del versamento mensile necessario e stima di quando lo raggiungerai al ritmo dei tuoi trasferimenti ricorrenti. Il totale risparmiato resta in cima; gli obiettivi sono elencati in ordine alfabetico
-- 🤝 **Crediti e debiti verso persone** - segni una spesa (o un'entrata) come prestito e indichi con chi: il denaro esce dal conto come sempre, ma resta fuori da statistiche, budget e spendibile, perché prestare non è spendere. Una schermata dedicata tiene i due totali separati (quanto ti devono, quanto devi) e una riga per persona con il saldo aperto, i movimenti che lo compongono e l'ultima attività; i rientri parziali funzionano da soli, perché il saldo è la somma con segno dei movimenti. Un pulsante apre il rientro già precompilato nel verso opposto, il nome ha il completamento automatico dai nomi già usati (e maiuscole o accenti diversi contano come la stessa persona), e scheda opzionale in Dashboard
-- 🏷️ **Categorie e tag personalizzabili** - i tag nascono al volo nell'editor del movimento e hanno una schermata di gestione dedicata (Impostazioni > Gestione > Tag): conteggio dei movimenti per tag, ordinamento per uso o alfabetico, ricerca quando sono molti, rinomina (verso un nome già esistente propone l'unione invece di creare un doppione), unione di più tag in uno ed eliminazione con conferma, senza mai toccare i movimenti
-- 🔍 **Ricerca e filtri combinabili** con totale della vista filtrata, preset rapidi (inclusa "Questa settimana", che rispetta il primo giorno scelto), periodo personalizzato (intervallo chiuso, solo "da una data" o solo "fino a una data"), filtro per origine (solo ricorrenti / solo manuali) e chip "Senza categoria" per ritrovare i movimenti rimasti senza
-- 🧹 **Eliminazione dei movimenti filtrati** - dal registro elimini in blocco tutti i movimenti della vista filtrata (per data, tipo, categoria, conto, tag, importo), con anteprima dell'impatto e undo. Due modalità: "Ricalcola i saldi" (per rimuovere voci errate) e "Conserva i saldi correnti" (per fare pulizia dello storico senza spostare i saldi, tramite una rettifica automatica del saldo di ogni conto). Con export della selezione prima di eliminare
-- 📈 **Statistiche** - spese per categoria (anello animato, tap sulla fetta per i movimenti), trend mensile, entrate vs uscite, andamento saldo. Il mese e l'anno in corso arrivano fino a oggi, come la scheda Mese della Dashboard. Le Statistiche contano la spesa "statistica" (rimborsi sottratti alla categoria, prestiti a persone e movimenti esclusi lasciati fuori), mentre le schede Oggi e Mese della Dashboard sono cifre di cassa: con un rimborso o un prestito nel mese le due letture divergono di proposito
-- 🌍 **Multi-valuta con conversione automatica** - ogni movimento conserva importo e valuta originali; nei trasferimenti tra valute diverse l'editor mostra il tasso di cambio implicito nei due importi digitati, che resta il dato reale dell'operazione. I conti e i movimenti in valuta estera entrano in saldo totale, schede Oggi/Mese, statistiche, budget, spendibile e obiettivi come equivalenti stimati con i tassi di riferimento BCE, sempre indicati con "≈": le spese passate al tasso del giorno del movimento (così un mese concluso resta stabile), i saldi all'ultimo tasso noto, con la data del tasso dichiarata. I tassi si scaricano da internet solo quando serve e vengono salvati sul dispositivo, quindi offline vale l'ultimo tasso noto con la sua data; la conversione si può disattivare dalle Impostazioni (e senza dati in valuta estera non parte comunque alcuna richiesta). Nessun controvalore viene mai salvato: quello che è successo resta scritto nella valuta in cui è successo. Una schermata **Tassi di cambio** (dalla riga dei equivalenti in Dashboard, dalla lista Conti o dalle Impostazioni) mostra tutte le valute BCE scaricate con il valore rispetto alla valuta principale, la variazione sull'ultima pubblicazione e un mini-grafico dell'andamento recente; in testa un **convertitore rapido** (prezzo visto all'estero → equivalente nella tua valuta, direzione invertibile) e, toccando una valuta, il dettaglio con grafico a 1 o 3 mesi. Nell'editor di un movimento in valuta estera compare l'equivalente stimato al tasso della data del movimento
-- 🎨 **Tema personalizzabile** - chiaro/scuro/sistema, colori dell'app o colori dinamici del telefono
-- ⚙️ **Preferenze** - valuta principale (automatica o esplicita), conversione automatica delle valute (attiva di default, disattivabile), conto predefinito per i nuovi movimenti, primo giorno della settimana, scelta delle schede visibili in Dashboard e apertura predefinita del dettaglio conti nella scheda Saldo totale (all'avvio dell'app)
-- 🔔 **Notifiche** - movimenti ricorrenti registrati o da confermare, budget all'80% e superati, estratti della carta, rinnovi e scadenze in arrivo, promemoria di backup, nello stile delle app sorelle Chiaro e Passo: il simbolo e il colore dell'icona di Saldo, una frase con la cifra che conta nella notifica chiusa e il resto sotto la stessa frase quando la apri (quali movimenti, quanto resta e a che ritmo al giorno, entro quando). La notifica di un budget aperta mostra una barra per budget, con la parte chiara che segna quanto del mese è già passato. Fra le 22 e le 7 le notifiche arrivano senza suono né vibrazione
-- 🔒 **Blocco app** (opzionale) - PIN di 6 cifre richiesto all'apertura, sblocco con impronta o volto, blocco automatico configurabile (subito, dopo 1 o 5 minuti in background) e attesa progressiva dopo troppi tentativi errati. Il blocco copre anche l'inserimento rapido dal widget. In più, un interruttore indipendente nasconde il contenuto nella schermata delle app recenti (e blocca gli screenshot). Il PIN non è mai salvato in chiaro e non entra nei backup
-- 💾 **Backup e ripristino su file** - file di backup completo dove vuoi tu (nessun account richiesto), con dentro **tutto**: conti, movimenti, categorie, ricorrenze, tag, budget, obiettivi e anche le tue impostazioni (tema, valuta principale, conto predefinito, promemoria, schede della Dashboard), così un ripristino su un telefono nuovo non ti chiede di riconfigurare l'app. Ripristino guidato con anteprima del contenuto prima di sostituire qualsiasi cosa - più **export CSV** dei movimenti filtrati, condivisibile. Dalla stessa schermata puoi anche **cancellare tutti i dati** e riportare l'app a com'era il primo giorno: la conferma ti ricorda quando hai fatto l'ultimo backup (o che non l'hai mai fatto). Un **promemoria di backup** opzionale (Impostazioni > Notifiche, ogni 7, 14 o 30 giorni) ti avvisa quando l'ultimo backup è più vecchio dell'intervallo scelto, o se non ne hai mai fatto uno; il tap sulla notifica apre la schermata Backup
-- 🔐 **Backup cifrato** (opzionale) - un interruttore accanto all'export protegge il file con una **passphrase** (crittografia avanzata): senza di essa il file non è leggibile da nessuno. Il ripristino riconosce un file cifrato dal contenuto e chiede la passphrase prima di mostrarti cosa contiene; una passphrase sbagliata te lo dice, senza confonderla con un file danneggiato. Non c'è modo di recuperarla, e l'app lo dichiara prima di attivare la protezione. I backup non cifrati restano importabili per sempre
-- 📥 **Import CSV** - importa i movimenti da un file CSV, anche di formato diverso da quello esportato: riconoscimento automatico del formato (separatore, decimali e colonne, in italiano o inglese), **mappatura manuale delle colonne** quando l'intestazione non viene riconosciuta (menu per ogni campo, separatore decimale, anteprima delle prime righe) con la possibilità di salvarla per nome e vederla riapplicata da sola al prossimo file con la stessa intestazione (elenco in Impostazioni > Dati), creazione opzionale di conti/categorie/tag mancanti, rilevazione dei duplicati (contro il registro e nel file), anteprima e report finale. Export e import coprono anche controparte, esclusione dalle statistiche e rimborso, così un giro CSV completo non perde i prestiti. Solo inserimento: non modifica né elimina i movimenti esistenti
-- 🛟 **Niente modifiche perse per sbaglio** - uscendo da una schermata di modifica (conto, movimento, ricorrenza, budget, categoria) con dati non salvati, l'app chiede conferma prima di scartarli; l'eliminazione di movimenti, budget e obiettivi dalle schermate di modifica si annulla con un tap (undo), senza dialog di conferma
-- 🇮🇹 🇬🇧 Italiano e inglese
-
-### Roadmap futura
-
-La roadmap v2.0 è chiusa: tutte le sue funzionalità sono nella versione 2.0.0. La roadmap v3.0 raccoglie le estensioni successive (budget con periodo personalizzato e riporto, acquisti a rate, spesa divisa su più categorie, ricerca con suggerimenti) più il baseline profile e il giro di QA su più dispositivi rinviati dalla 2.0. Restano da valutare, fuori dal piano: foto dello scontrino allegate ai movimenti, rimborsi collegati alla spesa originale, commissioni sui trasferimenti, analisi avanzate, export PDF/Excel/Google Sheets, pagamento parziale dell'estratto carta, arrotondamento degli spiccioli, riepilogo settimanale e backup automatico su Google Drive. Roadmap completa in [PLANNING.md](./PLANNING.md).
-
-## Installazione
-
-L'app non è (ancora) sul Play Store: si scarica dalla sezione [Releases](https://github.com/fiorenzobrioni/saldo/releases/latest) di questo repository.
-
-1. Scarica il file `saldo-<versione>-release.apk` dagli allegati della release.
-2. Aprilo dal telefono e autorizza l'installazione da questa sorgente quando Android lo chiede.
-3. Al primo avvio scegli valuta e primo conto, oppure ripristina un backup esistente.
-
-Requisiti: Android 13 (API 33) o superiore. Dalla 2.2.0 l'APK pubblicato è una build di release minificata, firmata con la chiave di rilascio del progetto e prodotta dal workflow di release al push del tag: ogni versione si installa sopra la precedente senza perdere i dati. Le versioni fino alla 2.1.0 erano firmate con la chiave di debug, quindi il passaggio da una di quelle alla 2.2.0 o successive richiede di disinstallare l'app: esporta prima un backup e ripristinalo al primo avvio. Le note di ogni versione sono in [docs/release-notes/](./docs/release-notes/).
-
-## Principi
+## Principles
 
 | | |
 |---|---|
-| 🔌 **Offline-first** | ogni funzione core funziona senza rete; la lettura dei cambi BCE ha una cache locale e senza rete vale l'ultimo tasso noto |
-| 🔒 **Privacy-first** | nessun dato lascia il dispositivo senza azione esplicita; nessuna telemetria di terze parti. L'unico traffico di rete oltre a backup ed export opzionali è la richiesta dei tassi BCE, che non contiene alcun dato dell'utente ed è disattivabile |
-| 🚫 **Zero backend** | nessun server proprietario, nessun account obbligatorio |
-| ⚡ **Zero frizione** | registrare una spesa richiede al massimo 2-3 tap |
+| 🔌 **Offline-first** | every core feature works without a network; offline, conversions use the last known ECB rate |
+| 🔒 **Privacy-first** | no data leaves the device without an explicit action, no telemetry. The only network request is the ECB rates, which carries no user data and can be turned off |
+| 🚫 **Zero backend** | no server of its own, no account |
+| ⚡ **Zero friction** | recording an expense takes at most 2 or 3 taps |
+| 🧮 **Exact money** | amounts in cents and `BigDecimal`, never floating point; a balance is always computed from its transactions |
+| 📊 **Honest statistics** | transfers, adjustments and loans to people stay out of the spending statistics |
 
-## Stack tecnico
+## Install
 
-- **Kotlin** 100%, **Jetpack Compose** + Material 3 (palette brand di default, Material You/dynamic color attivabile dalle impostazioni); typeface **Inter** (variable font embeddato, figure tabulari per gli importi)
-- **Navigation 3** (`androidx.navigation3`)
-- **Room** (persistenza), **DataStore** (impostazioni), **Coroutines + Flow**
-- **MVVM + Use Cases + Repository**, **Hilt** (DI), **KSP**
-- **WorkManager** (ricorrenze, backup), **Vico** (grafici), **RemoteViews** (widget home)
-- minSdk **33** (Android 13), target SDK 36
-- Test: JUnit 5 (unit test JVM), JUnit 4 + Compose UI Test (strumentati), MockK, Turbine; Robolectric per gli screenshot del README
+Android 13 (API 33) or newer.
 
-```text
-UI (Compose) → ViewModel → Use Cases → Repository → Room DB - DataStore - Backup/Export
+1. Download `saldo-vX.Y.Z.apk` from the [latest release](https://github.com/fiorenzobrioni/saldo/releases/latest).
+2. Open it on the phone and allow installs from that source when Android asks.
+3. On the first run, pick a currency and a first account, or restore a backup.
+
+**Verify the download.** Put the APK and its `.sha256` file in one folder and run
+`sha256sum -c saldo-vX.Y.Z.apk.sha256`. To check that the APK is genuine, compare its signing
+certificate (`apksigner verify --print-certs`, or AppVerifier on the phone) with this SHA-256
+fingerprint:
+
+```
+17:6C:88:E2:21:93:87:89:71:5C:CB:65:F1:73:F2:CA:90:09:9A:BF:B6:16:55:C1:BF:FA:F4:DE:98:E8:F8:7E
 ```
 
-Gli importi monetari sono gestiti come `Long` in centesimi nel database e `BigDecimal` nel dominio: nessun errore di arrotondamento, mai.
+**Updates.** Saldo does not check for updates itself. Use GitHub's "Watch, Custom, Releases"
+notifications, or [Obtainium](https://github.com/ImranR98/Obtainium). From 2.2.0 on, every
+release installs over the previous one and keeps your data. Versions up to 2.1.0 were signed
+with another key: moving from one of them needs an uninstall, so export a backup first and
+restore it on the first run. The notes of each version are in
+[docs/release-notes/](./docs/release-notes/).
+
+## Roadmap
+
+- **v3.0**: budgets with a custom period and rollover, installment purchases, an expense split
+  across categories, search with suggestions.
+
+The full plan, with the architecture decisions and the ideas still to weigh, is in
+[PLANNING.md](./PLANNING.md) (in Italian).
 
 ## Build
 
-Requisiti: Android Studio (ultima versione stabile), JDK 21+.
+Requires JDK 21 and the Android SDK (a stable Android Studio works).
 
 ```bash
-git clone https://github.com/fiorenzobrioni/saldo.git
-cd saldo
-./gradlew assembleDebug
+./gradlew assembleDebug                                # app/build/outputs/apk/debug/
+./gradlew assembleDebug testDebugUnitTest lint detekt  # the full check, as in CI
 ```
 
-Verifica completa (build, unit test, lint, analisi statica):
+For an installable minified build to test with:
+`./gradlew assembleRelease -PsignReleaseWithDebugKey`. It is signed with the debug key
+committed in `keystore/`, on purpose, so builds from CI and any machine share one signature.
+Debug builds carry `applicationIdSuffix ".debug"` and install side by side with the release.
 
-```bash
-./gradlew assembleDebug testDebugUnitTest lint detekt
-```
+CI runs the tests, lint and detekt **before** building the APKs. A `vX.Y.Z` tag runs the same
+check, then publishes the APK signed with the release key, its checksum and the R8 mapping,
+with `docs/release-notes/vX.Y.Z.md` as the release notes.
 
-La CI (GitHub Actions) esegue gli stessi task su ogni push e allega l'APK di debug come artefatto della build, più una build release minificata firmata con la chiave di debug per gli smoke test. La release la pubblica il workflow `release.yml` al push di un tag `vX.Y.Z`: ripete la verifica, costruisce l'APK release firmato con la chiave di rilascio (custodita fuori dal repository e iniettata come secret) e crea la release GitHub con le note di `docs/release-notes/vX.Y.Z.md`.
+README screenshots:
+`./gradlew testDebugUnitTest -PupdateScreenshots --tests "*.ReadmeScreenshots"`.
 
-Screenshot del README (`docs/screenshots/`): li disegna il test `ReadmeScreenshots`, che fa girare l'app su Robolectric con un registro d'esempio e una data fissa. Parte solo su richiesta, la CI non lo esegue:
+## Tech stack
 
-```bash
-./gradlew testDebugUnitTest -PupdateScreenshots --tests "*.ReadmeScreenshots"
-```
-
-## Struttura del progetto
+- **Kotlin** 2.3, **Jetpack Compose** with Material 3, Gradle 8.14 and AGP 8.13, minSdk **33**
+  (Android 13), target and compile SDK **36**
+- **Room** (persistence), **DataStore** (settings), **Hilt**, **Coroutines** and **Flow**, **KSP**
+- **WorkManager** (recurring transactions, reminders), **RemoteViews** (widgets), **Vico** (charts)
+- **Navigation 3**, MVVM with use cases only where there is real domain logic
+- Tests: JUnit 5 on the JVM (amount mapping, recurrences, balances, backup), JUnit 4 and
+  Compose UI tests on a device, Robolectric for the README screenshots
 
 ```text
-app/src/main/kotlin/com/callbackdev/saldo/
-├── MainActivity.kt          # activity host
-├── MainViewModel.kt         # stato globale (tema, navigazione)
-├── SaldoApplication.kt      # Application + Hilt entry point
-├── backup/                   # notifica del promemoria di backup
-├── budget/                   # notifiche e watcher soglie budget
-├── creditcard/               # notifiche carte di credito a saldo
-├── notifications/            # stile comune delle notifiche: simbolo, accento, testo espanso, ore di quiete
-├── recurring/                # worker e notifiche movimenti ricorrenti
-├── core/
-│   ├── common/              # utility condivise
-│   ├── database/            # Room DB, DAO, migrazioni
-│   ├── designsystem/        # tema Material 3, componenti UI condivisi
-│   └── domain/              # modelli e logica di dominio
-├── feature/
-│   ├── about/               # schermata informazioni: versione, licenza, librerie
-│   ├── accounts/            # conti: lista, editor, rettifica saldo
-│   ├── backup/              # backup su file: export e ripristino guidato
-│   ├── budgets/             # budget mensili: tetto globale e per categoria
-│   ├── categories/          # categorie: tab spese/entrate, editor, riordino drag
-│   ├── counterparties/      # crediti e debiti verso persone
-│   ├── dashboard/           # schermata "Oggi": saldo, oggi/mese, ultimi movimenti, FAB
-│   ├── guide/               # la guida nell'app, nella forma di Chiaro e Passo
-│   ├── onboarding/          # primo avvio: benvenuto, valuta, primo conto, notifiche
-│   ├── recap/               # Saldo Wrapped: recap mensile a storia
-│   ├── recurring/           # movimenti ricorrenti: hub, editor, motore
-│   ├── savings/             # obiettivi di risparmio
-│   ├── settings/            # impostazioni
-│   ├── stats/               # statistiche: grafici Vico, periodo, drill-down
-│   ├── transactions/        # movimenti: lista per giorno, ricerca e filtri, editor
-│   ├── upcoming/            # in arrivo: movimenti futuri e coda da confermare
-│   └── widget/              # widget home: RemoteViews, sheet importo, configurazione
-└── navigation/              # route NavKey, scaffold, bottom bar
+Compose UI → ViewModel → Use case → Repository → Room, DataStore, backup and export
 ```
 
-## Documentazione di progetto
+## Project structure
 
-| File | Contenuto |
-|------|-----------|
-| [VISION.md](./VISION.md) | Visione di prodotto: cosa è l'app, per chi e perché |
-| [PLANNING.md](./PLANNING.md) | Roadmap di sviluppo, decisioni architetturali, stato di avanzamento |
-| [CLAUDE.md](./CLAUDE.md) | Regole operative per lo sviluppo assistito da AI |
-| [docs/CLAUDE.md](./docs/CLAUDE.md) | Linee guida per la documentazione del progetto |
-| [Guida utente](./docs/guida-utente/) | Manuale d'uso, una pagina per funzionalità (indice) |
-| `devlog/` | Registro storico dello sviluppo |
+```text
+saldo/
+├── app/src/main/kotlin/com/callbackdev/saldo/
+│   ├── core/
+│   │   ├── common/         # shared utilities
+│   │   ├── database/       # Room: entities, DAOs, migrations
+│   │   ├── designsystem/   # Material 3 theme, shared components
+│   │   └── domain/         # models and domain logic
+│   ├── feature/            # one folder per screen: dashboard, transactions, accounts, ...
+│   ├── navigation/         # NavKey routes, scaffold, bottom bar
+│   └── notifications/      # the shared notification style
+├── docs/                   # user guide, release notes, screenshots
+├── devlog/                 # the development log
+├── tools/                  # the launcher icon script
+└── keystore/               # the shared debug key (deliberately committed)
+```
 
-## Licenza
+## Project documentation
 
-Distribuito sotto licenza **GNU General Public License v3.0** - vedi il file [LICENSE](./LICENSE) per i dettagli.
+The project documents are in Italian.
 
-Il font **Inter** incluso nell'app è distribuito sotto **SIL Open Font License 1.1** - vedi [licenses/inter/OFL.txt](./licenses/inter/OFL.txt).
+| File | Contents |
+|---|---|
+| [VISION.md](./VISION.md) | the product: what it is, who it is for, and why |
+| [PLANNING.md](./PLANNING.md) | the phased roadmap, the architecture decisions (ADRs), progress |
+| [docs/release-notes/](./docs/release-notes/) | the notes of every published version |
+| [devlog/](./devlog/) | the development log |
+| [CLAUDE.md](./CLAUDE.md) | the operating rules for AI-assisted development in this repo |
+
+## The family
+
+Saldo is one of three focused apps with the same look and the same rules:
+[Chiaro](https://github.com/fiorenzobrioni/chiaro) (weather) and
+[Passo](https://github.com/fiorenzobrioni/passo) (steps).
+
+## License
+
+[GPL-3.0](./LICENSE) © 2026 Fiorenzo Brioni
+
+[Inter](https://github.com/rsms/inter) under the SIL Open Font License 1.1: see
+[licenses/inter/OFL.txt](./licenses/inter/OFL.txt).

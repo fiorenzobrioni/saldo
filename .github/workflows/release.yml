@@ -81,6 +81,8 @@ jobs:
         run: |
           cp app/build/outputs/apk/release/app-release.apk "saldo-${GITHUB_REF_NAME}.apk"
           cp app/build/outputs/mapping/release/mapping.txt "mapping-${GITHUB_REF_NAME}.txt"
+          # The checksum lets a reader verify the download (README, "Install").
+          sha256sum "saldo-${GITHUB_REF_NAME}.apk" > "saldo-${GITHUB_REF_NAME}.apk.sha256"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -88,4 +90,5 @@ jobs:
           body_path: release-body.md
           files: |
             saldo-${{ github.ref_name }}.apk
+            saldo-${{ github.ref_name }}.apk.sha256
             mapping-${{ github.ref_name }}.txt
