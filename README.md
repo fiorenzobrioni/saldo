@@ -197,9 +197,10 @@ The project documents are in Italian.
 
 ## The family
 
-Saldo is one of three focused apps with the same look and the same rules:
-[Chiaro](https://github.com/fiorenzobrioni/chiaro) (weather) and
-[Passo](https://github.com/fiorenzobrioni/passo) (steps).
+Saldo is one of four focused apps with the same look and the same rules:
+[Chiaro](https://github.com/fiorenzobrioni/chiaro) (weather),
+[Passo](https://github.com/fiorenzobrioni/passo) (steps) and
+[Tempo](https://github.com/fiorenzobrioni/tempo) (clock and agenda).
 
 ## License
 

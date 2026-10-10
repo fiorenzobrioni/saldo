@@ -14,6 +14,14 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-10 - La famiglia: Tempo accanto a Chiaro e Passo
+
+**Fatto:** Tempo 1.0.0 è uscito ([fiorenzobrioni/tempo](https://github.com/fiorenzobrioni/tempo)), quarta app della famiglia. Il `README.md` lo nomina in "The family" (quattro app, non più tre) e la guida utente (`docs/guida-utente/aggiunta-rapida.md`) lo conta fra le app sorelle di cui il widget ha la forma.
+
+**Decisioni:** solo testo, nessun bump di versione (modifica alla sola documentazione). La stringa della guida nell'app (`guide_quick_widget_body`) e i commenti nel codice citano Chiaro e Passo come origine dello stile, non come elenco della famiglia: restano come sono.
+
+---
+
 ## 2026-10-01 - Release 2.3.0: versione e note di rilascio
 
 **Fatto:** `versionName` 2.3.0, `versionCode` 190. Note di rilascio in `docs/release-notes/v2.3.0.md`, in inglese (prima release con le note in inglese, come i CHANGELOG di Chiaro e Passo). Schema delle build di test in `CLAUDE.md` portato a `2.3.<incremento>`.

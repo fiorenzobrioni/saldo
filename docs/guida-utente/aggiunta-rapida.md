@@ -23,7 +23,7 @@ Due cose che il widget non fa, per scelta: non mostra saldi né totali, e non si
 
 ### L'aspetto
 
-Il widget ha la stessa forma dei widget di Chiaro e Passo, le app sorelle, così sulla stessa home si leggono come una famiglia: una card con gli angoli arrotondati e, di default, lo sfondo blu pieno con il testo bianco. Dalla configurazione del widget (pressione prolungata sul widget, poi l'icona delle impostazioni, a seconda del launcher) scegli:
+Il widget ha la stessa forma dei widget di Chiaro, Passo e Tempo, le app sorelle, così sulla stessa home si leggono come una famiglia: una card con gli angoli arrotondati e, di default, lo sfondo blu pieno con il testo bianco. Dalla configurazione del widget (pressione prolungata sul widget, poi l'icona delle impostazioni, a seconda del launcher) scegli:
 
 - lo **sfondo**: chiaro, scuro, come il telefono (segue il passaggio chiaro/scuro all'istante) o un colore fra sei (blu, blu chiaro, verde, verde acqua, viola, terracotta);
 - l'**opacità** dello sfondo, a passi del 5%, da pieno a trasparente.
