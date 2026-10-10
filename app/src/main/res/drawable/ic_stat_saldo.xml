@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
      Status-bar icon: the system renders only the alpha channel. The launcher icon's
-     mark restated for 24 dp, as Chiaro's and Passo's are: the ring, its two cuts, the coin. -->
+     mark restated for 24 dp: the ring, its two cuts, the coin. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"

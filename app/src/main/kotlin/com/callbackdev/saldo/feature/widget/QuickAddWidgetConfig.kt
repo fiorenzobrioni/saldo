@@ -46,9 +46,8 @@ data class QuickAddWidgetConfig(
      */
     val pinnedCategoryIds: List<Long> = emptyList(),
     /**
-     * What the card is painted on. The default is the family's (Chiaro's since
-     * its 21 Sep 2026 review, and Passo's): a solid blue card, so a Saldo widget
-     * placed beside theirs matches them before anybody configures anything.
+     * What the card is painted on. The default is a solid blue card (ADR 52),
+     * so a widget nobody configures already wears it.
      */
     val background: WidgetBackground = WidgetBackground.COLOR,
     /** Kept while another background is picked, so coming back finds it. */
@@ -92,7 +91,7 @@ enum class WidgetActionButtons {
 /** A solid card: below [InkTrustFloorPct] the ink has to ask the wallpaper. */
 const val FullOpacity: Int = 100
 
-/** The opacity slider's step, Chiaro's and Passo's. */
+/** The opacity slider's step (ADR 52). */
 const val OpacityStep: Int = 5
 
 
@@ -112,7 +111,7 @@ object QuickAddWidgetPrefs {
     /**
      * What the card is painted on. The key is the old appearance's: its values
      * SYSTEM, LIGHT and DARK mean the same grounds today, so a widget configured
-     * before the family's dress keeps its choice (see [decode] for the rest).
+     * before the ADR 52 dress keeps its choice (see [decode] for the rest).
      */
     fun background(appWidgetId: Int) = stringPreferencesKey(key(APPEARANCE, appWidgetId))
     fun cardColor(appWidgetId: Int) = stringPreferencesKey(key(CARD_COLOR, appWidgetId))
@@ -225,7 +224,7 @@ object QuickAddWidgetPrefs {
     }
 
     /**
-     * Absent means a widget nobody configured: the family's default card. The
+     * Absent means a widget nobody configured: the default card. The
      * old appearance's "transparent" (offered before an opacity slider existed,
      * itself removed before this dress) reads back as the phone's card, as it
      * did under the previous build; an unknown value is the default card.

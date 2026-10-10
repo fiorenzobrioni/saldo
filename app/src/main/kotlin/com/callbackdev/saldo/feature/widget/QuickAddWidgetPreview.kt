@@ -30,8 +30,7 @@ import com.callbackdev.saldo.R
 /**
  * The widget above its own settings, drawn by the same [WidgetRenderer] the
  * launcher receives - the `RemoteViews` applied to a view in this process - so
- * what the settings show cannot drift from what gets placed (Chiaro and Passo
- * draw their settings previews the same way, through the real composition).
+ * what the settings show cannot drift from what gets placed.
  *
  * The ground behind it stands in for the wallpaper: a soft two-tone wash, so a
  * see-through card shows that it is one. Taps are swallowed: the real widget's

@@ -58,7 +58,7 @@ import java.util.Currency
 import java.util.Locale
 
 /**
- * The guide, in Chiaro's shape as Passo has it (ADR 52): a tour of the four
+ * The guide (ADR 52): a tour of the four
  * screens, what each one answers, and the things a screen cannot say out loud
  * (that a transfer is not a spend, that the balance is computed, that the
  * Dashboard and the Statistics read the same month two ways, that a future
@@ -66,7 +66,7 @@ import java.util.Locale
  * forever from Settings: a definition offered before the user has met the
  * thing does not stick.
  *
- * Chiaro's two rules hold it in shape. It **never teaches a control**: it says
+ * Two rules hold it in shape. It **never teaches a control**: it says
  * what a screen is for, never which button to press, because a control that
  * needs explaining is a bug. And it **never justifies an absence**: it says what
  * Saldo does, not what it is not. It teaches by showing the app's own pieces (a
@@ -174,7 +174,7 @@ private fun GuideContent(modifier: Modifier) {
     }
 }
 
-// The prose kit: Chiaro's, value for value, as Passo carries it.
+// The prose kit (ADR 52): chapters, paragraphs, features and captions.
 
 @Composable
 private fun Chapter(icon: ImageVector?, @StringRes text: Int) {

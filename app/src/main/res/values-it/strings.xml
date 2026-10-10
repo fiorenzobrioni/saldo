@@ -1512,7 +1512,7 @@
     <string name="guide_quick_text_title">Scriverla in una riga</string>
     <string name="guide_quick_text_body">«12,50 pizza ieri» diventa importo, descrizione e data, e la categoria viene proposta da quello che hai già scritto in passato. Il testo compila e non salva mai da solo; quando non è sicuro, tace invece di indovinare.</string>
     <string name="guide_quick_widget_title">Il widget</string>
-    <string name="guide_quick_widget_body">Due forme, una griglia di categorie e una barra con Spesa ed Entrata, vestite come i widget di Chiaro e Passo: una card chiara, scura, come il telefono o in uno dei sei colori, con l\'opacità che scegli. Non mostra saldi e non si ridisegna quando registri un movimento, così non consuma niente a chi lo tiene sulla home.</string>
+    <string name="guide_quick_widget_body">Due forme, una griglia di categorie e una barra con Spesa ed Entrata, su una card: chiara, scura, come il telefono o in uno dei sei colori, con l\'opacità che scegli. Non mostra saldi e non si ridisegna quando registri un movimento, così non consuma niente a chi lo tiene sulla home.</string>
 
     <string name="guide_notifications_title">Notifiche</string>
     <string name="guide_notifications_p1" formatted="false">Saldo ti scrive solo per le cose che hai chiesto o che ti riguardano: un movimento ricorrente registrato o da confermare, un budget all\'80% o superato, l\'estratto della carta, un rinnovo in arrivo, il promemoria del backup.</string>

@@ -23,7 +23,7 @@ import javax.inject.Singleton
 
 /**
  * Posts the budget threshold notifications (80% reached, limit exceeded), in
- * the family's idiom (see [SaldoNotifications]). One notification per level
+ * the app's notification idiom (see [SaldoNotifications]). One notification per level
  * with a fixed id, replaced on repost.
  *
  * Collapsed, a single alert is named and quantified ("Spesi 400 € di 500 €")

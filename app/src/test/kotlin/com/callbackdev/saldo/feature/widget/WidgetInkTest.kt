@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 /**
- * Chiaro's ink rule, as Passo pins it (`WidgetInkTest` in both): which inks a
+ * The ink rule (ADR 52): which inks a
  * card writes with, from its ground, its solidity and, for a see-through card
  * whose ink nobody named, the wallpaper. Getting it wrong is dark text on a dark
  * card, which reads as a broken widget rather than as a wrong colour.

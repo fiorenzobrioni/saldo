@@ -17,9 +17,7 @@ import com.callbackdev.saldo.core.designsystem.theme.moneyColors
  * - only for a see-through card whose ink the user did not name - what the
  * wallpaper says about the ground under it.
  *
- * The card, its colours, its opacity and the ink rule are Chiaro's, carried over
- * as Passo carries them, so the family's widgets on one home screen read as one
- * set of furniture (ADR 52).
+ * The card, its colours, its opacity and the ink rule are ADR 52's.
  */
 data class QuickAddWidgetTheme(
     val dress: WidgetDress,
@@ -79,7 +77,7 @@ fun resolveWidgetTheme(
  * Whether the wallpaper behind a see-through card can carry dark text, by the
  * system's own account ([WallpaperColors.HINT_SUPPORTS_DARK_TEXT]). Read as the
  * affirmative signal it is: dark ink only when the system says the ground is
- * bright, light ink whenever it says nothing (Chiaro's and Passo's rule).
+ * bright, light ink whenever it says nothing.
  */
 private fun wallpaperWantsDarkInk(context: Context): Boolean {
     val manager = runCatching { WallpaperManager.getInstance(context) }.getOrNull() ?: return false

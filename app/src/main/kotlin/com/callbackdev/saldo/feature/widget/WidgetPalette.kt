@@ -34,7 +34,7 @@ internal data class WidgetColor(@ColorInt val light: Int, @ColorInt val dark: In
  * One theme as a widget needs it: both schemes and both sets of money colours at
  * once. A widget cannot ask the theme which mode it is in (the launcher draws
  * it, on a ground the app does not control), so every colour is resolved here
- * against the ground it really has - Passo's `WidgetDress`, for the same reason.
+ * against the ground it really has.
  */
 data class WidgetDress(
     val lightScheme: ColorScheme,
@@ -159,7 +159,7 @@ private fun side(
 ): Side {
     val ground = dress.ground(background, cardColor, night).toArgb()
     return when (val ink = widgetInk(background, opacityPct, night, wallpaperCarriesDarkInk)) {
-        // White on every card colour, as in Chiaro and Passo; the money colours
+        // White on every card colour (ADR 52); the money colours
         // are the dark theme's, the set made to read on a dark ground.
         WidgetInk.OVER_COLOR -> Side(
             ground = ground,
@@ -224,7 +224,7 @@ internal val WashImageAlpha: Int = (WashAlpha * 255).roundToInt()
 
 private const val White: Int = -0x1 // 0xFFFFFFFF
 
-/** Chiaro's quiet ink over a card colour: white at 75%. */
+/** The quiet ink over a card colour: white at 75%. */
 private const val QuietWhite: Int = -0x40000001 // 0xBFFFFFFF
 
 /** See [WidgetPalette.categoryInk]. */

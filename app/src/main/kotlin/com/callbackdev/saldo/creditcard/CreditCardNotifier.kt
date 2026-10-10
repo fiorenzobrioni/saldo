@@ -21,7 +21,7 @@ import javax.inject.Singleton
  * auto-post card has been charged, and a confirmation one when a confirm-mode
  * card has a statement waiting to be paid (tapping opens the app, where the
  * dashboard card settles it). One notification per kind with a fixed id,
- * replaced on repost. In the family's idiom (see [SaldoNotifications]): the
+ * replaced on repost. In the app's notification idiom (see [SaldoNotifications]): the
  * collapsed sentence is the amount; expanded, the cycle it covers and, for a
  * statement to pay, the day it is due. Like the other notifiers, posting is a
  * silent no-op until POST_NOTIFICATIONS is granted.

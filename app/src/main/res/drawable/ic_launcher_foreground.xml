@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
-     The mark: Chiaro's ring in two halves (income above, expenses below), cut by an amber
+     The mark: a ring in two halves (income above, expenses below), cut by an amber
      coin at the lower right and by a thin band at the other junction. Everything sits
      inside the 33-unit safe circle of every launcher mask (ring edge 26, coin edge 29.2). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"

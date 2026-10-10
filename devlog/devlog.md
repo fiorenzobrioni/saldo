@@ -14,6 +14,14 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-10 - La famiglia: Tempo nel README, nessuna app sorella nella guida e nel codice
+
+**Fatto:** Tempo 1.0.0 è uscito ([fiorenzobrioni/tempo](https://github.com/fiorenzobrioni/tempo)), quarta app della famiglia: il `README.md` lo nomina in "The family" (quattro app, non più tre). Dalla guida nell'app (`guide_quick_widget_body`, in inglese e in italiano) e dalla guida utente (`docs/guida-utente/aggiunta-rapida.md`) è tolto ogni riferimento alle app sorelle: il widget si descrive da solo, una card chiara, scura, come il telefono o in uno dei sei colori. Dal codice (commenti Kotlin e XML, test, `tools/draw_launcher_icon.py`) sono tolti i nomi di Chiaro e Passo e "la famiglia": ogni commento tiene la sua ragione, con il rimando all'ADR 52 o 53 dove serve. Le icone rigenerate dallo script cambiano solo nel commento d'intestazione. `versionName` 2.3.1, `versionCode` 191.
+
+**Decisioni:** le app della famiglia si nominano solo nel `README.md` (sezione "The family") e nella documentazione di progetto (PLANNING, devlog), mai nella guida né nel codice (committente, 10 ott 2026). I nomi dei test sul colore predefinito del widget cambiano di conseguenza.
+
+---
+
 ## 2026-10-01 - Release 2.3.0: versione e note di rilascio
 
 **Fatto:** `versionName` 2.3.0, `versionCode` 190. Note di rilascio in `docs/release-notes/v2.3.0.md`, in inglese (prima release con le note in inglese, come i CHANGELOG di Chiaro e Passo). Schema delle build di test in `CLAUDE.md` portato a `2.3.<incremento>`.
