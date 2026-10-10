@@ -1489,7 +1489,7 @@
     <string name="guide_quick_text_title">Writing it in one line</string>
     <string name="guide_quick_text_body">«12.50 pizza yesterday» becomes amount, description and date, and the category is suggested from what you wrote before. The text fills in and never saves by itself; when it is not sure, it stays quiet rather than guess.</string>
     <string name="guide_quick_widget_title">The widget</string>
-    <string name="guide_quick_widget_body">Two shapes, a grid of categories and a bar with Expense and Income, dressed like Chiaro\'s and Passo\'s widgets: a light card, a dark one, one that follows the phone or one of six colours, at the opacity you choose. It shows no balances and does not redraw when you record a movement, so it costs nothing to whoever keeps it on the home screen.</string>
+    <string name="guide_quick_widget_body">Two shapes, a grid of categories and a bar with Expense and Income, on a card: a light one, a dark one, one that follows the phone or one of six colours, at the opacity you choose. It shows no balances and does not redraw when you record a movement, so it costs nothing to whoever keeps it on the home screen.</string>
 
     <string name="guide_notifications_title">Notifications</string>
     <string name="guide_notifications_p1" formatted="false">Saldo writes to you only about what you asked for or what concerns you: a recurring movement recorded or waiting for you, a budget at 80% or past its limit, the card\'s statement, a renewal coming, the backup reminder.</string>

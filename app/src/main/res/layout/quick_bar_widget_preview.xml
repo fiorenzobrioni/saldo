@@ -10,7 +10,7 @@
 
     Same rules as quick_add_widget_preview.xml: only resources, only views
     RemoteViews accepts, colours from res/values rather than ?android:attr, the
-    default card of the family (ADR 52), and the wash as android:alpha over it.
+    default card (ADR 52), and the wash as android:alpha over it.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"

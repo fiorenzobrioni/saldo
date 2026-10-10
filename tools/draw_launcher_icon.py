@@ -3,10 +3,9 @@
 
     python3 tools/draw_launcher_icon.py
 
-The mark is Chiaro's ring, as Passo carries it (committente, 26 set 2026, ADR 53): the same
-ring (radius 21, stroke 10) on the same warm white, cut by an amber emblem the way Chiaro's
-sun and Passo's shoe print cut theirs. Saldo's emblem is a coin, at the lower right, where
-neither sister has hers. The ring is two halves, because a saldo is what comes in against what
+The mark is a ring (committente, 26 set 2026, ADR 53): radius 21, stroke 10, on a warm
+white, cut by an amber emblem. Saldo's emblem is a coin, at the lower right. The ring is two
+halves, because a saldo is what comes in against what
 goes out: the upper half in the brand's sea green (income), the lower in a soft brick
 (expenses). The coin sits where the expenses begin, and a thin cut marks the other junction,
 so the two halves survive in the themed (monochrome) icon too. Each half runs light to dark
@@ -27,18 +26,18 @@ from pathlib import Path
 RES = Path(__file__).resolve().parent.parent / "app/src/main/res/drawable"
 
 CENTRE = 54.0
-RING_RADIUS = 21.0  # Chiaro's
-RING_WIDTH = 10.0  # Chiaro's
-COIN_ANGLE = 40.0  # degrees clockwise from three o'clock: Chiaro's sun is at -40, Passo's print at 220
+RING_RADIUS = 21.0
+RING_WIDTH = 10.0
+COIN_ANGLE = 40.0  # degrees clockwise from three o'clock: the lower right
 JOIN_ANGLE = 220.0  # the other junction of the two halves, opposite the coin
-COIN_RADIUS = 8.2  # Chiaro's sun
-GAP_RADIUS = 11.2  # Chiaro's: the clear band around the emblem, where it cuts the ring
+COIN_RADIUS = 8.2
+GAP_RADIUS = 11.2  # the clear band around the emblem, where it cuts the ring
 RIM_OUTER, RIM_INNER = 6.3, 5.0  # the coin's rim, a thin ring of the ground
-SLIT_WIDTH = 2.6  # the cut at the other junction: Passo's gap, as a straight band
+SLIT_WIDTH = 2.6  # the cut at the other junction, as a straight band
 
 INCOME = ("5CC2BA", "12807D")  # sea green, light to dark along the half
 EXPENSE = ("EFA595", "CB6653")  # soft brick, light to dark along the half
-AMBER = ("FFC658", "EF8618")  # the family's emblem amber (Chiaro's sun, Passo's print)
+AMBER = ("FFC658", "EF8618")  # the emblem's amber
 
 HEADER = """<?xml version="1.0" encoding="utf-8"?>
 <!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
@@ -156,7 +155,7 @@ def write(name, what, text):
 def main():
     write(
         "ic_launcher_foreground.xml",
-        "The mark: Chiaro's ring in two halves (income above, expenses below), cut by an amber\n"
+        "The mark: a ring in two halves (income above, expenses below), cut by an amber\n"
         "     coin at the lower right and by a thin band at the other junction. Everything sits\n"
         "     inside the 33-unit safe circle of every launcher mask (ring edge 26, coin edge 29.2).",
         vector(ring_group() + "\n" + coin_path()),
@@ -183,7 +182,7 @@ def main():
         vector(coin_path()),
     )
     # The status bar: 24 units, the ring and the coin scaled by 24/60 about the centre, with
-    # the strokes nudged where 24 dp asks (Chiaro's rule: under 3.5 a stroke breaks up). The
+    # the strokes nudged where 24 dp asks (under 3.5 a stroke breaks up). The
     # coin is a plain disc: a rim at this size is a smudge.
     k = 24 / 60
     c, ring, width = 12.0, RING_RADIUS * k + 0.1, 3.6
@@ -195,7 +194,7 @@ def main():
     write(
         "ic_stat_saldo.xml",
         "Status-bar icon: the system renders only the alpha channel. The launcher icon's\n"
-        "     mark restated for 24 dp, as Chiaro's and Passo's are: the ring, its two cuts, the coin.",
+        "     mark restated for 24 dp: the ring, its two cuts, the coin.",
         vector(stat, size=24, viewport=24, aapt=False),
     )
 

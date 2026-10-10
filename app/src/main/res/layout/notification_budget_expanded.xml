@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The expanded body of a budget notification (ADR 52, after Chiaro's
-     notification_expanded.xml): the title, the collapsed sentence as its headline,
+<!-- The expanded body of a budget notification (ADR 52): the title, the collapsed sentence as its headline,
      then one bar per budget, the picture a budget says faster than its lines. Each
      bar is how much of the budget is spent, in the level's colour, over a lighter
      band that reaches as far as the month has gone: spending ahead of the month

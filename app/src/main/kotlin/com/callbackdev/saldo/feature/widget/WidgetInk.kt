@@ -3,15 +3,14 @@ package com.callbackdev.saldo.feature.widget
 /**
  * What a card is painted on: a plain card in the app's light or dark surface,
  * whichever of the two the phone is in, or one of the six colours of
- * `WidgetCardColor`. Chiaro's list without its sky, as in Passo; [COLOR] is one
+ * `WidgetCardColor` (ADR 52); [COLOR] is one
  * value, and which colour is a second question.
  */
 enum class WidgetBackground { LIGHT, DARK, SYSTEM, COLOR }
 
 /**
  * Which set of inks a card writes with, named after the ground it is written
- * on. Chiaro's rule (its `WidgetInk`, DESIGN §2.6), copied as Passo copies it
- * and kept pure so `WidgetInkTest` pins it: [OVER_COLOR] is the white set every
+ * on (ADR 52), kept pure so `WidgetInkTest` pins it: [OVER_COLOR] is the white set every
  * card colour is picked dark enough to carry; the other two are the schemes'
  * own.
  */

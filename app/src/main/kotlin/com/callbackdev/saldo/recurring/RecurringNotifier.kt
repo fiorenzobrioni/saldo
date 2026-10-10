@@ -30,7 +30,7 @@ import javax.inject.Singleton
  * ("Netflix renews in 3 days"). Tapping any of them opens the app, where the
  * pending movements can be confirmed or skipped.
  *
- * In the family's idiom (see [SaldoNotifications]): collapsed, a title with the
+ * In the app's notification idiom (see [SaldoNotifications]): collapsed, a title with the
  * count or the name and one sentence; expanded, the same sentence and under it
  * the movements themselves, one per line with its amount, so opening the
  * notification answers "which ones?" without opening the app. Posting is a
@@ -269,7 +269,7 @@ class RecurringNotifier @Inject constructor(
         // a shared id would make one notification silently replace the other.
         const val ID_MOVEMENT_REMINDER = 1008
 
-        /** Five facts under the headline, as in Chiaro's expanded bodies. */
+        /** Five facts under the headline. */
         const val MAX_LINES = 5
         const val DAY_PATTERN = "EEEE d MMMM"
     }

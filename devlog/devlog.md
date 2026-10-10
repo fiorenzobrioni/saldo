@@ -14,11 +14,11 @@ Formato suggerito per ogni voce:
 
 ---
 
-## 2026-10-10 - La famiglia: Tempo accanto a Chiaro e Passo
+## 2026-10-10 - La famiglia: Tempo nel README, nessuna app sorella nella guida e nel codice
 
-**Fatto:** Tempo 1.0.0 è uscito ([fiorenzobrioni/tempo](https://github.com/fiorenzobrioni/tempo)), quarta app della famiglia. Il `README.md` lo nomina in "The family" (quattro app, non più tre) e la guida utente (`docs/guida-utente/aggiunta-rapida.md`) lo conta fra le app sorelle di cui il widget ha la forma.
+**Fatto:** Tempo 1.0.0 è uscito ([fiorenzobrioni/tempo](https://github.com/fiorenzobrioni/tempo)), quarta app della famiglia: il `README.md` lo nomina in "The family" (quattro app, non più tre). Dalla guida nell'app (`guide_quick_widget_body`, in inglese e in italiano) e dalla guida utente (`docs/guida-utente/aggiunta-rapida.md`) è tolto ogni riferimento alle app sorelle: il widget si descrive da solo, una card chiara, scura, come il telefono o in uno dei sei colori. Dal codice (commenti Kotlin e XML, test, `tools/draw_launcher_icon.py`) sono tolti i nomi di Chiaro e Passo e "la famiglia": ogni commento tiene la sua ragione, con il rimando all'ADR 52 o 53 dove serve. Le icone rigenerate dallo script cambiano solo nel commento d'intestazione. `versionName` 2.3.1, `versionCode` 191.
 
-**Decisioni:** solo testo, nessun bump di versione (modifica alla sola documentazione). La stringa della guida nell'app (`guide_quick_widget_body`) e i commenti nel codice citano Chiaro e Passo come origine dello stile, non come elenco della famiglia: restano come sono.
+**Decisioni:** le app della famiglia si nominano solo nel `README.md` (sezione "The family") e nella documentazione di progetto (PLANNING, devlog), mai nella guida né nel codice (committente, 10 ott 2026). I nomi dei test sul colore predefinito del widget cambiano di conseguenza.
 
 ---
 

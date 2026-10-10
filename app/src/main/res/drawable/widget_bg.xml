@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The widget card: Chiaro's, value for value, as Passo carries it (ADR 52).
-    The 24dp corner is the family's own rather than the system's widget radius,
-    so a Saldo card beside a Chiaro or a Passo card has the same shape.
+    The widget card (ADR 52). The 24dp corner is the card's own rather than the
+    system's widget radius, so the card has the same shape on every launcher.
 
-    The fill baked in here is the default card (Chiaro's blue), and it is
+    The fill baked in here is the default card (the blue), and it is
     load-bearing rather than decoration: this drawable is what the host inflates
     for initialLayout, before the first bind ever lands, so without it a freshly
     dropped widget flashes as a white box. At bind time it is re-tinted with the

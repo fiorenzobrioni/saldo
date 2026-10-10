@@ -12,8 +12,7 @@ import com.callbackdev.saldo.R
 import java.time.LocalTime
 
 /**
- * What every Saldo notification wears besides its words, in the family's idiom
- * (Chiaro's notification review of 23 set 2026, which Passo follows; ADR 52):
+ * What every Saldo notification wears besides its words (ADR 52):
  *
  * - **the brand's mark and accent**: the status icon is the launcher icon's
  *   mark, the header and the icon's disc wear the icon's blue;

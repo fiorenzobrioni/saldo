@@ -89,7 +89,7 @@ import javax.inject.Inject
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 // SDK 35: Robolectric's SDK 36 image reaches into JDK internals that Java 21 keeps
-// closed (same pin as Passo). The screens draw the same on both.
+// closed. The screens draw the same on both.
 @Config(
     application = HiltTestApplication::class,
     sdk = [35],

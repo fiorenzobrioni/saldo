@@ -124,9 +124,9 @@ class QuickAddWidgetPrefsTest {
         assertTrue(!QuickAddWidgetPrefs.read(preferences, id).usesCustomCategories)
     }
 
-    /** The family's default: Chiaro's and Passo's solid blue card. */
+    /** The default (ADR 52): a solid blue card. */
     @Test
-    fun `an unconfigured widget wears the family's solid blue card`() {
+    fun `an unconfigured widget wears the solid blue card`() {
         val config = QuickAddWidgetPrefs.read(mutablePreferencesOf(), id)
         assertEquals(WidgetBackground.COLOR, config.background)
         assertEquals(WidgetCardColor.BLUE, config.cardColor)
@@ -146,11 +146,11 @@ class QuickAddWidgetPrefsTest {
 
     /**
      * The background lives under the old appearance's key, whose three values
-     * name the same grounds today: a widget configured before the family's dress
+     * name the same grounds today: a widget configured before the ADR 52 dress
      * keeps the choice its user made.
      */
     @Test
-    fun `a widget configured before the family's dress keeps its light or dark card`() {
+    fun `a widget configured before the new dress keeps its light or dark card`() {
         listOf("SYSTEM" to WidgetBackground.SYSTEM, "LIGHT" to WidgetBackground.LIGHT, "DARK" to WidgetBackground.DARK)
             .forEach { (stored, expected) ->
                 val preferences = mutablePreferencesOf(QuickAddWidgetPrefs.background(id) to stored)

@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The badge's ground (ADR 53): Chiaro's and Passo's warm white, so the three icons
-         share one ground on a home screen. The foreground carries the rest. -->
+    <!-- The badge's ground (ADR 53): a warm white. The foreground carries the rest. -->
     <color name="ic_launcher_background">#F7F4EE</color>
 
-    <!-- The notifications' accent (ADR 52 and 53, after Chiaro's of 23 set 2026): the
+    <!-- The notifications' accent (ADR 52 and 53): the
          small icon's disc and the app name in the header. The dark end of the icon's sea
          green (the income half): the one colour a user has already seen the app wear
          before opening it. -->
@@ -23,15 +22,14 @@
         restricted context and never runs a line of our code), so the values are
         baked, and baked here rather than across the layouts.
 
-        The card is the family's default one: widgetCardContainer(BLUE), flat,
-        the value Chiaro's and Passo's previews bake too, so the three apps'
-        widgets look like one family in the picker. It is also the fill the
+        The card is the default one: widgetCardContainer(BLUE), flat, so the
+        picker shows the widget as it will be placed. It is also the fill the
         placed widget is inflated with before its first bind (widget_bg.xml).
         No values-night variant: a card colour is the same in both themes, and
         so are the inks it carries. WidgetPreviewColorsTest checks the card
         against the Kotlin table.
 
-        The inks are Chiaro's white pair over a card colour (WidgetInk.OVER_COLOR):
+        The inks are the white pair over a card colour (WidgetInk.OVER_COLOR):
         white, and white at 75% for the quiet one. The selected half of the type
         selector is a white pill with the card's own blue as its ink.
     -->

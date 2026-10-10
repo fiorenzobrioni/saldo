@@ -3,12 +3,10 @@ package com.callbackdev.saldo.core.designsystem.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * The card colours a home-screen widget can wear: **Chiaro's six, hex for hex**,
- * the same table Passo copies, so a Saldo widget beside a Chiaro or a Passo one
- * on the same home screen is the same piece of furniture (ADR 52).
+ * The card colours a home-screen widget can wear: **six, hex for hex** the
+ * table ADR 52 fixes.
  *
- * Chiaro measured them against the inks they carry, and the measurements hold
- * here unchanged because the inks are the same: every one of the six is a dark
+ * Each was measured against the inks it carries: every one of the six is a dark
  * ground under white ink, white never under 7.8:1, the 75% quiet ink never under
  * 5.2:1.
  *

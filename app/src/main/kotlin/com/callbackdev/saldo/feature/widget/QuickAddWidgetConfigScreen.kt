@@ -501,7 +501,7 @@ private fun SwitchRow(
 /** Matches the widget's own tile wash. */
 private const val AvatarWashAlpha = 0.16f
 
-/** What the background question offers, in Chiaro's order less its sky, as Passo offers it. */
+/** What the background question offers, in order. */
 internal val WidgetBackgroundChoices: List<Pair<WidgetBackground, Int>> = listOf(
     WidgetBackground.LIGHT to R.string.widget_bg_light,
     WidgetBackground.DARK to R.string.widget_bg_dark,
@@ -509,7 +509,7 @@ internal val WidgetBackgroundChoices: List<Pair<WidgetBackground, Int>> = listOf
     WidgetBackground.COLOR to R.string.widget_bg_color,
 )
 
-/** Chiaro's six, in Chiaro's order. Every [WidgetCardColor] has its swatch. */
+/** The six, in their order. Every [WidgetCardColor] has its swatch. */
 internal val WidgetCardColorChoices: List<Pair<WidgetCardColor, Int>> = listOf(
     WidgetCardColor.BLUE to R.string.widget_color_blue,
     WidgetCardColor.AZURE to R.string.widget_color_azure,
@@ -522,8 +522,7 @@ internal val WidgetCardColorChoices: List<Pair<WidgetCardColor, Int>> = listOf(
 /**
  * What kind of card, each row with a swatch of the ground it paints; and, once
  * "A colour" is picked, which colour, as a strip of swatches with the chosen
- * one's name under it (a swatch is never the only label). Chiaro's and Passo's
- * group, row for row.
+ * one's name under it (a swatch is never the only label).
  */
 @Composable
 private fun BackgroundChoices(

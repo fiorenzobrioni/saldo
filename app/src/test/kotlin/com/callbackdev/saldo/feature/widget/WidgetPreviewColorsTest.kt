@@ -10,8 +10,7 @@ import java.io.File
 /**
  * The picker previews and the un-bound widget bake the default card as a colour
  * resource, because a static layout cannot call Kotlin. This keeps the two
- * written copies of Chiaro's blue in step (Chiaro's and Passo's
- * `WidgetPreviewTest` do the same).
+ * written copies of the default blue in step.
  */
 class WidgetPreviewColorsTest {
 

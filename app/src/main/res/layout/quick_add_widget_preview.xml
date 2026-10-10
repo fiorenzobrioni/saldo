@@ -16,7 +16,7 @@
     eight blank rounded rectangles, which read as a widget still loading rather
     than as the widget the user is about to place.
 
-    It is dressed as the default card (ADR 52): Chiaro's blue with its 24dp
+    It is dressed as the default card (ADR 52): the blue with its 24dp
     corner and 14dp side insets, white ink, the category colours lifted as the placed
     widget lifts them on a card colour. The wash is android:alpha over the card,
     as the placed widget's is image alpha.

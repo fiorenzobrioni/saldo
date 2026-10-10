@@ -495,7 +495,7 @@ fun SettingsScreen(
  * last used one) first, then the active accounts.
  */
 /**
- * The way to the guide, first in the list as in Chiaro's and Passo's Settings:
+ * The way to the guide, first in the list:
  * the place a user comes back to the day the question arrives.
  */
 @Composable
