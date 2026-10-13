@@ -152,8 +152,8 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
 
         /** Every provider whose widgets the watcher keeps fresh, with its breakpoints. */
         internal val providers: List<Pair<Class<out SaldoWidgetProvider>, (Float) -> List<WidgetSize>>> = listOf(
-            QuickAddWidgetProvider::class.java to ::gridWidgetSizes,
-            QuickBarWidgetProvider::class.java to ::actionSizes,
+            QuickAddWidgetProvider::class.java to { scale -> gridWidgetSizes(scale) },
+            QuickBarWidgetProvider::class.java to { scale -> actionSizes(scale) },
         )
 
         /** True while at least one widget of any of our providers is placed. */
@@ -172,7 +172,7 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
  * existed).
  */
 class QuickAddWidgetProvider : SaldoWidgetProvider() {
-    override val sizes: (Float) -> List<WidgetSize> = ::gridWidgetSizes
+    override val sizes: (Float) -> List<WidgetSize> = { scale -> gridWidgetSizes(scale) }
 }
 
 /**
@@ -187,5 +187,5 @@ class QuickAddWidgetProvider : SaldoWidgetProvider() {
  * widget only ever renders the [actionSizes].
  */
 class QuickBarWidgetProvider : SaldoWidgetProvider() {
-    override val sizes: (Float) -> List<WidgetSize> = ::actionSizes
+    override val sizes: (Float) -> List<WidgetSize> = { scale -> actionSizes(scale) }
 }
