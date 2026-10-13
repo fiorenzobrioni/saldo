@@ -96,8 +96,10 @@ internal fun layoutFor(size: WidgetSize, availableCategories: Int, fontScale: Fl
             // What is left of the declared height once the inset is paid: the
             // button height, which is also the width a square wants. Floored
             // so the smallest size keeps a usable tap target.
-            shortcutSide = (size.height.toInt() - 2 * ActionsPadding)
-                .coerceAtLeast(MinShortcutSide),
+            shortcutSide = shortcutSideFor(size.height),
+            // The words only where both fit whole at this text size; else the
+            // two arrows alone, each still named for accessibility.
+            showLabels = size.width >= wordsMinWidth(size.height, fontScale),
         )
     }
     val wide = size.width >= WideMinWidth
@@ -113,7 +115,8 @@ internal fun layoutFor(size: WidgetSize, availableCategories: Int, fontScale: Fl
     // Capped as well as computed: every tile carries a bitmap to the launcher,
     // and an unbounded grid would keep growing that payload towards the size
     // ceiling of the transaction that delivers it.
-    val fits = ((content + RowGapDp) / (rowHeight + RowGapDp)).coerceIn(1, MaxGridRows)
+    val fits = ((content + RowGapDp) / (rowHeight + RowGapDp))
+        .coerceIn(1, if (wide) MaxGridRows else NarrowMaxRows)
     // One slot always belongs to the "open Saldo" tile.
     val needed = ceilDiv(availableCategories + 1, columns)
 
@@ -129,6 +132,12 @@ internal fun layoutFor(size: WidgetSize, availableCategories: Int, fontScale: Fl
 }
 
 /**
+ * The single-row heights, one launcher row from the smallest to the tallest.
+ * Declared before [ActionSizes], which reads it as the file initialises.
+ */
+private val ActionHeights = listOf(40f, 64f, 88f, 112f)
+
+/**
  * The single-row sizes: the whole breakpoint set of the bar widget, and the low
  * end of the grid's (which still degrades to the two-button layout when
  * squashed, for the widgets placed before the bar existed).
@@ -138,13 +147,34 @@ internal fun layoutFor(size: WidgetSize, availableCategories: Int, fontScale: Fl
  * `RemoteViews` has no measure pass, so the declared height is the only
  * estimate of the button height there is, and one breakpoint at 40dp made the
  * shortcut a fixed-width rectangle on every launcher whose row is taller.
+ *
+ * Two widths per height, for the same reason (13 Oct 2026): every rung was
+ * 110dp wide, so the buttons printed their words at any width and a two-column
+ * bar read "E" and "In". The narrow rung draws the arrows alone; the wide one
+ * starts where both words fit whole at [fontScale], which is why the set is
+ * computed at render time rather than fixed.
  */
-internal val ActionSizes: List<WidgetSize> = listOf(
-    WidgetSize(110f, 40f),
-    WidgetSize(110f, 64f),
-    WidgetSize(110f, 88f),
-    WidgetSize(110f, 112f),
-)
+internal fun actionSizes(fontScale: Float = 1f): List<WidgetSize> = ActionHeights.flatMap { height ->
+    listOf(WidgetSize(MinWidgetWidth, height), WidgetSize(wordsMinWidth(height, fontScale), height))
+}
+
+/** [actionSizes] at the default text size: what the tests and the README pictures draw. */
+internal val ActionSizes: List<WidgetSize> = actionSizes()
+
+/**
+ * The narrowest single row whose two buttons hold their icon and word whole:
+ * the inset, the gaps, the shortcut square of that height and two buttons,
+ * each [ButtonIconDp] + [ButtonIconGapDp] + the widest word at [fontScale].
+ * Conservative on purpose: it counts the shortcut even when the user hid it.
+ */
+internal fun wordsMinWidth(height: Float, fontScale: Float = 1f): Float {
+    val word = ceil(WidestWordDp * fontScale).toInt()
+    val button = ButtonIconDp + ButtonIconGapDp + word
+    return (2 * button + 2 * ActionsPadding + 2 * ActionGapDp + shortcutSideFor(height)).toFloat()
+}
+
+private fun shortcutSideFor(height: Float): Int =
+    (height.toInt() - 2 * ActionsPadding).coerceAtLeast(MinShortcutSide)
 
 /**
  * One breakpoint per grid row, on both widths. The launcher only picks a size
@@ -157,11 +187,14 @@ internal val ActionSizes: List<WidgetSize> = listOf(
  * the last row or waste it.
  */
 internal val GridSizes: List<WidgetSize> =
-    (1..MaxGridRows).map { rows -> WidgetSize(110f, narrowGridHeight(rows)) } +
+    (1..NarrowMaxRows).map { rows -> WidgetSize(110f, narrowGridHeight(rows)) } +
         (1..MaxGridRows).map { rows -> WidgetSize(250f, wideGridHeight(rows)) }
 
-/** Every size the grid provider hands the launcher; the bar provider ships [ActionSizes] alone. */
-internal val GridWidgetSizes: List<WidgetSize> = ActionSizes + GridSizes
+/** Every size the grid provider hands the launcher; the bar provider ships [actionSizes] alone. */
+internal fun gridWidgetSizes(fontScale: Float = 1f): List<WidgetSize> = actionSizes(fontScale) + GridSizes
+
+/** [gridWidgetSizes] at the default text size. */
+internal val GridWidgetSizes: List<WidgetSize> = gridWidgetSizes()
 
 /**
  * A size-map key is a promise that the layout FITS in that many dp - the host
@@ -202,15 +235,33 @@ internal const val WideMinWidth = 250f
 /** How many categories the settings screen lets a user pin by hand. */
 internal const val MaxPinnedCategories = 12
 
+/**
+ * The wide grid's rows: five rows of four hold the whole default seed and the
+ * way out, with room for two more categories.
+ */
 internal const val MaxGridRows = 5
+
+/**
+ * The narrow grid's rows: two columns hold half as much per row, so a tall
+ * narrow widget showed nine categories with a third of the card empty (13 Oct
+ * 2026). Eight rows is the tallest a five-row launcher grants; the tiles share
+ * the wide grid's cached icons, so the rows add almost nothing to the payload.
+ */
+internal const val NarrowMaxRows = 8
 internal const val WideColumns = 4
 internal const val NarrowColumns = 2
 internal const val WideTileSize = 44
 internal const val NarrowTileSize = 52
 internal const val GridPaddingHorizontal = 14
-internal const val GridPaddingVertical = 8
+/**
+ * 6 and 5dp since 13 Oct 2026, from 8 and 6: the two-row wide grid needed
+ * 190dp and a two-row launcher cell grants 189, so it drew one row over an
+ * empty half. At these values every reference grant (189, 293, 397dp high)
+ * holds every row it has room for, on both widths.
+ */
+internal const val GridPaddingVertical = 6
 internal const val HeaderGapDp = 6
-internal const val RowGapDp = 6
+internal const val RowGapDp = 5
 /**
  * 2dp since the labels went from 12 to 13sp (13 Oct 2026): the dp the larger
  * line takes, so a row still costs 64dp and every breakpoint stays where it was.
@@ -226,6 +277,23 @@ internal const val PillHeightDp = 34
 
 /** The single-row layout's even inset (see [WidgetLayout.paddingHorizontal]). */
 internal const val ActionsPadding = 14
+
+/** Below this width a launcher does not place the widget at all (provider info). */
+internal const val MinWidgetWidth = 110f
+
+/** A single-row button's arrow and the gap before its word (widget_quick_actions.xml). */
+internal const val ButtonIconDp = 20
+internal const val ButtonIconGapDp = 6
+
+/** The gap between two single-row buttons, and before the shortcut. */
+internal const val ActionGapDp = 8
+
+/**
+ * The widest of the buttons' words at [WidgetType.LABEL] bold, 5% wider than
+ * measured in the system face, as another launcher's face may draw it:
+ * "Expense", 49.5dp ("Spesa" 36, "Entrata" 43).
+ */
+internal const val WidestWordDp = 52
 
 /** The smallest square the shortcut is allowed to shrink to: still a target. */
 internal const val MinShortcutSide = 40

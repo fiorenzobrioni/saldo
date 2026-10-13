@@ -2,7 +2,7 @@
 <!--
     The wide grid: the expense/income selector over four labelled columns.
 
-    Five rows of four cells, all declared, because RemoteViews has no way to add
+    Five rows of four cells (MaxGridRows), all declared, because RemoteViews has no way to add
     a view at bind time - the renderer shows the cells the size actually has
     room for (WidgetLayout.rows) and hides the rest. The repetition is
     mechanical and the ids are consumed by index in WidgetRenderer.
@@ -31,7 +31,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:paddingHorizontal="14dp"
-        android:paddingVertical="8dp">
+        android:paddingVertical="6dp">
 
         <LinearLayout
             android:id="@+id/widget_header"
@@ -280,7 +280,7 @@
             android:id="@+id/widget_row_1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="5dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -445,7 +445,7 @@
             android:id="@+id/widget_row_2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="5dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -610,7 +610,7 @@
             android:id="@+id/widget_row_3"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="5dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -775,7 +775,7 @@
             android:id="@+id/widget_row_4"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="5dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 

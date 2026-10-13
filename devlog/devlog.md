@@ -14,6 +14,23 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-13 - Widget: le card alte tengono dati, non aria
+
+**Fatto:** applicate le quattro proposte del controllo delle card alte (Fase 43, approvate dal committente sulle anteprime). A: margine verticale della griglia da 8 a 6 dp e spazio fra le righe da 6 a 5, così le celle di riferimento (189, 293, 397 dp) contengono tutte le righe che hanno spazio per mostrare. B: griglia stretta fino a 8 righe. C: card da configurare con il contenuto in alto (al centro solo a una riga). D: barra con due larghezze per altezza, solo frecce dove le parole non stanno intere, soglia calcolata alla dimensione del testo; chiude il bug dei tasti "E"/"In" e toglie l'unica eccezione di `WidgetFitTest`. Screenshot del README rigenerati e guardati, guida utente aggiornata. `versionName` 2.3.3, `versionCode` 193.
+
+**Decisioni:**
+
+- **Soglia della barra al render**: i fornitori passano una funzione della `fontScale` invece di una lista fissa, perché il punto in cui "Expense" sta intero dipende dalla dimensione del testo; il renderer la risolve con la configurazione del render, come già il budget delle righe della griglia. Stesso limite dichiarato: un cambio della dimensione del testo vale dal redraw successivo.
+- **Griglia larga a 5 righe**: contengono tutto il seed (17 categorie più "Apri Saldo"); oltre resta aria, perché non c'è altro di vero da mostrare.
+
+**Problemi:** inizializzazione del file `WidgetLayout.kt`: `ActionSizes` leggeva una lista dichiarata più sotto e valeva null nei test; spostata sopra. Un giro di lint è fallito con un errore interno dell'analizzatore Kotlin su un test strumentato non toccato (`BalanceAdjustmentTest.kt`); al giro successivo è passato.
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt` (con l'init script del mirror); `WidgetFitTest` senza eccezioni a ogni misura di riferimento, in inglese e italiano, a testo 1, 1,15 e 1,3.
+
+**Prossimo:** verifica su device.
+
+---
+
 ## 2026-10-13 - Widget: la scala tipografica e l'angolo del launcher
 
 **Fatto:** allineati i widget alla revisione dei widget di famiglia del 13 ottobre (Fase 43, emendamento dell'ADR 52). Scala tipografica di sei gradini in `WidgetType.kt`, rispecchiata nei dimen `widget_type_*` che ogni `textSize` dei layout dei widget e delle anteprime del picker nomina: nomi delle tessere da 12 a 13 sp, pulsanti della barra da 15 a 13, messaggio della card da configurare da 13 a 16; selettore (13) e badge del conto (11) erano già sulla scala. Angolo della card e dell'anteprima del picker dal raggio del launcher (`system_app_widget_background_radius`) invece dei 24 dp fissi. Righe della griglia larga a `wrap_content`. `WidgetTypeTest`, `WidgetFitTest`, `WidgetGallery` (su richiesta, `-PwidgetGallery`). Screenshot `widgets.png`, `widget-settings.png` e `quick-entry.png` rigenerati e guardati. `versionName` 2.3.2, `versionCode` 192.

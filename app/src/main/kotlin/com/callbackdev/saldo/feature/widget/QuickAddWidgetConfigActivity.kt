@@ -147,7 +147,7 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                 // above already misses it; only the render has to be asked for.
                 widgetUpdater.update(
                     appWidgetIds = intArrayOf(appWidgetId),
-                    sizes = if (isBar) ActionSizes else GridWidgetSizes,
+                    sizes = if (isBar) ::actionSizes else ::gridWidgetSizes,
                 )
             }.onFailure {
                 // The one thing worse than a failed save is a silent one: the

@@ -13,7 +13,7 @@ Una pressione prolungata sull'icona di Saldo apre tre voci: nuova spesa, nuova e
 Il widget si aggiunge dal menu dei widget del launcher e ne esistono due forme:
 
 - **griglia di categorie**: le categorie nell'ordine della schermata Categorie, oppure quelle che scegli e riordini tu, un tocco per scegliere;
-- **barra Spesa/Entrata**: due tasti, per chi vuole meno ingombro.
+- **barra Spesa/Entrata**: due tasti, per chi vuole meno ingombro. Dove le due parole non stanno intere (la barra larga due colonne, o tre con il testo di sistema grande) i tasti mostrano solo le frecce: in giù la spesa, in su l'entrata.
 
 Toccando il widget si apre una **schermata rapida** sopra il launcher, con il tastierino già pronto: scrivi l'importo e salvi, senza che l'app si apra per intero.
 

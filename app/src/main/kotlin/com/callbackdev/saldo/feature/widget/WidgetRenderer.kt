@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.util.SizeF
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
 import android.widget.RemoteViews
 import androidx.compose.material.icons.Icons
@@ -78,9 +79,14 @@ internal object WidgetRenderer {
         R.id.widget_tile_label_18, R.id.widget_tile_label_19,
     )
 
+    /**
+     * The rows, by index. The narrow grid declares eight and the wide one five
+     * ([NarrowMaxRows], [MaxGridRows]); an action on an id the inflated layout
+     * does not have is skipped by `RemoteViews`, so one loop serves both.
+     */
     private val RowIds = listOf(
-        R.id.widget_row_0, R.id.widget_row_1, R.id.widget_row_2,
-        R.id.widget_row_3, R.id.widget_row_4,
+        R.id.widget_row_0, R.id.widget_row_1, R.id.widget_row_2, R.id.widget_row_3,
+        R.id.widget_row_4, R.id.widget_row_5, R.id.widget_row_6, R.id.widget_row_7,
     )
 
     /** The same pair the dashboard speed-dial uses, so the gesture reads the same everywhere. */
@@ -130,6 +136,14 @@ internal object WidgetRenderer {
         // At one launcher row the mark would crowd out the words that explain
         // the tap, so only the taller sizes carry it.
         val compact = layout.style == WidgetStyle.ACTIONS
+        // At the top of a taller card, where the eye starts: centred, the mark
+        // and the line sat in the middle of a card two thirds empty (13 Oct
+        // 2026). One row has no empty part, so there it stays centred.
+        setInt(
+            R.id.widget_setup_column,
+            "setGravity",
+            if (compact) Gravity.CENTER else Gravity.TOP or Gravity.CENTER_HORIZONTAL,
+        )
         setViewVisibility(R.id.widget_setup_mark, if (compact) View.GONE else View.VISIBLE)
         if (!compact) {
             setImageViewBitmap(
@@ -171,6 +185,8 @@ internal object WidgetRenderer {
                 type = TransactionType.EXPENSE,
                 accountId = data.pinnedAccountId,
             )
+            // Where the words do not fit whole, the arrow alone (see actionSizes).
+            setViewVisibility(R.id.widget_action_expense_label, layout.showLabels.asVisibility())
         }
         if (income) {
             paintAction(
@@ -186,6 +202,7 @@ internal object WidgetRenderer {
                 type = TransactionType.INCOME,
                 accountId = data.pinnedAccountId,
             )
+            setViewVisibility(R.id.widget_action_income_label, layout.showLabels.asVisibility())
         }
 
         setViewVisibility(R.id.widget_action_shortcut, data.showAppShortcut.asVisibility())

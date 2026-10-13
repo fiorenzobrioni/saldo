@@ -20,7 +20,8 @@ import org.robolectric.annotation.GraphicsMode
  * ([STRETCH]): what a launcher on another face may do. `WidgetLayoutTest` pins
  * the arithmetic; this draws the real `RemoteViews` in the system face and looks.
  *
- * A name the user typed (a category, the pinned account) may end in an
+ * The breakpoints are the ones a provider hands the launcher at that text
+ * size. A name the user typed (a category, the pinned account) may end in an
  * ellipsis by design; any other text must be whole.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -37,22 +38,21 @@ class WidgetFitTest {
             case.grants().flatMap { (width, height) ->
                 val view = WidgetRendering.inflate(context, case.data, case.sizes, width, height, STRETCH)
                 WidgetRendering.cuts(view, allowEllipsis = ::isUserName)
-                    .filterNot { knownCut(view, width) && it.startsWithLabelOf(view) }
                     .map { "${case.name} ${width.toInt()}x${height.toInt()} @$scale: $it" }
             }
         }
     }
 
     private fun cases() = listOf(
-        Case("grid", GridWidgetSizes, WidgetRendering.Heights, WidgetRendering.data(context)),
+        Case("grid", gridWidgetSizes(context.resources.configuration.fontScale), WidgetRendering.Heights, WidgetRendering.data(context)),
         Case(
             "grid pinned to an account",
-            GridWidgetSizes,
+            gridWidgetSizes(context.resources.configuration.fontScale),
             WidgetRendering.Heights,
             WidgetRendering.data(context, accountName = "Joint current account"),
         ),
-        Case("bar", ActionSizes, OneRow, WidgetRendering.data(context)),
-        Case("setup", GridWidgetSizes, WidgetRendering.Heights, WidgetRendering.data(context, ready = false)),
+        Case("bar", actionSizes(context.resources.configuration.fontScale), OneRow, WidgetRendering.data(context)),
+        Case("setup", gridWidgetSizes(context.resources.configuration.fontScale), WidgetRendering.Heights, WidgetRendering.data(context, ready = false)),
     )
 
     @Test
@@ -85,23 +85,8 @@ class WidgetFitTest {
         return name == "widget_badge" || name.startsWith("widget_tile_label_")
     }
 
-    /**
-     * Known and open (PLANNING, "Bug conosciuti"): the two buttons of a one-row
-     * widget narrower than four columns have no room for their words at every
-     * text size, and `RemoteViews` cannot tell, because the single-row breakpoints
-     * are all 110dp wide. Only those two labels, only there.
-     */
-    private fun knownCut(view: View, width: Float): Boolean =
-        width < FourColumns && view.findViewById<View>(R.id.widget_action_expense) != null
-
-    private fun String.startsWithLabelOf(view: View): Boolean = listOf(
-        R.id.widget_action_expense_label,
-        R.id.widget_action_income_label,
-    ).any { id -> view.findViewById<TextView>(id)?.text?.let { startsWith("«$it»") } == true }
-
     private companion object {
         const val STRETCH = 1.05f
-        const val FourColumns = 340f
         val OneRow = listOf(85f)
     }
 }
