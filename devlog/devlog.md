@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-13 - Fix: il widget a griglia restava vuoto
+
+**Fatto:** sul device del committente il widget a griglia mostrava solo il layout iniziale (tessere e selettore vuoti, terza riga tagliata) mentre la barra funzionava. Causa: dopo la proposta D della Fase 43 la griglia consegnava 21 misure in un solo `RemoteViews`, e la piattaforma ne accetta al massimo 16 (`MAX_INIT_VIEW_COUNT`, verificato nel `RemoteViews` di Android 15: oltre lancia "Too many RemoteViews in constructor"); il provider intercetta l'eccezione, quindi nessun crash e nessun widget. Ora la griglia schiacciata a una riga tiene solo l'altezza più bassa con le sue due larghezze: 15 misure, la barra resta a 8. Nuovo `WidgetSizeMapTest` (Robolectric): costruisce la mappa di ogni provider a testo 0,85, 1, 1,15, 1,3 e 2 e fallisce oltre 16 misure o su due misure uguali. `versionName` 2.3.4, `versionCode` 194. Branch `fix/widget-size-map`.
+
+**Decisioni:** le altezze 64, 88 e 112 della riga singola servono solo a rendere quadrato il tasto dell'app su launcher con righe alte; per la griglia schiacciata (il caso dei widget piazzati prima che esistesse la barra) quel dettaglio vale meno del disegnarsi, e la barra lo conserva.
+
+**Problemi:** i test della Fase 43 disegnavano una misura alla volta (`WidgetRenderer.render`) e non costruivano mai la mappa intera che riceve il launcher: il limite non era coperto da nessun test.
+
+**Verifica:** `WidgetSizeMapTest` fallisce sul codice di `main` (21 misure) e passa con il fix; `./gradlew assembleDebug testDebugUnitTest lint detekt` (con l'init script del mirror). Screenshot del README invariati (disegnano una misura per forma, che non cambia).
+
+**Prossimo:** verifica su device del widget a griglia dopo l'aggiornamento.
+
+---
+
 ## 2026-10-13 - Widget: le card alte tengono dati, non aria
 
 **Fatto:** applicate le quattro proposte del controllo delle card alte (Fase 43, approvate dal committente sulle anteprime). A: margine verticale della griglia da 8 a 6 dp e spazio fra le righe da 6 a 5, così le celle di riferimento (189, 293, 397 dp) contengono tutte le righe che hanno spazio per mostrare. B: griglia stretta fino a 8 righe. C: card da configurare con il contenuto in alto (al centro solo a una riga). D: barra con due larghezze per altezza, solo frecce dove le parole non stanno intere, soglia calcolata alla dimensione del testo; chiude il bug dei tasti "E"/"In" e toglie l'unica eccezione di `WidgetFitTest`. Screenshot del README rigenerati e guardati, guida utente aggiornata. `versionName` 2.3.3, `versionCode` 193.

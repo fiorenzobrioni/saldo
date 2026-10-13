@@ -154,9 +154,10 @@ private val ActionHeights = listOf(40f, 64f, 88f, 112f)
  * starts where both words fit whole at [fontScale], which is why the set is
  * computed at render time rather than fixed.
  */
-internal fun actionSizes(fontScale: Float = 1f): List<WidgetSize> = ActionHeights.flatMap { height ->
-    listOf(WidgetSize(MinWidgetWidth, height), WidgetSize(wordsMinWidth(height, fontScale), height))
-}
+internal fun actionSizes(fontScale: Float = 1f, heights: List<Float> = ActionHeights): List<WidgetSize> =
+    heights.flatMap { height ->
+        listOf(WidgetSize(MinWidgetWidth, height), WidgetSize(wordsMinWidth(height, fontScale), height))
+    }
 
 /** [actionSizes] at the default text size: what the tests and the README pictures draw. */
 internal val ActionSizes: List<WidgetSize> = actionSizes()
@@ -190,8 +191,18 @@ internal val GridSizes: List<WidgetSize> =
     (1..NarrowMaxRows).map { rows -> WidgetSize(110f, narrowGridHeight(rows)) } +
         (1..MaxGridRows).map { rows -> WidgetSize(250f, wideGridHeight(rows)) }
 
-/** Every size the grid provider hands the launcher; the bar provider ships [actionSizes] alone. */
-internal fun gridWidgetSizes(fontScale: Float = 1f): List<WidgetSize> = actionSizes(fontScale) + GridSizes
+/**
+ * Every size the grid provider hands the launcher; the bar provider ships [actionSizes] alone.
+ *
+ * The platform takes at most [MaxBreakpoints] layouts in one `RemoteViews`
+ * and throws past them, so the grid squashed to one row keeps the lowest
+ * height only, with its two widths: every height draws the same two buttons,
+ * and the others only square the shortcut on a taller launcher row, which the
+ * bar (its own provider, the shape made for one row) still does. With all four
+ * the grid reached 21 and never drew at all (13 Oct 2026).
+ */
+internal fun gridWidgetSizes(fontScale: Float = 1f): List<WidgetSize> =
+    actionSizes(fontScale, heights = ActionHeights.take(1)) + GridSizes
 
 /** [gridWidgetSizes] at the default text size. */
 internal val GridWidgetSizes: List<WidgetSize> = gridWidgetSizes()
@@ -277,6 +288,13 @@ internal const val PillHeightDp = 34
 
 /** The single-row layout's even inset (see [WidgetLayout.paddingHorizontal]). */
 internal const val ActionsPadding = 14
+
+/**
+ * `RemoteViews.MAX_INIT_VIEW_COUNT`: past it the sizes-map constructor throws,
+ * and the provider, which never lets a broadcast crash, leaves the widget on
+ * its unbound initial layout. `WidgetSizeMapTest` builds every provider's map.
+ */
+internal const val MaxBreakpoints = 16
 
 /** Below this width a launcher does not place the widget at all (provider info). */
 internal const val MinWidgetWidth = 110f

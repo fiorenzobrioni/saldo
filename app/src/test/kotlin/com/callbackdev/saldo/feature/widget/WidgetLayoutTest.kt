@@ -112,12 +112,6 @@ class WidgetLayoutTest {
         val designed = mapOf(
             size(110, 40) to (WidgetStyle.ACTIONS to 0),
             size(240, 40) to (WidgetStyle.ACTIONS to 0),
-            size(110, 64) to (WidgetStyle.ACTIONS to 0),
-            size(240, 64) to (WidgetStyle.ACTIONS to 0),
-            size(110, 88) to (WidgetStyle.ACTIONS to 0),
-            size(260, 88) to (WidgetStyle.ACTIONS to 0),
-            size(110, 112) to (WidgetStyle.ACTIONS to 0),
-            size(284, 112) to (WidgetStyle.ACTIONS to 0),
             size(110, 120) to (WidgetStyle.GRID to 1),
             size(110, 121) to (WidgetStyle.GRID to 2),
             size(110, 178) to (WidgetStyle.GRID to 3),
