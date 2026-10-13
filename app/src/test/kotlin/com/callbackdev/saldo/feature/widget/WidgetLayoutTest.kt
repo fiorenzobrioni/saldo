@@ -97,7 +97,7 @@ class WidgetLayoutTest {
     @Test
     fun `a short widget never claims more rows than it can draw`() {
         val layout = layoutFor(size(250, 120), plenty)
-        val used = layout.rows * layout.rowHeight + (layout.rows - 1) * 6
+        val used = layout.rows * layout.rowHeight + (layout.rows - 1) * RowGapDp
         val available = 120 - 2 * layout.paddingVertical - 34 - 6
         assertTrue(used <= available, "Rows take ${used}dp of ${available}dp")
     }
@@ -111,19 +111,26 @@ class WidgetLayoutTest {
     fun `every breakpoint resolves to the layout it was designed for`() {
         val designed = mapOf(
             size(110, 40) to (WidgetStyle.ACTIONS to 0),
+            size(240, 40) to (WidgetStyle.ACTIONS to 0),
             size(110, 64) to (WidgetStyle.ACTIONS to 0),
+            size(240, 64) to (WidgetStyle.ACTIONS to 0),
             size(110, 88) to (WidgetStyle.ACTIONS to 0),
+            size(260, 88) to (WidgetStyle.ACTIONS to 0),
             size(110, 112) to (WidgetStyle.ACTIONS to 0),
+            size(284, 112) to (WidgetStyle.ACTIONS to 0),
             size(110, 120) to (WidgetStyle.GRID to 1),
-            size(110, 126) to (WidgetStyle.GRID to 2),
-            size(110, 184) to (WidgetStyle.GRID to 3),
-            size(110, 242) to (WidgetStyle.GRID to 4),
-            size(110, 300) to (WidgetStyle.GRID to 5),
+            size(110, 121) to (WidgetStyle.GRID to 2),
+            size(110, 178) to (WidgetStyle.GRID to 3),
+            size(110, 235) to (WidgetStyle.GRID to 4),
+            size(110, 292) to (WidgetStyle.GRID to 5),
+            size(110, 349) to (WidgetStyle.GRID to 6),
+            size(110, 406) to (WidgetStyle.GRID to 7),
+            size(110, 463) to (WidgetStyle.GRID to 8),
             size(250, 120) to (WidgetStyle.GRID to 1),
-            size(250, 190) to (WidgetStyle.GRID to 2),
-            size(250, 260) to (WidgetStyle.GRID to 3),
-            size(250, 330) to (WidgetStyle.GRID to 4),
-            size(250, 400) to (WidgetStyle.GRID to 5),
+            size(250, 185) to (WidgetStyle.GRID to 2),
+            size(250, 254) to (WidgetStyle.GRID to 3),
+            size(250, 323) to (WidgetStyle.GRID to 4),
+            size(250, 392) to (WidgetStyle.GRID to 5),
         )
         assertEquals(designed.keys, GridWidgetSizes.toSet(), "The size set must match the designed steps")
         designed.forEach { (size, spec) ->
@@ -142,7 +149,7 @@ class WidgetLayoutTest {
         val scaled = layoutFor(size(250, 260), plenty, fontScale = 1.5f)
         assertTrue(scaled.rowHeight > base.rowHeight, "The label line must grow with the font")
         assertTrue(scaled.rows <= base.rows, "Taller rows cannot keep the same count")
-        val used = scaled.rows * scaled.rowHeight + (scaled.rows - 1) * 6
+        val used = scaled.rows * scaled.rowHeight + (scaled.rows - 1) * RowGapDp
         val available = 260 - 2 * scaled.paddingVertical - 34 - 6
         assertTrue(used <= available, "Rows take ${used}dp of ${available}dp at font scale 1.5")
     }
@@ -179,5 +186,46 @@ class WidgetLayoutTest {
         assertEquals(60, layoutFor(size(110, 88), plenty).shortcutSide)
         assertEquals(84, layoutFor(size(110, 112), plenty).shortcutSide)
         assertEquals(40, layoutFor(size(110, 40), plenty).shortcutSide, "Floored, never a sliver")
+    }
+
+    /**
+     * The reference grants a launcher gives one to four rows (189, 293, 397dp
+     * high): each must hold every row it has room for, on both widths. Before
+     * 13 Oct 2026 the two-row wide grid asked 190dp and drew one row over an
+     * empty half of a 189dp cell.
+     */
+    @Test
+    fun `every reference grant holds the rows it has room for`() {
+        mapOf(189 to (3 to 2), 293 to (5 to 3), 397 to (6 to 5)).forEach { (height, rows) ->
+            val (narrow, wide) = rows
+            assertEquals(narrow, layoutFor(size(110, height), plenty).rows, "Narrow rows at ${height}dp")
+            assertEquals(wide, layoutFor(size(250, height), plenty).rows, "Wide rows at ${height}dp")
+        }
+    }
+
+    /** A tall narrow widget shows more of its categories than five rows of two. */
+    @Test
+    fun `the narrow grid grows to eight rows`() {
+        assertEquals(NarrowMaxRows, layoutFor(size(110, 600), plenty).rows)
+        assertEquals(MaxGridRows, layoutFor(size(250, 600), plenty).rows)
+    }
+
+    /**
+     * Every single-row height has two widths: the arrows alone below the width
+     * where both words fit whole, the words from it. The width follows the text
+     * size, so a larger system font moves the words' rung instead of cutting them.
+     */
+    @Test
+    fun `the single row prints its words only where they fit`() {
+        listOf(40f, 64f, 88f, 112f).forEach { height ->
+            val bare = layoutFor(WidgetSize(110f, height), plenty)
+            val words = WidgetSize(wordsMinWidth(height), height)
+            assertTrue(!bare.showLabels, "No words at 110dp, ${height}dp high")
+            assertTrue(layoutFor(words, plenty).showLabels, "Words at $words")
+            assertTrue(!layoutFor(words, plenty, fontScale = 1.3f).showLabels, "No words at $words, text 1.3")
+            assertTrue(layoutFor(WidgetSize(wordsMinWidth(height, 1.3f), height), plenty, 1.3f).showLabels)
+        }
+        assertEquals(actionSizes(1.3f).size, ActionSizes.size)
+        assertTrue(wordsMinWidth(64f, 1.3f) > wordsMinWidth(64f))
     }
 }

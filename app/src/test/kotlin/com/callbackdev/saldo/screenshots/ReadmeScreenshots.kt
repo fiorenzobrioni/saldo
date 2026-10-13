@@ -43,7 +43,6 @@ import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.feature.guide.GuideScreen
 import com.callbackdev.saldo.feature.rates.ExchangeRatesScreen
 import com.callbackdev.saldo.feature.recurring.RecurrencesScreen
-import com.callbackdev.saldo.feature.widget.ActionSizes
 import com.callbackdev.saldo.feature.widget.QuickAddWidgetConfig
 import com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigScreen
 import com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigUiState
@@ -55,6 +54,7 @@ import com.callbackdev.saldo.feature.widget.WidgetRenderer
 import com.callbackdev.saldo.feature.widget.WidgetSize
 import com.callbackdev.saldo.feature.widget.resolveWidgetTheme
 import com.callbackdev.saldo.feature.widget.wideGridHeight
+import com.callbackdev.saldo.feature.widget.wordsMinWidth
 import com.callbackdev.saldo.navigation.SaldoApp
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -339,11 +339,13 @@ class ReadmeScreenshots {
             )
         }
         val grid = WidgetSize(WIDE_WIDGET_DP, wideGridHeight(GRID_ROWS))
+        // The single row with its words, at the height of a common launcher row.
+        val bar = WidgetSize(wordsMinWidth(BAR_HEIGHT_DP), BAR_HEIGHT_DP)
         return HomeWidgets(
             // The bar in another of the six colours, the grid on the default
             // blue: the picture shows the choice as well as the widgets.
-            bar = render(QuickAddWidgetConfig(cardColor = WidgetCardColor.PLUM), ActionSizes[1]),
-            barHeightDp = ActionSizes[1].height,
+            bar = render(QuickAddWidgetConfig(cardColor = WidgetCardColor.PLUM), bar),
+            barHeightDp = bar.height,
             grid = render(QuickAddWidgetConfig(), grid),
             gridHeightDp = grid.height,
         )
@@ -418,6 +420,7 @@ class ReadmeScreenshots {
         const val QUIET_ROUND_MS = 200L
         const val WIDE_WIDGET_DP = 250f
         const val GRID_ROWS = 4
+        const val BAR_HEIGHT_DP = 64f
         val WallpaperTop = Color(0xFF1F4E5A)
         val WallpaperBottom = Color(0xFFD9895B)
     }

@@ -41,8 +41,11 @@ class WidgetUpdater @Inject constructor(
      * built per instance - the selector's broadcast names the widget it belongs
      * to, so two instances cannot share one set of intents.
      */
-    internal suspend fun update(appWidgetIds: IntArray, sizes: List<WidgetSize>) {
+    internal suspend fun update(appWidgetIds: IntArray, sizes: (fontScale: Float) -> List<WidgetSize>) {
         if (appWidgetIds.isEmpty()) return
+        // The text size this render is for: the single row's words need more
+        // room at a larger one, and the launcher draws in the same configuration.
+        val breakpoints = sizes(context.resources.configuration.fontScale)
         val manager = AppWidgetManager.getInstance(context)
         val configs = configStore.readAll(appWidgetIds)
         configs.entries
@@ -57,7 +60,7 @@ class WidgetUpdater @Inject constructor(
                             appWidgetId = id,
                             data = snapshot.data,
                             palette = snapshot.theme.palette,
-                            sizes = sizes,
+                            sizes = breakpoints,
                         ),
                     )
                 }

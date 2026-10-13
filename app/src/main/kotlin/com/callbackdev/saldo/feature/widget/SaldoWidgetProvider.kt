@@ -30,8 +30,11 @@ import kotlinx.coroutines.launch
  */
 abstract class SaldoWidgetProvider : AppWidgetProvider() {
 
-    /** The breakpoints this provider hands the launcher (see [WidgetRenderer.sizeMap]). */
-    internal abstract val sizes: List<WidgetSize>
+    /**
+     * The breakpoints this provider hands the launcher at a text size (see
+     * [WidgetRenderer.sizeMap]): where the single row's words fit depends on it.
+     */
+    internal abstract val sizes: (fontScale: Float) -> List<WidgetSize>
 
     private var render: IntArray? = null
     private var placementChanged = false
@@ -148,9 +151,9 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
         const val EXTRA_TYPE = "com.callbackdev.saldo.widget.EXTRA_TYPE"
 
         /** Every provider whose widgets the watcher keeps fresh, with its breakpoints. */
-        internal val providers: List<Pair<Class<out SaldoWidgetProvider>, List<WidgetSize>>> = listOf(
-            QuickAddWidgetProvider::class.java to GridWidgetSizes,
-            QuickBarWidgetProvider::class.java to ActionSizes,
+        internal val providers: List<Pair<Class<out SaldoWidgetProvider>, (Float) -> List<WidgetSize>>> = listOf(
+            QuickAddWidgetProvider::class.java to ::gridWidgetSizes,
+            QuickBarWidgetProvider::class.java to ::actionSizes,
         )
 
         /** True while at least one widget of any of our providers is placed. */
@@ -169,7 +172,7 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
  * existed).
  */
 class QuickAddWidgetProvider : SaldoWidgetProvider() {
-    override val sizes: List<WidgetSize> = GridWidgetSizes
+    override val sizes: (Float) -> List<WidgetSize> = ::gridWidgetSizes
 }
 
 /**
@@ -181,8 +184,8 @@ class QuickAddWidgetProvider : SaldoWidgetProvider() {
  * configuration screens: the bar's settings show only what a bar can use, and
  * the grid's stop carrying options whose effect was invisible at the size on
  * screen. The provider info pins the shape with `maxResizeHeight`, so this
- * widget only ever renders the [ActionSizes].
+ * widget only ever renders the [actionSizes].
  */
 class QuickBarWidgetProvider : SaldoWidgetProvider() {
-    override val sizes: List<WidgetSize> = ActionSizes
+    override val sizes: (Float) -> List<WidgetSize> = ::actionSizes
 }

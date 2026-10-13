@@ -16,7 +16,7 @@
     eight blank rounded rectangles, which read as a widget still loading rather
     than as the widget the user is about to place.
 
-    It is dressed as the default card (ADR 52): the blue with its 24dp
+    It is dressed as the default card (ADR 52): the blue with the launcher's
     corner and 14dp side insets, white ink, the category colours lifted as the placed
     widget lifts them on a card colour. The wash is android:alpha over the card,
     as the placed widget's is image alpha.
@@ -37,7 +37,7 @@
     android:background="@drawable/widget_preview_background"
     android:orientation="vertical"
     android:paddingHorizontal="14dp"
-    android:paddingVertical="8dp">
+    android:paddingVertical="6dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -55,7 +55,7 @@
             android:paddingHorizontal="14dp"
             android:text="@string/widget_quick_add_expense"
             android:textColor="@color/widget_preview_pill_ink"
-            android:textSize="13sp"
+            android:textSize="@dimen/widget_type_label"
             android:textStyle="bold" />
 
         <TextView
@@ -67,13 +67,13 @@
             android:paddingHorizontal="14dp"
             android:text="@string/widget_quick_add_income"
             android:textColor="@color/widget_preview_ink_muted"
-            android:textSize="13sp"
+            android:textSize="@dimen/widget_type_label"
             android:textStyle="bold" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -109,13 +109,13 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:text="@string/seed_category_home"
                 android:textColor="@color/widget_preview_ink_muted"
-                android:textSize="12sp" />
+                android:textSize="@dimen/widget_type_label" />
         </LinearLayout>
 
         <LinearLayout
@@ -150,13 +150,13 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:text="@string/seed_category_rent_mortgage"
                 android:textColor="@color/widget_preview_ink_muted"
-                android:textSize="12sp" />
+                android:textSize="@dimen/widget_type_label" />
         </LinearLayout>
 
         <LinearLayout
@@ -191,13 +191,13 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:text="@string/seed_category_groceries"
                 android:textColor="@color/widget_preview_ink_muted"
-                android:textSize="12sp" />
+                android:textSize="@dimen/widget_type_label" />
         </LinearLayout>
 
         <LinearLayout
@@ -232,20 +232,20 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:text="@string/seed_category_dining"
                 android:textColor="@color/widget_preview_ink_muted"
-                android:textSize="12sp" />
+                android:textSize="@dimen/widget_type_label" />
         </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_marginTop="6dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -281,13 +281,13 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:text="@string/seed_category_transport"
                 android:textColor="@color/widget_preview_ink_muted"
-                android:textSize="12sp" />
+                android:textSize="@dimen/widget_type_label" />
         </LinearLayout>
 
         <LinearLayout
@@ -322,13 +322,13 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:text="@string/seed_category_car_fuel"
                 android:textColor="@color/widget_preview_ink_muted"
-                android:textSize="12sp" />
+                android:textSize="@dimen/widget_type_label" />
         </LinearLayout>
 
         <LinearLayout
@@ -363,13 +363,13 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:text="@string/seed_category_health"
                 android:textColor="@color/widget_preview_ink_muted"
-                android:textSize="12sp" />
+                android:textSize="@dimen/widget_type_label" />
         </LinearLayout>
 
         <LinearLayout
@@ -404,13 +404,13 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
+                android:layout_marginTop="2dp"
                 android:ellipsize="end"
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:text="@string/widget_quick_add_open"
                 android:textColor="@color/widget_preview_ink_muted"
-                android:textSize="12sp" />
+                android:textSize="@dimen/widget_type_label" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
