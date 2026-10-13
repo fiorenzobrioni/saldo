@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The widgets' type scale (WidgetType.kt, ADR 52): the steps the cards print
+    in, as the dimens a RemoteViews layout can name. Only the steps a card uses
+    are here; WidgetTypeTest holds each to its step and every widget textSize
+    to one of these.
+-->
+<resources>
+    <!-- Read last: the badge of the account a widget is pinned to. -->
+    <dimen name="widget_type_caption">11sp</dimen>
+    <!-- A cell's label, a header: the tiles, the selector, the bar's buttons. -->
+    <dimen name="widget_type_label">13sp</dimen>
+    <!-- The second thing read: the message of a card with nothing to show yet. -->
+    <dimen name="widget_type_body">16sp</dimen>
+</resources>

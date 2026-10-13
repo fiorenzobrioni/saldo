@@ -42,6 +42,6 @@
             android:gravity="center"
             android:maxLines="3"
             android:text="@string/widget_quick_add_setup"
-            android:textSize="13sp" />
+            android:textSize="@dimen/widget_type_body" />
     </LinearLayout>
 </FrameLayout>

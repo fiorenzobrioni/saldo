@@ -53,7 +53,7 @@
                 android:maxLines="1"
                 android:text="@string/widget_quick_add_expense"
                 android:textColor="@color/widget_preview_expense"
-                android:textSize="15sp"
+                android:textSize="@dimen/widget_type_label"
                 android:textStyle="bold" />
         </LinearLayout>
     </FrameLayout>
@@ -96,7 +96,7 @@
                 android:maxLines="1"
                 android:text="@string/widget_quick_add_income"
                 android:textColor="@color/widget_preview_income"
-                android:textSize="15sp"
+                android:textSize="@dimen/widget_type_label"
                 android:textStyle="bold" />
         </LinearLayout>
     </FrameLayout>

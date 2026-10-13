@@ -67,7 +67,7 @@
                     android:gravity="center"
                     android:maxLines="1"
                     android:paddingHorizontal="14dp"
-                    android:textSize="13sp"
+                    android:textSize="@dimen/widget_type_label"
                     android:textStyle="bold" />
             </FrameLayout>
 
@@ -91,7 +91,7 @@
                     android:gravity="center"
                     android:maxLines="1"
                     android:paddingHorizontal="14dp"
-                    android:textSize="13sp"
+                    android:textSize="@dimen/widget_type_label"
                     android:textStyle="bold" />
             </FrameLayout>
 
@@ -109,13 +109,13 @@
                 android:maxLines="1"
                 android:paddingStart="8dp"
                 android:paddingEnd="4dp"
-                android:textSize="11sp" />
+                android:textSize="@dimen/widget_type_caption" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/widget_row_0"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -151,11 +151,11 @@
                     android:id="@+id/widget_tile_label_0"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -190,11 +190,11 @@
                     android:id="@+id/widget_tile_label_1"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -229,11 +229,11 @@
                     android:id="@+id/widget_tile_label_2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -268,18 +268,18 @@
                     android:id="@+id/widget_tile_label_3"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/widget_row_1"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
@@ -316,11 +316,11 @@
                     android:id="@+id/widget_tile_label_4"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -355,11 +355,11 @@
                     android:id="@+id/widget_tile_label_5"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -394,11 +394,11 @@
                     android:id="@+id/widget_tile_label_6"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -433,18 +433,18 @@
                     android:id="@+id/widget_tile_label_7"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/widget_row_2"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
@@ -481,11 +481,11 @@
                     android:id="@+id/widget_tile_label_8"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -520,11 +520,11 @@
                     android:id="@+id/widget_tile_label_9"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -559,11 +559,11 @@
                     android:id="@+id/widget_tile_label_10"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -598,18 +598,18 @@
                     android:id="@+id/widget_tile_label_11"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/widget_row_3"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
@@ -646,11 +646,11 @@
                     android:id="@+id/widget_tile_label_12"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -685,11 +685,11 @@
                     android:id="@+id/widget_tile_label_13"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -724,11 +724,11 @@
                     android:id="@+id/widget_tile_label_14"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -763,18 +763,18 @@
                     android:id="@+id/widget_tile_label_15"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/widget_row_4"
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
@@ -811,11 +811,11 @@
                     android:id="@+id/widget_tile_label_16"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -850,11 +850,11 @@
                     android:id="@+id/widget_tile_label_17"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -889,11 +889,11 @@
                     android:id="@+id/widget_tile_label_18"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
 
             <LinearLayout
@@ -928,11 +928,11 @@
                     android:id="@+id/widget_tile_label_19"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
+                    android:layout_marginTop="2dp"
                     android:ellipsize="end"
                     android:gravity="center_horizontal"
                     android:maxLines="1"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/widget_type_label" />
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

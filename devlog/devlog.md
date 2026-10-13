@@ -14,6 +14,25 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-13 - Widget: la scala tipografica e l'angolo del launcher
+
+**Fatto:** allineati i widget alla revisione dei widget di famiglia del 13 ottobre (Fase 43, emendamento dell'ADR 52). Scala tipografica di sei gradini in `WidgetType.kt`, rispecchiata nei dimen `widget_type_*` che ogni `textSize` dei layout dei widget e delle anteprime del picker nomina: nomi delle tessere da 12 a 13 sp, pulsanti della barra da 15 a 13, messaggio della card da configurare da 13 a 16; selettore (13) e badge del conto (11) erano già sulla scala. Angolo della card e dell'anteprima del picker dal raggio del launcher (`system_app_widget_background_radius`) invece dei 24 dp fissi. Righe della griglia larga a `wrap_content`. `WidgetTypeTest`, `WidgetFitTest`, `WidgetGallery` (su richiesta, `-PwidgetGallery`). Screenshot `widgets.png`, `widget-settings.png` e `quick-entry.png` rigenerati e guardati. `versionName` 2.3.2, `versionCode` 192.
+
+**Decisioni:**
+
+- **Barra a 13 e non a 16**: misurato nel font di sistema, "Expense" in grassetto a 16 sp (60 dp più icona) non entra nel pulsante della barra a tre colonne (83 dp); a 13 sì, anche con le righe più larghe del 5%. Le parole sono le stesse del selettore della griglia, già 13.
+- **La riga di un nome resta 64 dp**: a 13 sp la riga costa 17,25 dp con il padding del font (18 nel budget), e lo spazio fra tessera e nome scende da 3 a 2 dp, così nessun breakpoint si muove.
+- **Righe a `wrap_content`**: con il testo di sistema a 1,15 o 1,3 le righe fisse a 64 dp tagliavano il fondo dei nomi (difetto di prima, trovato da `WidgetFitTest`); il budget di `layoutFor` già scala con il font.
+- **`WidgetFitTest` nella suite ordinaria**: avvia Robolectric anche in CI (prima lo faceva solo lo screenshot del README, su richiesta), perché è l'unico test che vede un testo tagliato in un `RemoteViews`.
+
+**Problemi:** Robolectric (Android 15) risolve il raggio del launcher a 28 dp, quindi negli screenshot l'angolo è quello di Android 15 standard e non i 24 dp di Android 16. `WidgetFitTest` ha trovato un difetto già presente: i pulsanti della barra sotto le quattro colonne non hanno spazio per le parole ("E", "In"); registrato in "Bug conosciuti" e proposto al committente insieme al controllo delle card alte.
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt` (con l'init script del mirror); `WidgetFitTest` controllato anche al contrario, rimettendo le righe a 64 dp fissi: fallisce.
+
+**Prossimo:** decisione del committente sulle proposte (card alte, barra stretta); verifica su device.
+
+---
+
 ## 2026-10-10 - La famiglia: Tempo nel README, nessuna app sorella nella guida e nel codice
 
 **Fatto:** Tempo 1.0.0 è uscito ([fiorenzobrioni/tempo](https://github.com/fiorenzobrioni/tempo)), quarta app della famiglia: il `README.md` lo nomina in "The family" (quattro app, non più tre). Dalla guida nell'app (`guide_quick_widget_body`, in inglese e in italiano) e dalla guida utente (`docs/guida-utente/aggiunta-rapida.md`) è tolto ogni riferimento alle app sorelle: il widget si descrive da solo, una card chiara, scura, come il telefono o in uno dei sei colori. Dal codice (commenti Kotlin e XML, test, `tools/draw_launcher_icon.py`) sono tolti i nomi di Chiaro e Passo e "la famiglia": ogni commento tiene la sua ragione, con il rimando all'ADR 52 o 53 dove serve. Le icone rigenerate dallo script cambiano solo nel commento d'intestazione. `versionName` 2.3.1, `versionCode` 191.

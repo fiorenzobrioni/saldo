@@ -20,8 +20,8 @@ android {
         applicationId = "com.callbackdev.saldo"
         minSdk = 33
         targetSdk = 36
-        versionCode = 191
-        versionName = "2.3.1"
+        versionCode = 192
+        versionName = "2.3.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -99,7 +99,7 @@ android {
         buildConfig = true
     }
 
-    // Robolectric (README screenshots) renders with the merged resources: strings,
+    // Robolectric (README screenshots, the widget fit test) renders with the merged resources: strings,
     // fonts, themes.
     testOptions.unitTests.isIncludeAndroidResources = true
 
@@ -130,7 +130,8 @@ detekt {
 // The README's screenshots (docs/screenshots) are drawn by the `ReadmeScreenshots`
 // test, and only on request: `./gradlew testDebugUnitTest -PupdateScreenshots`.
 // Without the property the class is left out of the run altogether, so CI and an
-// ordinary test run never start Robolectric nor rewrite a committed image.
+// ordinary test run never rewrite a committed image. (They do start Robolectric
+// for WidgetFitTest, which draws the widgets to find a cut text.)
 if (providers.gradleProperty("updateScreenshots").isPresent) {
     val screenshots = rootProject.layout.projectDirectory.dir("docs/screenshots").asFile.absolutePath
     tasks.withType<Test>().configureEach {
@@ -140,6 +141,15 @@ if (providers.gradleProperty("updateScreenshots").isPresent) {
 } else {
     tasks.withType<Test>().configureEach {
         filter.excludeTestsMatching("*.ReadmeScreenshots")
+    }
+}
+
+// The widget gallery (app/build/screenshots, every form at every reference
+// grant) is drawn only on request too: `-PwidgetGallery`.
+if (providers.gradleProperty("widgetGallery").isPresent) {
+    tasks.withType<Test>().configureEach {
+        systemProperty("saldo.widgetGallery", "true")
+        outputs.upToDateWhen { false }
     }
 }
 
@@ -204,7 +214,7 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
 
-    // README screenshots (JVM, JUnit 4 on Robolectric, run only with -PupdateScreenshots)
+    // Robolectric (JUnit 4): the widget fit test, and the README screenshots run only with -PupdateScreenshots
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.robolectric)
     testImplementation(libs.hilt.android.testing)

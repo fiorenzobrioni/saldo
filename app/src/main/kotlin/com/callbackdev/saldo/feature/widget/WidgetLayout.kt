@@ -80,8 +80,10 @@ internal data class WidgetLayout(
  * taller than the categories it has to show would otherwise grow empty rows.
  *
  * [fontScale] keeps the height budget honest for large system fonts: a label
- * line that costs 17dp at scale 1 costs 26dp at 1.5, and a budget that ignored
- * that clipped every label on the grid.
+ * line that costs 18dp at scale 1 costs 27dp at 1.5, and a budget that ignored
+ * that clipped every label on the grid. The wide grid's rows wrap their cells
+ * for the same reason: a fixed row height clipped the labels' last pixels as
+ * soon as the system font was a step larger.
  */
 internal fun layoutFor(size: WidgetSize, availableCategories: Int, fontScale: Float = 1f): WidgetLayout {
     // Height first: a widget one row high can be any number of columns wide,
@@ -209,10 +211,17 @@ internal const val GridPaddingHorizontal = 14
 internal const val GridPaddingVertical = 8
 internal const val HeaderGapDp = 6
 internal const val RowGapDp = 6
-internal const val LabelGapDp = 3
+/**
+ * 2dp since the labels went from 12 to 13sp (13 Oct 2026): the dp the larger
+ * line takes, so a row still costs 64dp and every breakpoint stays where it was.
+ */
+internal const val LabelGapDp = 2
 
-/** A 12sp label with its line spacing at font scale 1, the base of the height budget. */
-internal const val LabelLineDp = 17
+/**
+ * A [WidgetType.LABEL] line with its font padding at font scale 1, the base of
+ * the height budget: 17.25dp in the system face, rounded up.
+ */
+internal const val LabelLineDp = 18
 internal const val PillHeightDp = 34
 
 /** The single-row layout's even inset (see [WidgetLayout.paddingHorizontal]). */

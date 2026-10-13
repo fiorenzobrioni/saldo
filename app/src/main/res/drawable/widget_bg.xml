@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    The widget card (ADR 52). The 24dp corner is the card's own rather than the
-    system's widget radius, so the card has the same shape on every launcher.
+    The widget card (ADR 52). Its corner is the launcher's own, the radius the
+    home screen gives its widgets (system_app_widget_background_radius, 24dp
+    on stock Android 16), so the card matches the widgets beside it (13 Oct
+    2026; it was a fixed 24dp).
 
     The fill baked in here is the default card (the blue), and it is
     load-bearing rather than decoration: this drawable is what the host inflates
@@ -16,5 +18,5 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="@color/widget_preview_card" />
-    <corners android:radius="24dp" />
+    <corners android:radius="@android:dimen/system_app_widget_background_radius" />
 </shape>

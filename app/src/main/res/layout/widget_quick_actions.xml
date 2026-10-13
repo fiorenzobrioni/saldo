@@ -67,7 +67,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/widget_type_label"
                     android:textStyle="bold" />
             </LinearLayout>
         </FrameLayout>
@@ -110,7 +110,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
                     android:maxLines="1"
-                    android:textSize="15sp"
+                    android:textSize="@dimen/widget_type_label"
                     android:textStyle="bold" />
             </LinearLayout>
         </FrameLayout>
