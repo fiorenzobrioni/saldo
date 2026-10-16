@@ -218,7 +218,8 @@ class ReadmeScreenshots {
 
     /**
      * The grid widget's own settings, as the launcher's reconfigure flow opens
-     * them: the real widget at the top, then its background, colour and opacity.
+     * them: the real widget at the top at the sizes it can be given, then the
+     * account it records on and its background.
      */
     @Test
     fun widgetSettings() {
@@ -237,6 +238,7 @@ class ReadmeScreenshots {
                 state = state,
                 isBar = false,
                 theme = theme,
+                placed = null,
                 onAccountSelected = {},
                 onTypeSelected = {},
                 onShowAppShortcutChanged = {},
@@ -245,8 +247,10 @@ class ReadmeScreenshots {
                 onCategoryToggled = {},
                 onPinnedReordered = {},
                 onLookChanged = {},
-                onConfirm = {},
-                onCancel = {},
+                onOpacityDrag = {},
+                onOpacityDone = {},
+                onReset = {},
+                onDone = {},
             )
         }
         quiet()

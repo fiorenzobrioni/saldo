@@ -30,7 +30,7 @@ Il widget è una card con gli angoli arrotondati e, di default, lo sfondo blu pi
 
 Su uno sfondo colorato le icone delle categorie sono schiarite quanto basta per leggersi sul colore scuro, senza cambiare tinta. Sotto il 50% di opacità la card lascia vedere lo sfondo del telefono, e il colore del testo lo decide quello: scuro se Android dice che lo sfondo è chiaro, bianco altrimenti. Una card chiara o scura resta invece con il testo che le è proprio. Se cambi lo sfondo del telefono, un widget trasparente aggiorna il colore del testo al suo prossimo aggiornamento (quando cambi un conto, una categoria, il tema o le sue impostazioni).
 
-In cima alle impostazioni c'è il widget vero, disegnato come lo riceve il launcher, e cambia mentre scegli; toccarlo lì non fa nulla, è un'anteprima. Le modifiche valgono quando tocchi "Aggiorna il widget".
+In cima alle impostazioni c'è il widget vero, disegnato come lo riceve il launcher, e cambia mentre scegli; toccarlo lì non fa nulla, è un'anteprima. Sotto, i chip delle misure lo mostrano alle altre dimensioni che può avere ("Com'è ora" è la sua), con una frase su cosa porta a quella misura. Poi, nell'ordine: il conto, lo sfondo, cosa porta (da quale tipo parte la griglia e le sue categorie, oppure i pulsanti della barra e l'icona dell'app). Ogni scelta vale subito e aggiorna il widget sulla home; "Fatto", o il tasto indietro, chiude e basta. "Ripristina questo widget" rimette tutto come al primo posizionamento, tranne il conto.
 
 ## Tile nelle Impostazioni rapide
 

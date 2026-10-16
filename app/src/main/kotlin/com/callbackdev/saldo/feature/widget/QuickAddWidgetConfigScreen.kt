@@ -1,5 +1,3 @@
-@file:Suppress("TooManyFunctions") // One small composable per settings row/section, as in SettingsScreen.
-
 package com.callbackdev.saldo.feature.widget
 
 import androidx.compose.foundation.Canvas
@@ -7,7 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,23 +23,15 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DragIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -59,33 +51,32 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.callbackdev.saldo.R
-import com.callbackdev.saldo.core.designsystem.component.EditorSaveButton
-import com.callbackdev.saldo.core.designsystem.component.LoadingState
 import com.callbackdev.saldo.core.designsystem.component.ReorderableListState
-import com.callbackdev.saldo.core.designsystem.component.SettingsGroup
-import com.callbackdev.saldo.core.designsystem.component.SettingsSectionHeader
 import com.callbackdev.saldo.core.designsystem.component.rememberReorderableListState
 import com.callbackdev.saldo.core.designsystem.component.reorderableHandle
 import com.callbackdev.saldo.core.designsystem.theme.AvatarShape
 import com.callbackdev.saldo.core.designsystem.theme.WidgetCardColor
-import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.designsystem.theme.widgetCardContainer
 import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import kotlinx.coroutines.flow.first
-import kotlin.math.roundToInt
 
 /**
- * The widget's optional setup, in two flavors served by the same activity: the
- * grid's (account, starting type, categories) and the bar's (account, buttons,
- * app shortcut). Appearance is common. One screen per flavor rather than one
- * screen with captions explaining which option applies at which size - the
- * option that does not apply is simply not there.
+ * One widget's settings, in two flavours served by the same activity: the
+ * grid's and the bar's. Both read top to bottom the same way (16 Oct 2026):
+ * the widget at the sizes it can be given; where its entries go (the account,
+ * always first: it is where the widget's data goes, not how it looks); what
+ * it is painted on and how solid; then what it carries. The option that does
+ * not apply to a flavour is simply not there.
+ *
+ * Every choice is saved as it is made and repaints this one widget; "Done"
+ * only closes the door, and so does the back gesture.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,6 +84,7 @@ fun QuickAddWidgetConfigScreen(
     state: QuickAddWidgetConfigUiState,
     isBar: Boolean,
     theme: QuickAddWidgetTheme,
+    placed: DpSize?,
     onAccountSelected: (Long?) -> Unit,
     onTypeSelected: (TransactionType) -> Unit,
     onShowAppShortcutChanged: (Boolean) -> Unit,
@@ -101,190 +93,281 @@ fun QuickAddWidgetConfigScreen(
     onCategoryToggled: (Long) -> Unit,
     onPinnedReordered: (List<Long>) -> Unit,
     onLookChanged: (QuickAddWidgetConfig) -> Unit,
-    onConfirm: () -> Unit,
-    onCancel: () -> Unit,
+    onOpacityDrag: (Int) -> Unit,
+    onOpacityDone: () -> Unit,
+    onReset: () -> Unit,
+    onDone: () -> Unit,
 ) {
     Scaffold(
-        containerColor = MaterialTheme.saldoSurfaces.canvas,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.widget_config_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onCancel) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                            contentDescription = stringResource(R.string.action_back),
-                        )
-                    }
-                },
-            )
-        },
-        bottomBar = {
-            EditorSaveButton(
-                // Always "update": the launcher has already created the widget
-                // by the time this screen opens, so even the first visit is
-                // editing something that exists.
-                text = stringResource(R.string.widget_config_update),
-                onClick = onConfirm,
-                enabled = !state.isLoading,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            )
-        },
+        topBar = { TopAppBar(title = { Text(stringResource(R.string.widget_config_title)) }) },
     ) { padding ->
-        if (state.isLoading) {
-            LoadingState(modifier = Modifier.fillMaxSize().padding(padding))
-            return@Scaffold
+        // Until the stored configuration is read, nothing: a screen of defaults
+        // about to change would show the reader choices in the wrong place.
+        if (state.isLoading) return@Scaffold
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // On an open foldable or a phone on its side the column stays a
+            // phone's width, centred, instead of stretching rows across it.
+            val side = ((maxWidth - PageMaxWidth) / 2).coerceAtLeast(0.dp)
+            ConfigList(
+                state = state,
+                isBar = isBar,
+                theme = theme,
+                placed = placed,
+                contentPadding = PaddingValues(start = side, end = side, bottom = 24.dp),
+                actions = ConfigActions(
+                    onAccountSelected = onAccountSelected,
+                    onTypeSelected = onTypeSelected,
+                    onShowAppShortcutChanged = onShowAppShortcutChanged,
+                    onButtonsSelected = onButtonsSelected,
+                    onCustomCategoriesChanged = onCustomCategoriesChanged,
+                    onCategoryToggled = onCategoryToggled,
+                    onPinnedReordered = onPinnedReordered,
+                    onLookChanged = onLookChanged,
+                    onOpacityDrag = onOpacityDrag,
+                    onOpacityDone = onOpacityDone,
+                    onReset = onReset,
+                    onDone = onDone,
+                ),
+            )
         }
+    }
+}
 
-        // The pinned rows are reorderable in place, inside this same list. The
-        // live order is a local mirror (the drag mutates it synchronously, the
-        // ViewModel hears about it once, at drop), and every mapping between
-        // the drag's list indices and the pinned categories goes through the
-        // rows' stable keys: the rows sit among other settings items, so a
-        // positional offset would break the day a section is added above them.
-        val listState = rememberLazyListState()
-        val pinnedIds = remember { state.config.pinnedCategoryIds.toMutableStateList() }
-        val reorderState = rememberReorderableListState(
-            listState = listState,
-            onMove = { from, to ->
-                val fromId = listState.pinnedIdAt(from)
-                val toId = listState.pinnedIdAt(to)
-                if (fromId != null && toId != null) {
-                    val fromIndex = pinnedIds.indexOf(fromId)
-                    val toIndex = pinnedIds.indexOf(toId)
-                    if (fromIndex >= 0 && toIndex >= 0) {
-                        pinnedIds.add(toIndex, pinnedIds.removeAt(fromIndex))
-                    }
+/** What the reader can do on this screen, passed down as one thing. */
+private class ConfigActions(
+    val onAccountSelected: (Long?) -> Unit,
+    val onTypeSelected: (TransactionType) -> Unit,
+    val onShowAppShortcutChanged: (Boolean) -> Unit,
+    val onButtonsSelected: (WidgetActionButtons) -> Unit,
+    val onCustomCategoriesChanged: (Boolean) -> Unit,
+    val onCategoryToggled: (Long) -> Unit,
+    val onPinnedReordered: (List<Long>) -> Unit,
+    val onLookChanged: (QuickAddWidgetConfig) -> Unit,
+    val onOpacityDrag: (Int) -> Unit,
+    val onOpacityDone: () -> Unit,
+    val onReset: () -> Unit,
+    val onDone: () -> Unit,
+)
+
+@Composable
+private fun ConfigList(
+    state: QuickAddWidgetConfigUiState,
+    isBar: Boolean,
+    theme: QuickAddWidgetTheme,
+    placed: DpSize?,
+    contentPadding: PaddingValues,
+    actions: ConfigActions,
+) {
+    // The pinned rows are reorderable in place, inside this same list. The
+    // live order is a local mirror (the drag mutates it synchronously, the
+    // ViewModel hears about it once, at drop), and every mapping between the
+    // drag's list indices and the pinned categories goes through the rows'
+    // stable keys: the rows sit among other settings items, so a positional
+    // offset would break the day a section is added above them.
+    val listState = rememberLazyListState()
+    val pinnedIds = remember { state.config.pinnedCategoryIds.toMutableStateList() }
+    val reorderState = rememberReorderableListState(
+        listState = listState,
+        onMove = { from, to ->
+            val fromId = listState.pinnedIdAt(from)
+            val toId = listState.pinnedIdAt(to)
+            if (fromId != null && toId != null) {
+                val fromIndex = pinnedIds.indexOf(fromId)
+                val toIndex = pinnedIds.indexOf(toId)
+                if (fromIndex >= 0 && toIndex >= 0) {
+                    pinnedIds.add(toIndex, pinnedIds.removeAt(fromIndex))
                 }
-            },
-            onSettle = { onPinnedReordered(pinnedIds.toList()) },
-            canMove = { from, to ->
-                listState.pinnedIdAt(from) != null && listState.pinnedIdAt(to) != null
-            },
-        )
-        // Re-adopt the source of truth (a removal, an addition, the seed) once
-        // any in-flight drag has settled; mid-drag the local order is the truth.
-        LaunchedEffect(state.config.pinnedCategoryIds) {
-            snapshotFlow { reorderState.isDragging }.first { !it }
-            if (pinnedIds.toList() != state.config.pinnedCategoryIds) {
-                pinnedIds.clear()
-                pinnedIds.addAll(state.config.pinnedCategoryIds)
+            }
+        },
+        onSettle = { actions.onPinnedReordered(pinnedIds.toList()) },
+        canMove = { from, to ->
+            listState.pinnedIdAt(from) != null && listState.pinnedIdAt(to) != null
+        },
+    )
+    // Re-adopt the source of truth (a removal, an addition, a reset) once any
+    // in-flight drag has settled; mid-drag the local order is the truth.
+    LaunchedEffect(state.config.pinnedCategoryIds) {
+        snapshotFlow { reorderState.isDragging }.first { !it }
+        if (pinnedIds.toList() != state.config.pinnedCategoryIds) {
+            pinnedIds.clear()
+            pinnedIds.addAll(state.config.pinnedCategoryIds)
+        }
+    }
+    val config = state.config
+
+    LazyColumn(state = listState, modifier = Modifier.fillMaxSize(), contentPadding = contentPadding) {
+        item(key = "preview") {
+            // The preview leads: every control below changes what is drawn
+            // here, so the choice is made by looking rather than by placing
+            // the widget and coming back.
+            QuickAddWidgetPreviewSection(
+                data = rememberPreviewData(state),
+                theme = theme,
+                bar = isBar,
+                placed = placed,
+            )
+        }
+        item(key = "account") {
+            ConfigHeader(stringResource(R.string.widget_config_account))
+            AccountChoices(state.accounts, config.accountId, actions.onAccountSelected)
+        }
+        item(key = "background") {
+            ConfigHeader(stringResource(R.string.widget_config_background))
+            ConfigGroup {
+                BackgroundChoices(config, theme.dress, actions.onLookChanged)
+                ConfigDivider()
+                OpacityRow(config.opacityPct, actions.onOpacityDrag, actions.onOpacityDone)
             }
         }
-
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(bottom = 24.dp),
-        ) {
-            item(key = "preview") {
-                // The preview leads: every control below changes what is drawn
-                // here, so the choice is made by looking rather than by placing
-                // the widget and coming back.
-                QuickAddWidgetPreview(
-                    data = rememberPreviewData(state),
-                    theme = theme,
-                    bar = isBar,
-                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+        if (isBar) {
+            item(key = "buttons") {
+                ConfigHeader(stringResource(R.string.widget_config_buttons))
+                ConfigChoices(
+                    options = listOf(
+                        WidgetActionButtons.BOTH to stringResource(R.string.widget_config_buttons_both),
+                        WidgetActionButtons.EXPENSE_ONLY to stringResource(R.string.widget_config_buttons_expense),
+                        WidgetActionButtons.INCOME_ONLY to stringResource(R.string.widget_config_buttons_income),
+                    ),
+                    selected = config.buttons,
+                    onPick = actions.onButtonsSelected,
                 )
             }
-            item(key = "background") {
-                SettingsSectionHeader(stringResource(R.string.widget_config_background))
-                SettingsGroup {
-                    BackgroundChoices(state.config, theme.dress, onLookChanged)
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant,
+            item(key = "content") {
+                ConfigHeader(stringResource(R.string.widget_config_content))
+                ConfigGroup {
+                    ConfigSwitchRow(
+                        label = stringResource(R.string.widget_config_app_shortcut),
+                        note = stringResource(R.string.widget_config_app_shortcut_caption),
+                        checked = config.showAppShortcut,
+                        onToggle = actions.onShowAppShortcutChanged,
                     )
-                    OpacityRow(state.config.opacityPct) { onLookChanged(state.config.copy(opacityPct = it)) }
                 }
+            }
+        } else {
+            item(key = "type") {
+                ConfigHeader(stringResource(R.string.widget_config_type))
+                ConfigChoices(
+                    options = listOf(
+                        TransactionType.EXPENSE to stringResource(R.string.widget_quick_add_expense),
+                        TransactionType.INCOME to stringResource(R.string.widget_quick_add_income),
+                    ),
+                    selected = config.type,
+                    onPick = actions.onTypeSelected,
+                )
             }
             item(key = "content") {
-                SettingsSectionHeader(stringResource(R.string.widget_config_content))
-                SettingsGroup {
-                    if (!isBar) {
-                        Section(stringResource(R.string.widget_config_type)) {
-                            TypeSelector(state.config.type, onTypeSelected)
-                        }
-                    }
-                    Section(stringResource(R.string.widget_config_account)) {
-                        AccountChips(state.accounts, state.config.accountId, onAccountSelected)
-                    }
-                    if (isBar) {
-                        Section(stringResource(R.string.widget_config_buttons)) {
-                            ButtonsSelector(state.config.buttons, onButtonsSelected)
-                        }
-                        SwitchRow(
-                            title = stringResource(R.string.widget_config_app_shortcut),
-                            subtitle = stringResource(R.string.widget_config_app_shortcut_caption),
-                            checked = state.config.showAppShortcut,
-                            onCheckedChange = onShowAppShortcutChanged,
-                        )
-                    } else {
-                        SwitchRow(
-                            title = stringResource(R.string.widget_config_custom_categories),
-                            subtitle = stringResource(R.string.widget_config_custom_categories_caption),
-                            checked = state.config.usesCustomCategories,
-                            onCheckedChange = onCustomCategoriesChanged,
-                        )
-                    }
+                ConfigHeader(stringResource(R.string.widget_config_content))
+                ConfigGroup {
+                    ConfigSwitchRow(
+                        label = stringResource(R.string.widget_config_custom_categories),
+                        note = stringResource(R.string.widget_config_custom_categories_caption),
+                        checked = config.usesCustomCategories,
+                        onToggle = actions.onCustomCategoriesChanged,
+                    )
                 }
             }
-            if (!isBar) {
-                if (state.config.usesCustomCategories) {
-                    item(key = "pinned-header") {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
-                        ) {
-                            Text(
-                                text = stringResource(R.string.widget_config_pinned),
-                                style = MaterialTheme.typography.titleSmall,
-                            )
-                            Text(
-                                text = stringResource(R.string.widget_config_pinned_caption),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                    items(
-                        items = pinnedIds.mapNotNull { id -> state.categories.firstOrNull { it.id == id } },
-                        key = { category -> pinnedKeyOf(category.id) },
-                    ) { category ->
-                        val isDragging = reorderState.isDraggingKey(pinnedKeyOf(category.id), listState)
-                        val rowModifier = if (isDragging) {
-                            Modifier
-                                .zIndex(1f)
-                                .graphicsLayer { translationY = reorderState.draggingItemOffset }
-                        } else {
-                            Modifier.animateItem()
-                        }
-                        val currentKey by rememberUpdatedState(pinnedKeyOf(category.id))
-                        PinnedCategoryRow(
-                            category = category,
-                            elevated = isDragging,
-                            onRemove = { onCategoryToggled(category.id) },
-                            dragHandleModifier = Modifier.reorderableHandle(
-                                state = reorderState,
-                                key = category.id,
-                                index = { listState.indexOfKey(currentKey) },
-                            ),
-                            modifier = rowModifier.padding(horizontal = 16.dp),
+            if (config.usesCustomCategories) {
+                pinnedCategories(state, pinnedIds, listState, reorderState, actions.onCategoryToggled)
+            }
+        }
+        item(key = "actions") {
+            ConfigResetButton(actions.onReset)
+            ConfigDoneButton(actions.onDone)
+        }
+    }
+}
+
+/**
+ * The hand-picked categories, as one group drawn across several list items:
+ * each pinned row is its own item so it can be dragged, and the group's
+ * rounded ends sit on the first and the last of them.
+ */
+private fun androidx.compose.foundation.lazy.LazyListScope.pinnedCategories(
+    state: QuickAddWidgetConfigUiState,
+    pinnedIds: List<Long>,
+    listState: LazyListState,
+    reorderState: ReorderableListState,
+    onCategoryToggled: (Long) -> Unit,
+) {
+    val pinned = pinnedIds.mapNotNull { id -> state.categories.firstOrNull { it.id == id } }
+    val remaining = state.categories.filterNot { it.id in pinnedIds }
+    item(key = "pinned-header") {
+        ConfigHeader(stringResource(R.string.widget_config_pinned))
+        ConfigNote(stringResource(R.string.widget_config_pinned_caption))
+    }
+    items(items = pinned, key = { category -> pinnedKeyOf(category.id) }) { category ->
+        val index = pinned.indexOf(category)
+        val isDragging = reorderState.isDraggingKey(pinnedKeyOf(category.id), listState)
+        val rowModifier = if (isDragging) {
+            Modifier
+                .zIndex(1f)
+                .graphicsLayer { translationY = reorderState.draggingItemOffset }
+        } else {
+            Modifier.animateItem()
+        }
+        val currentKey by rememberUpdatedState(pinnedKeyOf(category.id))
+        Column(
+            rowModifier.groupSegment(
+                first = index == 0,
+                last = index == pinned.lastIndex && remaining.isEmpty(),
+                raised = isDragging,
+            ),
+        ) {
+            if (index > 0 && !isDragging) ConfigDivider()
+            PinnedCategoryRow(
+                category = category,
+                onRemove = { onCategoryToggled(category.id) },
+                dragHandleModifier = Modifier.reorderableHandle(
+                    state = reorderState,
+                    key = category.id,
+                    index = { listState.indexOfKey(currentKey) },
+                ),
+            )
+        }
+    }
+    if (remaining.isNotEmpty()) {
+        item(key = "pinned-add") {
+            Column(Modifier.groupSegment(first = pinned.isEmpty(), last = true, raised = false)) {
+                if (pinned.isNotEmpty()) ConfigDivider()
+                Text(
+                    text = stringResource(R.string.widget_config_pinned_add),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp),
+                )
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                ) {
+                    remaining.forEach { category ->
+                        FilterChip(
+                            selected = false,
+                            onClick = { onCategoryToggled(category.id) },
+                            label = { Text(category.name, maxLines = 1) },
                         )
-                    }
-                    item(key = "pinned-add") {
-                        val remaining = state.categories.filterNot { it.id in pinnedIds }
-                        if (remaining.isNotEmpty()) {
-                            Section(stringResource(R.string.widget_config_pinned_add)) {
-                                CategoryChips(remaining, emptyList(), onCategoryToggled)
-                            }
-                        }
                     }
                 }
             }
         }
     }
+}
+
+/**
+ * One slice of a [ConfigGroup] drawn across list items: the group's margin and
+ * ground, its rounded corners only where the group begins and ends. A row held
+ * by the drag rises onto a higher container, so it reads as lifted.
+ */
+@Composable
+private fun Modifier.groupSegment(first: Boolean, last: Boolean, raised: Boolean): Modifier {
+    val top = if (first) ConfigGroupCorner else 0.dp
+    val bottom = if (last) ConfigGroupCorner else 0.dp
+    val shape = RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
+    val colors = MaterialTheme.colorScheme
+    return this
+        .fillMaxWidth()
+        .padding(horizontal = 16.dp)
+        .clip(if (raised) ConfigGroupShape else shape)
+        .background(if (raised) colors.surfaceContainerHigh else colors.surfaceContainerLow)
 }
 
 /** The stable key of a pinned row in the settings list. */
@@ -308,28 +391,46 @@ private fun ReorderableListState.isDraggingKey(key: Any, listState: LazyListStat
 
 private const val PINNED_KEY_PREFIX = "pinned-"
 
+/** The widest the page's column grows on an open foldable or a phone on its side. */
+private val PageMaxWidth = 640.dp
+
+/**
+ * Where the widget's entries go: the app's default account, which follows the
+ * app when its default changes, or one account, so two widgets can record on
+ * two accounts.
+ */
+@Composable
+private fun AccountChoices(accounts: List<Account>, selectedId: Long?, onSelect: (Long?) -> Unit) {
+    ConfigGroup {
+        Column(Modifier.selectableGroup()) {
+            ConfigChoiceRow(
+                label = stringResource(R.string.widget_config_account_default),
+                selected = selectedId == null,
+                onPick = { onSelect(null) },
+            )
+            accounts.forEach { account ->
+                ConfigChoiceRow(
+                    label = account.name,
+                    selected = account.id == selectedId,
+                    onPick = { onSelect(account.id) },
+                )
+            }
+        }
+    }
+}
+
 /**
  * One pinned category: avatar in the widget's own visual language, the name,
  * a way out and a drag handle. Removing the last one flips the grid back to
  * the app's own category order, which is what an empty pinned list means.
  */
 @Composable
-private fun PinnedCategoryRow(
-    category: Category,
-    elevated: Boolean,
-    onRemove: () -> Unit,
-    dragHandleModifier: Modifier,
-    modifier: Modifier = Modifier,
-) {
+private fun PinnedCategoryRow(category: Category, onRemove: () -> Unit, dragHandleModifier: Modifier) {
     val accent = CategoryVisuals.color(category.color)
     Row(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (elevated) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent,
-            )
-            .padding(vertical = 4.dp),
+            .padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -356,145 +457,20 @@ private fun PinnedCategoryRow(
         IconButton(onClick = onRemove) {
             Icon(
                 imageVector = Icons.Outlined.Close,
-                contentDescription = stringResource(
-                    R.string.widget_config_pinned_remove_a11y,
-                    category.name,
-                ),
+                contentDescription = stringResource(R.string.widget_config_pinned_remove_a11y, category.name),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Icon(
-            imageVector = Icons.Outlined.DragIndicator,
-            contentDescription = stringResource(R.string.widget_config_pinned_reorder_a11y),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = dragHandleModifier,
-        )
-    }
-}
-
-@Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-    ) {
-        Text(text = title, style = MaterialTheme.typography.titleSmall)
-        content()
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TypeSelector(selected: TransactionType, onSelect: (TransactionType) -> Unit) {
-    val options = listOf(
-        TransactionType.EXPENSE to stringResource(R.string.widget_quick_add_expense),
-        TransactionType.INCOME to stringResource(R.string.widget_quick_add_income),
-    )
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        options.forEachIndexed { index, (type, label) ->
-            SegmentedButton(
-                selected = type == selected,
-                onClick = { onSelect(type) },
-                shape = SegmentedButtonDefaults.itemShape(index, options.size),
-                icon = {},
-            ) {
-                Text(text = label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ButtonsSelector(selected: WidgetActionButtons, onSelect: (WidgetActionButtons) -> Unit) {
-    val options = listOf(
-        WidgetActionButtons.BOTH to stringResource(R.string.widget_config_buttons_both),
-        WidgetActionButtons.EXPENSE_ONLY to stringResource(R.string.widget_quick_add_expense),
-        WidgetActionButtons.INCOME_ONLY to stringResource(R.string.widget_quick_add_income),
-    )
-    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-        options.forEachIndexed { index, (buttons, label) ->
-            SegmentedButton(
-                selected = buttons == selected,
-                onClick = { onSelect(buttons) },
-                shape = SegmentedButtonDefaults.itemShape(index, options.size),
-                icon = {},
-            ) {
-                Text(text = label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun AccountChips(accounts: List<Account>, selectedId: Long?, onSelect: (Long?) -> Unit) {
-    androidx.compose.foundation.layout.FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        // The first chip is the honest default: follow whatever the app itself
-        // considers the default account, so changing it in Settings moves the
-        // widget too.
-        FilterChip(
-            selected = selectedId == null,
-            onClick = { onSelect(null) },
-            label = { Text(stringResource(R.string.widget_config_account_default)) },
-        )
-        accounts.forEach { account ->
-            FilterChip(
-                selected = account.id == selectedId,
-                onClick = { onSelect(account.id) },
-                label = { Text(account.name, maxLines = 1) },
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = dragHandleModifier.size(48.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.DragIndicator,
+                contentDescription = stringResource(R.string.widget_config_pinned_reorder_a11y),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CategoryChips(
-    categories: List<Category>,
-    pinnedIds: List<Long>,
-    onToggle: (Long) -> Unit,
-) {
-    androidx.compose.foundation.layout.FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        categories.forEach { category ->
-            FilterChip(
-                selected = category.id in pinnedIds,
-                onClick = { onToggle(category.id) },
-                label = { Text(category.name, maxLines = 1) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun SwitchRow(
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.titleSmall)
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
@@ -532,7 +508,7 @@ private fun BackgroundChoices(
 ) {
     Column(Modifier.selectableGroup()) {
         WidgetBackgroundChoices.forEach { (background, label) ->
-            ChoiceRow(
+            ConfigChoiceRow(
                 label = stringResource(label),
                 selected = config.background == background,
                 onPick = { onChange(config.copy(background = background)) },
@@ -569,35 +545,45 @@ private fun BackgroundChoices(
 
 @Composable
 private fun ColorSwatches(selected: WidgetCardColor, onPick: (WidgetCardColor) -> Unit) {
-    Column(modifier = Modifier.padding(start = 56.dp, end = 16.dp, bottom = 12.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.selectableGroup()) {
+    Column(modifier = Modifier.padding(start = 50.dp, end = 10.dp, bottom = 12.dp)) {
+        // Each colour is a 48dp target around its 36dp disc (the chosen one's
+        // included), side by side: the gaps between the discs are the targets'
+        // own. A narrow phone wraps the row rather than squeezing the last disc
+        // into an oval, which a fixed row of six did at 360dp.
+        FlowRow(modifier = Modifier.selectableGroup()) {
             WidgetCardColorChoices.forEach { (color, label) ->
                 val chosen = color == selected
                 val name = stringResource(label)
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .border(
-                            width = if (chosen) 2.dp else 0.dp,
-                            color = if (chosen) MaterialTheme.colorScheme.primary else Color.Transparent,
-                            shape = CircleShape,
-                        )
-                        .padding(if (chosen) 4.dp else 0.dp)
-                        .clip(CircleShape)
-                        .background(widgetCardContainer(color))
+                        .size(48.dp)
                         .selectable(selected = chosen, onClick = { onPick(color) }, role = Role.RadioButton)
                         .semantics { contentDescription = name },
                 ) {
-                    if (chosen) {
-                        // Every card colour is a dark ground under white ink.
-                        Icon(
-                            imageVector = Icons.Outlined.Check,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(18.dp),
-                        )
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .border(
+                                width = if (chosen) 2.dp else 0.dp,
+                                color = if (chosen) MaterialTheme.colorScheme.primary else Color.Transparent,
+                                shape = CircleShape,
+                            )
+                            .padding(if (chosen) 4.dp else 0.dp)
+                            .clip(CircleShape)
+                            .background(widgetCardContainer(color)),
+                    ) {
+                        if (chosen) {
+                            // Every card colour is a dark ground under white ink.
+                            Icon(
+                                imageVector = Icons.Outlined.Check,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
                     }
                 }
             }
@@ -607,62 +593,6 @@ private fun ColorSwatches(selected: WidgetCardColor, onPick: (WidgetCardColor) -
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 6.dp),
-        )
-    }
-}
-
-@Composable
-private fun ChoiceRow(
-    label: String,
-    selected: Boolean,
-    onPick: () -> Unit,
-    trailing: @Composable () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectable(selected = selected, onClick = onPick, role = Role.RadioButton)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-    ) {
-        RadioButton(selected = selected, onClick = null)
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-        )
-        trailing()
-    }
-}
-
-/**
- * How solid the card is: the name and the value on one line, the slider under
- * them, in steps of 5%. The value is said in words at the two ends.
- */
-@Composable
-private fun OpacityRow(pct: Int, onChange: (Int) -> Unit) {
-    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = stringResource(R.string.widget_config_opacity),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = when (pct) {
-                    FullOpacity -> stringResource(R.string.widget_opacity_full)
-                    0 -> stringResource(R.string.widget_opacity_transparent)
-                    else -> stringResource(R.string.widget_opacity_percent, pct)
-                },
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-        Slider(
-            value = pct.toFloat(),
-            onValueChange = { raw -> onChange((raw / OpacityStep).roundToInt() * OpacityStep) },
-            valueRange = 0f..FullOpacity.toFloat(),
-            steps = FullOpacity / OpacityStep - 1,
         )
     }
 }

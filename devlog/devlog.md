@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-16 - Impostazioni del widget: la grammatica di famiglia
+
+**Fatto:** Fase 44. La schermata di impostazione dei widget (griglia e barra) segue ora quella delle altre app della famiglia. Ogni scelta si salva subito e ridisegna il widget; "Fatto" in fondo chiude e basta, via la freccia che scartava e il pulsante "Aggiorna il widget". Ordine: anteprima con i chip delle misure e la frase su cosa porta il widget a quella misura, Conto (primo, è la fonte dei dati), Sfondo e opacità, poi Parte da e Contenuto (griglia) o Pulsanti e Contenuto (barra). Righe con il pallino di scelta e interruttori a riga intera al posto di pulsanti segmentati e chip; gruppi su `surfaceContainerLow` a 24 dp senza bordo. I sei colori sono bersagli da 48 dp in una fila che va a capo (a 360 dp l'ultimo diventava un ovale). Nuovo "Ripristina questo widget" (tiene il conto). Titolo "Questo widget". Niente rotellina all'apertura. `versionName` 2.3.5, `versionCode` 195.
+
+**Decisioni:** la pagina usa i componenti propri dei widget (`WidgetConfigKit.kt`) e non `SettingsGroup` di Saldo: la grammatica delle impostazioni di un widget è quella di famiglia, le Impostazioni dell'app restano le loro. L'opacità si scrive al rilascio del dito, non a ogni passo del cursore. Il reset non tocca il conto, come nelle altre app non tocca il luogo. `PreviewSize` sta in `WidgetLayout.kt` accanto a `WidgetSize` (detekt, `MatchingDeclarationName`).
+
+**Problemi:** nessuno.
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt` (con l'init script del mirror); `widget-settings.png` rigenerato e guardato.
+
+**Prossimo:** verifica su device delle scelte che arrivano al widget mentre la schermata è aperta.
+
+---
+
 ## 2026-10-13 - Fix: il widget a griglia restava vuoto
 
 **Fatto:** sul device del committente il widget a griglia mostrava solo il layout iniziale (tessere e selettore vuoti, terza riga tagliata) mentre la barra funzionava. Causa: dopo la proposta D della Fase 43 la griglia consegnava 21 misure in un solo `RemoteViews`, e la piattaforma ne accetta al massimo 16 (`MAX_INIT_VIEW_COUNT`, verificato nel `RemoteViews` di Android 15: oltre lancia "Too many RemoteViews in constructor"); il provider intercetta l'eccezione, quindi nessun crash e nessun widget. Ora la griglia schiacciata a una riga tiene solo l'altezza più bassa con le sue due larghezze: 15 misure, la barra resta a 8. Nuovo `WidgetSizeMapTest` (Robolectric): costruisce la mappa di ogni provider a testo 0,85, 1, 1,15, 1,3 e 2 e fallisce oltre 16 misure o su due misure uguali. `versionName` 2.3.4, `versionCode` 194. Branch `fix/widget-size-map`.

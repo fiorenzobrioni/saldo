@@ -21,15 +21,20 @@ import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
 import com.callbackdev.saldo.core.designsystem.theme.SaldoTheme
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
- * Configuration screen of a placed widget, opened at placement and re-openable
- * later (the provider is declared `reconfigurable|configuration_optional`).
+ * Configuration screen of a placed widget, reached from the launcher's
+ * reconfigure flow (the provider is declared
+ * `reconfigurable|configuration_optional`, so placement never opens it).
  *
- * The widget is already usable without ever coming here, so this screen never
- * blocks: cancelling still leaves a working widget on the defaults.
+ * Every choice is saved as it is made and repaints this one widget; "Done" and
+ * the back gesture only close the door (16 Oct 2026: it used to hold the
+ * choices until an "Update the widget" button, and backing out dropped them).
  */
 @AndroidEntryPoint
 class QuickAddWidgetConfigActivity : ComponentActivity() {
@@ -75,14 +80,15 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
         // gate deliberately does not: this is a system placement flow that
         // shows no amounts (trade-off stated in PLANNING, Fase 14.5).
         bindSecureScreen(appLockRepository)
-        // Declared up front: if the user backs out, the launcher must still keep
-        // the widget rather than dropping it as a failed placement.
-        setResult(RESULT_CANCELED, resultIntent())
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             finish()
             return
         }
+        // The host expects this result whether or not anything changes, and
+        // there is nothing to cancel: what was chosen is already saved.
+        setResult(RESULT_OK, resultIntent())
         loadStoredConfig()
+        saveAsChosen()
         setContent {
             val themePreferences by userPreferences.themePreferences
                 .collectAsStateWithLifecycle(initialValue = ThemePreferences())
@@ -119,9 +125,12 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                     onCategoryToggled = viewModel::onCategoryToggled,
                     onPinnedReordered = viewModel::onPinnedReordered,
                     onLookChanged = viewModel::onLookChanged,
+                    onOpacityDrag = viewModel::onOpacityDragged,
+                    onOpacityDone = viewModel::onOpacityDone,
                     onButtonsSelected = viewModel::onButtonsSelected,
-                    onConfirm = ::confirm,
-                    onCancel = ::finish,
+                    onReset = viewModel::onReset,
+                    onDone = ::finish,
+                    placed = remember { placedWidgetSize(this@QuickAddWidgetConfigActivity, appWidgetId) },
                 )
             }
         }
@@ -138,30 +147,37 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
         }
     }
 
-    private fun confirm() {
-        val config = viewModel.uiState.value.config
+    /**
+     * Writes every choice after the stored seed and repaints the widget. A
+     * write that has started finishes even if "Done" closes the screen in the
+     * same instant: the reader saw the choice land on the preview, and the
+     * widget must not quietly keep the old one.
+     */
+    private fun saveAsChosen() {
         lifecycleScope.launch {
-            runCatching {
-                configStore.write(appWidgetId, config)
-                // The snapshot cache is keyed by configuration, so the write
-                // above already misses it; only the render has to be asked for.
-                widgetUpdater.update(
-                    appWidgetIds = intArrayOf(appWidgetId),
-                    sizes = if (isBar) { scale -> actionSizes(scale) } else { scale -> gridWidgetSizes(scale) },
-                )
-            }.onFailure {
-                // The one thing worse than a failed save is a silent one: the
-                // user just chose these settings and would find them undone.
-                Toast.makeText(
-                    this@QuickAddWidgetConfigActivity,
-                    R.string.widget_config_save_error,
-                    Toast.LENGTH_LONG,
-                ).show()
+            viewModel.savedConfig.drop(1).collect { config ->
+                withContext(NonCancellable) { persist(config) }
             }
-            // Even a failed write leaves a usable widget on the defaults, so the
-            // placement is confirmed either way rather than silently discarded.
-            setResult(RESULT_OK, resultIntent())
-            finish()
+        }
+    }
+
+    private suspend fun persist(config: QuickAddWidgetConfig) {
+        runCatching {
+            configStore.write(appWidgetId, config)
+            // The snapshot cache is keyed by configuration, so the write
+            // above already misses it; only the render has to be asked for.
+            widgetUpdater.update(
+                appWidgetIds = intArrayOf(appWidgetId),
+                sizes = if (isBar) { scale -> actionSizes(scale) } else { scale -> gridWidgetSizes(scale) },
+            )
+        }.onFailure {
+            // The one thing worse than a failed save is a silent one: the
+            // user just chose this and would find it undone.
+            Toast.makeText(
+                this@QuickAddWidgetConfigActivity,
+                R.string.widget_config_save_error,
+                Toast.LENGTH_LONG,
+            ).show()
         }
     }
 

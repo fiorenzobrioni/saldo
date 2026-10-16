@@ -45,7 +45,7 @@ balance is always computed from its transactions, never stored on its own.
   <tr>
     <td align="center"><img src="docs/screenshots/widgets.png" width="250" alt="The two widgets on a home screen: the expense and income bar, and the category grid"><br><sub><b>Two quick-add widgets</b></sub></td>
     <td align="center"><img src="docs/screenshots/quick-entry.png" width="250" alt="Quick entry from the widget: the chosen category, the keypad, the amount"><br><sub><b>Quick entry</b>, without opening the app</sub></td>
-    <td align="center"><img src="docs/screenshots/widget-settings.png" width="250" alt="Widget settings: a live preview, a light, dark or system background or one of six colours, the opacity"><br><sub><b>Widget settings</b>, with a live preview</sub></td>
+    <td align="center"><img src="docs/screenshots/widget-settings.png" width="250" alt="Widget settings: the real widget at the sizes it can be given, then the account it records on, its background and what it carries"><br><sub><b>Widget settings</b>, with a live preview</sub></td>
   </tr>
   <tr>
     <td align="center"><img src="docs/screenshots/exchange-rates.png" width="250" alt="ECB exchange rates with a quick converter and the recent trend"><br><sub><b>Exchange rates</b> from the ECB, and a converter</sub></td>

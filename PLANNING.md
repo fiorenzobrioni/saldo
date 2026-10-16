@@ -1082,6 +1082,22 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 - [x] **Fix: la griglia non si disegnava** (segnalato dal committente su device dopo il merge della PR #94): con D la griglia passava al launcher 21 misure, e la piattaforma ne accetta al massimo 16 in un `RemoteViews` (`MAX_INIT_VIEW_COUNT`, oltre lancia un'eccezione); il provider la intercetta per non far cadere l'app e il widget restava sul layout iniziale, con tessere e selettore vuoti. La griglia schiacciata a una riga tiene ora la sola altezza più bassa con le sue due larghezze (2 + 8 + 5 = 15 misure); la barra, che ha un suo provider, tiene le 8. `WidgetSizeMapTest` costruisce la mappa di ogni provider a cinque dimensioni del testo e fallisce oltre 16; i test esistenti disegnavano una misura per volta e non potevano vederlo
 - [ ] Verifica su device: card e anteprima del picker con l'angolo del launcher, nomi delle tessere e pulsanti della barra a 13, messaggio a 16
 
+
+## Fase 44 - Impostazioni del widget: la grammatica di famiglia (16 ottobre 2026)
+
+> Richiesta del committente: rivedere le schermate di impostazione dei widget delle quattro app della famiglia perché layout e stile siano uniformi (ognuna con le sue impostazioni). Saldo era l'unica diversa nel comportamento, non solo nell'aspetto.
+
+- [x] **Salvataggio immediato**: ogni scelta vale subito, viene scritta e ridisegna il widget sulla home (`QuickAddWidgetConfigViewModel.savedConfig`, scritto dall'attività); "Fatto" in fondo alla pagina chiude e basta, come il tasto indietro. Via la freccia indietro che scartava le scelte e il pulsante fisso "Aggiorna il widget". Il risultato è `RESULT_OK` dall'inizio: il provider è `configuration_optional`, la schermata non si apre al posizionamento e non c'è niente da annullare. L'opacità si scrive quando si alza il dito (`onOpacityDragged`/`onOpacityDone`): un trascinamento è una scrittura sola, non venti; una scrittura iniziata finisce anche se "Fatto" chiude nello stesso istante (`NonCancellable`)
+- [x] **Niente spinner a tutto schermo**: finché la configurazione salvata non è letta la pagina resta vuota sotto il titolo (un attimo), invece della rotellina
+- [x] **L'ordine di famiglia**: anteprima, poi la fonte dei dati (il **Conto**, sempre primo: è dove vanno i movimenti, non un aspetto), poi **Sfondo** e opacità, poi cosa porta il widget: per la griglia **Parte da** e **Contenuto** (le categorie scelte a mano, con l'elenco da riordinare), per la barra **Pulsanti** e **Contenuto** (l'icona dell'app)
+- [x] **Righe e controlli come nelle altre app** (`WidgetConfigKit.kt`): righe con il pallino di scelta al posto di pulsanti segmentati e chip (conto, tipo, pulsanti), interruttori con la frase che spiega cosa fanno e tutta la riga toccabile, titoli dei gruppi fuori dai gruppi. I colori della pagina sono quelli delle altre: fondo della pagina e gruppi su `surfaceContainerLow` con angoli da 24 dp e senza bordo, invece della card bianca bordata da 12 dp sul fondo grigio delle Impostazioni di Saldo. Le categorie fissate sono un gruppo anche loro, disegnato su più righe della lista perché ognuna si possa trascinare
+- [x] **Anteprima come nelle altre app**: il widget vero su uno sfondo che imita la carta da parati, i chip delle misure che può avere ("Com'è ora" e le misure di riferimento: 2×1-4×1 per la barra, da 2×1 a 4×3 per la griglia), la frase su cosa porta a quella misura (`formNote`, letta da `layoutFor`) e l'invito a ridimensionarlo
+- [x] **I sei colori non si schiacciano più**: bersagli da 48 dp attorno a dischi da 36, in una fila che va a capo. La fila fissa di sei dischi chiedeva 266 dp e su un telefono da 360 dp il gruppo ne lascia 256: l'ultimo diventava un ovale
+- [x] **"Ripristina questo widget"** sopra "Fatto": rimette la configurazione di un widget appena piazzato, tranne il conto
+- [x] Titolo "Questo widget" (era "Widget aggiunta rapida"); su un pieghevole aperto la colonna resta larga 640 dp, centrata
+- [x] Guida utente (`aggiunta-rapida.md`) e screenshot del README (`widget-settings.png`) aggiornati
+- [ ] Verifica su device: le scelte arrivano al widget sulla home mentre la schermata è aperta, e il trascinamento dell'opacità resta fluido
+
 ---
 
 # Fasi da valutare

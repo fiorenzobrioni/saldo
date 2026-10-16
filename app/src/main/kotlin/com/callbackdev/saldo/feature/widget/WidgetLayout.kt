@@ -3,6 +3,8 @@ package com.callbackdev.saldo.feature.widget
 import com.callbackdev.saldo.MainActivity
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.domain.model.TransactionType
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import kotlin.math.ceil
 
 /**
@@ -26,6 +28,22 @@ import kotlin.math.ceil
  */
 internal data class WidgetSize(val width: Float, val height: Float) {
     override fun toString(): String = "${width.toInt()}x${height.toInt()}dp"
+}
+
+/**
+ * A launcher grant, named by its cells: the reference sizes a phone's launcher
+ * gives a widget of that many cells, so what a chip shows is what a reader can
+ * have on their home screen.
+ */
+internal enum class PreviewSize(val label: String, val size: DpSize) {
+    TWO_BY_ONE("2×1", DpSize(159.dp, 85.dp)),
+    THREE_BY_ONE("3×1", DpSize(250.dp, 85.dp)),
+    FOUR_BY_ONE("4×1", DpSize(340.dp, 85.dp)),
+    TWO_BY_TWO("2×2", DpSize(159.dp, 189.dp)),
+    THREE_BY_TWO("3×2", DpSize(250.dp, 189.dp)),
+    FOUR_BY_TWO("4×2", DpSize(340.dp, 189.dp)),
+    TWO_BY_THREE("2×3", DpSize(159.dp, 293.dp)),
+    FOUR_BY_THREE("4×3", DpSize(340.dp, 293.dp)),
 }
 
 /**
