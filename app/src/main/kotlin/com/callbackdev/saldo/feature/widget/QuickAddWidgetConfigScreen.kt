@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.widget
 
+import android.appwidget.AppWidgetManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -47,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -68,12 +70,11 @@ import com.callbackdev.saldo.core.domain.model.TransactionType
 import kotlinx.coroutines.flow.first
 
 /**
- * One widget's settings, in two flavours served by the same activity: the
- * grid's and the bar's. Both read top to bottom the same way (16 Oct 2026):
- * the widget at the sizes it can be given; where its entries go (the account,
- * always first: it is where the widget's data goes, not how it looks); what
- * it is painted on and how solid; then what it carries. The option that does
- * not apply to a flavour is simply not there.
+ * The quick-add widget's settings, read top to bottom as every widget's
+ * settings in the family (16 Oct 2026): the widget at the sizes it can be
+ * given; where its entries go (the account, always first: it is where the
+ * widget's data goes, not how it looks); what it is painted on and how solid;
+ * then what it carries, the grid's choices first and the one-row form's last.
  *
  * Every choice is saved as it is made and repaints this one widget; "Done"
  * only closes the door, and so does the back gesture.
@@ -82,7 +83,6 @@ import kotlinx.coroutines.flow.first
 @Composable
 fun QuickAddWidgetConfigScreen(
     state: QuickAddWidgetConfigUiState,
-    isBar: Boolean,
     theme: QuickAddWidgetTheme,
     placed: DpSize?,
     onAccountSelected: (Long?) -> Unit,
@@ -110,7 +110,6 @@ fun QuickAddWidgetConfigScreen(
             val side = ((maxWidth - PageMaxWidth) / 2).coerceAtLeast(0.dp)
             ConfigList(
                 state = state,
-                isBar = isBar,
                 theme = theme,
                 placed = placed,
                 contentPadding = PaddingValues(start = side, end = side, bottom = 24.dp),
@@ -152,7 +151,6 @@ private class ConfigActions(
 @Composable
 private fun ConfigList(
     state: QuickAddWidgetConfigUiState,
-    isBar: Boolean,
     theme: QuickAddWidgetTheme,
     placed: DpSize?,
     contentPadding: PaddingValues,
@@ -200,11 +198,15 @@ private fun ConfigList(
             // The preview leads: every control below changes what is drawn
             // here, so the choice is made by looking rather than by placing
             // the widget and coming back.
-            QuickAddWidgetPreviewSection(
-                data = rememberPreviewData(state),
-                theme = theme,
-                bar = isBar,
+            val data = rememberPreviewData(state)
+            val fontScale = LocalDensity.current.fontScale
+            WidgetPreviewSection(
+                kind = SaldoWidgetKind.QUICK_ADD,
                 placed = placed,
+                note = { size -> quickAddFormNote(size, data.categories.size, fontScale) },
+                render = { context, size ->
+                    WidgetRenderer.render(context, AppWidgetManager.INVALID_APPWIDGET_ID, data, theme.palette, size)
+                },
             )
         }
         item(key = "account") {
@@ -214,60 +216,65 @@ private fun ConfigList(
         item(key = "background") {
             ConfigHeader(stringResource(R.string.widget_config_background))
             ConfigGroup {
-                BackgroundChoices(config, theme.dress, actions.onLookChanged)
+                BackgroundChoices(config.background, config.cardColor, theme.dress) { background, color ->
+                    actions.onLookChanged(config.copy(background = background, cardColor = color))
+                }
                 ConfigDivider()
                 OpacityRow(config.opacityPct, actions.onOpacityDrag, actions.onOpacityDone)
             }
         }
-        if (isBar) {
-            item(key = "buttons") {
-                ConfigHeader(stringResource(R.string.widget_config_buttons))
-                ConfigChoices(
-                    options = listOf(
+        item(key = "type") {
+            ConfigHeader(stringResource(R.string.widget_config_type))
+            ConfigChoices(
+                options = listOf(
+                    TransactionType.EXPENSE to stringResource(R.string.widget_quick_add_expense),
+                    TransactionType.INCOME to stringResource(R.string.widget_quick_add_income),
+                ),
+                selected = config.type,
+                onPick = actions.onTypeSelected,
+            )
+        }
+        item(key = "content") {
+            ConfigHeader(stringResource(R.string.widget_config_content))
+            ConfigGroup {
+                ConfigSwitchRow(
+                    label = stringResource(R.string.widget_config_custom_categories),
+                    note = stringResource(R.string.widget_config_custom_categories_caption),
+                    checked = config.usesCustomCategories,
+                    onToggle = actions.onCustomCategoriesChanged,
+                )
+            }
+        }
+        if (config.usesCustomCategories) {
+            pinnedCategories(state, pinnedIds, listState, reorderState, actions.onCategoryToggled)
+        }
+        // What the one-row form carries (16 Oct 2026): the bar was its own
+        // widget until then, with these two choices on its settings; squashed
+        // to a row this widget draws the same two buttons, so they live here.
+        item(key = "one-row") {
+            ConfigHeader(stringResource(R.string.widget_config_one_row))
+            ConfigNote(stringResource(R.string.widget_config_one_row_caption))
+            ConfigGroup {
+                Column(Modifier.selectableGroup()) {
+                    listOf(
                         WidgetActionButtons.BOTH to stringResource(R.string.widget_config_buttons_both),
                         WidgetActionButtons.EXPENSE_ONLY to stringResource(R.string.widget_config_buttons_expense),
                         WidgetActionButtons.INCOME_ONLY to stringResource(R.string.widget_config_buttons_income),
-                    ),
-                    selected = config.buttons,
-                    onPick = actions.onButtonsSelected,
-                )
-            }
-            item(key = "content") {
-                ConfigHeader(stringResource(R.string.widget_config_content))
-                ConfigGroup {
-                    ConfigSwitchRow(
-                        label = stringResource(R.string.widget_config_app_shortcut),
-                        note = stringResource(R.string.widget_config_app_shortcut_caption),
-                        checked = config.showAppShortcut,
-                        onToggle = actions.onShowAppShortcutChanged,
-                    )
+                    ).forEach { (buttons, label) ->
+                        ConfigChoiceRow(
+                            label = label,
+                            selected = config.buttons == buttons,
+                            onPick = { actions.onButtonsSelected(buttons) },
+                        )
+                    }
                 }
-            }
-        } else {
-            item(key = "type") {
-                ConfigHeader(stringResource(R.string.widget_config_type))
-                ConfigChoices(
-                    options = listOf(
-                        TransactionType.EXPENSE to stringResource(R.string.widget_quick_add_expense),
-                        TransactionType.INCOME to stringResource(R.string.widget_quick_add_income),
-                    ),
-                    selected = config.type,
-                    onPick = actions.onTypeSelected,
+                ConfigDivider()
+                ConfigSwitchRow(
+                    label = stringResource(R.string.widget_config_app_shortcut),
+                    note = stringResource(R.string.widget_config_app_shortcut_caption),
+                    checked = config.showAppShortcut,
+                    onToggle = actions.onShowAppShortcutChanged,
                 )
-            }
-            item(key = "content") {
-                ConfigHeader(stringResource(R.string.widget_config_content))
-                ConfigGroup {
-                    ConfigSwitchRow(
-                        label = stringResource(R.string.widget_config_custom_categories),
-                        note = stringResource(R.string.widget_config_custom_categories_caption),
-                        checked = config.usesCustomCategories,
-                        onToggle = actions.onCustomCategoriesChanged,
-                    )
-                }
-            }
-            if (config.usesCustomCategories) {
-                pinnedCategories(state, pinnedIds, listState, reorderState, actions.onCategoryToggled)
             }
         }
         item(key = "actions") {
@@ -501,17 +508,19 @@ internal val WidgetCardColorChoices: List<Pair<WidgetCardColor, Int>> = listOf(
  * one's name under it (a swatch is never the only label).
  */
 @Composable
-private fun BackgroundChoices(
-    config: QuickAddWidgetConfig,
+internal fun BackgroundChoices(
+    background: WidgetBackground,
+    cardColor: WidgetCardColor,
     dress: WidgetDress,
-    onChange: (QuickAddWidgetConfig) -> Unit,
+    onPick: (WidgetBackground, WidgetCardColor) -> Unit,
 ) {
+    val selectedBackground = background
     Column(Modifier.selectableGroup()) {
         WidgetBackgroundChoices.forEach { (background, label) ->
             ConfigChoiceRow(
                 label = stringResource(label),
-                selected = config.background == background,
-                onPick = { onChange(config.copy(background = background)) },
+                selected = selectedBackground == background,
+                onPick = { onPick(background, cardColor) },
             ) {
                 val shape = RoundedCornerShape(10.dp)
                 val swatch = Modifier
@@ -533,13 +542,13 @@ private fun BackgroundChoices(
                         )
                     }
                 } else {
-                    Box(swatch.background(dress.ground(background, config.cardColor, night = false)))
+                    Box(swatch.background(dress.ground(background, cardColor, night = false)))
                 }
             }
         }
     }
-    if (config.background == WidgetBackground.COLOR) {
-        ColorSwatches(config.cardColor) { onChange(config.copy(cardColor = it)) }
+    if (selectedBackground == WidgetBackground.COLOR) {
+        ColorSwatches(cardColor) { onPick(selectedBackground, it) }
     }
 }
 

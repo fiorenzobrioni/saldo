@@ -26,6 +26,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ShortText
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.Category
@@ -38,7 +39,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material.icons.outlined.SettingsBackupRestore
-import androidx.compose.material.icons.outlined.ViewAgenda
+import androidx.compose.material.icons.outlined.DonutLarge
 import androidx.compose.material.icons.outlined.ViewColumn
 import androidx.compose.material.icons.outlined.Widgets
 import androidx.compose.material3.AlertDialog
@@ -88,7 +89,8 @@ import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
 import com.callbackdev.saldo.feature.widget.QuickAddWidgetProvider
-import com.callbackdev.saldo.feature.widget.QuickBarWidgetProvider
+import com.callbackdev.saldo.feature.widget.MonthRingWidgetProvider
+import com.callbackdev.saldo.feature.widget.MonthWordsWidgetProvider
 import java.time.DayOfWeek
 import java.time.format.TextStyle
 import java.util.Currency
@@ -293,13 +295,27 @@ fun SettingsScreen(
                         },
                     )
                     SettingsEntry(
-                        title = stringResource(R.string.settings_widget_pin_bar),
-                        hint = stringResource(R.string.settings_widget_pin_bar_hint),
-                        icon = Icons.Outlined.ViewAgenda,
+                        title = stringResource(R.string.settings_widget_pin_words),
+                        hint = stringResource(R.string.settings_widget_pin_words_hint),
+                        icon = Icons.AutoMirrored.Outlined.ShortText,
                         onClick = {
                             runCatching {
                                 AppWidgetManager.getInstance(widgetContext).requestPinAppWidget(
-                                    ComponentName(widgetContext, QuickBarWidgetProvider::class.java),
+                                    ComponentName(widgetContext, MonthWordsWidgetProvider::class.java),
+                                    null,
+                                    null,
+                                )
+                            }
+                        },
+                    )
+                    SettingsEntry(
+                        title = stringResource(R.string.settings_widget_pin_ring),
+                        hint = stringResource(R.string.settings_widget_pin_ring_hint),
+                        icon = Icons.Outlined.DonutLarge,
+                        onClick = {
+                            runCatching {
+                                AppWidgetManager.getInstance(widgetContext).requestPinAppWidget(
+                                    ComponentName(widgetContext, MonthRingWidgetProvider::class.java),
                                     null,
                                     null,
                                 )

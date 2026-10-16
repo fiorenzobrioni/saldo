@@ -32,7 +32,11 @@ class WidgetTypeTest {
             "widget_quick_grid_wide.xml",
             "widget_quick_setup.xml",
             "quick_add_widget_preview.xml",
-            "quick_bar_widget_preview.xml",
+            "widget_month_words.xml",
+            "widget_month_ring.xml",
+            "widget_month_ring_square.xml",
+            "month_words_widget_preview.xml",
+            "month_ring_widget_preview.xml",
         ).forEach { assertTrue(it in names, "$it is not read") }
     }
 

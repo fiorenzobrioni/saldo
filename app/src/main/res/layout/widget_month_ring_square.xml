@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    «The month» narrow and tall (ADR 54): the ring large at the top, the share
+    spent inside it, two lines under it. Same view ids as widget_month_ring.xml,
+    so the renderer binds both forms with one function.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_bg" />
+
+    <LinearLayout
+        android:id="@+id/widget_month_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <FrameLayout
+            android:id="@+id/widget_ring_box"
+            android:layout_width="96dp"
+            android:layout_height="96dp">
+
+            <ProgressBar
+                android:id="@+id/widget_ring"
+                style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:indeterminate="false"
+                android:max="1000"
+                android:progressDrawable="@drawable/widget_month_ring" />
+
+            <TextView
+                android:id="@+id/widget_ring_percent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:fontFamily="sans-serif-medium"
+                android:includeFontPadding="false"
+                android:maxLines="1"
+                android:textSize="@dimen/widget_type_title" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:id="@+id/widget_ring_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_ring_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textSize="@dimen/widget_type_label" />
+
+            <TextView
+                android:id="@+id/widget_ring_line1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textSize="@dimen/widget_type_label" />
+
+            <TextView
+                android:id="@+id/widget_ring_line2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textSize="@dimen/widget_type_label"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

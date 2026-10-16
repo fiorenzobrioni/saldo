@@ -43,6 +43,11 @@ import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import com.callbackdev.saldo.feature.guide.GuideScreen
 import com.callbackdev.saldo.feature.rates.ExchangeRatesScreen
 import com.callbackdev.saldo.feature.recurring.RecurrencesScreen
+import com.callbackdev.saldo.feature.widget.MonthWidgetConfig
+import com.callbackdev.saldo.feature.widget.MonthWidgetDataLoader
+import com.callbackdev.saldo.feature.widget.MonthWidgetKind
+import com.callbackdev.saldo.feature.widget.MonthWidgetRenderer
+import androidx.compose.foundation.layout.Row
 import com.callbackdev.saldo.feature.widget.QuickAddWidgetConfig
 import com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigScreen
 import com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigUiState
@@ -111,6 +116,9 @@ class ReadmeScreenshots {
 
     @Inject
     lateinit var widgetData: QuickAddWidgetDataLoader
+
+    @Inject
+    lateinit var monthData: MonthWidgetDataLoader
 
     @Inject
     lateinit var categories: CategoryRepository
@@ -236,7 +244,6 @@ class ReadmeScreenshots {
         show {
             QuickAddWidgetConfigScreen(
                 state = state,
-                isBar = false,
                 theme = theme,
                 placed = null,
                 onAccountSelected = {},
@@ -330,7 +337,11 @@ class ReadmeScreenshots {
         }
     }
 
-    /** The two widget shapes as the launcher gets them: the real `RemoteViews`. */
+    /**
+     * The widgets as the launcher gets them, the real `RemoteViews`: the
+     * quick-add widget at one row and as the grid, and the two month widgets
+     * (ADR 54) side by side, two cells by two each.
+     */
     private fun homeScreenWidgets(): HomeWidgets {
         fun render(config: QuickAddWidgetConfig, size: WidgetSize): RemoteViews {
             val snapshot = runBlocking { widgetData.loadShared(config) }
@@ -345,13 +356,22 @@ class ReadmeScreenshots {
         val grid = WidgetSize(WIDE_WIDGET_DP, wideGridHeight(GRID_ROWS))
         // The single row with its words, at the height of a common launcher row.
         val bar = WidgetSize(wordsMinWidth(BAR_HEIGHT_DP), BAR_HEIGHT_DP)
+        val month = runBlocking { monthData.load() }
+        fun renderMonth(kind: MonthWidgetKind, color: WidgetCardColor): RemoteViews {
+            val config = MonthWidgetConfig(cardColor = color)
+            val palette = resolveWidgetTheme(context, ThemePreferences(), config.background, color, config.opacityPct).palette
+            return MonthWidgetRenderer.render(context, kind, month, config, palette, WidgetSize(HALF_WIDGET_DP, MONTH_HEIGHT_DP))
+        }
         return HomeWidgets(
-            // The bar in another of the six colours, the grid on the default
-            // blue: the picture shows the choice as well as the widgets.
+            // The one-row form in another of the six colours, the grid on the
+            // default blue: the picture shows the choice as well as the widgets.
             bar = render(QuickAddWidgetConfig(cardColor = WidgetCardColor.PLUM), bar),
             barHeightDp = bar.height,
             grid = render(QuickAddWidgetConfig(), grid),
             gridHeightDp = grid.height,
+            ring = renderMonth(MonthWidgetKind.RING, WidgetCardColor.TEAL),
+            words = renderMonth(MonthWidgetKind.WORDS, WidgetCardColor.BLUE),
+            monthHeightDp = MONTH_HEIGHT_DP,
         )
     }
 
@@ -390,9 +410,12 @@ class ReadmeScreenshots {
         val barHeightDp: Float,
         val grid: RemoteViews,
         val gridHeightDp: Float,
+        val ring: RemoteViews,
+        val words: RemoteViews,
+        val monthHeightDp: Float,
     )
 
-    /** A plain wallpaper with the two widgets placed on it, four cells wide. */
+    /** A plain wallpaper with the widgets placed on it, four cells wide. */
     @Composable
     private fun HomeScreen(widgets: HomeWidgets) {
         Column(
@@ -400,16 +423,20 @@ class ReadmeScreenshots {
                 .fillMaxSize()
                 .background(Brush.verticalGradient(listOf(WallpaperTop, WallpaperBottom)))
                 .padding(horizontal = 16.dp, vertical = 56.dp),
-            verticalArrangement = Arrangement.spacedBy(32.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
             PlacedWidget(widgets.bar, heightDp = widgets.barHeightDp)
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                PlacedWidget(widgets.ring, heightDp = widgets.monthHeightDp, modifier = Modifier.weight(1f))
+                PlacedWidget(widgets.words, heightDp = widgets.monthHeightDp, modifier = Modifier.weight(1f))
+            }
             PlacedWidget(widgets.grid, heightDp = widgets.gridHeightDp)
         }
     }
 
     @Composable
-    private fun PlacedWidget(views: RemoteViews, heightDp: Float) {
-        Box(modifier = Modifier.fillMaxWidth().height(heightDp.dp)) {
+    private fun PlacedWidget(views: RemoteViews, heightDp: Float, modifier: Modifier = Modifier.fillMaxWidth()) {
+        Box(modifier = modifier.height(heightDp.dp)) {
             AndroidView(
                 factory = { context -> FrameLayout(context).apply { addView(views.apply(context, this)) } },
                 modifier = Modifier.fillMaxSize(),
@@ -425,6 +452,10 @@ class ReadmeScreenshots {
         const val WIDE_WIDGET_DP = 250f
         const val GRID_ROWS = 4
         const val BAR_HEIGHT_DP = 64f
+
+        /** Two cells by two on this screen: half the row less the gap, a launcher's two rows. */
+        const val HALF_WIDGET_DP = 172f
+        const val MONTH_HEIGHT_DP = 189f
         val WallpaperTop = Color(0xFF1F4E5A)
         val WallpaperBottom = Color(0xFFD9895B)
     }

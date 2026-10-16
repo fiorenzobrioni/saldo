@@ -43,7 +43,7 @@ balance is always computed from its transactions, never stored on its own.
     <td align="center"><img src="docs/screenshots/recurrences.png" width="250" alt="Recurring transactions: the month's total, the yearly projection, the next charges"><br><sub><b>Recurring</b>: total and yearly projection</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/widgets.png" width="250" alt="The two widgets on a home screen: the expense and income bar, and the category grid"><br><sub><b>Two quick-add widgets</b></sub></td>
+    <td align="center"><img src="docs/screenshots/widgets.png" width="250" alt="The widgets on a home screen: quick add squashed to one row, the month ring, the month in words, and quick add as the category grid"><br><sub><b>Widgets</b>: quick add and the month</sub></td>
     <td align="center"><img src="docs/screenshots/quick-entry.png" width="250" alt="Quick entry from the widget: the chosen category, the keypad, the amount"><br><sub><b>Quick entry</b>, without opening the app</sub></td>
     <td align="center"><img src="docs/screenshots/widget-settings.png" width="250" alt="Widget settings: the real widget at the sizes it can be given, then the account it records on, its background and what it carries"><br><sub><b>Widget settings</b>, with a live preview</sub></td>
   </tr>
@@ -74,7 +74,7 @@ Italian). The phone's status bar is not in the pictures. The command that redraw
 - 📈 **Statistics**: spending by category, monthly trend, income against expenses, balance over time.
 - ✨ **Saldo Wrapped**: the story of the month just closed, shareable as an image.
 - 🌍 **Multi-currency**: every transaction in its own currency, converted with the ECB reference rates.
-- 🏠 **Widgets and Quick Settings**: an expense recorded without opening the app, even typed in one line ("12.50 pizza yesterday").
+- 🏠 **Widgets and Quick Settings**: an expense recorded without opening the app, even typed in one line ("12.50 pizza yesterday"); the month on the home screen, in one sentence or as the budget's ring.
 - 💾 **Backup**: to a file of yours, optionally encrypted with a passphrase, with an optional reminder.
 - 📥 **CSV**: export of the filtered transactions, import with format detection or manual column mapping.
 - 🔒 **App lock**: PIN, fingerprint or face, content hidden in recent apps.

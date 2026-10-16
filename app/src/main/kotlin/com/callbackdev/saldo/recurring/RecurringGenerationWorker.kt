@@ -13,6 +13,7 @@ import com.callbackdev.saldo.core.domain.usecase.CheckUpcomingRenewalsUseCase
 import com.callbackdev.saldo.core.domain.usecase.GenerateRecurringMovementsUseCase
 import com.callbackdev.saldo.core.domain.usecase.ProcessDueCreditCardStatementsUseCase
 import com.callbackdev.saldo.creditcard.CreditCardNotifier
+import com.callbackdev.saldo.feature.widget.WidgetUpdater
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 
@@ -39,6 +40,7 @@ class RecurringGenerationWorker @AssistedInject constructor(
     private val creditCardNotifier: CreditCardNotifier,
     private val checkBackupReminder: CheckBackupReminderUseCase,
     private val backupReminderNotifier: BackupReminderNotifier,
+    private val widgetUpdater: WidgetUpdater,
 ) : CoroutineWorker(appContext, params) {
 
     override suspend fun doWork(): Result = runCatching {
@@ -54,9 +56,13 @@ class RecurringGenerationWorker @AssistedInject constructor(
         creditCardNotifier.notify(processDueStatements())
         // After generation, so an automatic charge that crosses a budget
         // threshold alerts on the same run, even with the device untouched.
-        // No widget refresh here: the widget shows no totals, so a generated
-        // movement changes nothing it draws.
         budgetNotifier.notify(checkBudgetThresholds())
+        // The month widgets show what a generated charge changes (ADR 54). The
+        // watcher would see the write too, but this process may be gone before
+        // its debounce lands; with no month widget placed this is a binder
+        // call and nothing else. The quick-add widget shows no totals and is
+        // not touched.
+        runCatching { widgetUpdater.updateMonth() }
         // Last, and independent of the ledger work above: the opt-in reminder
         // that the last backup export is getting old (Fase 39, F4).
         backupReminderNotifier.notify(checkBackupReminder())

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The widget picker's preview of «The month» (ADR 54). Static resources only,
+    as every picker preview (ADR 37b): the default card, the ring at a sample
+    share with the month's band inside it, and sample figures from
+    widget_preview_* strings. Nothing is read from the database.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_preview_background"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <FrameLayout
+        android:layout_width="96dp"
+        android:layout_height="96dp">
+
+        <ProgressBar
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:indeterminate="false"
+            android:max="1000"
+            android:progress="640"
+            android:progressBackgroundTint="@color/widget_preview_ring_track"
+            android:progressDrawable="@drawable/widget_month_ring"
+            android:progressTint="@color/widget_preview_ink"
+            android:secondaryProgress="520"
+            android:secondaryProgressTint="@color/widget_preview_ink_muted" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:text="@string/widget_preview_ring_percent"
+            android:textColor="@color/widget_preview_ink"
+            android:textSize="@dimen/widget_type_title" />
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="@string/widget_preview_ring_spent"
+        android:textColor="@color/widget_preview_ink"
+        android:textSize="@dimen/widget_type_label" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:maxLines="1"
+        android:text="@string/widget_preview_ring_days"
+        android:textColor="@color/widget_preview_ink_muted"
+        android:textSize="@dimen/widget_type_label" />
+</LinearLayout>

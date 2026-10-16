@@ -156,9 +156,9 @@ internal fun layoutFor(size: WidgetSize, availableCategories: Int, fontScale: Fl
 private val ActionHeights = listOf(40f, 64f, 88f, 112f)
 
 /**
- * The single-row sizes: the whole breakpoint set of the bar widget, and the low
- * end of the grid's (which still degrades to the two-button layout when
- * squashed, for the widgets placed before the bar existed).
+ * The single-row sizes: the low end of the quick-add widget's, where it becomes
+ * the two-button row (the bar was a widget of its own until 16 Oct 2026, with
+ * all four heights; the widget keeps the lowest, see [gridWidgetSizes]).
  *
  * Four heights rather than one, not for the layout (any height under
  * [GridMinHeight] is the same two buttons) but for the app-shortcut square:
@@ -210,14 +210,14 @@ internal val GridSizes: List<WidgetSize> =
         (1..MaxGridRows).map { rows -> WidgetSize(250f, wideGridHeight(rows)) }
 
 /**
- * Every size the grid provider hands the launcher; the bar provider ships [actionSizes] alone.
+ * Every size the quick-add provider hands the launcher.
  *
  * The platform takes at most [MaxBreakpoints] layouts in one `RemoteViews`
  * and throws past them, so the grid squashed to one row keeps the lowest
  * height only, with its two widths: every height draws the same two buttons,
- * and the others only square the shortcut on a taller launcher row, which the
- * bar (its own provider, the shape made for one row) still does. With all four
- * the grid reached 21 and never drew at all (13 Oct 2026).
+ * and the others only square the shortcut on a taller launcher row, the one
+ * thing lost when the bar stopped being a widget of its own (16 Oct 2026). With
+ * all four the grid reached 21 and never drew at all (13 Oct 2026).
  */
 internal fun gridWidgetSizes(fontScale: Float = 1f): List<WidgetSize> =
     actionSizes(fontScale, heights = ActionHeights.take(1)) + GridSizes

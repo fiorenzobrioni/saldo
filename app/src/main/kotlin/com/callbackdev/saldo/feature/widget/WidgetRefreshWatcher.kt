@@ -1,12 +1,12 @@
 package com.callbackdev.saldo.feature.widget
 
 import android.content.Context
+import com.callbackdev.saldo.core.common.applock.AppLockRepository
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
+import com.callbackdev.saldo.core.database.SaldoDatabase
 import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -18,24 +18,49 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import javax.inject.Singleton
+
+/**
+ * The tables the month widgets read (ADR 54), as one signal: a write to any of
+ * them is a change a month card may have to show. Room's own invalidation
+ * tracker, so the signal costs no query at all: the card's data pass runs only
+ * once the debounce has let a burst of writes settle.
+ *
+ * Open, and apart from the watcher, so a test can hand the watcher a signal of
+ * its own instead of a database.
+ */
+@Singleton
+open class LedgerChanges @Inject constructor(private val database: SaldoDatabase) {
+    open fun observe(): Flow<Unit> = database.invalidationTracker
+        .createFlow("transactions", "budgets", "recurring_rules", "accounts", "exchange_rates")
+        .map { }
+}
 
 /**
  * Keeps placed widgets in step with the data. A widget renders a snapshot (see
  * [SaldoWidgetProvider]), so something has to ask for the redraw: this watches
- * the little a widget still shows - the category list, the account list, the
- * theme settings - and refreshes on change, debounced so a restore or a bulk
- * edit costs one redraw instead of hundreds.
+ * what each kind of widget shows and refreshes it on change, debounced so a
+ * restore or a bulk edit costs one redraw instead of hundreds.
  *
- * Deliberately *not* watched: the transactions table. The widget shows no
- * totals and no usage-derived ordering, so recording a movement changes
- * nothing it draws - a widget on a busy day redraws exactly as often as one on
- * a quiet day, which is to say almost never.
+ * Two branches, each running only while a widget that needs it is placed:
  *
- * The observers only run while at least one widget is placed, which is why the
- * receiver reports placement changes through [onWidgetsChanged] rather than
- * this collecting unconditionally: a user who never adds a widget pays nothing
- * for the feature.
+ * - **the quick-add widget** (ADR 37): the category list, the account list,
+ *   the theme. Deliberately *not* the transactions table: it shows no totals
+ *   and no usage-derived ordering, so recording a movement changes nothing it
+ *   draws.
+ * - **the month widgets** (ADR 54): they show the month's figures, so they do
+ *   follow the ledger, the budgets, the rules and the rates (Room's
+ *   invalidation signal, no query), the theme, the primary currency, the
+ *   conversion switch and the app lock. With no month widget placed none of it
+ *   is observed, and the midnight alarm is cancelled.
+ *
+ * A user who never adds a widget pays nothing for the feature: the receiver
+ * reports placement changes through [onWidgetsChanged], and with nothing placed
+ * both branches are empty flows.
  */
 @Singleton
 class WidgetRefreshWatcher @Inject constructor(
@@ -45,9 +70,13 @@ class WidgetRefreshWatcher @Inject constructor(
     private val userPreferences: UserPreferencesRepository,
     private val updater: WidgetUpdater,
     private val loader: QuickAddWidgetDataLoader,
+    private val ledgerChanges: LedgerChanges,
+    private val appLockRepository: AppLockRepository,
 ) {
 
-    private val hasPlacedWidgets = MutableStateFlow(false)
+    private data class Placement(val quickAdd: Boolean = false, val month: Boolean = false)
+
+    private val placement = MutableStateFlow(Placement())
     private var scope: CoroutineScope? = null
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
@@ -55,12 +84,23 @@ class WidgetRefreshWatcher @Inject constructor(
         if (this.scope != null) return
         this.scope = scope
         scope.launch {
-            hasPlacedWidgets
-                .flatMapLatest { placed ->
-                    if (!placed) emptyFlow() else refreshSignals()
-                }
+            placement
+                .map { it.quickAdd }
+                .distinctUntilChanged()
+                .flatMapLatest { placed -> if (!placed) emptyFlow() else refreshSignals() }
                 .debounce(DEBOUNCE_MILLIS)
                 .collect { refresh() }
+        }
+        scope.launch {
+            placement
+                .map { it.month }
+                .distinctUntilChanged()
+                .flatMapLatest { placed ->
+                    if (!placed) MonthWidgetDayAlarm.cancel(context)
+                    if (!placed) emptyFlow() else monthSignals()
+                }
+                .debounce(DEBOUNCE_MILLIS)
+                .collect { runCatching { updater.updateMonth() } }
         }
         // Off the main thread: this is a binder call, and it runs during
         // Application.onCreate on every cold start.
@@ -68,9 +108,9 @@ class WidgetRefreshWatcher @Inject constructor(
     }
 
     /**
-     * Everything whose change makes a placed widget wrong. Named and internal so
-     * the set can be asserted: an omission here is invisible in a build and
-     * shows up only as a widget that quietly stops keeping up.
+     * Everything whose change makes a placed quick-add widget wrong. Named and
+     * internal so the set can be asserted: an omission here is invisible in a
+     * build and shows up only as a widget that quietly stops keeping up.
      */
     internal fun refreshSignals(): Flow<Unit> = combine(
         // The grid follows the categories screen: adding, renaming, recoloring
@@ -93,17 +133,36 @@ class WidgetRefreshWatcher @Inject constructor(
         // The first emission is the state already on screen.
         .drop(1)
 
+    /**
+     * Everything whose change makes a placed month widget wrong (ADR 54). The
+     * ledger signal emits once on subscription, on purpose: the month cards
+     * are drawn afresh whenever the watcher starts with one placed, because the
+     * day may have turned or a figure moved while the process was gone.
+     */
+    internal fun monthSignals(): Flow<Unit> = merge(
+        ledgerChanges.observe(),
+        userPreferences.themePreferences.distinctUntilChanged().drop(1).map { },
+        userPreferences.primaryCurrencyOverride.distinctUntilChanged().drop(1).map { },
+        userPreferences.currencyConversionEnabled.distinctUntilChanged().drop(1).map { },
+        // The PIN hides the figures on the home screen: turning it on must
+        // take them off the cards at once, not at the next movement.
+        appLockRepository.lockEnabled.distinctUntilChanged().drop(1).map { },
+    )
+
     /** Called when a widget is added or removed, and on every framework update broadcast. */
     fun onWidgetsChanged() {
         scope?.launch { readPlacement() } ?: readPlacement()
     }
 
     private fun readPlacement() {
-        hasPlacedWidgets.value = SaldoWidgetProvider.hasWidgets(context)
+        placement.value = Placement(
+            quickAdd = SaldoWidgetProvider.hasWidgets(context, setOf(SaldoWidgetKind.QUICK_ADD)),
+            month = SaldoWidgetProvider.hasWidgets(context, setOf(SaldoWidgetKind.WORDS, SaldoWidgetKind.RING)),
+        )
     }
 
     /**
-     * One-shot redraw for the debounced signal collector.
+     * One-shot redraw of the quick-add widgets for the debounced signal.
      *
      * Nothing is written on this path, which is the difference from the
      * Glance-backed version: a session only reacted to its own widget state, so
@@ -118,7 +177,7 @@ class WidgetRefreshWatcher @Inject constructor(
             // The snapshot cache is keyed by configuration alone, so it has to be
             // dropped here: this is the one moment the database moved under it.
             loader.invalidate()
-            updater.updateAll()
+            updater.updateQuickAdd()
         }
     }
 

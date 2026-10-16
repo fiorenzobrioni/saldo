@@ -2,7 +2,7 @@
 <!--
     The single-row layout: expense and income share the width and grow with it,
     so the same widget works at two launcher columns and at five. It is the
-    whole of the bar widget and the squashed end of the grid one.
+    quick-add widget squashed to one launcher row.
 
     Each button is an ImageView carrying the tinted shape with its content on
     top, not a container with a background: setColorFilter is the only tint a

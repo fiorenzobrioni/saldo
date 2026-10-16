@@ -1272,13 +1272,9 @@
     <string name="widget_form_buttons_arrows">A narrow row: the two arrows for Expense and Income, without names. The category is picked in the sheet that opens.</string>
     <string name="widget_form_grid_narrow">The categories as large icons, without names, on the type the widget starts on.</string>
     <string name="widget_form_grid_wide">Expense and Income at the top, the categories with their names below, and a last tile that opens Saldo.</string>
-    <string name="widget_quick_bar_label">Quick bar</string>
-    <string name="widget_quick_bar_description">Expense and income in one row, without opening the app.</string>
     <string name="settings_section_widgets">Widgets</string>
-    <string name="settings_widget_pin_grid">Grid widget on the home screen</string>
-    <string name="settings_widget_pin_grid_hint">The quick-add category grid.</string>
-    <string name="settings_widget_pin_bar">Bar widget on the home screen</string>
-    <string name="settings_widget_pin_bar_hint">Expense and Income in a single row.</string>
+    <string name="settings_widget_pin_grid">Quick add on the home screen</string>
+    <string name="settings_widget_pin_grid_hint">The categories, or Expense and Income in one row when you shrink it.</string>
 
     <!-- App lock and screen privacy (Phase 14.5) -->
     <string name="settings_section_security">Security</string>
@@ -1496,8 +1492,8 @@
     <string name="guide_quick_p1">Recording an expense is what you do most often, so it has more than one door: the shortcuts on the app\'s icon, the widget on the home screen, the tile in the quick settings. The widget and the tile open a small screen over the one you are using, with the keypad ready.</string>
     <string name="guide_quick_text_title">Writing it in one line</string>
     <string name="guide_quick_text_body">«12.50 pizza yesterday» becomes amount, description and date, and the category is suggested from what you wrote before. The text fills in and never saves by itself; when it is not sure, it stays quiet rather than guess.</string>
-    <string name="guide_quick_widget_title">The widget</string>
-    <string name="guide_quick_widget_body">Two shapes, a grid of categories and a bar with Expense and Income, on a card: a light one, a dark one, one that follows the phone or one of six colours, at the opacity you choose. It shows no balances and does not redraw when you record a movement, so it costs nothing to whoever keeps it on the home screen.</string>
+    <string name="guide_quick_widget_title">The widgets</string>
+    <string name="guide_quick_widget_body">Quick add is a grid of categories that, shrunk to one row, becomes Expense and Income. It shows no balances and does not redraw when you record a movement, so it costs nothing to whoever keeps it on the home screen. In words and The month read the month instead: what you can still spend, the next charge, the monthly budget\'s ring. They update when you record a movement and at midnight, and with the app lock on they show no figures. All of them sit on a card: light, dark, following the phone or one of six colours, at the opacity you choose.</string>
 
     <string name="guide_notifications_title">Notifications</string>
     <string name="guide_notifications_p1" formatted="false">Saldo writes to you only about what you asked for or what concerns you: a recurring movement recorded or waiting for you, a budget at 80% or past its limit, the card\'s statement, a renewal coming, the backup reminder.</string>
@@ -1513,4 +1509,70 @@
 
     <string name="settings_guide">How Saldo works</string>
     <string name="settings_guide_note">The four screens, the movements, the balance and your data</string>
+    <!-- Month widgets (ADR 54) -->
+    <string name="widget_words_label">In words</string>
+    <string name="widget_words_description">The month in one sentence: what you can still spend and the next charge.</string>
+    <string name="widget_ring_label">The month</string>
+    <string name="widget_ring_description_picker">The monthly budget\'s ring, with the month going by.</string>
+    <string name="widget_month_ring_setup">Set a budget</string>
+    <string name="widget_month_percent">%1$d%%</string>
+    <string name="widget_month_today">today</string>
+    <string name="widget_month_tomorrow">tomorrow</string>
+    <string name="widget_month_spent_of">%1$s of %2$s</string>
+    <string name="widget_words_can_spend">You can still spend %1$s, %2$s a day.</string>
+    <string name="widget_words_can_spend_plain">You can still spend %1$s this month.</string>
+    <string name="widget_words_can_spend_last_day">You can still spend %1$s: it is the last day of the month.</string>
+    <string name="widget_words_over">%1$s over this month\'s budget.</string>
+    <string name="widget_words_used">You have used %1$d%% of this month\'s budget.</string>
+    <string name="widget_words_over_hidden">This month\'s budget is over its limit.</string>
+    <string name="widget_words_spent">You have spent %1$s this month.</string>
+    <string name="widget_words_next_only">Next charge: %1$s, %2$s.</string>
+    <string name="widget_words_quiet">No recurring charge coming up.</string>
+    <string name="widget_words_short_can_spend">%1$s left</string>
+    <string name="widget_words_short_over">%1$s over</string>
+    <string name="widget_words_short_used">%1$d%% of budget</string>
+    <string name="widget_words_short_over_hidden">Over budget</string>
+    <string name="widget_words_short_spent">%1$s spent</string>
+    <string name="widget_words_short_next">%1$s %2$s</string>
+    <string name="widget_words_short_quiet">Nothing coming up</string>
+    <string name="widget_words_fact_next">Next: %1$s, %2$s</string>
+    <string name="widget_words_fact_next_amount">Next: %1$s, %2$s, %3$s</string>
+    <string name="widget_ring_spent">%1$s spent</string>
+    <string name="widget_ring_of_budget">of a %1$s budget</string>
+    <string name="widget_ring_over_budget">over the %1$s budget</string>
+    <string name="widget_ring_of_short">of %1$s</string>
+    <string name="widget_ring_over_short">over %1$s</string>
+    <string name="widget_ring_over">Over budget</string>
+    <string name="widget_ring_month_budget">%1$s budget</string>
+    <string name="widget_ring_description">%1$s budget: %2$d%% used. %3$s.</string>
+    <string name="widget_config_amounts">The amounts</string>
+    <string name="widget_config_amounts_caption">The figures on the card. With the app lock on they stay hidden anyway: the home screen is not behind the PIN.</string>
+    <string name="widget_config_next_charge">The next charge</string>
+    <string name="widget_config_next_charge_caption">The next recurring expense, with its day, where the card has room.</string>
+    <string name="widget_config_one_row">On one row</string>
+    <string name="widget_config_one_row_caption">One row tall, the widget becomes two buttons, Expense and Income.</string>
+    <string name="widget_form_words_short">A narrow row: the figure that matters, in a few words.</string>
+    <string name="widget_form_words_line">One row: the month\'s sentence.</string>
+    <string name="widget_form_words_panel">The month\'s name, the sentence and under it the facts that fit: the budget\'s figures, the days left, the next charge.</string>
+    <string name="widget_form_ring_row">One row: the ring and, where there is room, the budget\'s figures beside it.</string>
+    <string name="widget_form_ring_square">The ring large, and the budget\'s figures under it.</string>
+    <string name="widget_form_ring_panel">The ring, and beside it what you spent, on which budget, and the days left.</string>
+    <string name="settings_widget_pin_words">In words on the home screen</string>
+    <string name="settings_widget_pin_words_hint">The month in one sentence, with the next charge.</string>
+    <string name="settings_widget_pin_ring">The month on the home screen</string>
+    <string name="settings_widget_pin_ring_hint">The monthly budget\'s ring.</string>
+    <plurals name="widget_month_days_left">
+        <item quantity="one">Last day of the month</item>
+        <item quantity="other">%d days to the end of the month</item>
+    </plurals>
+    <plurals name="widget_month_days_left_short">
+        <item quantity="one">Last day</item>
+        <item quantity="other">%d days left</item>
+    </plurals>
+    <string name="widget_preview_ring_percent">64%</string>
+    <string name="widget_preview_ring_spent">€960 of €1,500</string>
+    <string name="widget_preview_ring_days">14 days left</string>
+    <string name="widget_preview_words_month">This month</string>
+    <string name="widget_preview_words_sentence">You can still spend €410, €29 a day.</string>
+    <string name="widget_preview_words_next">Next charge: Gym, Friday</string>
 </resources>

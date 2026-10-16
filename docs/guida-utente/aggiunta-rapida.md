@@ -10,10 +10,12 @@ Una pressione prolungata sull'icona di Saldo apre tre voci: nuova spesa, nuova e
 
 ## Widget sulla schermata home
 
-Il widget si aggiunge dal menu dei widget del launcher e ne esistono due forme:
+Il widget "Aggiunta rapida" si aggiunge dal menu dei widget del launcher e cambia forma con la misura:
 
-- **griglia di categorie**: le categorie nell'ordine della schermata Categorie, oppure quelle che scegli e riordini tu, un tocco per scegliere;
-- **barra Spesa/Entrata**: due tasti, per chi vuole meno ingombro. Dove le due parole non stanno intere (la barra larga due colonne, o tre con il testo di sistema grande) i tasti mostrano solo le frecce: in giù la spesa, in su l'entrata.
+- **griglia di categorie**, da due righe in su: le categorie nell'ordine della schermata Categorie, oppure quelle che scegli e riordini tu, un tocco per scegliere;
+- **Spesa ed Entrata**, quando lo rimpicciolisci a una riga: due tasti, per chi vuole meno ingombro. Dove le due parole non stanno intere (largo due colonne, o tre con il testo di sistema grande) i tasti mostrano solo le frecce: in giù la spesa, in su l'entrata. Quali tasti mostrare e se aggiungere l'icona dell'app si sceglie nel gruppo "Su una riga" delle sue impostazioni.
+
+Nelle versioni precedenti la riga di due tasti era anche un widget a sé, "Barra rapida": con l'aggiornamento sparisce dalla home e si rimette come "Aggiunta rapida" ridotta a una riga.
 
 Toccando il widget si apre una **schermata rapida** sopra il launcher, con il tastierino già pronto: scrivi l'importo e salvi, senza che l'app si apra per intero.
 
@@ -30,7 +32,7 @@ Il widget è una card con gli angoli arrotondati e, di default, lo sfondo blu pi
 
 Su uno sfondo colorato le icone delle categorie sono schiarite quanto basta per leggersi sul colore scuro, senza cambiare tinta. Sotto il 50% di opacità la card lascia vedere lo sfondo del telefono, e il colore del testo lo decide quello: scuro se Android dice che lo sfondo è chiaro, bianco altrimenti. Una card chiara o scura resta invece con il testo che le è proprio. Se cambi lo sfondo del telefono, un widget trasparente aggiorna il colore del testo al suo prossimo aggiornamento (quando cambi un conto, una categoria, il tema o le sue impostazioni).
 
-In cima alle impostazioni c'è il widget vero, disegnato come lo riceve il launcher, e cambia mentre scegli; toccarlo lì non fa nulla, è un'anteprima. Sotto, i chip delle misure lo mostrano alle altre dimensioni che può avere ("Com'è ora" è la sua), con una frase su cosa porta a quella misura. Poi, nell'ordine: il conto, lo sfondo, cosa porta (da quale tipo parte la griglia e le sue categorie, oppure i pulsanti della barra e l'icona dell'app). Ogni scelta vale subito e aggiorna il widget sulla home; "Fatto", o il tasto indietro, chiude e basta. "Ripristina questo widget" rimette tutto come al primo posizionamento, tranne il conto.
+In cima alle impostazioni c'è il widget vero, disegnato come lo riceve il launcher, e cambia mentre scegli; toccarlo lì non fa nulla, è un'anteprima. Sotto, i chip delle misure lo mostrano alle altre dimensioni che può avere ("Com'è ora" è la sua), con una frase su cosa porta a quella misura. Poi, nell'ordine: il conto, lo sfondo, cosa porta (da quale tipo parte la griglia e le sue categorie, e su una riga quali pulsanti e l'icona dell'app). Ogni scelta vale subito e aggiorna il widget sulla home; "Fatto", o il tasto indietro, chiude e basta. "Ripristina questo widget" rimette tutto come al primo posizionamento, tranne il conto.
 
 ## Tile nelle Impostazioni rapide
 

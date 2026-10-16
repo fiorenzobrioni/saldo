@@ -2,6 +2,7 @@ package com.callbackdev.saldo.feature.widget
 
 import android.content.Context
 import app.cash.turbine.test
+import com.callbackdev.saldo.core.common.applock.AppLockRepository
 import com.callbackdev.saldo.core.common.prefs.ThemeMode
 import com.callbackdev.saldo.core.common.prefs.ThemePreferences
 import com.callbackdev.saldo.core.common.prefs.UserPreferencesRepository
@@ -13,6 +14,7 @@ import com.callbackdev.saldo.core.domain.repository.AccountRepository
 import com.callbackdev.saldo.core.domain.repository.CategoryRepository
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
@@ -38,6 +40,10 @@ class WidgetRefreshWatcherTest {
     private val categories = MutableStateFlow(emptyList<Category>())
     private val accounts = MutableStateFlow(emptyList<Account>())
     private val theme = MutableStateFlow(ThemePreferences())
+    private val currencyOverride = MutableStateFlow<Currency?>(null)
+    private val conversion = MutableStateFlow(true)
+    private val lock = MutableStateFlow(false)
+    private val ledger = MutableSharedFlow<Unit>(replay = 1).apply { tryEmit(Unit) }
 
     private val categoryRepository = mockk<CategoryRepository> {
         every { observeCategories() } returns categories
@@ -47,6 +53,14 @@ class WidgetRefreshWatcherTest {
     }
     private val userPreferences = mockk<UserPreferencesRepository> {
         every { themePreferences } returns theme
+        every { primaryCurrencyOverride } returns currencyOverride
+        every { currencyConversionEnabled } returns conversion
+    }
+    private val ledgerChanges = mockk<LedgerChanges> {
+        every { observe() } returns ledger
+    }
+    private val appLockRepository = mockk<AppLockRepository> {
+        every { lockEnabled } returns lock
     }
 
     private val watcher = WidgetRefreshWatcher(
@@ -56,6 +70,8 @@ class WidgetRefreshWatcherTest {
         userPreferences = userPreferences,
         updater = mockk<WidgetUpdater>(relaxed = true),
         loader = mockk<QuickAddWidgetDataLoader>(relaxed = true),
+        ledgerChanges = ledgerChanges,
+        appLockRepository = appLockRepository,
     )
 
     private val account = Account(
@@ -120,6 +136,48 @@ class WidgetRefreshWatcherTest {
     @Test
     fun `the state already on screen is not a redraw`() = runTest {
         watcher.refreshSignals().test {
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /**
+     * The month widgets (ADR 54) are drawn afresh when the watcher starts with
+     * one placed: the ledger signal emits on subscription.
+     */
+    @Test
+    fun `the month cards are drawn when the watch starts`() = runTest {
+        watcher.monthSignals().test {
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `a ledger write signals the month cards`() = runTest {
+        watcher.monthSignals().test {
+            awaitItem()
+            ledger.emit(Unit)
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /** The PIN hides the figures on the home screen: turning it on must take them off at once. */
+    @Test
+    fun `turning the app lock on signals the month cards`() = runTest {
+        watcher.monthSignals().test {
+            awaitItem()
+            lock.value = true
+            awaitItem()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `the quick-add widget's signals still leave the ledger out`() = runTest {
+        watcher.refreshSignals().test {
+            ledger.emit(Unit)
             expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }

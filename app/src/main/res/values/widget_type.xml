@@ -12,4 +12,6 @@
     <dimen name="widget_type_label">13sp</dimen>
     <!-- The second thing read: the message of a card with nothing to show yet. -->
     <dimen name="widget_type_body">16sp</dimen>
+    <!-- The text of a card whose hero is a drawing: the month ring's words. -->
+    <dimen name="widget_type_title">22sp</dimen>
 </resources>

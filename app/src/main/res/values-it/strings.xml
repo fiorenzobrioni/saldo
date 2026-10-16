@@ -1295,13 +1295,9 @@
     <string name="widget_form_buttons_arrows">Una riga stretta: le due frecce di Spesa ed Entrata, senza nome. La categoria si sceglie nel foglio che si apre.</string>
     <string name="widget_form_grid_narrow">Le categorie come icone grandi, senza nome, sul tipo da cui il widget parte.</string>
     <string name="widget_form_grid_wide">In alto Spesa ed Entrata, sotto le categorie con il loro nome e l\'ultima casella che apre Saldo.</string>
-    <string name="widget_quick_bar_label">Barra rapida</string>
-    <string name="widget_quick_bar_description">Spesa ed entrata in una riga, senza aprire l\'app.</string>
     <string name="settings_section_widgets">Widget</string>
-    <string name="settings_widget_pin_grid">Widget griglia sulla home</string>
-    <string name="settings_widget_pin_grid_hint">La griglia di categorie per l\'aggiunta rapida.</string>
-    <string name="settings_widget_pin_bar">Widget barra sulla home</string>
-    <string name="settings_widget_pin_bar_hint">Spesa ed Entrata in una sola riga.</string>
+    <string name="settings_widget_pin_grid">Aggiunta rapida sulla home</string>
+    <string name="settings_widget_pin_grid_hint">Le categorie, o Spesa ed Entrata in una riga se lo rimpicciolisci.</string>
 
     <!-- Blocco app e privacy dello schermo (Fase 14.5) -->
     <string name="settings_section_security">Sicurezza</string>
@@ -1519,8 +1515,8 @@
     <string name="guide_quick_p1">Registrare una spesa è la cosa che fai più spesso, quindi ha più porte: le scorciatoie dall\'icona dell\'app, il widget sulla home, la tile nelle impostazioni rapide. Widget e tile aprono una schermata piccola sopra quella che stai usando, con il tastierino già pronto.</string>
     <string name="guide_quick_text_title">Scriverla in una riga</string>
     <string name="guide_quick_text_body">«12,50 pizza ieri» diventa importo, descrizione e data, e la categoria viene proposta da quello che hai già scritto in passato. Il testo compila e non salva mai da solo; quando non è sicuro, tace invece di indovinare.</string>
-    <string name="guide_quick_widget_title">Il widget</string>
-    <string name="guide_quick_widget_body">Due forme, una griglia di categorie e una barra con Spesa ed Entrata, su una card: chiara, scura, come il telefono o in uno dei sei colori, con l\'opacità che scegli. Non mostra saldi e non si ridisegna quando registri un movimento, così non consuma niente a chi lo tiene sulla home.</string>
+    <string name="guide_quick_widget_title">I widget</string>
+    <string name="guide_quick_widget_body">Aggiunta rapida è una griglia di categorie che, rimpicciolita a una riga, diventa Spesa ed Entrata. Non mostra saldi e non si ridisegna quando registri un movimento, così non consuma niente a chi la tiene sulla home. In parole e Il mese invece leggono il mese: quanto puoi ancora spendere, il prossimo addebito, l\'anello del budget mensile. Si aggiornano quando registri un movimento e a mezzanotte, e con il blocco dell\'app attivo non mostrano cifre. Tutti stanno su una card chiara, scura, come il telefono o in uno dei sei colori, con l\'opacità che scegli.</string>
 
     <string name="guide_notifications_title">Notifiche</string>
     <string name="guide_notifications_p1" formatted="false">Saldo ti scrive solo per le cose che hai chiesto o che ti riguardano: un movimento ricorrente registrato o da confermare, un budget all\'80% o superato, l\'estratto della carta, un rinnovo in arrivo, il promemoria del backup.</string>
@@ -1536,4 +1532,72 @@
 
     <string name="settings_guide">Come funziona Saldo</string>
     <string name="settings_guide_note">Le quattro schermate, i movimenti, il saldo e i tuoi dati</string>
+    <!-- Month widgets (ADR 54) -->
+    <string name="widget_words_label">In parole</string>
+    <string name="widget_words_description">Il mese in una frase: quanto puoi ancora spendere e il prossimo addebito.</string>
+    <string name="widget_ring_label">Il mese</string>
+    <string name="widget_ring_description_picker">L\'anello del budget mensile, con il mese che passa.</string>
+    <string name="widget_month_ring_setup">Imposta un budget</string>
+    <string name="widget_month_percent">%1$d%%</string>
+    <string name="widget_month_today">oggi</string>
+    <string name="widget_month_tomorrow">domani</string>
+    <string name="widget_month_spent_of">%1$s su %2$s</string>
+    <string name="widget_words_can_spend">Puoi ancora spendere %1$s, %2$s al giorno.</string>
+    <string name="widget_words_can_spend_plain">Puoi ancora spendere %1$s questo mese.</string>
+    <string name="widget_words_can_spend_last_day">Puoi ancora spendere %1$s: è l\'ultimo giorno del mese.</string>
+    <string name="widget_words_over">Oltre il budget del mese di %1$s.</string>
+    <string name="widget_words_used">Hai usato il %1$d%% del budget del mese.</string>
+    <string name="widget_words_over_hidden">Il budget del mese è superato.</string>
+    <string name="widget_words_spent">Questo mese hai speso %1$s.</string>
+    <string name="widget_words_next_only">Prossimo addebito: %1$s, %2$s.</string>
+    <string name="widget_words_quiet">Nessun addebito ricorrente in arrivo.</string>
+    <string name="widget_words_short_can_spend">Ancora %1$s</string>
+    <string name="widget_words_short_over">Oltre di %1$s</string>
+    <string name="widget_words_short_used">%1$d%% del budget</string>
+    <string name="widget_words_short_over_hidden">Budget superato</string>
+    <string name="widget_words_short_spent">Spesi %1$s</string>
+    <string name="widget_words_short_next">%1$s %2$s</string>
+    <string name="widget_words_short_quiet">Niente in arrivo</string>
+    <string name="widget_words_fact_next">Prossimo: %1$s, %2$s</string>
+    <string name="widget_words_fact_next_amount">Prossimo: %1$s, %2$s, %3$s</string>
+    <string name="widget_ring_spent">Spesi %1$s</string>
+    <string name="widget_ring_of_budget">su un budget di %1$s</string>
+    <string name="widget_ring_over_budget">oltre il budget di %1$s</string>
+    <string name="widget_ring_of_short">su %1$s</string>
+    <string name="widget_ring_over_short">oltre %1$s</string>
+    <string name="widget_ring_over">Budget superato</string>
+    <string name="widget_ring_month_budget">Budget di %1$s</string>
+    <string name="widget_ring_description">Budget di %1$s: usato il %2$d%%. %3$s.</string>
+    <string name="widget_config_amounts">Gli importi</string>
+    <string name="widget_config_amounts_caption">Le cifre sulla card. Con il blocco dell\'app attivo restano nascoste comunque: la home non è dietro il PIN.</string>
+    <string name="widget_config_next_charge">Il prossimo addebito</string>
+    <string name="widget_config_next_charge_caption">La prossima spesa ricorrente, con il giorno, dove la card ha spazio.</string>
+    <string name="widget_config_one_row">Su una riga</string>
+    <string name="widget_config_one_row_caption">Alto una riga, il widget diventa due pulsanti, Spesa ed Entrata.</string>
+    <string name="widget_form_words_short">Una riga stretta: la cifra che conta, in poche parole.</string>
+    <string name="widget_form_words_line">Una riga: la frase del mese.</string>
+    <string name="widget_form_words_panel">Il nome del mese, la frase e sotto i fatti che ci stanno: le cifre del budget, i giorni rimasti, il prossimo addebito.</string>
+    <string name="widget_form_ring_row">Una riga: l\'anello e, dove c\'è spazio, accanto le cifre del budget.</string>
+    <string name="widget_form_ring_square">L\'anello grande e sotto le cifre del budget.</string>
+    <string name="widget_form_ring_panel">L\'anello e accanto quanto hai speso, su quale budget e i giorni rimasti.</string>
+    <string name="settings_widget_pin_words">In parole sulla home</string>
+    <string name="settings_widget_pin_words_hint">Il mese in una frase, con il prossimo addebito.</string>
+    <string name="settings_widget_pin_ring">Il mese sulla home</string>
+    <string name="settings_widget_pin_ring_hint">L\'anello del budget mensile.</string>
+    <plurals name="widget_month_days_left">
+        <item quantity="one">Ultimo giorno del mese</item>
+        <item quantity="many">%d giorni alla fine del mese</item>
+        <item quantity="other">%d giorni alla fine del mese</item>
+    </plurals>
+    <plurals name="widget_month_days_left_short">
+        <item quantity="one">Ultimo giorno</item>
+        <item quantity="many">Ancora %d giorni</item>
+        <item quantity="other">Ancora %d giorni</item>
+    </plurals>
+    <string name="widget_preview_ring_percent">64%</string>
+    <string name="widget_preview_ring_spent">960 € su 1.500 €</string>
+    <string name="widget_preview_ring_days">Ancora 14 giorni</string>
+    <string name="widget_preview_words_month">Questo mese</string>
+    <string name="widget_preview_words_sentence">Puoi ancora spendere 410 €, 29 € al giorno.</string>
+    <string name="widget_preview_words_next">Prossimo addebito: Palestra, venerdì</string>
 </resources>

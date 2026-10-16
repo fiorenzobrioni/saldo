@@ -57,18 +57,42 @@
                 android:resource="@xml/quick_add_widget_info" />
         </receiver>
 
-        <!-- The single-row bar as its own provider: its own picker card, its
-             own preview, and a shape pinned by maxResizeHeight. -->
+        <!--
+            The month widgets (ADR 54): «In words» and «The month». Besides the
+            update broadcast they take the three broadcasts that change a
+            card's day (a clock or zone set by hand, a new language), all
+            exempt from the limits on implicit broadcasts; the midnight redraw
+            is their own non-wakeup alarm, aimed at «In words» and speaking for
+            both.
+        -->
         <receiver
-            android:name=".feature.widget.QuickBarWidgetProvider"
+            android:name=".feature.widget.MonthWordsWidgetProvider"
             android:exported="false"
-            android:label="@string/widget_quick_bar_label">
+            android:label="@string/widget_words_label">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/quick_bar_widget_info" />
+                android:resource="@xml/month_words_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".feature.widget.MonthRingWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_ring_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/month_ring_widget_info" />
         </receiver>
 
         <!--

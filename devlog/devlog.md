@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-16 - Widget del mese e un solo widget di aggiunta
+
+**Fatto:** Fase 45, ADR 54, emendamento dell'ADR 37. Due widget nuovi: "In parole" (il mese in una frase: quanto puoi ancora spendere e al giorno, le cifre del budget, i giorni rimasti, il prossimo addebito) e "Il mese" (l'anello della spesa sul budget mensile, con la banda del mese trascorso e la percentuale nel foro; senza budget una card che apre i budget). "Barra rapida" tolta: "Aggiunta rapida" a una riga disegna già la stessa barra, e le sue opzioni passano nel gruppo "Su una riga". Aggiornamento dei widget del mese solo se piazzati: segnale di invalidazione di Room sulle tabelle che leggono, tema, valuta, conversione e PIN, sveglia `RTC` non esatta poco dopo mezzanotte, broadcast esenti di ora, fuso e lingua, ridisegno alla fine del worker giornaliero. Con il blocco app nessun importo, più l'interruttore "Gli importi". `ACTION_OPEN_BUDGETS` per la card senza budget. Voci nelle Impostazioni per aggiungere i due widget alla home. `versionName` 2.3.6, `versionCode` 196.
+
+**Decisioni:** l'anello è un `ProgressBar` con un `layer-list` di tre anelli tinti a bind time, così il `RemoteViews` non porta bitmap. Le righe dei widget del mese sono misurate con `StaticLayout` alla dimensione del testo corrente e tenute solo se stanno intere, in ordine di lettura: una stima a caratteri tagliava la frase in italiano o a testo 1,3. Il prossimo addebito viene dalle regole (la soglia dell'hub), non dai movimenti futuri inseriti a mano. La frase di "In parole" usa lo spendibile della Dashboard, l'anello la spesa sul budget: sono le due domande diverse delle due card della Dashboard.
+
+**Problemi:** la prima versione delle righe tagliava testi a 1,15 e 1,3 e nelle card strette; `WidgetFitTest`, esteso ai due widget in sei situazioni, li ha trovati tutti. Il launcher sceglie il breakpoint più grande che sta nella card, quindi le righe venivano misurate su una colonna più stretta di quella vera: aggiunti breakpoint alle larghezze di riferimento (15 per l'anello, 13 per "In parole").
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt` (con l'init script del mirror); `WidgetGallery` guardata in italiano e inglese; `widgets.png` rigenerato e guardato.
+
+**Prossimo:** verifica su device: aggiornamento dopo un movimento, a mezzanotte e all'attivazione del PIN.
+
+---
+
 ## 2026-10-16 - Impostazioni del widget: la grammatica di famiglia
 
 **Fatto:** Fase 44. La schermata di impostazione dei widget (griglia e barra) segue ora quella delle altre app della famiglia. Ogni scelta si salva subito e ridisegna il widget; "Fatto" in fondo chiude e basta, via la freccia che scartava e il pulsante "Aggiorna il widget". Ordine: anteprima con i chip delle misure e la frase su cosa porta il widget a quella misura, Conto (primo, è la fonte dei dati), Sfondo e opacità, poi Parte da e Contenuto (griglia) o Pulsanti e Contenuto (barra). Righe con il pallino di scelta e interruttori a riga intera al posto di pulsanti segmentati e chip; gruppi su `surfaceContainerLow` a 24 dp senza bordo. I sei colori sono bersagli da 48 dp in una fila che va a capo (a 360 dp l'ultimo diventava un ovale). Nuovo "Ripristina questo widget" (tiene il conto). Titolo "Questo widget". Niente rotellina all'apertura. `versionName` 2.3.5, `versionCode` 195.
