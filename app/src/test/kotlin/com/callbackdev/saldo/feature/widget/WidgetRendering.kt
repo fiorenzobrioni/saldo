@@ -20,8 +20,12 @@ import com.callbackdev.saldo.core.designsystem.theme.WidgetCardColor
 import com.callbackdev.saldo.core.designsystem.theme.moneyColors
 import com.callbackdev.saldo.core.domain.model.Category
 import com.callbackdev.saldo.core.domain.model.CategoryType
+import com.callbackdev.saldo.core.domain.model.BudgetLevel
 import com.callbackdev.saldo.core.domain.model.TransactionType
 import java.io.File
+import java.math.BigDecimal
+import java.time.LocalDate
+import java.util.Currency
 import kotlin.math.roundToInt
 
 /**
@@ -79,6 +83,75 @@ internal object WidgetRendering {
         pinnedAccountId = accountName?.let { 1L },
         pinnedAccountName = accountName,
     )
+
+    /**
+     * A month as the month widgets read it: mid-October, an overall budget of
+     * 1,500 with 960 spent and 410 still safe to spend, and the gym renewing on
+     * Friday. [amounts] false is the app lock on; [budget] false is a reader
+     * with no monthly budget.
+     */
+    fun monthData(
+        amounts: Boolean = true,
+        budget: Boolean = true,
+        over: Boolean = false,
+        ready: Boolean = true,
+        nextName: String = "Gym",
+    ) = MonthWidgetData(
+        today = LocalDate.of(2026, 10, 16),
+        currency = Currency.getInstance("EUR"),
+        hasAccounts = ready,
+        budget = if (!budget) {
+            null
+        } else if (over) {
+            MonthBudget(
+                limit = BigDecimal("1500.00"),
+                spent = BigDecimal("1545.20"),
+                fraction = 1.03f,
+                level = BudgetLevel.OVER,
+                safeToSpend = BigDecimal("-162.40"),
+                perDay = null,
+            )
+        } else {
+            MonthBudget(
+                limit = BigDecimal("1500.00"),
+                spent = BigDecimal("960.00"),
+                fraction = 0.64f,
+                level = BudgetLevel.UNDER,
+                safeToSpend = BigDecimal("410.00"),
+                perDay = BigDecimal("25.62"),
+            )
+        },
+        spent = BigDecimal("960.00"),
+        next = NextCharge(nextName, LocalDate.of(2026, 10, 23), BigDecimal("39.90"), Currency.getInstance("EUR")),
+        amountsAllowed = amounts,
+    )
+
+    /** A month widget inflated and laid out at the granted size, as [inflate] does for the quick-add one. */
+    fun inflateMonth(
+        context: Context,
+        kind: MonthWidgetKind,
+        data: MonthWidgetData,
+        width: Float,
+        height: Float,
+        stretch: Float = 1f,
+        config: MonthWidgetConfig = MonthWidgetConfig(),
+    ): View {
+        val density = context.resources.displayMetrics.density
+        val sizes = if (kind == MonthWidgetKind.RING) RingSizes else WordsSizes
+        val breakpoint = pickBreakpoint(sizes, width, height)
+        val views = MonthWidgetRenderer.render(context, kind, data, config, palette(), breakpoint)
+        val host = FrameLayout(context)
+        host.addView(views.apply(context, host))
+        if (stretch != 1f) texts(host).forEach { it.textScaleX = stretch }
+        val w = (width * density).roundToInt()
+        val h = (height * density).roundToInt()
+        host.measure(
+            View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY),
+        )
+        host.layout(0, 0, w, h)
+        return host
+    }
 
     /**
      * The breakpoint a launcher applies for a granted size: the one that fits

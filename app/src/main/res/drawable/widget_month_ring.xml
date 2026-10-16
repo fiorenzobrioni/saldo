@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The month ring (ADR 54), drawn by a ProgressBar so the card ships no bitmap:
+    a RemoteViews carries a bitmap per breakpoint, and a ring is the one drawing
+    a shape can be. Three rings at the layer ids ProgressBar knows:
+
+    - background: the track, the full circle, tinted the quiet ink at a quarter;
+    - progress: the budget spent, from the top clockwise, tinted the card's
+      accent, or the expense colour once the budget is over;
+    - secondaryProgress: how much of the month has gone by, a thin line inside
+      the track, in the quiet ink, so "64% spent, half the month gone" reads
+      without a word (the budget notifications' band, as a ring).
+
+    Ratios of the view's side: the thick ring's outer edge is 1/2.6 + 1/9 =
+    0.496 of the side (inside the half), the thin one sits at 1/3.4 with 1/40
+    of thickness, clear of the thick ring's inner edge at 0.385. The fills are
+    white and are tinted at bind time (setProgressTintList and its two siblings).
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@android:id/background">
+        <shape
+            android:innerRadiusRatio="2.6"
+            android:shape="ring"
+            android:thicknessRatio="9"
+            android:useLevel="false">
+            <solid android:color="#FFFFFFFF" />
+        </shape>
+    </item>
+    <item android:id="@android:id/secondaryProgress">
+        <rotate
+            android:fromDegrees="270"
+            android:pivotX="50%"
+            android:pivotY="50%"
+            android:toDegrees="270">
+            <shape
+                android:innerRadiusRatio="3.4"
+                android:shape="ring"
+                android:thicknessRatio="40"
+                android:useLevel="true">
+                <solid android:color="#FFFFFFFF" />
+            </shape>
+        </rotate>
+    </item>
+    <item android:id="@android:id/progress">
+        <rotate
+            android:fromDegrees="270"
+            android:pivotX="50%"
+            android:pivotY="50%"
+            android:toDegrees="270">
+            <shape
+                android:innerRadiusRatio="2.6"
+                android:shape="ring"
+                android:thicknessRatio="9"
+                android:useLevel="true">
+                <solid android:color="#FFFFFFFF" />
+            </shape>
+        </rotate>
+    </item>
+</layer-list>

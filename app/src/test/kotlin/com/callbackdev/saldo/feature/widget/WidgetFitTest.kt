@@ -40,7 +40,27 @@ class WidgetFitTest {
                 WidgetRendering.cuts(view, allowEllipsis = ::isUserName)
                     .map { "${case.name} ${width.toInt()}x${height.toInt()} @$scale: $it" }
             }
+        } + monthCases().flatMap { (name, kind, data) ->
+            MonthHeights.flatMap { height ->
+                WidgetRendering.Widths.flatMap { width ->
+                    val view = WidgetRendering.inflateMonth(context, kind, data, width, height, STRETCH)
+                    WidgetRendering.cuts(view, allowEllipsis = ::isUserName)
+                        .map { "$name ${width.toInt()}x${height.toInt()} @$scale: $it" }
+                }
+            }
         }
+    }
+
+    /** The month widgets (ADR 54): figures shown, hidden by the app lock, over budget, no budget, not set up. */
+    private fun monthCases(): List<Triple<String, MonthWidgetKind, MonthWidgetData>> = MonthWidgetKind.entries.flatMap { kind ->
+        listOf(
+            Triple("$kind", kind, WidgetRendering.monthData()),
+            Triple("$kind locked", kind, WidgetRendering.monthData(amounts = false)),
+            Triple("$kind over", kind, WidgetRendering.monthData(over = true)),
+            Triple("$kind no budget", kind, WidgetRendering.monthData(budget = false)),
+            Triple("$kind no budget locked", kind, WidgetRendering.monthData(budget = false, amounts = false)),
+            Triple("$kind setup", kind, WidgetRendering.monthData(ready = false)),
+        )
     }
 
     private fun cases() = listOf(
@@ -51,7 +71,8 @@ class WidgetFitTest {
             WidgetRendering.Heights,
             WidgetRendering.data(context, accountName = "Joint current account"),
         ),
-        Case("bar", actionSizes(context.resources.configuration.fontScale), OneRow, WidgetRendering.data(context)),
+        // Squashed to one launcher row: the two buttons, the shape that was its own widget until Fase 45.
+        Case("one row", gridWidgetSizes(context.resources.configuration.fontScale), OneRow, WidgetRendering.data(context)),
         Case("setup", gridWidgetSizes(context.resources.configuration.fontScale), WidgetRendering.Heights, WidgetRendering.data(context, ready = false)),
     )
 
@@ -82,11 +103,15 @@ class WidgetFitTest {
     private fun isUserName(text: TextView): Boolean {
         if (text.id == View.NO_ID) return false
         val name = context.resources.getResourceEntryName(text.id)
-        return name == "widget_badge" || name.startsWith("widget_tile_label_")
+        // The month card's next charge carries the name of the reader's rule (ADR 54).
+        return name == "widget_badge" || name.startsWith("widget_tile_label_") || name == "widget_words_next"
     }
 
     private companion object {
         const val STRETCH = 1.05f
         val OneRow = listOf(85f)
+
+        /** One row and the two reference heights the month cards are placed at most. */
+        val MonthHeights = listOf(85f, 189f, 293f)
     }
 }

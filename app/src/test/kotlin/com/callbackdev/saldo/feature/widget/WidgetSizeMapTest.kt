@@ -26,9 +26,9 @@ class WidgetSizeMapTest {
 
     @Test
     fun `every provider's breakpoints fit in one RemoteViews`() {
-        SaldoWidgetProvider.providers.forEach { (provider, sizes) ->
+        SaldoWidgetProvider.providers.forEach { (provider, kind) ->
             listOf(0.85f, 1f, 1.15f, 1.3f, 2f).forEach { scale ->
-                val breakpoints = sizes(scale)
+                val breakpoints = kind.sizes(scale)
                 assertTrue(
                     "${provider.simpleName} at text $scale: ${breakpoints.size} breakpoints, the platform takes 16",
                     breakpoints.size <= MaxBreakpoints,
@@ -38,13 +38,25 @@ class WidgetSizeMapTest {
                     breakpoints.toSet().size == breakpoints.size,
                 )
                 // Throws past the platform's limit, as on a phone.
-                WidgetRenderer.sizeMap(
-                    context = context,
-                    appWidgetId = 1,
-                    data = WidgetRendering.data(context),
-                    palette = WidgetRendering.palette(),
-                    sizes = breakpoints,
-                )
+                val month = kind.month
+                if (month == null) {
+                    WidgetRenderer.sizeMap(
+                        context = context,
+                        appWidgetId = 1,
+                        data = WidgetRendering.data(context),
+                        palette = WidgetRendering.palette(),
+                        sizes = breakpoints,
+                    )
+                } else {
+                    MonthWidgetRenderer.sizeMap(
+                        context = context,
+                        kind = month,
+                        data = WidgetRendering.monthData(),
+                        config = MonthWidgetConfig(),
+                        palette = WidgetRendering.palette(),
+                        sizes = breakpoints,
+                    )
+                }
             }
         }
     }

@@ -76,6 +76,7 @@ class MainActivity : ComponentActivity() {
 
     /** The backup reminder notification was tapped: open the Backup screen once (Fase 39, F4). */
     private val pendingOpenBackup = MutableStateFlow(false)
+    private val pendingOpenBudgets = MutableStateFlow(false)
 
     override fun onStart() {
         super.onStart()
@@ -108,6 +109,7 @@ class MainActivity : ComponentActivity() {
             applicationScope.launch { runCatching { processDueStatements() } }
             pendingQuickAction.value = quickActionFrom(intent)
             pendingOpenBackup.value = intent?.action == ACTION_OPEN_BACKUP
+            pendingOpenBudgets.value = intent?.action == ACTION_OPEN_BUDGETS
         }
         setContent {
             val themePreferences by userPreferences.themePreferences
@@ -160,11 +162,14 @@ class MainActivity : ComponentActivity() {
                                 LaunchGate.APP -> {
                                     val quickAction by pendingQuickAction.collectAsStateWithLifecycle()
                                     val openBackup by pendingOpenBackup.collectAsStateWithLifecycle()
+                                    val openBudgets by pendingOpenBudgets.collectAsStateWithLifecycle()
                                     SaldoApp(
                                         quickAction = quickAction,
                                         onQuickActionHandled = { pendingQuickAction.value = null },
                                         openBackup = openBackup,
                                         onOpenBackupHandled = { pendingOpenBackup.value = false },
+                                        openBudgets = openBudgets,
+                                        onOpenBudgetsHandled = { pendingOpenBudgets.value = false },
                                     )
                                 }
                             }
@@ -181,6 +186,7 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         quickActionFrom(intent)?.let { pendingQuickAction.value = it }
         if (intent.action == ACTION_OPEN_BACKUP) pendingOpenBackup.value = true
+        if (intent.action == ACTION_OPEN_BUDGETS) pendingOpenBudgets.value = true
     }
 
     /** Maps a launcher shortcut intent to the movement type it opens, or null. */
@@ -198,5 +204,8 @@ class MainActivity : ComponentActivity() {
 
         /** Set on the backup reminder's tap intent: the app opens on the Backup screen. */
         const val ACTION_OPEN_BACKUP = "com.callbackdev.saldo.action.OPEN_BACKUP"
+
+        /** Set by the month ring's "set a monthly budget" card: the app opens on the budgets. */
+        const val ACTION_OPEN_BUDGETS = "com.callbackdev.saldo.action.OPEN_BUDGETS"
     }
 }

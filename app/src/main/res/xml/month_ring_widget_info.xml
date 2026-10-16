@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    «The month» (ADR 54): the overall monthly budget as a ring. Same passive
+    policy as «In words». Two cells by two by default: the square form, the
+    ring large with its figures under it.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigActivity"
+    android:description="@string/widget_ring_description_picker"
+    android:initialLayout="@layout/widget_month_ring_square"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:previewLayout="@layout/month_ring_widget_preview"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional" />

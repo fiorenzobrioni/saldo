@@ -14,7 +14,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
 /**
- * Every form of both widgets at every reference grant, drawn to
+ * Every form of every widget at the reference grants, drawn to
  * `app/build/screenshots` to be looked at after a change to a card. Not an
  * assertion ([WidgetFitTest] and `WidgetLayoutTest` are), and only on request:
  * `./gradlew testDebugUnitTest -PwidgetGallery --tests "*.WidgetGallery"`.
@@ -57,7 +57,44 @@ class WidgetGallery {
     )
 
     @Test
-    fun bar() = board("widget-bar", ActionSizes, listOf(85f), WidgetRendering.data(context))
+    fun oneRow() = board("widget-one-row", GridWidgetSizes, listOf(85f), WidgetRendering.data(context))
+
+    private fun monthBoard(name: String, kind: MonthWidgetKind, data: MonthWidgetData) {
+        val board = WidgetRendering.Board(context)
+        listOf(85f, 189f, 293f).forEach { height ->
+            val cards = WidgetRendering.Widths.map { width ->
+                "${width.toInt()}x${height.toInt()}" to
+                    WidgetRendering.draw(WidgetRendering.inflateMonth(context, kind, data, width, height))
+            }
+            board.row(*cards.toTypedArray())
+        }
+        board.draw().saveTo(out, name)
+    }
+
+    @Test
+    fun words() = monthBoard("widget-words", MonthWidgetKind.WORDS, WidgetRendering.monthData())
+
+    @Test
+    fun wordsLocked() = monthBoard("widget-words-locked", MonthWidgetKind.WORDS, WidgetRendering.monthData(amounts = false))
+
+    @Test
+    fun wordsNoBudget() = monthBoard("widget-words-no-budget", MonthWidgetKind.WORDS, WidgetRendering.monthData(budget = false))
+
+    @Test
+    fun ring() = monthBoard("widget-ring", MonthWidgetKind.RING, WidgetRendering.monthData())
+
+    @Test
+    fun ringOver() = monthBoard("widget-ring-over", MonthWidgetKind.RING, WidgetRendering.monthData(over = true))
+
+    @Test
+    fun ringLocked() = monthBoard("widget-ring-locked", MonthWidgetKind.RING, WidgetRendering.monthData(amounts = false))
+
+    @Test
+    fun ringNoBudget() = monthBoard("widget-ring-no-budget", MonthWidgetKind.RING, WidgetRendering.monthData(budget = false))
+
+    @Test
+    @Config(qualifiers = "it-rIT-w411dp-h891dp-xhdpi")
+    fun wordsItalian() = monthBoard("widget-words-it", MonthWidgetKind.WORDS, WidgetRendering.monthData())
 
     @Test
     fun setup() = board(

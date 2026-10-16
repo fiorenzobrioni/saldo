@@ -549,8 +549,9 @@ L'export rispetta i filtri attivi ("esporta questa vista").
 
 # Widget
 
-- widget "aggiunta rapida" in due forme, griglia e barra (implementati nella v1.0)
-- i widget sono punti di ingresso statici, non superfici di visualizzazione: niente saldi, totali o contenuti derivati dai movimenti (decisione di luglio 2026, Fase 10.21). I widget di sola lettura (saldo totale, spese del giorno) sono fuori scope per questo motivo: costerebbero un refresh a ogni movimento
+- widget "aggiunta rapida": una griglia di categorie che, rimpicciolita a una riga, diventa Spesa ed Entrata (fino alla Fase 45 la barra era un widget a sé)
+- il widget di aggiunta è un punto di ingresso statico: niente saldi, totali o contenuti derivati dai movimenti (decisione di luglio 2026, Fase 10.21, ADR 37)
+- due widget di lettura del mese (Fase 45, ADR 54): "In parole" (quanto si può ancora spendere, il prossimo addebito) e "Il mese" (l'anello del budget mensile). Si aggiornano quando cambiano i movimenti e a mezzanotte, solo se piazzati; con il blocco app attivo non mostrano importi
 
 ---
 

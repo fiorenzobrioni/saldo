@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    «In words» (ADR 54): the month in one sentence. Same passive policy as the
+    quick-add widget (updatePeriodMillis=0): it is redrawn when what it says
+    changes and just after midnight, by the app, never on a timer of the
+    host's. initialLayout is the card itself, so a fresh placement shows the
+    card's ground and not a white box before the first bind.
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:configure="com.callbackdev.saldo.feature.widget.QuickAddWidgetConfigActivity"
+    android:description="@string/widget_words_description"
+    android:initialLayout="@layout/widget_month_words"
+    android:minWidth="110dp"
+    android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
+    android:previewLayout="@layout/month_words_widget_preview"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
+    android:updatePeriodMillis="0"
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable|configuration_optional" />

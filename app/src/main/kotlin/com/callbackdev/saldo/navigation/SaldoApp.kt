@@ -94,6 +94,8 @@ fun SaldoApp(
     onQuickActionHandled: () -> Unit = {},
     openBackup: Boolean = false,
     onOpenBackupHandled: () -> Unit = {},
+    openBudgets: Boolean = false,
+    onOpenBudgetsHandled: () -> Unit = {},
 ) {
     // One back stack per tab (Nav3 multiple-back-stacks recipe): switching
     // tabs keeps every tab's ViewModels, scroll and filters alive.
@@ -117,6 +119,15 @@ fun SaldoApp(
         if (openBackup) {
             if (nav.currentRoute != BackupRoute) nav.navigate(BackupRoute)
             onOpenBackupHandled()
+        }
+    }
+
+    // The month ring's "set a monthly budget" card was tapped: land on the
+    // budgets, where the monthly one is set, unless they are already showing.
+    LaunchedEffect(openBudgets) {
+        if (openBudgets) {
+            if (nav.currentRoute != BudgetsRoute) nav.navigate(BudgetsRoute)
+            onOpenBudgetsHandled()
         }
     }
 

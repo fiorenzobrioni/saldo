@@ -13,15 +13,26 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * The manifest side of the quick-add widgets: a plain [AppWidgetProvider]
- * driving `RemoteViews` directly.
+ * Every kind of widget the app places, with the breakpoints its provider hands
+ * the launcher: the quick-add widget (ADR 37) and the two month widgets (ADR 54).
+ */
+enum class SaldoWidgetKind(internal val sizes: (fontScale: Float) -> List<WidgetSize>, val month: MonthWidgetKind?) {
+    QUICK_ADD({ scale -> gridWidgetSizes(scale) }, null),
+    WORDS({ WordsSizes }, MonthWidgetKind.WORDS),
+    RING({ RingSizes }, MonthWidgetKind.RING),
+}
+
+/**
+ * The manifest side of the widgets: a plain [AppWidgetProvider] driving
+ * `RemoteViews` directly.
  *
  * Deliberately passive on battery. There is no `updatePeriodMillis`, no polling
- * and no work of its own: the widget draws a snapshot of things that only change
- * when the user edits accounts, categories, the theme or the widget's own
- * settings, and [WidgetRefreshWatcher] pushes a redraw when one of those moves
- * (ADR 37). Recording a movement changes nothing a widget draws, so a busy day
- * costs exactly as many redraws as a quiet one, which is none.
+ * and no work of its own. The quick-add widget draws a snapshot of things that
+ * only change when the user edits accounts, categories, the theme or the
+ * widget's own settings (ADR 37); the month widgets also follow the ledger, the
+ * budgets and the recurring rules, and the day (ADR 54). [WidgetRefreshWatcher]
+ * pushes a redraw when one of those moves, and only while a widget that draws
+ * it is placed.
  *
  * The lifecycle hooks only record what the broadcast needs; the suspend work
  * runs once, in [onReceive]. `goAsync()` is consume-once and a single broadcast
@@ -34,13 +45,14 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
      * The breakpoints this provider hands the launcher at a text size (see
      * [WidgetRenderer.sizeMap]): where the single row's words fit depends on it.
      */
-    internal abstract val sizes: (fontScale: Float) -> List<WidgetSize>
+    internal abstract val kind: SaldoWidgetKind
 
     private var render: IntArray? = null
     private var placementChanged = false
     private var deleted: IntArray? = null
     private var restored: Pair<IntArray, IntArray>? = null
     private var requestedType: Pair<Int, TransactionType>? = null
+    private var dayChanged = false
 
     override fun onUpdate(
         context: Context,
@@ -99,7 +111,12 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
         deleted = null
         restored = null
         requestedType = null
+        dayChanged = false
         super.onReceive(context, intent)
+        // A month card is about a day: a new day (the watcher's alarm), a clock
+        // or zone moved by hand, or a new language all redraw every one of them.
+        // Either month provider speaks for both: the alarm is aimed at one.
+        if (kind.month != null && intent.action in DayActions) dayChanged = true
         if (intent.action == ACTION_SET_TYPE) {
             val id = intent.getIntExtra(EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
             val type = intent.getStringExtra(EXTRA_TYPE)
@@ -114,7 +131,8 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
         val forget = deleted
         val remap = restored
         val selector = requestedType
-        val wanted = listOfNotNull(ids, forget, remap, selector).isNotEmpty() || placement
+        val newDay = dayChanged
+        val wanted = listOfNotNull(ids, forget, remap, selector).isNotEmpty() || placement || newDay
         if (!wanted) return
 
         // Nullable despite the platform signature: goAsync() only returns a
@@ -134,10 +152,11 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
                 forget?.let { store.forget(it) }
                 selector?.let { (id, type) ->
                     store.setCurrentType(id, type)
-                    updater.update(intArrayOf(id), sizes)
+                    updater.update(intArrayOf(id), kind)
                 }
                 if (placement) entryPoint.widgetRefreshWatcher().onWidgetsChanged()
-                ids?.let { updater.update(it, sizes) }
+                ids?.let { updater.update(it, kind) }
+                if (newDay) updater.updateMonth()
             }
             pendingResult?.finish()
         }
@@ -147,45 +166,65 @@ abstract class SaldoWidgetProvider : AppWidgetProvider() {
         /** The home-screen expense/income selector, handled by the grid provider. */
         const val ACTION_SET_TYPE = "com.callbackdev.saldo.widget.SET_TYPE"
 
+        /** The month widgets' midnight alarm (ADR 54), see [MonthWidgetDayAlarm]. */
+        const val ACTION_NEW_DAY = "com.callbackdev.saldo.widget.NEW_DAY"
+
         const val EXTRA_APPWIDGET_ID = "com.callbackdev.saldo.widget.EXTRA_APPWIDGET_ID"
         const val EXTRA_TYPE = "com.callbackdev.saldo.widget.EXTRA_TYPE"
 
-        /** Every provider whose widgets the watcher keeps fresh, with its breakpoints. */
-        internal val providers: List<Pair<Class<out SaldoWidgetProvider>, (Float) -> List<WidgetSize>>> = listOf(
-            QuickAddWidgetProvider::class.java to { scale -> gridWidgetSizes(scale) },
-            QuickBarWidgetProvider::class.java to { scale -> actionSizes(scale) },
+        /**
+         * The broadcasts that change a month card's day: the alarm, and the
+         * three a manifest receiver still gets (all exempt from the implicit
+         * broadcast limits), for a clock or a zone moved by hand and a new
+         * language.
+         */
+        private val DayActions = setOf(
+            ACTION_NEW_DAY,
+            Intent.ACTION_TIME_CHANGED,
+            Intent.ACTION_TIMEZONE_CHANGED,
+            Intent.ACTION_LOCALE_CHANGED,
         )
 
-        /** True while at least one widget of any of our providers is placed. */
-        fun hasWidgets(context: Context): Boolean = runCatching {
-            val manager = AppWidgetManager.getInstance(context)
-            providers.any { (provider, _) ->
-                manager.getAppWidgetIds(ComponentName(context, provider)).isNotEmpty()
-            }
-        }.getOrDefault(false)
+        /** Every provider the watcher keeps fresh, with its kind. */
+        internal val providers: List<Pair<Class<out SaldoWidgetProvider>, SaldoWidgetKind>> = listOf(
+            QuickAddWidgetProvider::class.java to SaldoWidgetKind.QUICK_ADD,
+            MonthWordsWidgetProvider::class.java to SaldoWidgetKind.WORDS,
+            MonthRingWidgetProvider::class.java to SaldoWidgetKind.RING,
+        )
+
+        /** True while at least one widget of [kinds] is placed. */
+        fun hasWidgets(context: Context, kinds: Set<SaldoWidgetKind> = SaldoWidgetKind.entries.toSet()): Boolean =
+            runCatching {
+                val manager = AppWidgetManager.getInstance(context)
+                providers.any { (provider, kind) ->
+                    kind in kinds && manager.getAppWidgetIds(ComponentName(context, provider)).isNotEmpty()
+                }
+            }.getOrDefault(false)
+
+        /** Which kind a placed widget is, from its provider; null for an id that is not ours. */
+        fun kindOf(context: Context, appWidgetId: Int): SaldoWidgetKind? = runCatching {
+            val provider = AppWidgetManager.getInstance(context).getAppWidgetInfo(appWidgetId)?.provider?.className
+            providers.firstOrNull { (cls, _) -> cls.name == provider }?.second
+        }.getOrNull()
     }
 }
 
 /**
- * The grid: the expense/income selector over a grid of category tiles, degrading
- * to the two-button row when squashed (for the widgets placed before the bar
- * existed).
+ * The quick-add widget: the expense/income selector over a grid of category
+ * tiles, and the two-button row it becomes when squashed to one launcher row.
+ * Since 16 Oct 2026 it is the only quick-add widget: the bar had its own
+ * provider, whose whole range this one already covered (Fase 45).
  */
 class QuickAddWidgetProvider : SaldoWidgetProvider() {
-    override val sizes: (Float) -> List<WidgetSize> = { scale -> gridWidgetSizes(scale) }
+    override val kind = SaldoWidgetKind.QUICK_ADD
 }
 
-/**
- * The single-row sibling, as its own provider rather than a squashed grid.
- *
- * A separate provider is what gives the bar its own card in the launcher's
- * widget picker, with its own preview, so the user chooses the shape at
- * placement instead of discovering it by resizing. It also cleans both
- * configuration screens: the bar's settings show only what a bar can use, and
- * the grid's stop carrying options whose effect was invisible at the size on
- * screen. The provider info pins the shape with `maxResizeHeight`, so this
- * widget only ever renders the [actionSizes].
- */
-class QuickBarWidgetProvider : SaldoWidgetProvider() {
-    override val sizes: (Float) -> List<WidgetSize> = { scale -> actionSizes(scale) }
+/** «In words»: the month in one sentence (ADR 54). */
+class MonthWordsWidgetProvider : SaldoWidgetProvider() {
+    override val kind = SaldoWidgetKind.WORDS
+}
+
+/** «The month»: the ring of the overall monthly budget (ADR 54). */
+class MonthRingWidgetProvider : SaldoWidgetProvider() {
+    override val kind = SaldoWidgetKind.RING
 }

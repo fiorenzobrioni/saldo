@@ -73,11 +73,31 @@ class WidgetConfigStore @Inject constructor(
         }
     }
 
-    /** Removed instances must not leave their settings behind in the store. */
+    /** A month widget's settings (ADR 54), one read for the whole render. */
+    suspend fun readMonthAll(appWidgetIds: IntArray): Map<Int, MonthWidgetConfig> {
+        val preferences = dataStore.data.first()
+        return appWidgetIds.associateWith { MonthWidgetPrefs.read(preferences, it) }
+    }
+
+    suspend fun readMonth(appWidgetId: Int): MonthWidgetConfig =
+        MonthWidgetPrefs.read(dataStore.data.first(), appWidgetId)
+
+    suspend fun writeMonth(appWidgetId: Int, config: MonthWidgetConfig) {
+        dataStore.edit { preferences -> MonthWidgetPrefs.write(preferences, appWidgetId, config) }
+    }
+
+    /**
+     * Removed instances must not leave their settings behind in the store. An
+     * id belongs to one kind of widget, and clearing the other kind's keys for
+     * it is a no-op, so both are cleared without asking which it was.
+     */
     suspend fun forget(appWidgetIds: IntArray) {
         if (appWidgetIds.isEmpty()) return
         dataStore.edit { preferences ->
-            appWidgetIds.forEach { QuickAddWidgetPrefs.clear(preferences, it) }
+            appWidgetIds.forEach {
+                QuickAddWidgetPrefs.clear(preferences, it)
+                MonthWidgetPrefs.clear(preferences, it)
+            }
         }
     }
 
@@ -91,9 +111,19 @@ class WidgetConfigStore @Inject constructor(
         if (oldIds.isEmpty() || oldIds.size != newIds.size) return
         dataStore.edit { preferences ->
             val moved = oldIds.map { QuickAddWidgetPrefs.read(preferences, it) }
-            oldIds.forEach { QuickAddWidgetPrefs.clear(preferences, it) }
+            // Only the month records that exist move: writing a default record
+            // for every quick-add widget would leave month keys on ids that
+            // never were month widgets.
+            val months = oldIds.map { id ->
+                MonthWidgetPrefs.read(preferences, id).takeIf { MonthWidgetPrefs.exists(preferences, id) }
+            }
+            oldIds.forEach {
+                QuickAddWidgetPrefs.clear(preferences, it)
+                MonthWidgetPrefs.clear(preferences, it)
+            }
             newIds.forEachIndexed { index, id ->
                 QuickAddWidgetPrefs.write(preferences, id, moved[index])
+                months[index]?.let { MonthWidgetPrefs.write(preferences, id, it) }
             }
         }
     }

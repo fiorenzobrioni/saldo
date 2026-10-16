@@ -37,6 +37,7 @@ Il manuale cresce in modo incrementale. Gli argomenti già disponibili hanno un 
 - 💰 Budget mensili: tetto complessivo e tetti per categoria.
 - 🟢 Spendibile oggi: quanto puoi ancora spendere restando nel budget.
 - 🎯 [Obiettivi di risparmio](obiettivi-di-risparmio.md): traguardi su un conto di risparmio, con progresso sul saldo reale, suggerimento mensile e proiezione.
+- 🏠 [Widget del mese](widget-del-mese.md): "In parole" e l'anello del budget sulla home, cosa mostrano, quando si aggiornano e cosa nascondono con il blocco dell'app.
 
 ### Panoramica e analisi
 

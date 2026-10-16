@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    «In words» (ADR 54): the month's name, one sentence about it, then the facts
+    that fit, in reading order so what the renderer drops first is what is read
+    last. How many lines the sentence takes and how many facts show is the
+    renderer's (wordsLayout), set at bind time; so is the column's gravity, at
+    the top of a tall card and in the middle of a row.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_bg" />
+
+    <LinearLayout
+        android:id="@+id/widget_words_column"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="top"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <TextView
+            android:id="@+id/widget_words_month"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:maxLines="1"
+            android:textSize="@dimen/widget_type_label" />
+
+        <TextView
+            android:id="@+id/widget_words_sentence"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="3"
+            android:textSize="@dimen/widget_type_body" />
+
+        <TextView
+            android:id="@+id/widget_words_fact1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:textSize="@dimen/widget_type_label" />
+
+        <TextView
+            android:id="@+id/widget_words_fact2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:textSize="@dimen/widget_type_label" />
+
+        <!-- The next charge: last, and the one line allowed to end in an
+             ellipsis, because it carries a name the reader typed. -->
+        <TextView
+            android:id="@+id/widget_words_next"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textSize="@dimen/widget_type_label" />
+    </LinearLayout>
+</FrameLayout>

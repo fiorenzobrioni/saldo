@@ -36,6 +36,8 @@
     <color name="widget_preview_card">#FF0F3B6B</color>
     <color name="widget_preview_ink">#FFFFFFFF</color>
     <color name="widget_preview_ink_muted">#BFFFFFFF</color>
+    <!-- The month ring's track: the quiet ink at a quarter, as the placed ring draws it. -->
+    <color name="widget_preview_ring_track">#40FFFFFF</color>
     <color name="widget_preview_pill">#FFFFFFFF</color>
     <color name="widget_preview_pill_ink">#FF0F3B6B</color>
 

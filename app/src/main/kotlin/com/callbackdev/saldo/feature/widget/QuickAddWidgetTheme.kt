@@ -64,13 +64,22 @@ fun resolveWidgetTheme(
     context: Context,
     preferences: ThemePreferences,
     config: QuickAddWidgetConfig,
+): QuickAddWidgetTheme =
+    resolveWidgetTheme(context, preferences, config.background, config.cardColor, config.opacityPct)
+
+/** The same resolution for any card's look: the month widgets' (ADR 54) as the quick-add one's. */
+fun resolveWidgetTheme(
+    context: Context,
+    preferences: ThemePreferences,
+    background: WidgetBackground,
+    cardColor: WidgetCardColor,
+    opacityPct: Int,
 ): QuickAddWidgetTheme = QuickAddWidgetTheme(
     dress = widgetDressFor(context, preferences),
-    background = config.background,
-    cardColor = config.cardColor,
-    opacityPct = config.opacityPct,
-    wallpaperCarriesDarkInk = inkAsksWallpaper(config.background, config.opacityPct) &&
-        wallpaperWantsDarkInk(context),
+    background = background,
+    cardColor = cardColor,
+    opacityPct = opacityPct,
+    wallpaperCarriesDarkInk = inkAsksWallpaper(background, opacityPct) && wallpaperWantsDarkInk(context),
 )
 
 /**
