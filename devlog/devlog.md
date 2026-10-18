@@ -14,6 +14,25 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-18 - Verifica su dispositivo delle icone, dell'onboarding, delle informazioni e del carattere
+
+**Fatto:** il committente ha provato sul dispositivo le quattro modifiche del 18 ottobre e le ha trovate a posto. Chiuse le verifiche lasciate nelle voci precedenti:
+
+- [x] l'icona con due launcher e a tema, e una notifica vera nella barra di stato (ADR 53, emendamento);
+- [x] l'onboarding a testo grande e con la tastiera aperta sulla pagina del conto (ADR 55);
+- [x] i collegamenti delle informazioni in fondo alle Impostazioni (ADR 56);
+- [x] il carattere, a testo grande, e il passaggio da Inter a Google Sans per chi aggiorna dalla 2.3.9 (ADR 57).
+
+**Decisioni:** nessuna.
+
+**Problemi:** nessuno.
+
+**Verifica:** sul dispositivo del committente.
+
+**Prossimo:** le PR della famiglia.
+
+---
+
 ## 2026-10-18 - Google Sans predefinito e la scelta del carattere
 
 **Fatto:** ADR 57. Google Sans è il carattere predefinito (copiato dalle app sorelle, licenza in `licenses/google-sans/OFL.txt`); Inter e il carattere del telefono si scelgono in Impostazioni, Aspetto, con una fila segmentata in cui ogni nome è scritto nel proprio carattere. `AppFont` e `ThemePreferences.font` nelle preferenze, chiave `app_font`, nel backup delle impostazioni (`SettingsBackup.font`, ripulita al ripristino come il tema). `SaldoTheme(font)` nell'app, nell'inserimento rapido e nella configurazione dei widget; la tipografia si costruisce per carattere (`saldoTypography`). Nei Riconoscimenti la riga «Caratteri» cita entrambi i font e dice quale è in uso. L'onboarding prende il carattere dal tema, senza altro lavoro. `versionName` 2.3.10, `versionCode` 200.
