@@ -1,28 +1,37 @@
 package com.callbackdev.saldo.feature.onboarding
 
 import android.Manifest
+import android.content.Context
+import android.provider.Settings
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.unit.IntOffset
 import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -44,8 +53,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -67,12 +74,13 @@ import java.util.Locale
 private val RESTORE_MIME_TYPES = arrayOf("application/json", "application/octet-stream", "text/plain")
 
 /**
- * First-launch onboarding: a five-page guided flow (welcome, privacy value
- * proposition, currency, first account with optional backup restore,
- * notifications). Pages advance only via their CTAs ([HorizontalPager] with
- * user scrolling off) so the input pages cannot be swiped past mid-form; the
- * system back gesture steps back one page. [onFinished] flips the launch gate:
- * it is called exactly once, from the last page.
+ * First-launch onboarding (ADR 55): four pages (welcome with the three promises,
+ * currency, first account with optional backup restore, notifications) in the
+ * family's frame: the page's words centered in the room above the buttons, the
+ * buttons at the bottom in the same place on every page, no picture and no page
+ * indicator. Pages advance only via their CTAs, so the input pages cannot be
+ * swiped past mid-form; the system back gesture steps back one page. [onFinished]
+ * flips the launch gate: it is called exactly once, from the last page.
  */
 @Composable
 fun OnboardingScreen(
@@ -81,7 +89,6 @@ fun OnboardingScreen(
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val pagerState = rememberPagerState(pageCount = { OnboardingPage.entries.size })
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
 
@@ -95,9 +102,7 @@ fun OnboardingScreen(
         ActivityResultContracts.RequestPermission(),
     ) { onFinished() }
 
-    LaunchedEffect(uiState.page) {
-        pagerState.animateScrollToPage(uiState.page.ordinal)
-    }
+    val reduced = remember { animationsOff(context) }
     BackHandler(enabled = uiState.page != OnboardingPage.WELCOME) {
         viewModel.back()
     }
@@ -138,26 +143,35 @@ fun OnboardingScreen(
                 .consumeWindowInsets(innerPadding)
                 .imePadding(),
         ) {
-            HorizontalPager(
-                state = pagerState,
-                userScrollEnabled = false,
+            AnimatedContent(
+                targetState = uiState.page,
+                transitionSpec = { pageTransition(initialState, targetState, reduced) },
+                label = "onboarding",
                 modifier = Modifier.weight(1f),
-            ) { pageIndex ->
-                when (OnboardingPage.entries[pageIndex]) {
-                    OnboardingPage.WELCOME -> WelcomePage()
-                    OnboardingPage.PRIVACY -> PrivacyPage()
-                    OnboardingPage.CURRENCY -> CurrencyPage(
-                        selected = uiState.selectedCurrency,
-                        onSelected = viewModel::onCurrencySelected,
+            ) { page ->
+                OnboardingPageFrame {
+                    val where = stringResource(
+                        R.string.onboarding_step_of,
+                        page.ordinal + 1,
+                        OnboardingPage.entries.size,
                     )
-                    OnboardingPage.ACCOUNT -> AccountPage(
-                        uiState = uiState,
-                        onNameChanged = viewModel::onAccountNameChanged,
-                        balanceTarget = balanceTarget,
-                        onActivateBalance = { keypadOpen = true },
-                        onCloseKeypad = { keypadOpen = false },
-                    )
-                    OnboardingPage.NOTIFICATIONS -> NotificationsPage()
+                    when (page) {
+                        OnboardingPage.WELCOME -> WelcomePage(where)
+                        OnboardingPage.CURRENCY -> CurrencyPage(
+                            selected = uiState.selectedCurrency,
+                            onSelected = viewModel::onCurrencySelected,
+                            where = where,
+                        )
+                        OnboardingPage.ACCOUNT -> AccountPage(
+                            uiState = uiState,
+                            onNameChanged = viewModel::onAccountNameChanged,
+                            balanceTarget = balanceTarget,
+                            onActivateBalance = { keypadOpen = true },
+                            onCloseKeypad = { keypadOpen = false },
+                            where = where,
+                        )
+                        OnboardingPage.NOTIFICATIONS -> NotificationsPage(where)
+                    }
                 }
             }
             AmountKeypadHost(
@@ -165,7 +179,6 @@ fun OnboardingScreen(
                 onHide = { keypadOpen = false },
                 modifier = Modifier.padding(horizontal = 12.dp),
             )
-            PageIndicator(current = uiState.page)
             OnboardingActions(
                 uiState = uiState,
                 onNext = viewModel::next,
@@ -220,7 +233,52 @@ private fun OnboardingEvent.messageRes(): Int = when (this) {
     }
 }
 
-/** The bottom CTA block; buttons change with the page, layout stays anchored. */
+/**
+ * The page's words, centered in the room above the buttons; a page taller than the room (the
+ * currency list, any page at a large text size) scrolls from its top. On an open foldable the
+ * column keeps a phone's width.
+ */
+@Composable
+private fun OnboardingPageFrame(content: @Composable ColumnScope.() -> Unit) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val room = maxHeight
+        Column(
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(
+                modifier = Modifier
+                    .heightIn(min = room)
+                    .widthIn(max = PAGE_MAX_WIDTH)
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                content = content,
+            )
+        }
+    }
+}
+
+private val PAGE_MAX_WIDTH = 640.dp
+private const val PAGE_MILLIS = 300
+
+/** Forward slides in from the end, back from the start; a fade alone under reduced motion. */
+private fun pageTransition(from: OnboardingPage, to: OnboardingPage, reduced: Boolean): ContentTransform {
+    if (reduced) return fadeIn(tween(REDUCED_FADE_MILLIS)) togetherWith fadeOut(tween(REDUCED_FADE_MILLIS))
+    val shift = if (to.ordinal > from.ordinal) 6 else -6
+    val slide = tween<IntOffset>(PAGE_MILLIS, easing = FastOutSlowInEasing)
+    return (fadeIn(tween(PAGE_MILLIS)) + slideInHorizontally(slide) { it / shift }) togetherWith
+        (fadeOut(tween(PAGE_MILLIS)) + slideOutHorizontally(slide) { -it / shift })
+}
+
+private const val REDUCED_FADE_MILLIS = 100
+
+/** True when the user has turned system animations off (scale 0). */
+private fun animationsOff(context: Context): Boolean =
+    Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+
+/** The bottom CTA block; buttons change with the page, the block stays anchored at the bottom. */
 @Composable
 private fun OnboardingActions(
     uiState: OnboardingUiState,
@@ -235,19 +293,16 @@ private fun OnboardingActions(
 ) {
     Column(
         modifier = modifier
+            .widthIn(max = PAGE_MAX_WIDTH)
             .fillMaxWidth()
-            .padding(horizontal = 24.dp, vertical = 16.dp)
+            .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp)
             .animateContentSize(),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         when (uiState.page) {
             OnboardingPage.WELCOME -> PrimaryCta(
                 text = stringResource(R.string.onboarding_welcome_cta),
-                onClick = onNext,
-            )
-
-            OnboardingPage.PRIVACY -> PrimaryCta(
-                text = stringResource(R.string.onboarding_privacy_cta),
                 onClick = onNext,
             )
 
@@ -268,7 +323,7 @@ private fun OnboardingActions(
                     onClick = onRestoreRequest,
                     enabled = !uiState.isWorking,
                 )
-                SecondaryCta(
+                QuietCta(
                     text = stringResource(R.string.onboarding_account_skip),
                     onClick = onSkipAccount,
                     enabled = !uiState.isWorking,
@@ -280,7 +335,7 @@ private fun OnboardingActions(
                     text = stringResource(R.string.onboarding_notifications_cta),
                     onClick = onEnableNotifications,
                 )
-                SecondaryCta(
+                QuietCta(
                     text = stringResource(R.string.onboarding_notifications_skip),
                     onClick = onSkipNotifications,
                 )
@@ -299,17 +354,36 @@ private fun PrimaryCta(
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = MaterialTheme.shapes.large,
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp),
+            .heightIn(min = 52.dp),
     ) {
-        Text(text = text, style = MaterialTheme.typography.titleMedium)
+        Text(text)
     }
 }
 
+/** A real alternative to the page's main step (restoring a backup instead of a new account). */
 @Composable
 private fun SecondaryCta(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp),
+    ) {
+        Text(text)
+    }
+}
+
+/** The quiet way past: "later" is a real answer and costs nothing. */
+@Composable
+private fun QuietCta(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -318,50 +392,9 @@ private fun SecondaryCta(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp),
+        modifier = modifier.heightIn(min = 48.dp),
     ) {
         Text(text)
-    }
-}
-
-/** Dots above the CTA: the active page reads as a wide pill. */
-@Composable
-private fun PageIndicator(
-    current: OnboardingPage,
-    modifier: Modifier = Modifier,
-) {
-    val pages = OnboardingPage.entries
-    val description = stringResource(
-        R.string.onboarding_step_of,
-        current.ordinal + 1,
-        pages.size,
-    )
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp, alignment = Alignment.CenterHorizontally),
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp)
-            .semantics { contentDescription = description },
-    ) {
-        pages.forEach { page ->
-            val active = page == current
-            Box(
-                modifier = Modifier
-                    .height(8.dp)
-                    .width(if (active) 24.dp else 8.dp)
-                    .animateContentSize()
-                    .background(
-                        color = if (active) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.surfaceVariant
-                        },
-                        shape = CircleShape,
-                    ),
-            )
-        }
     }
 }
 

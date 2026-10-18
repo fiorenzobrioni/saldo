@@ -953,12 +953,14 @@
     <string name="about_libraries_footer">Oltre alle librerie Android Jetpack e Material Design di Google.</string>
 
     <!-- Onboarding (Phase 9) -->
-    <string name="onboarding_welcome_title">Ciao! Sono Saldo</string>
-    <string name="onboarding_welcome_body">I tuoi soldi, finalmente chiari. Spese, entrate, budget e obiettivi di risparmio sotto controllo in pochi tocchi, senza collegare la banca, senza registrazione, senza pensieri.</string>
+    <string name="onboarding_welcome_tagline">I tuoi soldi, finalmente chiari.</string>
+    <string name="onboarding_promise_taps_title">Tutto in pochi tocchi</string>
+    <string name="onboarding_promise_taps_body">Spese, entrate, budget e obiettivi di risparmio, senza collegare la banca e senza registrazione.</string>
+    <string name="onboarding_promise_phone_title">Resta sul tuo telefono</string>
+    <string name="onboarding_promise_phone_body">Niente cloud, niente account, niente tracciamenti. Funziona anche in modalità aereo: l\'unica cosa che scarica sono i tassi di cambio, se hai conti in valuta estera, e quella richiesta non porta con sé nessun tuo dato.</string>
+    <string name="onboarding_promise_backup_title">Una copia quando vuoi tu</string>
+    <string name="onboarding_promise_backup_body">Esporta un backup quando vuoi, anche protetto da una passphrase.</string>
     <string name="onboarding_welcome_cta">Iniziamo</string>
-    <string name="onboarding_privacy_title">I tuoi dati restano con te</string>
-    <string name="onboarding_privacy_body">Tutto vive sul tuo telefono e da nessun\'altra parte: niente cloud, niente account, niente tracciamenti. Saldo funziona anche in modalità aereo; l\'unica cosa che scarica sono i tassi di cambio, e solo se hai conti in valuta estera: quella richiesta non porta con sé nessun tuo dato. Vuoi una copia? Puoi esportare un backup quando vuoi, anche protetto da una passphrase.</string>
-    <string name="onboarding_privacy_cta">Mi piace</string>
     <string name="onboarding_currency_title">Scegli la tua valuta</string>
     <string name="onboarding_currency_body">Quella che usi tutti i giorni. Potrai cambiarla quando vuoi dalle Impostazioni, promesso.</string>
     <string name="onboarding_currency_cta">Continua</string>

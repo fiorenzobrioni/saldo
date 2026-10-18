@@ -936,12 +936,16 @@
     <string name="about_libraries_footer">Plus Google\'s Android Jetpack and Material Design libraries.</string>
 
     <!-- Onboarding (Phase 9) -->
-    <string name="onboarding_welcome_title">Hi! I\'m Saldo</string>
-    <string name="onboarding_welcome_body">Your money, finally clear. Expenses, income, budgets and savings goals under control in a few taps — no bank logins, no sign-up, no fuss.</string>
+    <!-- The welcome's heading: the name alone, where app_name carries the debug build's mark. -->
+    <string name="onboarding_app_name" translatable="false">Saldo</string>
+    <string name="onboarding_welcome_tagline">Your money, finally clear.</string>
+    <string name="onboarding_promise_taps_title">All in a few taps</string>
+    <string name="onboarding_promise_taps_body">Expenses, income, budgets and savings goals, with no bank login and no sign-up.</string>
+    <string name="onboarding_promise_phone_title">It stays on your phone</string>
+    <string name="onboarding_promise_phone_body">No cloud, no account, no tracking. It works in airplane mode too: the only thing it downloads is exchange rates, if you keep accounts in a foreign currency, and that request carries none of your data.</string>
+    <string name="onboarding_promise_backup_title">A copy when you want one</string>
+    <string name="onboarding_promise_backup_body">Export a backup whenever you like, protected by a passphrase if you want.</string>
     <string name="onboarding_welcome_cta">Let\'s get started</string>
-    <string name="onboarding_privacy_title">Your data stays with you</string>
-    <string name="onboarding_privacy_body">Everything lives on your phone and nowhere else: no cloud, no account, no tracking. Saldo works even in airplane mode — the only thing it ever downloads is exchange rates, and only if you keep accounts in a foreign currency: that request carries none of your data. Want a copy? You can export a backup whenever you like, protected by a passphrase if you want.</string>
-    <string name="onboarding_privacy_cta">Sounds good</string>
     <string name="onboarding_currency_title">Pick your currency</string>
     <string name="onboarding_currency_body">The one you use every day. You can change it anytime in Settings — promise.</string>
     <string name="onboarding_currency_cta">Continue</string>

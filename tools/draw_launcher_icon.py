@@ -17,11 +17,10 @@ and in grey.
 
 Re-running this script IS the drawing. It writes, into app/src/main/res/drawable:
 - ic_launcher_foreground.xml, ic_launcher_monochrome.xml: the adaptive icon's layers;
-- ic_app_icon_ring.xml, ic_app_icon_coin.xml: the same foreground in two pieces, for the
-  welcome page's animation (the coins drop into their place on the ring);
 - ic_stat_saldo.xml: the status-bar icon, the two coins alone (no ring: at 24 dp the status bar
   shows the object, the launcher the mark).
-None of them is edited by hand. Only the standard library is used.
+None of them is edited by hand. Only the standard library is used. The welcome page no longer
+shows the mark (ADR 55, 18 ott 2026), so the two pieces its animation was made of are gone.
 """
 
 import math
@@ -206,16 +205,6 @@ def main():
         "The themed icon (Android 13+): the foreground's shapes in one ink, which the system\n"
         "     tints. The cut keeps the two halves apart where the colours are gone.",
         vector(ring_group(' android:strokeColor="#FF000000"/>') + coin_path(ink), aapt=False),
-    )
-    write(
-        "ic_app_icon_ring.xml",
-        "The welcome page's first piece: the foreground's ring alone, on the same canvas.",
-        vector(ring_group()),
-    )
-    write(
-        "ic_app_icon_coin.xml",
-        "The welcome page's second piece: the foreground's two coins alone, on the same canvas.",
-        vector(coin_path()),
     )
     write(
         "ic_stat_saldo.xml",

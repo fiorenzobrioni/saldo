@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-18 - Onboarding nella cornice di famiglia
+
+**Fatto:** ADR 55. L'onboarding passa da cinque a quattro pagine: il benvenuto (il nome, la frase e tre punti di forza in sole parole, che assorbono la pagina della privacy), la valuta, il primo conto, le notifiche. Via l'icona dell'app dalle pagine statiche, l'animazione delle monete, i badge e i puntini; `OnboardingIcon.kt` e i pezzi `ic_app_icon_*` sono rimossi e lo script dell'icona non li scrive più. Ogni pagina è un titolo e un testo centrati nello spazio sopra i pulsanti, che stanno in basso nello stesso punto su ogni pagina; il pager diventa un `AnimatedContent` con scorrimento e dissolvenza (solo dissolvenza con le animazioni spente); la lista delle valute diventa una colonna che scorre con la pagina. `versionName` 2.3.8, `versionCode` 198.
+
+**Decisioni:** il ripristino da backup è un pulsante contornato perché è un'alternativa vera alla creazione del conto; «Lo faccio dopo» e «Magari dopo» sono di solo testo. Il passaggio è annunciato da TalkBack sul titolo della pagina invece dei puntini. Il carattere resta Inter: è il carattere dell'app intera, la gerarchia è quella delle app sorelle.
+
+**Problemi:** nessuno. Robolectric disegna Inter variabile con un solo peso, quindi nelle rese i titoli sembrano più leggeri che sul telefono.
+
+**Verifica:** rese delle quattro pagine accanto a quelle delle altre tre app; `OnboardingViewModelTest` aggiornato all'ordine delle pagine; `./gradlew assembleDebug testDebugUnitTest lint detekt` con l'init script del mirror. Nessuno screenshot del README mostra l'onboarding.
+
+**Prossimo:** l'onboarding sul dispositivo, a testo grande e con la tastiera aperta sulla pagina del conto.
+
+---
+
 ## 2026-10-18 - Icone della famiglia rese omogenee
 
 **Fatto:** emendamento dell'ADR 53, dopo la review delle icone delle quattro app chiesta dal committente. L'emblema è ora **due monete ambra** sovrapposte, quella davanti con il bordo, nel punto della moneta di prima (40 gradi), ognuna con il vuoto di 3,0 delle app sorelle. L'anello è più deciso (entrate `#43B3AA`→`#0E7672`, uscite `#E99280`→`#C05741`). L'icona della barra di stato sono le due monete, senza anello. I pezzi del benvenuto si rigenerano: le due monete cadono insieme sull'anello, l'animazione non cambia. L'accento delle notifiche e i due badge dell'onboarding seguono le estremità scure delle due metà. `versionName` 2.3.7, `versionCode` 197.

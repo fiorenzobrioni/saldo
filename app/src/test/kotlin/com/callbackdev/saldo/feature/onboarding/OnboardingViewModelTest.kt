@@ -84,7 +84,7 @@ class OnboardingViewModelTest {
         assertEquals(OnboardingPage.WELCOME, viewModel.uiState.value.page)
 
         viewModel.next()
-        assertEquals(OnboardingPage.PRIVACY, viewModel.uiState.value.page)
+        assertEquals(OnboardingPage.CURRENCY, viewModel.uiState.value.page)
         assertTrue(viewModel.back())
         assertEquals(OnboardingPage.WELCOME, viewModel.uiState.value.page)
         // On the first page back is not consumed: the system handles it.
@@ -94,7 +94,6 @@ class OnboardingViewModelTest {
     @Test
     fun `confirming the currency persists the override and advances`() = runTest {
         val viewModel = viewModel()
-        viewModel.next()
         viewModel.next()
         assertEquals(OnboardingPage.CURRENCY, viewModel.uiState.value.page)
 
@@ -149,7 +148,6 @@ class OnboardingViewModelTest {
     @Test
     fun `skipping the account creates nothing and advances`() = runTest {
         val viewModel = viewModel()
-        viewModel.next()
         viewModel.next()
         viewModel.next()
         assertEquals(OnboardingPage.ACCOUNT, viewModel.uiState.value.page)
