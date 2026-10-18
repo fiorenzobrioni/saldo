@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-18 - Icone della famiglia rese omogenee
+
+**Fatto:** emendamento dell'ADR 53, dopo la review delle icone delle quattro app chiesta dal committente. L'emblema è ora **due monete ambra** sovrapposte, quella davanti con il bordo, nel punto della moneta di prima (40 gradi), ognuna con il vuoto di 3,0 delle app sorelle. L'anello è più deciso (entrate `#43B3AA`→`#0E7672`, uscite `#E99280`→`#C05741`). L'icona della barra di stato sono le due monete, senza anello. I pezzi del benvenuto si rigenerano: le due monete cadono insieme sull'anello, l'animazione non cambia. L'accento delle notifiche e i due badge dell'onboarding seguono le estremità scure delle due metà. `versionName` 2.3.7, `versionCode` 197.
+
+**Decisioni:** nella barra di stato l'oggetto dell'app, nel launcher il marchio (scelta del committente per tutta la famiglia). Due monete invece di una perché una moneta con il bordo si leggeva come un bersaglio; la pila di monete, provata, sembrava l'icona del menu. Le monete cadono insieme e non una dopo l'altra: la moneta dietro porta il morso della fascia che la separa da quella davanti, e da sola si vedrebbe come una moneta morsicata.
+
+**Problemi:** il taglio sottile alla seconda giunzione (220 gradi) non si è mai visto, né a colori né nell'icona a tema dove serve a tenere separate le due metà: il rettangolo era percorso nello stesso verso della tela, e con la regola nonzero di VectorDrawable un buco nello stesso verso si riempie. Ora `slit()` lo percorre al contrario.
+
+**Verifica:** resa degli XML veri accanto alle altre tre app (cerchio, squircle, quadrato, 48 px, a tema chiaro e scuro, barra di stato a 24 px); simulazione di deuteranopia (Machado 2009) e contrasto WCAG dei badge; `./gradlew assembleDebug testDebugUnitTest lint detekt` con l'init script del mirror; screenshot del README rigenerati dove compare l'icona.
+
+**Prossimo:** l'icona sul dispositivo con due launcher e a tema, e una notifica vera nella barra di stato.
+
+---
+
 ## 2026-10-16 - Widget del mese e un solo widget di aggiunta
 
 **Fatto:** Fase 45, ADR 54, emendamento dell'ADR 37. Due widget nuovi: "In parole" (il mese in una frase: quanto puoi ancora spendere e al giorno, le cifre del budget, i giorni rimasti, il prossimo addebito) e "Il mese" (l'anello della spesa sul budget mensile, con la banda del mese trascorso e la percentuale nel foro; senza budget una card che apre i budget). "Barra rapida" tolta: "Aggiunta rapida" a una riga disegna già la stessa barra, e le sue opzioni passano nel gruppo "Su una riga". Aggiornamento dei widget del mese solo se piazzati: segnale di invalidazione di Room sulle tabelle che leggono, tema, valuta, conversione e PIN, sveglia `RTC` non esatta poco dopo mezzanotte, broadcast esenti di ora, fuso e lingua, ridisegno alla fine del worker giornaliero. Con il blocco app nessun importo, più l'interruttore "Gli importi". `ACTION_OPEN_BUDGETS` per la card senza budget. Voci nelle Impostazioni per aggiungere i due widget alla home. `versionName` 2.3.6, `versionCode` 196.

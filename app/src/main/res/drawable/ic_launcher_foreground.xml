@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
-     The mark: a ring in two halves (income above, expenses below), cut by an amber
-     coin at the lower right and by a thin band at the other junction. Everything sits
-     inside the 33-unit safe circle of every launcher mask (ring edge 26, coin edge 29.2). -->
+     The mark: a ring in two halves (income above, expenses below), cut by two amber
+     coins at the lower right and by a thin band at the other junction. Everything sits
+     inside the 33-unit safe circle of every launcher mask (ring edge 26, coins' edge 30.5). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
@@ -10,23 +10,37 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 <group>
-    <clip-path android:pathData="M 0,0 H 108.00 V 108.00 H 0 Z M 58.89,67.50 a 11.20,11.20 0 1,0 22.40,0 a 11.20,11.20 0 1,0 -22.40,0 z M 44.74,47.93 L 29.42,35.07 L 31.09,33.08 L 46.41,45.93 Z"/>
+    <clip-path android:pathData="M 0,0 H 108 V 108 H 0 Z M 61.79,69.68 a 9.90,9.90 0 1,0 19.80,0 a 9.90,9.90 0 1,0 -19.80,0 z M 46.41,45.93 L 31.09,33.08 L 29.42,35.07 L 44.74,47.93 Z"/>
+<group>
+    <clip-path android:pathData="M 0,0 H 108 V 108 H 0 Z M 57.43,64.60 a 9.90,9.90 0 1,0 19.80,0 a 9.90,9.90 0 1,0 -19.80,0 z"/>
     <path android:pathData="M 33.00,54.00 a 21.00,21.00 0 1,0 42.00,0 a 21.00,21.00 0 1,0 -42.00,0 z" android:strokeWidth="10.00" android:fillColor="#00000000">
         <aapt:attr name="android:strokeColor">
             <gradient android:type="sweep" android:centerX="54.00" android:centerY="54.00">
-                <item android:offset="0.0000" android:color="#FF228F8B"/>
-                <item android:offset="0.1111" android:color="#FF12807D"/>
-                <item android:offset="0.1117" android:color="#FFEFA595"/>
-                <item android:offset="0.6111" android:color="#FFCB6653"/>
-                <item android:offset="0.6117" android:color="#FF5CC2BA"/>
-                <item android:offset="1.0000" android:color="#FF228F8B"/>
+                <item android:offset="0.0000" android:color="#FF1A847E"/>
+                <item android:offset="0.1111" android:color="#FF0E7672"/>
+                <item android:offset="0.1117" android:color="#FFE99280"/>
+                <item android:offset="0.6111" android:color="#FFC05741"/>
+                <item android:offset="0.6117" android:color="#FF43B3AA"/>
+                <item android:offset="1.0000" android:color="#FF1A847E"/>
             </gradient>
         </aapt:attr>
     </path>
 </group>
-<path android:fillType="evenOdd" android:pathData="M 61.89,67.50 a 8.20,8.20 0 1,0 16.40,0 a 8.20,8.20 0 1,0 -16.40,0 z M 63.79,67.50 a 6.30,6.30 0 1,0 12.60,0 a 6.30,6.30 0 1,0 -12.60,0 z M 65.09,67.50 a 5.00,5.00 0 1,0 10.00,0 a 5.00,5.00 0 1,0 -10.00,0 z">
+</group>
+<group>
+    <clip-path android:pathData="M 0,0 H 108.00 V 108.00 H 0 Z M 63.39,69.68 a 8.30,8.30 0 1,0 16.60,0 a 8.30,8.30 0 1,0 -16.60,0 z"/>
+<path android:pathData="M 60.43,64.60 a 6.90,6.90 0 1,0 13.80,0 a 6.90,6.90 0 1,0 -13.80,0 z">
     <aapt:attr name="android:fillColor">
-        <gradient android:type="linear" android:startX="64.09" android:startY="61.50" android:endX="76.09" android:endY="73.50">
+        <gradient android:type="linear" android:startX="63.09" android:startY="60.50" android:endX="77.09" android:endY="74.50">
+            <item android:offset="0" android:color="#FFFFC658"/>
+            <item android:offset="1" android:color="#FFEF8618"/>
+        </gradient>
+    </aapt:attr>
+</path>
+</group>
+<path android:fillType="evenOdd" android:pathData="M 64.79,69.68 a 6.90,6.90 0 1,0 13.80,0 a 6.90,6.90 0 1,0 -13.80,0 z M 66.59,69.68 a 5.10,5.10 0 1,0 10.20,0 a 5.10,5.10 0 1,0 -10.20,0 z M 67.79,69.68 a 3.90,3.90 0 1,0 7.80,0 a 3.90,3.90 0 1,0 -7.80,0 z">
+    <aapt:attr name="android:fillColor">
+        <gradient android:type="linear" android:startX="63.09" android:startY="60.50" android:endX="77.09" android:endY="74.50">
             <item android:offset="0" android:color="#FFFFC658"/>
             <item android:offset="1" android:color="#FFEF8618"/>
         </gradient>

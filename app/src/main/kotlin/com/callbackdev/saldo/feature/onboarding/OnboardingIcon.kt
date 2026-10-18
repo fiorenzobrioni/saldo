@@ -35,7 +35,7 @@ import kotlinx.coroutines.launch
 
 /**
  * The app icon rendered as an onboarding hero, plus its two variants: an
- * animated "the coin drops onto the ring" reveal for the welcome page, and a
+ * animated "the coins drop onto the ring" reveal for the welcome page, and a
  * corner-badge overlay that keeps the per-page meaning (a shield for privacy, a
  * bell for notifications) while the brand mark carries the identity.
  *
@@ -58,9 +58,9 @@ private const val ARTWORK_OVERDRAW = 108f / 72f
 // Fixed accents for the corner badges, taken from the icon's two halves (the
 // icon itself is fixed colour, not dynamic, so the badges match it rather than
 // the Material scheme). Both clear the 3:1 non-text contrast bar against a
-// white glyph (4.7:1 and 3.9:1).
-private val SecurityBadgeColor = Color(0xFF12807D) // the income half's sea green
-private val NotificationBadgeColor = Color(0xFFCB6653) // the expense half's brick
+// white glyph (5.4:1 and 4.5:1).
+private val SecurityBadgeColor = Color(0xFF0E7672) // the income half's sea green
+private val NotificationBadgeColor = Color(0xFFC05741) // the expense half's brick
 
 /** The bare app-icon artwork (no ground), drawn straight on the page. */
 @Composable
@@ -78,7 +78,7 @@ internal fun AppIconArtwork(
 }
 
 /**
- * Welcome hero: the ring turns into place, then the coin drops into its gap
+ * Welcome hero: the ring turns into place, then the two coins drop into its gap
  * and settles, assembling the full icon straight on the page. One-shot,
  * non-looping, and non-blocking (the CTA is always live). When the system
  * animation scale is 0 the finished icon is shown with no motion.
@@ -124,7 +124,7 @@ internal fun WelcomeAppIcon(
                     scaleY = scale
                 },
         )
-        // The coin arrives from off-screen, over the page itself (no ground).
+        // The coins arrive from off-screen, together, over the page itself (no ground).
         Image(
             painter = painterResource(R.drawable.ic_app_icon_coin),
             contentDescription = null,

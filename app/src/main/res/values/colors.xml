@@ -7,7 +7,7 @@
          small icon's disc and the app name in the header. The dark end of the icon's sea
          green (the income half): the one colour a user has already seen the app wear
          before opening it. -->
-    <color name="notification_accent">#12807D</color>
+    <color name="notification_accent">#0E7672</color>
 
     <!-- Launcher shortcut icon backgrounds, drawn from the brand palette so the
          adaptive icons stay on-brand and legible under any launcher mask. -->
