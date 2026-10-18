@@ -760,8 +760,21 @@
     </plurals>
     <string name="settings_csv_mappings_delete">Elimina la mappatura %1$s</string>
     <string name="settings_section_about">Informazioni</string>
-    <string name="settings_about">Informazioni su Saldo</string>
-    <string name="settings_about_hint">Versione %1$s</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_version">Versione</string>
+    <string name="settings_developer">Sviluppo</string>
+    <string name="settings_copyright">Copyright</string>
+    <string name="settings_license">Licenza</string>
+    <string name="settings_license_note">GPL-3.0: libera di usare, studiare, modificare e condividere, senza garanzia</string>
+    <string name="settings_source_code">Codice sorgente</string>
+    <string name="settings_source_code_note">Software libero, GPL-3.0, su GitHub</string>
+    <string name="settings_section_credits">Riconoscimenti</string>
+    <string name="settings_credit_font">Carattere</string>
+    <string name="settings_credit_font_note">Inter di Rasmus Andersson, SIL Open Font License 1.1</string>
+    <string name="settings_credit_rates">Tassi di cambio</string>
+    <string name="settings_credit_rates_note">Tassi di riferimento dell\'euro della Banca centrale europea</string>
+    <string name="settings_credit_platform">Android Jetpack e Material Design</string>
+    <string name="settings_credit_platform_note">Google</string>
 
     <!-- Backup e ripristino (Fase 8) -->
     <string name="backup_title">Backup</string>
@@ -936,21 +949,13 @@
     <string name="csv_mapping_save_as_hint">Es. Estratto Banca X. Verrà applicata da sola al prossimo file con la stessa intestazione.</string>
     <string name="csv_mapping_continue">Continua</string>
 
-    <!-- Schermata Informazioni -->
-    <string name="about_title">Informazioni</string>
-    <string name="about_version">Versione %1$s</string>
-    <string name="about_tagline">Capire dove vanno i soldi, in modo chiaro e immediato.</string>
-    <string name="about_author">Sviluppata da Callback Dev</string>
+    <!-- Informazioni, in fondo alle Impostazioni (ADR 56) -->
     <string name="about_privacy_title">Privacy e rete</string>
     <string name="about_privacy_body">I tuoi dati vivono solo su questo dispositivo. La lettura dei cambi BCE per la conversione delle valute è l\'unico traffico di rete dell\'app oltre a backup ed export opzionali, e non porta fuori alcun tuo dato: dal dispositivo esce solo la richiesta dei tassi. La conversione si può disattivare nelle Impostazioni.</string>
-    <string name="about_license_title">Licenza</string>
-    <string name="about_license_body">Saldo è software libero, rilasciato con licenza GNU GPL-3.0.</string>
-    <string name="about_libraries_title">Librerie open source</string>
     <string-array name="about_library_roles">
         <item>Linguaggio, coroutine e serializzazione JSON (JetBrains)</item>
         <item>Grafici</item>
     </string-array>
-    <string name="about_libraries_footer">Oltre alle librerie Android Jetpack e Material Design di Google.</string>
 
     <!-- Onboarding (Phase 9) -->
     <string name="onboarding_welcome_tagline">I tuoi soldi, finalmente chiari.</string>

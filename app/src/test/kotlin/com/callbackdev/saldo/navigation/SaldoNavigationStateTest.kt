@@ -55,7 +55,7 @@ class SaldoNavigationStateTest {
     fun `back pops the tab stack before falling back to the dashboard`() {
         val nav = state()
         nav.switchTab(TopLevelDestination.SETTINGS)
-        nav.navigate(AboutRoute)
+        nav.navigate(GuideRoute)
 
         nav.goBack()
         assertEquals(SettingsRoute, nav.currentRoute)

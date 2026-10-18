@@ -735,8 +735,22 @@
     </plurals>
     <string name="settings_csv_mappings_delete">Delete the mapping %1$s</string>
     <string name="settings_section_about">About</string>
-    <string name="settings_about">About Saldo</string>
-    <string name="settings_about_hint">Version %1$s</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_developer">Developer</string>
+    <string name="settings_copyright">Copyright</string>
+    <string name="settings_license">License</string>
+    <string name="settings_license_note">GPL-3.0: free to use, study, change and share, with no warranty</string>
+    <string name="settings_source_code">Source code</string>
+    <string name="settings_source_code_note">Free software, GPL-3.0, on GitHub</string>
+    <string name="settings_section_credits">Credits</string>
+    <string name="settings_credit_font">Typeface</string>
+    <string name="settings_credit_font_note">Inter by Rasmus Andersson, SIL Open Font License 1.1</string>
+    <string name="settings_credit_rates">Exchange rates</string>
+    <string name="settings_credit_rates_note">Euro foreign exchange reference rates of the European Central Bank</string>
+    <string name="settings_credit_platform">Android Jetpack and Material Design</string>
+    <string name="settings_credit_platform_note">Google</string>
+    <string name="settings_developer_note" translatable="false">Callback Dev</string>
 
     <!-- Backup and restore (Phase 8) -->
     <string name="backup_title">Backup</string>
@@ -910,18 +924,11 @@
     <string name="csv_mapping_save_as_hint">E.g. Bank X statement. Applied automatically to the next file with the same header.</string>
     <string name="csv_mapping_continue">Continue</string>
 
-    <!-- About screen -->
-    <string name="about_title">About</string>
-    <string name="about_version">Version %1$s</string>
-    <string name="about_tagline">Understand where your money goes, clearly and instantly.</string>
-    <string name="about_author">Developed by Callback Dev</string>
+    <!-- About, at the foot of Settings (ADR 56) -->
     <!-- Author line: a name and a year, identical in every language. -->
     <string name="about_copyright" translatable="false">© 2026 Fiorenzo Brioni</string>
     <string name="about_privacy_title">Privacy and network</string>
     <string name="about_privacy_body">Your data lives only on this device. Reading the ECB exchange rates for the currency conversion is the app\'s only network traffic besides the optional backup and export, and it sends none of your data: only the request for the rates leaves the device. Conversion can be turned off in Settings.</string>
-    <string name="about_license_title">License</string>
-    <string name="about_license_body">Saldo is free software, released under the GNU GPL-3.0 license.</string>
-    <string name="about_libraries_title">Open source libraries</string>
     <!-- The two arrays below are parallel: names[i] is described by roles[i].
          Only non-Google libraries are itemized; Google's stack is credited as
          a whole by about_libraries_footer. -->
@@ -933,7 +940,6 @@
         <item>Language, coroutines and JSON serialization (JetBrains)</item>
         <item>Charts</item>
     </string-array>
-    <string name="about_libraries_footer">Plus Google\'s Android Jetpack and Material Design libraries.</string>
 
     <!-- Onboarding (Phase 9) -->
     <!-- The welcome's heading: the name alone, where app_name carries the debug build's mark. -->

@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-18 - Le informazioni sull'app in fondo alle Impostazioni
+
+**Fatto:** ADR 56. La pagina Informazioni è rimossa con la sua rotta: in fondo alle Impostazioni ci sono Privacy (la card «Privacy e rete»), Informazioni (versione, sviluppo, copyright, licenza, codice sorgente) e Riconoscimenti (carattere, tassi di cambio della BCE, librerie, Android Jetpack e Material Design), nella forma delle app sorelle. Nuove righe `SettingsInfoRow` e `SettingsLinkRow` in `SettingsRows.kt`. Stringhe della pagina tolte, stringhe di famiglia aggiunte in italiano e inglese. `versionName` 2.3.9, `versionCode` 199.
+
+**Decisioni:** le righe dei dati non hanno icona, come gli interruttori delle Impostazioni; i collegamenti hanno la freccia come le altre righe che portano altrove. I collegamenti si aprono con `LocalUriHandler`, e un telefono senza browser non fa cadere l'app.
+
+**Problemi:** nessuno.
+
+**Verifica:** rese delle Impostazioni (Robolectric) prima e dopo; `SaldoNavigationStateTest` usa la guida al posto della pagina tolta; `./gradlew assembleDebug testDebugUnitTest lint detekt` con l'init script del mirror. Nessuno screenshot del README mostra la pagina.
+
+**Prossimo:** i collegamenti sul dispositivo.
+
+---
+
 ## 2026-10-18 - Onboarding nella cornice di famiglia
 
 **Fatto:** ADR 55. L'onboarding passa da cinque a quattro pagine: il benvenuto (il nome, la frase e tre punti di forza in sole parole, che assorbono la pagina della privacy), la valuta, il primo conto, le notifiche. Via l'icona dell'app dalle pagine statiche, l'animazione delle monete, i badge e i puntini; `OnboardingIcon.kt` e i pezzi `ic_app_icon_*` sono rimossi e lo script dell'icona non li scrive più. Ogni pagina è un titolo e un testo centrati nello spazio sopra i pulsanti, che stanno in basso nello stesso punto su ogni pagina; il pager diventa un `AnimatedContent` con scorrimento e dissolvenza (solo dissolvenza con le animazioni spente); la lista delle valute diventa una colonna che scorre con la pagina. `versionName` 2.3.8, `versionCode` 198.
