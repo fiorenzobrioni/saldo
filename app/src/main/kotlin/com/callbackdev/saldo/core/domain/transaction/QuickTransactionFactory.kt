@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.core.domain.transaction
 
+import com.callbackdev.saldo.core.common.date.offsetAt
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.Transaction
 import com.callbackdev.saldo.core.domain.model.TransactionType
@@ -9,6 +10,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.ZoneOffset
 
 /**
  * Builds the expense/income movement of the quick-entry paths (today the home
@@ -31,10 +33,13 @@ object QuickTransactionFactory {
         dateTime: LocalDateTime,
         zone: ZoneId,
         description: String? = null,
+        preferredOffset: ZoneOffset? = null,
     ): Transaction {
         val digits = MoneyMapper.fractionDigits(account.currency)
         val scaled = amount.setScale(digits, RoundingMode.HALF_UP)
-        val offset = zone.rules.getOffset(dateTime)
+        // The offset of the movement's own date; in the hour the clocks repeat,
+        // [preferredOffset] (the one of the moment it was written) says which of the two.
+        val offset = zone.offsetAt(dateTime, preferredOffset)
         return Transaction(
             type = type,
             amount = TransactionSign.signed(type, scaled),

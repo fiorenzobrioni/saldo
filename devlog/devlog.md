@@ -14,6 +14,25 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-18 - Fusi orari e cambi d'ora: revisione e correzioni
+
+**Fatto:** revisione mirata di come l'app tratta fusi orari e ora legale, prima del ritorno all'ora solare (domenica 25 ottobre 2026: alle 03:00 gli orologi tornano alle 02:00, l'ora 02:00-03:00 esiste due volte). Corretti due difetti:
+
+- **Il fuso restava quello di avvio del processo.** `ClockModule` forniva come singleton `Clock.systemDefaultZone()`, che fissa il fuso quando viene costruito: dopo un viaggio "oggi", le finestre del mese, l'ora proposta dall'editor e l'offset salvato con un movimento nuovo restavano nel fuso di partenza finché Android non chiudeva il processo (anche i ridisegni dei widget su `TIMEZONE_CHANGED` leggevano il fuso vecchio). Ora il `Clock` iniettato è `SystemZoneClock`, che legge il fuso del telefono a ogni chiamata. Test: `SystemZoneClockTest`.
+- **L'istante di un movimento veniva ricostruito dall'etichetta locale.** L'editor e l'inserimento rapido trasformavano data e ora locali in istante con `zone.rules.getOffset(LocalDateTime)`, che nell'ora ripetuta sceglie sempre il primo dei due offset: un movimento scritto alle 02:15 della seconda passata (CET) veniva salvato alle 02:15 CEST, un'ora prima, e finiva prima dei movimenti scritti nella prima passata. Lo stesso calcolo, alla modifica di un movimento registrato in un altro fuso (o nell'ora ripetuta) senza toccarne data e ora, ne spostava l'istante e l'offset. Ora l'editor tiene il momento da cui ha letto data e ora (adesso per un movimento nuovo o una copia, l'istante salvato con il suo offset per una modifica): se data e ora non cambiano si salva quello, se cambiano si leggono nel fuso del telefono preferendo quell'offset dove l'ora è ambigua (`ZoneId.offsetAt`, in `core/common/date`). `QuickTransactionFactory.create` ha il parametro `preferredOffset`, che l'inserimento rapido valorizza con l'offset del momento in cui scrive. Test: quattro casi in `TransactionEditorViewModelTest`, uno in `QuickEntryViewModelTest`, uno in `QuickTransactionFactoryTest`.
+
+Cosa regge, verificato: il giorno di un movimento è il suo giorno locale (istante + offset salvato, ADR 7) in lista, nei raggruppamenti per giorno e nei promemoria; le ricorrenze lavorano su `LocalDate` e generano a mezzogiorno, quindi nessuna occorrenza cade nel buco o nella sovrapposizione e il 31 segue `RecurrenceCalculator` come prima; le finestre di giorno e mese sono `atStartOfDay(zone)` (23 o 25 ore quando serve), mai `+24 h`; il worker giornaliero recupera fino a oggi, quindi il suo periodo di 24 ore non deve cadere a un'ora precisa; la sveglia del widget del mese è la mezzanotte locale ricalcolata a ogni render, con i ricevitori di `TIME_SET` e `TIMEZONE_CHANGED`. `versionName` 2.3.11, `versionCode` 201.
+
+**Decisioni:** nessun cambiamento di comportamento fuori dai due difetti: un'ora scelta a mano si legge nel fuso del telefono come prima, e un'ora che non esiste (le 02:30 del 28 marzo 2027) si salva come prima, con l'offset di prima del salto.
+
+**Problemi:** trovato e non corretto, perché la correzione tocca tutte le query delle statistiche: le finestre di periodo (statistiche, dashboard, budget) sono istanti nel fuso di oggi, mentre il giorno di un movimento è quello del suo offset. Un movimento scritto in viaggio vicino alla mezzanotte può contare nel mese sbagliato. Annotato in "Bug conosciuti", in attesa di una decisione.
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt`.
+
+**Prossimo:** la decisione sulle finestre per giorno locale.
+
+---
+
 ## 2026-10-18 - Verifica su dispositivo delle icone, dell'onboarding, delle informazioni e del carattere
 
 **Fatto:** il committente ha provato sul dispositivo le quattro modifiche del 18 ottobre e le ha trovate a posto. Chiuse le verifiche lasciate nelle voci precedenti:
