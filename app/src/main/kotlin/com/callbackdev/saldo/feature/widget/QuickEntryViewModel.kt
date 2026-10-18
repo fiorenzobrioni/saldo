@@ -41,8 +41,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
+import java.time.ZonedDateTime
 
 /** What the quick entry sheet renders. */
 data class QuickEntryUiState(
@@ -356,6 +355,7 @@ class QuickEntryViewModel @AssistedInject constructor(
         val account = state.account?.account ?: return
         val amount = MoneyInput.parse(state.amountInput) ?: return
         isSaving = true
+        val now = ZonedDateTime.now(clock)
         val transaction = QuickTransactionFactory.create(
             type = state.type,
             amount = amount,
@@ -363,9 +363,10 @@ class QuickEntryViewModel @AssistedInject constructor(
             categoryId = state.category?.id,
             // A date read from the text keeps the current time of day: the
             // day is the information, the hour is just "when it was written".
-            dateTime = state.parsedDate?.atTime(LocalTime.now(clock)) ?: LocalDateTime.now(clock),
-            zone = clock.zone,
+            dateTime = state.parsedDate?.atTime(now.toLocalTime()) ?: now.toLocalDateTime(),
+            zone = now.zone,
             description = state.description.trim().ifEmpty { null },
+            preferredOffset = now.offset,
         )
         viewModelScope.launch {
             val result = suspendRunCatching {

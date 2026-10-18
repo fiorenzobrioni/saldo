@@ -3,6 +3,7 @@ package com.callbackdev.saldo.feature.transactions
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.coroutines.suspendRunCatching
+import com.callbackdev.saldo.core.common.date.offsetAt
 import com.callbackdev.saldo.core.common.money.MoneyInput
 import com.callbackdev.saldo.core.domain.model.primaryCurrency
 import com.callbackdev.saldo.core.domain.rates.CurrencyConverter
@@ -51,6 +52,8 @@ import java.time.Clock
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.Currency
 
 /**
@@ -122,8 +125,18 @@ class TransactionEditorViewModel @AssistedInject constructor(
         val showValidation: Boolean = false,
     )
 
+    /**
+     * The moment the form's date and time were read from: now for a new movement or a
+     * copy, the stored instant at its own offset for an edit. Saving a date and time
+     * the user did not touch keeps this offset, so the instant is the one written.
+     * Rebuilding it from the local date and time picks the earlier offset in the hour
+     * the clocks repeat (the second 02:15 of 25 October in Rome was saved an hour
+     * early) and the phone's zone of today for a movement written elsewhere.
+     */
+    private var anchor: OffsetDateTime = OffsetDateTime.now(clock)
+
     private val form: MutableStateFlow<Form> = run {
-        val now = LocalDateTime.now(clock)
+        val now = anchor.toLocalDateTime()
         MutableStateFlow(
             Form(
                 isLoading = route.transactionId != null,
@@ -557,6 +570,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
             val ruleName = transaction.recurringRuleId
                 ?.let { recurringRuleRepository.getRule(it)?.name }
             val local = transaction.timestamp.atOffset(transaction.zoneOffset)
+            anchor = local
             form.update {
                 it.copy(
                     isLoading = false,
@@ -627,7 +641,8 @@ class TransactionEditorViewModel @AssistedInject constructor(
             )
             val destination = source.transferAccountId
                 ?.takeIf { id -> active.any { it.id == id } && id != fallback?.id }
-            val now = LocalDateTime.now(clock)
+            val now = OffsetDateTime.now(clock)
+            anchor = now
             form.update {
                 it.copy(
                     isLoading = false,
@@ -683,6 +698,17 @@ class TransactionEditorViewModel @AssistedInject constructor(
     }
 
     /** Builds the domain movement with the sign conventions of the model. */
+    /**
+     * The offset to save [dateTime] with: the one the form was read at when the user
+     * left date and time alone; otherwise today's zone at [dateTime], where in the hour
+     * the clocks repeat the offset the form was read at says which of the two it is.
+     */
+    private fun offsetOf(dateTime: LocalDateTime): ZoneOffset = if (dateTime == anchor.toLocalDateTime()) {
+        anchor.offset
+    } else {
+        clock.zone.offsetAt(dateTime, anchor.offset)
+    }
+
     private fun buildTransaction(
         state: TransactionEditorUiState,
         current: Form,
@@ -702,7 +728,7 @@ class TransactionEditorViewModel @AssistedInject constructor(
         val transferLegMissing = isTransfer && (toAccount == null || transferAmount == null)
         if (account == null || parsed == null || transferLegMissing) return null
         val dateTime = LocalDateTime.of(current.date, current.time)
-        val offset = clock.zone.rules.getOffset(dateTime)
+        val offset = offsetOf(dateTime)
         val hasCategory = current.type == TransactionType.EXPENSE ||
             current.type == TransactionType.INCOME
         val base = existing

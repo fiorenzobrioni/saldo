@@ -115,6 +115,7 @@ class TransactionEditorViewModelTest {
         defaultAccountId: Long? = null,
         counterpartyNames: List<String> = emptyList(),
         remindersEnabled: Boolean = true,
+        clock: Clock = this.clock,
     ): TransactionEditorViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
@@ -330,6 +331,96 @@ class TransactionEditorViewModelTest {
 
         // 10:00 UTC at the stored +2 offset is 12:00 local.
         assertEquals(LocalTime.of(12, 0), viewModel.uiState.value.time)
+    }
+
+    @Test
+    fun `a new movement in the hour the clocks repeat keeps the instant it was written`() = runTest {
+        // Rome, 25 October 2026: 03:00 CEST becomes 02:00 CET, so 02:15 happens twice.
+        // 01:15 UTC is the second 02:15, at +01:00.
+        val secondPass = Clock.fixed(Instant.parse("2026-10-25T01:15:00Z"), ZoneId.of("Europe/Rome"))
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(lastUsedAccountId = 1L, clock = secondPass)
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        viewModel.onAmountChanged("5")
+        viewModel.onCategorySelected(groceries.id)
+        viewModel.save()
+
+        assertEquals(Instant.parse("2026-10-25T01:15:00Z"), saved.captured.timestamp)
+        assertEquals(ZoneOffset.ofHours(1), saved.captured.zoneOffset)
+    }
+
+    @Test
+    fun `editing a movement written in the repeated hour keeps its instant`() = runTest {
+        val existing = Transaction(
+            id = 7L,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-12.00"),
+            currency = eur,
+            accountId = checking.id,
+            // The second 02:15 of 25 October 2026 in Rome.
+            timestamp = Instant.parse("2026-10-25T01:15:00Z"),
+            zoneOffset = ZoneOffset.ofHours(1),
+            categoryId = groceries.id,
+        )
+        coEvery { transactionRepository.getTransaction(7L) } returns existing
+        every { tagRepository.observeTagsForTransaction(7L) } returns flowOf(emptyList())
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(route = TransactionEditorRoute(7L))
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns 7L
+
+        viewModel.onAmountChanged("13")
+        viewModel.save()
+
+        assertEquals(existing.timestamp, saved.captured.timestamp)
+        assertEquals(existing.zoneOffset, saved.captured.zoneOffset)
+    }
+
+    @Test
+    fun `editing a movement written in another zone keeps its instant and its offset`() = runTest {
+        val existing = Transaction(
+            id = 7L,
+            type = TransactionType.EXPENSE,
+            amount = BigDecimal("-12.00"),
+            currency = eur,
+            accountId = checking.id,
+            // 20:00 in New York on 1 July (UTC-4), edited back in Rome (UTC+2).
+            timestamp = Instant.parse("2026-07-02T00:00:00Z"),
+            zoneOffset = ZoneOffset.ofHours(-4),
+            categoryId = groceries.id,
+        )
+        coEvery { transactionRepository.getTransaction(7L) } returns existing
+        every { tagRepository.observeTagsForTransaction(7L) } returns flowOf(emptyList())
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(route = TransactionEditorRoute(7L))
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns 7L
+
+        viewModel.onAmountChanged("13")
+        viewModel.save()
+
+        assertEquals(existing.timestamp, saved.captured.timestamp)
+        assertEquals(existing.zoneOffset, saved.captured.zoneOffset)
+    }
+
+    @Test
+    fun `a time picked in the repeated hour is read in the offset the editor opened in`() = runTest {
+        // Opened at 02:40 CET, the second pass: 02:20 picked now is the second 02:20.
+        val secondPass = Clock.fixed(Instant.parse("2026-10-25T01:40:00Z"), ZoneId.of("Europe/Rome"))
+        val saved = slot<Transaction>()
+        val viewModel = viewModel(lastUsedAccountId = 1L, clock = secondPass)
+        collectState(viewModel)
+        coEvery { transactionRepository.upsert(capture(saved)) } returns SAVED_ID
+
+        viewModel.onAmountChanged("5")
+        viewModel.onCategorySelected(groceries.id)
+        viewModel.onTimeSelected(LocalTime.of(2, 20))
+        viewModel.save()
+
+        assertEquals(Instant.parse("2026-10-25T01:20:00Z"), saved.captured.timestamp)
+        assertEquals(ZoneOffset.ofHours(1), saved.captured.zoneOffset)
     }
 
     @Test

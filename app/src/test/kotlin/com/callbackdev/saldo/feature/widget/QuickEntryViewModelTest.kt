@@ -35,6 +35,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZoneOffset
 import java.util.Currency
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -97,6 +98,7 @@ class QuickEntryViewModelTest {
         defaultAccountId: Long? = null,
         lastUsedAccountId: Long? = null,
         mostUsed: List<Long> = emptyList(),
+        clock: Clock = this.clock,
     ): QuickEntryViewModel {
         every { accountRepository.observeAccountsWithBalance() } returns
             flowOf(accounts.map { AccountWithBalance(it, BigDecimal.ZERO) })
@@ -389,6 +391,21 @@ class QuickEntryViewModelTest {
         assertEquals(BigDecimal("-12.50"), saved.captured.amount)
         val savedDate = saved.captured.timestamp.atOffset(saved.captured.zoneOffset).toLocalDate()
         assertEquals(LocalDate.of(2026, 7, 7), savedDate)
+    }
+
+    @Test
+    fun `a movement saved in the hour the clocks repeat keeps the instant it was written`() = runTest {
+        // Rome, 25 October 2026: 01:15 UTC is the second 02:15, at +01:00.
+        val secondPass = Clock.fixed(Instant.parse("2026-10-25T01:15:00Z"), ZoneId.of("Europe/Rome"))
+        val viewModel = viewModel(clock = secondPass)
+        viewModel.uiState.test { expectMostRecentItem() }
+        viewModel.onQuickTextChanged("12,50 pizza")
+        viewModel.save()
+
+        val saved = slot<Transaction>()
+        coVerify { transactionRepository.upsert(capture(saved)) }
+        assertEquals(Instant.parse("2026-10-25T01:15:00Z"), saved.captured.timestamp)
+        assertEquals(ZoneOffset.ofHours(1), saved.captured.zoneOffset)
     }
 
     private companion object {
