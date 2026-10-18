@@ -22,6 +22,7 @@ internal object UserPreferenceKeys {
     val LAST_RATE_SYNC_ATTEMPT_EPOCH_MILLI = longPreferencesKey("last_rate_sync_attempt_epoch_milli")
     val THEME_MODE = stringPreferencesKey("theme_mode")
     val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
+    val APP_FONT = stringPreferencesKey("app_font")
     val RENEWAL_REMINDER_ENABLED = booleanPreferencesKey("renewal_reminder_enabled")
     val RENEWAL_REMINDER_LEAD_DAYS = intPreferencesKey("renewal_reminder_lead_days")
     val BACKUP_REMINDER_ENABLED = booleanPreferencesKey("backup_reminder_enabled")
@@ -64,6 +65,7 @@ internal object UserPreferenceKeys {
         CURRENCY_CONVERSION_ENABLED,
         THEME_MODE,
         USE_DYNAMIC_COLOR,
+        APP_FONT,
         RENEWAL_REMINDER_ENABLED,
         RENEWAL_REMINDER_LEAD_DAYS,
         BACKUP_REMINDER_ENABLED,

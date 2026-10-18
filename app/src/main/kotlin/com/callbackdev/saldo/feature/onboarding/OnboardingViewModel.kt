@@ -43,7 +43,8 @@ import java.util.Currency
 import javax.inject.Inject
 
 /** The onboarding pages, in presentation order (ordinal = pager index). */
-enum class OnboardingPage { WELCOME, PRIVACY, CURRENCY, ACCOUNT, NOTIFICATIONS }
+/** The four pages (ADR 55): the privacy page's points are the welcome's promises since 18 Oct 2026. */
+enum class OnboardingPage { WELCOME, CURRENCY, ACCOUNT, NOTIFICATIONS }
 
 /** Immutable state of the onboarding flow. */
 data class OnboardingUiState(

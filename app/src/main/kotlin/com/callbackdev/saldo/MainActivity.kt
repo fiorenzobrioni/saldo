@@ -133,6 +133,7 @@ class MainActivity : ComponentActivity() {
             SaldoTheme(
                 darkTheme = darkTheme,
                 dynamicColor = themePreferences.useDynamicColor,
+                font = themePreferences.font,
             ) {
                 // First-launch gate: onboarding lives above the Nav3 back stack,
                 // so the app's navigation is untouched. LOADING renders nothing:

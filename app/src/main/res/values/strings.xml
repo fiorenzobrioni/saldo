@@ -714,6 +714,13 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_font">Typeface</string>
+    <string name="settings_font_google_sans">Google Sans</string>
+    <string name="settings_font_inter">Inter</string>
+    <string name="settings_font_system">System</string>
+    <string name="settings_font_note">Google Sans and Inter come with the app: they look the same on every phone and line amounts up in columns. System takes the font your phone is set in.</string>
+    <string name="settings_credit_font_inuse">in use: %1$s</string>
+    <string name="settings_credit_font_inuse_system">in use: the font your phone is set in</string>
     <string name="settings_dynamic_color">Dynamic colors</string>
     <string name="settings_dynamic_color_hint">Use colors from your wallpaper (Material You)</string>
 
@@ -735,8 +742,22 @@
     </plurals>
     <string name="settings_csv_mappings_delete">Delete the mapping %1$s</string>
     <string name="settings_section_about">About</string>
-    <string name="settings_about">About Saldo</string>
-    <string name="settings_about_hint">Version %1$s</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_developer">Developer</string>
+    <string name="settings_copyright">Copyright</string>
+    <string name="settings_license">License</string>
+    <string name="settings_license_note">GPL-3.0: free to use, study, change and share, with no warranty</string>
+    <string name="settings_source_code">Source code</string>
+    <string name="settings_source_code_note">Free software, GPL-3.0, on GitHub</string>
+    <string name="settings_section_credits">Credits</string>
+    <string name="settings_credit_font">Typefaces</string>
+    <string name="settings_credit_font_note">Inter by Rasmus Andersson and Google Sans by Google, both SIL Open Font License 1.1</string>
+    <string name="settings_credit_rates">Exchange rates</string>
+    <string name="settings_credit_rates_note">Euro foreign exchange reference rates of the European Central Bank</string>
+    <string name="settings_credit_platform">Android Jetpack and Material Design</string>
+    <string name="settings_credit_platform_note">Google</string>
+    <string name="settings_developer_note" translatable="false">Callback Dev</string>
 
     <!-- Backup and restore (Phase 8) -->
     <string name="backup_title">Backup</string>
@@ -910,18 +931,11 @@
     <string name="csv_mapping_save_as_hint">E.g. Bank X statement. Applied automatically to the next file with the same header.</string>
     <string name="csv_mapping_continue">Continue</string>
 
-    <!-- About screen -->
-    <string name="about_title">About</string>
-    <string name="about_version">Version %1$s</string>
-    <string name="about_tagline">Understand where your money goes, clearly and instantly.</string>
-    <string name="about_author">Developed by Callback Dev</string>
+    <!-- About, at the foot of Settings (ADR 56) -->
     <!-- Author line: a name and a year, identical in every language. -->
     <string name="about_copyright" translatable="false">© 2026 Fiorenzo Brioni</string>
     <string name="about_privacy_title">Privacy and network</string>
     <string name="about_privacy_body">Your data lives only on this device. Reading the ECB exchange rates for the currency conversion is the app\'s only network traffic besides the optional backup and export, and it sends none of your data: only the request for the rates leaves the device. Conversion can be turned off in Settings.</string>
-    <string name="about_license_title">License</string>
-    <string name="about_license_body">Saldo is free software, released under the GNU GPL-3.0 license.</string>
-    <string name="about_libraries_title">Open source libraries</string>
     <!-- The two arrays below are parallel: names[i] is described by roles[i].
          Only non-Google libraries are itemized; Google's stack is credited as
          a whole by about_libraries_footer. -->
@@ -933,15 +947,18 @@
         <item>Language, coroutines and JSON serialization (JetBrains)</item>
         <item>Charts</item>
     </string-array>
-    <string name="about_libraries_footer">Plus Google\'s Android Jetpack and Material Design libraries.</string>
 
     <!-- Onboarding (Phase 9) -->
-    <string name="onboarding_welcome_title">Hi! I\'m Saldo</string>
-    <string name="onboarding_welcome_body">Your money, finally clear. Expenses, income, budgets and savings goals under control in a few taps — no bank logins, no sign-up, no fuss.</string>
+    <!-- The welcome's heading: the name alone, where app_name carries the debug build's mark. -->
+    <string name="onboarding_app_name" translatable="false">Saldo</string>
+    <string name="onboarding_welcome_tagline">Your money, finally clear.</string>
+    <string name="onboarding_promise_taps_title">All in a few taps</string>
+    <string name="onboarding_promise_taps_body">Expenses, income, budgets and savings goals, with no bank login and no sign-up.</string>
+    <string name="onboarding_promise_phone_title">It stays on your phone</string>
+    <string name="onboarding_promise_phone_body">No cloud, no account, no tracking. It works in airplane mode too: the only thing it downloads is exchange rates, if you keep accounts in a foreign currency, and that request carries none of your data.</string>
+    <string name="onboarding_promise_backup_title">A copy when you want one</string>
+    <string name="onboarding_promise_backup_body">Export a backup whenever you like, protected by a passphrase if you want.</string>
     <string name="onboarding_welcome_cta">Let\'s get started</string>
-    <string name="onboarding_privacy_title">Your data stays with you</string>
-    <string name="onboarding_privacy_body">Everything lives on your phone and nowhere else: no cloud, no account, no tracking. Saldo works even in airplane mode — the only thing it ever downloads is exchange rates, and only if you keep accounts in a foreign currency: that request carries none of your data. Want a copy? You can export a backup whenever you like, protected by a passphrase if you want.</string>
-    <string name="onboarding_privacy_cta">Sounds good</string>
     <string name="onboarding_currency_title">Pick your currency</string>
     <string name="onboarding_currency_body">The one you use every day. You can change it anytime in Settings — promise.</string>
     <string name="onboarding_currency_cta">Continue</string>

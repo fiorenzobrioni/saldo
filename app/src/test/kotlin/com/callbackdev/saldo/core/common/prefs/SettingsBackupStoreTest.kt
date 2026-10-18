@@ -55,6 +55,7 @@ class SettingsBackupStoreTest {
             currencyConversionEnabled = false,
             themeMode = "LIGHT",
             useDynamicColor = true,
+            font = "INTER",
             renewalReminderEnabled = true,
             renewalReminderLeadDays = 7,
             backupReminderEnabled = true,
@@ -93,6 +94,7 @@ class SettingsBackupStoreTest {
             SettingsBackup(
                 themeMode = "DARK",
                 useDynamicColor = true,
+                font = "SYSTEM",
                 renewalReminderEnabled = true,
                 renewalReminderLeadDays = 7,
                 backupReminderEnabled = true,
@@ -104,6 +106,7 @@ class SettingsBackupStoreTest {
 
         assertEquals(ThemeMode.DARK, preferences.themePreferences.first().mode)
         assertTrue(preferences.themePreferences.first().useDynamicColor)
+        assertEquals(AppFont.SYSTEM, preferences.themePreferences.first().font)
         assertEquals(7, preferences.renewalReminderPreferences.first().leadDays)
         assertTrue(preferences.backupReminderPreferences.first().enabled)
         assertEquals(30, preferences.backupReminderPreferences.first().intervalDays)
@@ -145,6 +148,8 @@ class SettingsBackupStoreTest {
 
         assertEquals(SettingsBackup(), store.snapshotSettings())
         assertEquals(ThemeMode.SYSTEM, preferences.themePreferences.first().mode)
+        // A file from before the typeface choice leaves the default face, the family's.
+        assertEquals(AppFont.GOOGLE_SANS, preferences.themePreferences.first().font)
         assertNull(preferences.defaultAccountId.first())
     }
 
@@ -170,6 +175,7 @@ class SettingsBackupStoreTest {
             SettingsBackup(
                 primaryCurrencyCode = "EURO",
                 themeMode = "NEON",
+                font = "COMIC_SANS",
                 csvSeparator = "TAB",
                 firstDayOfWeek = "FRIDAY",
                 renewalReminderLeadDays = 99,
@@ -179,6 +185,7 @@ class SettingsBackupStoreTest {
         val snapshot = store.snapshotSettings()
         assertNull(snapshot.primaryCurrencyCode)
         assertNull(snapshot.themeMode)
+        assertNull(snapshot.font)
         assertNull(snapshot.csvSeparator)
         // A real day of the week, but not one the app offers.
         assertNull(snapshot.firstDayOfWeek)

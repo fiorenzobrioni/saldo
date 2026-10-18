@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.feature.settings
 
+import com.callbackdev.saldo.core.common.prefs.AppFont
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.callbackdev.saldo.core.common.applock.AppLockRepository
@@ -164,6 +165,10 @@ class SettingsViewModel @Inject constructor(
 
     fun onDynamicColorChanged(enabled: Boolean) {
         viewModelScope.launch { userPreferences.setUseDynamicColor(enabled) }
+    }
+
+    fun onFontSelected(font: AppFont) {
+        viewModelScope.launch { userPreferences.setFont(font) }
     }
 
     fun onRenewalReminderChanged(enabled: Boolean) {

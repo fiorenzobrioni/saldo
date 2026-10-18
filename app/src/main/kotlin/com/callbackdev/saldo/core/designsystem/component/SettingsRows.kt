@@ -114,3 +114,40 @@ fun SettingsSwitchRow(
         ),
     )
 }
+
+/** A fact, not a door: title and value, nothing to tap (the version, who made the app). */
+@Composable
+fun SettingsInfoRow(
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(value) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = modifier,
+    )
+}
+
+/** A fact that opens its source outside the app (the license, the code): title, value and a chevron. */
+@Composable
+fun SettingsLinkRow(
+    title: String,
+    value: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(value) },
+        trailingContent = {
+            Icon(
+                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                contentDescription = null,
+            )
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier = modifier.clickable(onClick = onClick),
+    )
+}

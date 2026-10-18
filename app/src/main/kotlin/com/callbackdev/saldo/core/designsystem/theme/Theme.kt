@@ -1,5 +1,6 @@
 package com.callbackdev.saldo.core.designsystem.theme
 
+import com.callbackdev.saldo.core.common.prefs.AppFont
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +24,8 @@ import androidx.compose.ui.platform.LocalContext
  * feel is carried by plain Compose springs at the call sites (see
  * SpeedDialFab) until the SDK 37 chore unlocks material3 1.5.
  *
+ * [font] is the user's typeface (ADR 57), Google Sans unless they chose another.
+ *
  * [applyBackground] draws the opaque themed backdrop described below. It is on
  * everywhere the app owns the whole window, and off in the one place that must
  * let the surface behind show through: the quick-entry sheet, whose translucent
@@ -32,6 +35,7 @@ import androidx.compose.ui.platform.LocalContext
 fun SaldoTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     dynamicColor: Boolean = false,
+    font: AppFont = AppFont.GOOGLE_SANS,
     applyBackground: Boolean = true,
     content: @Composable () -> Unit,
 ) {
@@ -45,7 +49,7 @@ fun SaldoTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = SaldoTypography,
+        typography = saldoTypography(font),
         shapes = SaldoShapes,
     ) {
         CompositionLocalProvider(

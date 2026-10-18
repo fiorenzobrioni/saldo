@@ -103,7 +103,11 @@ class QuickAddWidgetConfigActivity : ComponentActivity() {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
-            SaldoTheme(darkTheme = darkTheme, dynamicColor = themePreferences.useDynamicColor) {
+            SaldoTheme(
+                darkTheme = darkTheme,
+                dynamicColor = themePreferences.useDynamicColor,
+                font = themePreferences.font,
+            ) {
                 if (month == null) QuickAddContent(themePreferences) else MonthContent(month, themePreferences)
             }
         }

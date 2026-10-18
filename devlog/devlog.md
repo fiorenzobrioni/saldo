@@ -14,6 +14,81 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-18 - Verifica su dispositivo delle icone, dell'onboarding, delle informazioni e del carattere
+
+**Fatto:** il committente ha provato sul dispositivo le quattro modifiche del 18 ottobre e le ha trovate a posto. Chiuse le verifiche lasciate nelle voci precedenti:
+
+- [x] l'icona con due launcher e a tema, e una notifica vera nella barra di stato (ADR 53, emendamento);
+- [x] l'onboarding a testo grande e con la tastiera aperta sulla pagina del conto (ADR 55);
+- [x] i collegamenti delle informazioni in fondo alle Impostazioni (ADR 56);
+- [x] il carattere, a testo grande, e il passaggio da Inter a Google Sans per chi aggiorna dalla 2.3.9 (ADR 57).
+
+**Decisioni:** nessuna.
+
+**Problemi:** nessuno.
+
+**Verifica:** sul dispositivo del committente.
+
+**Prossimo:** le PR della famiglia.
+
+---
+
+## 2026-10-18 - Google Sans predefinito e la scelta del carattere
+
+**Fatto:** ADR 57. Google Sans è il carattere predefinito (copiato dalle app sorelle, licenza in `licenses/google-sans/OFL.txt`); Inter e il carattere del telefono si scelgono in Impostazioni, Aspetto, con una fila segmentata in cui ogni nome è scritto nel proprio carattere. `AppFont` e `ThemePreferences.font` nelle preferenze, chiave `app_font`, nel backup delle impostazioni (`SettingsBackup.font`, ripulita al ripristino come il tema). `SaldoTheme(font)` nell'app, nell'inserimento rapido e nella configurazione dei widget; la tipografia si costruisce per carattere (`saldoTypography`). Nei Riconoscimenti la riga «Caratteri» cita entrambi i font e dice quale è in uso. L'onboarding prende il carattere dal tema, senza altro lavoro. `versionName` 2.3.10, `versionCode` 200.
+
+**Decisioni:** la scala di Saldo resta la sua (titoli in semigrassetto): cambia il carattere, non la gerarchia. I pesi dei font variabili passano dall'asse `wght` (`FontVariation`), come nelle app sorelle, invece di lasciarli sintetizzare: anche Inter ne guadagna. La scelta del carattere non è una pagina dell'onboarding: nessuna delle app sorelle la chiede al primo avvio, e Google Sans è già quello che il committente ha scelto per tutti.
+
+**Problemi:** nessuno. I widget restano nel carattere di sistema: i `RemoteViews` non prendono i font dell'app.
+
+**Verifica:** `SettingsBackupStoreTest` esteso (il carattere va e torna dal backup, un valore sconosciuto è scartato, un file senza la chiave lascia Google Sans); rese di Aspetto, Riconoscimenti e onboarding in Google Sans e Inter; dieci screenshot del README rigenerati e guardati (`widgets.png` non cambia); `./gradlew assembleDebug testDebugUnitTest lint detekt` con l'init script del mirror.
+
+**Prossimo:** il carattere sul dispositivo, a testo grande, e il passaggio da Inter a Google Sans per chi aggiorna dalla 2.3.9.
+
+---
+
+## 2026-10-18 - Le informazioni sull'app in fondo alle Impostazioni
+
+**Fatto:** ADR 56. La pagina Informazioni è rimossa con la sua rotta: in fondo alle Impostazioni ci sono Privacy (la card «Privacy e rete»), Informazioni (versione, sviluppo, copyright, licenza, codice sorgente) e Riconoscimenti (carattere, tassi di cambio della BCE, librerie, Android Jetpack e Material Design), nella forma delle app sorelle. Nuove righe `SettingsInfoRow` e `SettingsLinkRow` in `SettingsRows.kt`. Stringhe della pagina tolte, stringhe di famiglia aggiunte in italiano e inglese. `versionName` 2.3.9, `versionCode` 199.
+
+**Decisioni:** le righe dei dati non hanno icona, come gli interruttori delle Impostazioni; i collegamenti hanno la freccia come le altre righe che portano altrove. I collegamenti si aprono con `LocalUriHandler`, e un telefono senza browser non fa cadere l'app.
+
+**Problemi:** nessuno.
+
+**Verifica:** rese delle Impostazioni (Robolectric) prima e dopo; `SaldoNavigationStateTest` usa la guida al posto della pagina tolta; `./gradlew assembleDebug testDebugUnitTest lint detekt` con l'init script del mirror. Nessuno screenshot del README mostra la pagina.
+
+**Prossimo:** i collegamenti sul dispositivo.
+
+---
+
+## 2026-10-18 - Onboarding nella cornice di famiglia
+
+**Fatto:** ADR 55. L'onboarding passa da cinque a quattro pagine: il benvenuto (il nome, la frase e tre punti di forza in sole parole, che assorbono la pagina della privacy), la valuta, il primo conto, le notifiche. Via l'icona dell'app dalle pagine statiche, l'animazione delle monete, i badge e i puntini; `OnboardingIcon.kt` e i pezzi `ic_app_icon_*` sono rimossi e lo script dell'icona non li scrive più. Ogni pagina è un titolo e un testo centrati nello spazio sopra i pulsanti, che stanno in basso nello stesso punto su ogni pagina; il pager diventa un `AnimatedContent` con scorrimento e dissolvenza (solo dissolvenza con le animazioni spente); la lista delle valute diventa una colonna che scorre con la pagina. `versionName` 2.3.8, `versionCode` 198.
+
+**Decisioni:** il ripristino da backup è un pulsante contornato perché è un'alternativa vera alla creazione del conto; «Lo faccio dopo» e «Magari dopo» sono di solo testo. Il passaggio è annunciato da TalkBack sul titolo della pagina invece dei puntini. Il carattere resta Inter: è il carattere dell'app intera, la gerarchia è quella delle app sorelle.
+
+**Problemi:** nessuno. Robolectric disegna Inter variabile con un solo peso, quindi nelle rese i titoli sembrano più leggeri che sul telefono.
+
+**Verifica:** rese delle quattro pagine accanto a quelle delle altre tre app; `OnboardingViewModelTest` aggiornato all'ordine delle pagine; `./gradlew assembleDebug testDebugUnitTest lint detekt` con l'init script del mirror. Nessuno screenshot del README mostra l'onboarding.
+
+**Prossimo:** l'onboarding sul dispositivo, a testo grande e con la tastiera aperta sulla pagina del conto.
+
+---
+
+## 2026-10-18 - Icone della famiglia rese omogenee
+
+**Fatto:** emendamento dell'ADR 53, dopo la review delle icone delle quattro app chiesta dal committente. L'emblema è ora **due monete ambra** sovrapposte, quella davanti con il bordo, nel punto della moneta di prima (40 gradi), ognuna con il vuoto di 3,0 delle app sorelle. L'anello è più deciso (entrate `#43B3AA`→`#0E7672`, uscite `#E99280`→`#C05741`). L'icona della barra di stato sono le due monete, senza anello. I pezzi del benvenuto si rigenerano: le due monete cadono insieme sull'anello, l'animazione non cambia. L'accento delle notifiche e i due badge dell'onboarding seguono le estremità scure delle due metà. `versionName` 2.3.7, `versionCode` 197.
+
+**Decisioni:** nella barra di stato l'oggetto dell'app, nel launcher il marchio (scelta del committente per tutta la famiglia). Due monete invece di una perché una moneta con il bordo si leggeva come un bersaglio; la pila di monete, provata, sembrava l'icona del menu. Le monete cadono insieme e non una dopo l'altra: la moneta dietro porta il morso della fascia che la separa da quella davanti, e da sola si vedrebbe come una moneta morsicata.
+
+**Problemi:** il taglio sottile alla seconda giunzione (220 gradi) non si è mai visto, né a colori né nell'icona a tema dove serve a tenere separate le due metà: il rettangolo era percorso nello stesso verso della tela, e con la regola nonzero di VectorDrawable un buco nello stesso verso si riempie. Ora `slit()` lo percorre al contrario.
+
+**Verifica:** resa degli XML veri accanto alle altre tre app (cerchio, squircle, quadrato, 48 px, a tema chiaro e scuro, barra di stato a 24 px); simulazione di deuteranopia (Machado 2009) e contrasto WCAG dei badge; `./gradlew assembleDebug testDebugUnitTest lint detekt` con l'init script del mirror; screenshot del README rigenerati dove compare l'icona.
+
+**Prossimo:** l'icona sul dispositivo con due launcher e a tema, e una notifica vera nella barra di stato.
+
+---
+
 ## 2026-10-16 - Widget del mese e un solo widget di aggiunta
 
 **Fatto:** Fase 45, ADR 54, emendamento dell'ADR 37. Due widget nuovi: "In parole" (il mese in una frase: quanto puoi ancora spendere e al giorno, le cifre del budget, i giorni rimasti, il prossimo addebito) e "Il mese" (l'anello della spesa sul budget mensile, con la banda del mese trascorso e la percentuale nel foro; senza budget una card che apre i budget). "Barra rapida" tolta: "Aggiunta rapida" a una riga disegna già la stessa barra, e le sue opzioni passano nel gruppo "Su una riga". Aggiornamento dei widget del mese solo se piazzati: segnale di invalidazione di Room sulle tabelle che leggono, tema, valuta, conversione e PIN, sveglia `RTC` non esatta poco dopo mezzanotte, broadcast esenti di ora, fuso e lingua, ridisegno alla fine del worker giornaliero. Con il blocco app nessun importo, più l'interruttore "Gli importi". `ACTION_OPEN_BUDGETS` per la card senza budget. Voci nelle Impostazioni per aggiungere i due widget alla home. `versionName` 2.3.6, `versionCode` 196.

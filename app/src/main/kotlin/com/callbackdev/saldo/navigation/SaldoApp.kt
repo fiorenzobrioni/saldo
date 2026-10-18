@@ -35,7 +35,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.ui.NavDisplay
 import com.callbackdev.saldo.R
-import com.callbackdev.saldo.feature.about.AboutScreen
 import com.callbackdev.saldo.feature.guide.GuideScreen
 import com.callbackdev.saldo.feature.accounts.AccountDetailScreen
 import com.callbackdev.saldo.feature.accounts.AccountEditorScreen
@@ -228,7 +227,6 @@ fun SaldoApp(
                 onNavigateToCounterparties = { nav.navigate(CounterpartiesRoute) },
                 onNavigateToSecurity = { nav.navigate(SecurityRoute) },
                 onNavigateToBackup = { nav.navigate(BackupRoute) },
-                onNavigateToAbout = { nav.navigate(AboutRoute) },
                 onNavigateToGuide = { nav.navigate(GuideRoute) },
                 onNavigateToRates = { nav.navigate(ExchangeRatesRoute) },
             )
@@ -372,9 +370,6 @@ fun SaldoApp(
         }
         entry<BackupRoute> {
             BackupScreen(onNavigateBack = { nav.goBack() })
-        }
-        entry<AboutRoute> {
-            AboutScreen(onNavigateBack = { nav.goBack() })
         }
         entry<GuideRoute> {
             GuideScreen(onNavigateBack = { nav.goBack() })
