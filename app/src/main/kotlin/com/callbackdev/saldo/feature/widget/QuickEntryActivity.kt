@@ -62,6 +62,7 @@ class QuickEntryActivity : ComponentActivity() {
             SaldoTheme(
                 darkTheme = darkTheme,
                 dynamicColor = themePreferences.useDynamicColor,
+                font = themePreferences.font,
                 // The window is translucent: an opaque backdrop would hide the
                 // launcher and turn the sheet back into a full screen.
                 applyBackground = false,

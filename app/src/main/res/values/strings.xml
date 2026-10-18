@@ -714,6 +714,13 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_font">Typeface</string>
+    <string name="settings_font_google_sans">Google Sans</string>
+    <string name="settings_font_inter">Inter</string>
+    <string name="settings_font_system">System</string>
+    <string name="settings_font_note">Google Sans and Inter come with the app: they look the same on every phone and line amounts up in columns. System takes the font your phone is set in.</string>
+    <string name="settings_credit_font_inuse">in use: %1$s</string>
+    <string name="settings_credit_font_inuse_system">in use: the font your phone is set in</string>
     <string name="settings_dynamic_color">Dynamic colors</string>
     <string name="settings_dynamic_color_hint">Use colors from your wallpaper (Material You)</string>
 
@@ -744,8 +751,8 @@
     <string name="settings_source_code">Source code</string>
     <string name="settings_source_code_note">Free software, GPL-3.0, on GitHub</string>
     <string name="settings_section_credits">Credits</string>
-    <string name="settings_credit_font">Typeface</string>
-    <string name="settings_credit_font_note">Inter by Rasmus Andersson, SIL Open Font License 1.1</string>
+    <string name="settings_credit_font">Typefaces</string>
+    <string name="settings_credit_font_note">Inter by Rasmus Andersson and Google Sans by Google, both SIL Open Font License 1.1</string>
     <string name="settings_credit_rates">Exchange rates</string>
     <string name="settings_credit_rates_note">Euro foreign exchange reference rates of the European Central Bank</string>
     <string name="settings_credit_platform">Android Jetpack and Material Design</string>

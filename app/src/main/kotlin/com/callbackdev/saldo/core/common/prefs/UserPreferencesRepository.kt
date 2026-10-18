@@ -3,9 +3,12 @@ package com.callbackdev.saldo.core.common.prefs
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.APP_FONT
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_ENCRYPTION_ENABLED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_ENABLED
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_INTERVAL_DAYS
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_NOTIFIED_EPOCH_DAY
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BALANCE_ACCOUNTS_EXPANDED_DEFAULT
-import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.MONTH_COMPARISON_EXPANDED
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CSV_SEPARATOR
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.CURRENCY_CONVERSION_ENABLED
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_BUDGET_CARD
@@ -15,9 +18,6 @@ import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECENT_TRANSACTIONS
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_RECURRING
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_SAFE_TO_SPEND
-import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_ENABLED
-import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_INTERVAL_DAYS
-import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_NOTIFIED_EPOCH_DAY
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_SAVINGS_GOALS
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DASHBOARD_SHOW_UPCOMING
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.DEFAULT_ACCOUNT_ID
@@ -26,6 +26,7 @@ import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.FIRST_DAY_OF_W
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.LAST_BACKUP_AT_EPOCH_MILLI
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.LAST_RATE_SYNC_ATTEMPT_EPOCH_MILLI
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.LAST_USED_ACCOUNT_ID
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.MONTH_COMPARISON_EXPANDED
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.ONBOARDING_COMPLETED
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.PRIMARY_CURRENCY_CODE
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.RENEWAL_REMINDER_ENABLED
@@ -47,10 +48,18 @@ import javax.inject.Singleton
 /** How the app resolves light/dark. */
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+/**
+ * The typeface the app is set in (ADR 57). Google Sans is the default, the family's face;
+ * Inter, the face Saldo had until 2.3.9, keeps its slashed zero for whoever wants it; System
+ * takes the phone's own font. Both bundled faces carry tabular figures, so amounts align.
+ */
+enum class AppFont { GOOGLE_SANS, INTER, SYSTEM }
+
 /** Theme choices persisted across launches. Brand palette is the default. */
 data class ThemePreferences(
     val mode: ThemeMode = ThemeMode.SYSTEM,
     val useDynamicColor: Boolean = false,
+    val font: AppFont = AppFont.GOOGLE_SANS,
 )
 
 /**
@@ -249,6 +258,9 @@ class UserPreferencesRepository @Inject constructor(
                 ?.let { stored -> ThemeMode.entries.firstOrNull { it.name == stored } }
                 ?: ThemeMode.SYSTEM,
             useDynamicColor = preferences[USE_DYNAMIC_COLOR] ?: false,
+            font = preferences[APP_FONT]
+                ?.let { stored -> AppFont.entries.firstOrNull { it.name == stored } }
+                ?: AppFont.GOOGLE_SANS,
         )
     }.distinctUntilChanged()
 
@@ -258,6 +270,10 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setUseDynamicColor(enabled: Boolean) {
         dataStore.edit { preferences -> preferences[USE_DYNAMIC_COLOR] = enabled }
+    }
+
+    suspend fun setFont(font: AppFont) {
+        dataStore.edit { preferences -> preferences[APP_FONT] = font.name }
     }
 
     val renewalReminderPreferences: Flow<RenewalReminderPreferences> = dataStore.data.map { preferences ->

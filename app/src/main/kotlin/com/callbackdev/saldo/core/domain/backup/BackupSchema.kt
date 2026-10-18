@@ -85,6 +85,8 @@ data class SettingsBackup(
     /** [com.callbackdev.saldo.core.common.prefs.ThemeMode] name. */
     val themeMode: String? = null,
     val useDynamicColor: Boolean? = null,
+    /** [com.callbackdev.saldo.core.common.prefs.AppFont] name (ADR 57): absent in older files. */
+    val font: String? = null,
     val renewalReminderEnabled: Boolean? = null,
     val renewalReminderLeadDays: Int? = null,
     /** Fase 39 (F4): absent in older files. */

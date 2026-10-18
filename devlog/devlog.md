@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-10-18 - Google Sans predefinito e la scelta del carattere
+
+**Fatto:** ADR 57. Google Sans è il carattere predefinito (copiato dalle app sorelle, licenza in `licenses/google-sans/OFL.txt`); Inter e il carattere del telefono si scelgono in Impostazioni, Aspetto, con una fila segmentata in cui ogni nome è scritto nel proprio carattere. `AppFont` e `ThemePreferences.font` nelle preferenze, chiave `app_font`, nel backup delle impostazioni (`SettingsBackup.font`, ripulita al ripristino come il tema). `SaldoTheme(font)` nell'app, nell'inserimento rapido e nella configurazione dei widget; la tipografia si costruisce per carattere (`saldoTypography`). Nei Riconoscimenti la riga «Caratteri» cita entrambi i font e dice quale è in uso. L'onboarding prende il carattere dal tema, senza altro lavoro. `versionName` 2.3.10, `versionCode` 200.
+
+**Decisioni:** la scala di Saldo resta la sua (titoli in semigrassetto): cambia il carattere, non la gerarchia. I pesi dei font variabili passano dall'asse `wght` (`FontVariation`), come nelle app sorelle, invece di lasciarli sintetizzare: anche Inter ne guadagna. La scelta del carattere non è una pagina dell'onboarding: nessuna delle app sorelle la chiede al primo avvio, e Google Sans è già quello che il committente ha scelto per tutti.
+
+**Problemi:** nessuno. I widget restano nel carattere di sistema: i `RemoteViews` non prendono i font dell'app.
+
+**Verifica:** `SettingsBackupStoreTest` esteso (il carattere va e torna dal backup, un valore sconosciuto è scartato, un file senza la chiave lascia Google Sans); rese di Aspetto, Riconoscimenti e onboarding in Google Sans e Inter; dieci screenshot del README rigenerati e guardati (`widgets.png` non cambia); `./gradlew assembleDebug testDebugUnitTest lint detekt` con l'init script del mirror.
+
+**Prossimo:** il carattere sul dispositivo, a testo grande, e il passaggio da Inter a Google Sans per chi aggiorna dalla 2.3.9.
+
+---
+
 ## 2026-10-18 - Le informazioni sull'app in fondo alle Impostazioni
 
 **Fatto:** ADR 56. La pagina Informazioni è rimossa con la sua rotta: in fondo alle Impostazioni ci sono Privacy (la card «Privacy e rete»), Informazioni (versione, sviluppo, copyright, licenza, codice sorgente) e Riconoscimenti (carattere, tassi di cambio della BCE, librerie, Android Jetpack e Material Design), nella forma delle app sorelle. Nuove righe `SettingsInfoRow` e `SettingsLinkRow` in `SettingsRows.kt`. Stringhe della pagina tolte, stringhe di famiglia aggiunte in italiano e inglese. `versionName` 2.3.9, `versionCode` 199.

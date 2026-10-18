@@ -737,6 +737,13 @@
     <string name="settings_theme_system">Sistema</string>
     <string name="settings_theme_light">Chiaro</string>
     <string name="settings_theme_dark">Scuro</string>
+    <string name="settings_font">Carattere</string>
+    <string name="settings_font_google_sans">Google Sans</string>
+    <string name="settings_font_inter">Inter</string>
+    <string name="settings_font_system">Di sistema</string>
+    <string name="settings_font_note">Google Sans e Inter vengono con l\'app: si vedono uguali su ogni telefono e allineano gli importi in colonna. Di sistema prende il carattere impostato sul telefono.</string>
+    <string name="settings_credit_font_inuse">in uso: %1$s</string>
+    <string name="settings_credit_font_inuse_system">in uso: il carattere impostato sul telefono</string>
     <string name="settings_dynamic_color">Colori dinamici</string>
     <string name="settings_dynamic_color_hint">Usa i colori dello sfondo (Material You)</string>
 
@@ -769,8 +776,8 @@
     <string name="settings_source_code">Codice sorgente</string>
     <string name="settings_source_code_note">Software libero, GPL-3.0, su GitHub</string>
     <string name="settings_section_credits">Riconoscimenti</string>
-    <string name="settings_credit_font">Carattere</string>
-    <string name="settings_credit_font_note">Inter di Rasmus Andersson, SIL Open Font License 1.1</string>
+    <string name="settings_credit_font">Caratteri</string>
+    <string name="settings_credit_font_note">Inter di Rasmus Andersson e Google Sans di Google, entrambi SIL Open Font License 1.1</string>
     <string name="settings_credit_rates">Tassi di cambio</string>
     <string name="settings_credit_rates_note">Tassi di riferimento dell\'euro della Banca centrale europea</string>
     <string name="settings_credit_platform">Android Jetpack e Material Design</string>

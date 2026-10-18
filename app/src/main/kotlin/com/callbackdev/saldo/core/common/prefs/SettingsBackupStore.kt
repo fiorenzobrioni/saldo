@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.APP_FONT
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_ENCRYPTION_ENABLED
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_ENABLED
 import com.callbackdev.saldo.core.common.prefs.UserPreferenceKeys.BACKUP_REMINDER_INTERVAL_DAYS
@@ -63,6 +64,7 @@ class SettingsBackupStore @Inject constructor(
             currencyConversionEnabled = preferences[CURRENCY_CONVERSION_ENABLED],
             themeMode = preferences[THEME_MODE],
             useDynamicColor = preferences[USE_DYNAMIC_COLOR],
+            font = preferences[APP_FONT],
             renewalReminderEnabled = preferences[RENEWAL_REMINDER_ENABLED],
             renewalReminderLeadDays = preferences[RENEWAL_REMINDER_LEAD_DAYS],
             backupReminderEnabled = preferences[BACKUP_REMINDER_ENABLED],
@@ -99,6 +101,7 @@ class SettingsBackupStore @Inject constructor(
             preferences.setIfPresent(CURRENCY_CONVERSION_ENABLED, settings.currencyConversionEnabled)
             preferences.setIfPresent(THEME_MODE, settings.themeMode?.takeIf(::isKnownThemeMode))
             preferences.setIfPresent(USE_DYNAMIC_COLOR, settings.useDynamicColor)
+            preferences.setIfPresent(APP_FONT, settings.font?.takeIf(::isKnownFont))
             preferences.setIfPresent(RENEWAL_REMINDER_ENABLED, settings.renewalReminderEnabled)
             preferences.setIfPresent(
                 RENEWAL_REMINDER_LEAD_DAYS,
@@ -170,6 +173,8 @@ class SettingsBackupStore @Inject constructor(
         runCatching { Currency.getInstance(code) }.isSuccess
 
     private fun isKnownThemeMode(name: String): Boolean = ThemeMode.entries.any { it.name == name }
+
+    private fun isKnownFont(name: String): Boolean = AppFont.entries.any { it.name == name }
 
     private fun isKnownSeparator(name: String): Boolean = CsvSeparator.entries.any { it.name == name }
 

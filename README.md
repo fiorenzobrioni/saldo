@@ -80,7 +80,7 @@ Italian). The phone's status bar is not in the pictures. The command that redraw
 - 🔒 **App lock**: PIN, fingerprint or face, content hidden in recent apps.
 - 🔔 **Notifications**: recurring transactions, budgets, card statements, due dates, silent between 22:00 and 7:00.
 - 📖 **The guide**: the four screens, and what a screen cannot say on its own.
-- 🎨 **Appearance**: light or dark, the app's colours or the phone's dynamic ones.
+- 🎨 **Appearance**: light or dark, the app's colours or the phone's dynamic ones, and the typeface (Google Sans, Inter or the phone's own), every amount in aligned figures.
 - 🇬🇧 🇮🇹 **English and Italian**, through the system per-app language picker.
 
 The full user guide, one page per feature, is in [docs/guida-utente/](./docs/guida-utente/)
@@ -206,5 +206,7 @@ Saldo is one of four focused apps with the same look and the same rules:
 
 [GPL-3.0](./LICENSE) © 2026 Fiorenzo Brioni
 
-[Inter](https://github.com/rsms/inter) under the SIL Open Font License 1.1: see
+[Google Sans](https://github.com/googlefonts/googlesans) and [Inter](https://github.com/rsms/inter),
+both under the SIL Open Font License 1.1: see
+[licenses/google-sans/OFL.txt](./licenses/google-sans/OFL.txt) and
 [licenses/inter/OFL.txt](./licenses/inter/OFL.txt).

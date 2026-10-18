@@ -74,12 +74,14 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.BuildConfig
 import com.callbackdev.saldo.R
+import com.callbackdev.saldo.core.common.prefs.AppFont
 import com.callbackdev.saldo.core.common.prefs.BackupReminderPreferences
 import com.callbackdev.saldo.core.common.prefs.FirstDayOfWeek
 import com.callbackdev.saldo.core.common.prefs.RenewalReminderPreferences
@@ -90,6 +92,7 @@ import com.callbackdev.saldo.core.designsystem.component.SettingsInfoRow
 import com.callbackdev.saldo.core.designsystem.component.SettingsLinkRow
 import com.callbackdev.saldo.core.designsystem.component.SettingsSectionHeader
 import com.callbackdev.saldo.core.designsystem.component.SettingsSwitchRow
+import com.callbackdev.saldo.core.designsystem.theme.fontFamilyOf
 import com.callbackdev.saldo.core.designsystem.theme.saldoSurfaces
 import com.callbackdev.saldo.core.domain.model.Account
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
@@ -204,6 +207,15 @@ fun SettingsScreen(
                     hint = stringResource(R.string.settings_dynamic_color_hint),
                     checked = themePreferences.useDynamicColor,
                     onCheckedChange = viewModel::onDynamicColorChanged,
+                )
+                SettingsInfoRow(
+                    title = stringResource(R.string.settings_font),
+                    value = stringResource(R.string.settings_font_note),
+                )
+                FontSelector(
+                    selected = themePreferences.font,
+                    onSelected = viewModel::onFontSelected,
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
             }
 
@@ -465,7 +477,7 @@ fun SettingsScreen(
                 )
             }
 
-            AboutSections()
+            AboutSections(themePreferences.font)
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -509,7 +521,7 @@ fun SettingsScreen(
  * source); then the credits (the typeface, the ECB's rates, the libraries).
  */
 @Composable
-private fun AboutSections() {
+private fun AboutSections(font: AppFont) {
     val uriHandler = LocalUriHandler.current
     val open = { url: String -> runCatching { uriHandler.openUri(url) } }
 
@@ -537,8 +549,8 @@ private fun AboutSections() {
     SettingsGroup {
         SettingsLinkRow(
             title = stringResource(R.string.settings_credit_font),
-            value = stringResource(R.string.settings_credit_font_note),
-            onClick = { open(INTER_URL) },
+            value = fontCreditNote(font),
+            onClick = { open(fontCreditUrl(font)) },
         )
         SettingsLinkRow(
             title = stringResource(R.string.settings_credit_rates),
@@ -582,7 +594,62 @@ private fun PrivacyCard() {
 
 private const val LICENSE_URL = "https://www.gnu.org/licenses/gpl-3.0.html"
 private const val SOURCE_URL = "https://github.com/fiorenzobrioni/saldo"
-private const val INTER_URL = "https://rsms.me/inter/"
+
+/** Both bundled faces travel in the APK, so both are credited; the note says which one is on screen. */
+@Composable
+private fun fontCreditNote(font: AppFont): String {
+    val inUse = when (font) {
+        AppFont.SYSTEM -> stringResource(R.string.settings_credit_font_inuse_system)
+        else -> stringResource(R.string.settings_credit_font_inuse, fontLabel(font))
+    }
+    return stringResource(R.string.settings_credit_font_note) + " · " + inUse
+}
+
+private fun fontCreditUrl(font: AppFont): String = when (font) {
+    AppFont.INTER -> "https://rsms.me/inter/"
+    AppFont.GOOGLE_SANS -> "https://fonts.google.com/specimen/Google+Sans"
+    AppFont.SYSTEM -> "https://openfontlicense.org"
+}
+
+@Composable
+private fun fontLabel(font: AppFont): String = when (font) {
+    AppFont.GOOGLE_SANS -> stringResource(R.string.settings_font_google_sans)
+    AppFont.INTER -> stringResource(R.string.settings_font_inter)
+    AppFont.SYSTEM -> stringResource(R.string.settings_font_system)
+}
+
+/**
+ * The typeface (ADR 57), as the theme above it: a segmented row, each choice written in its own
+ * face so the row is its own preview.
+ */
+@Composable
+private fun FontSelector(
+    selected: AppFont,
+    onSelected: (AppFont) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val options = AppFont.entries
+    SingleChoiceSegmentedButtonRow(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    ) {
+        options.forEachIndexed { index, font ->
+            SegmentedButton(
+                selected = selected == font,
+                onClick = { onSelected(font) },
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+            ) {
+                Text(
+                    text = fontLabel(font),
+                    fontFamily = fontFamilyOf(font),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
 private const val ECB_RATES_URL =
     "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html"
 
