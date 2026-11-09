@@ -29,7 +29,10 @@ Re-running this script IS the drawing. It writes, into app/src/main/res/drawable
 - ic_app_mark.xml: the icon in a round mask as one vector (the ground on a disc, the wallet on
   it), for the widgets' "open Saldo" button and their setup card, which draw it as a picture;
 - ic_shortcut_expense.xml, ic_shortcut_income.xml, ic_shortcut_transfer.xml: the launcher
-  shortcuts' marks, each arrow in white on a disc of the ground's colours.
+  shortcuts' marks, adaptive icons on the launcher icon's own ground, each with its white arrow
+  (ic_shortcut_*_foreground.xml), so a launcher gives them the shape it gives every icon. A
+  shortcut drawn as a disc kept its shape only under a round mask: under any other the launcher
+  shrank it onto a white plate (owner, 9 Nov 2026).
 None of them is edited by hand. Only the standard library is used, so any Python 3 runs it.
 """
 
@@ -70,9 +73,10 @@ STAT_GAP = 3.4
 STAT_BUTTON = 3.1
 STAT_STRIPE = 4.0
 
-# The launcher shortcuts: arrows on the 108 grid, each scaled about its own middle into a disc
-# of 48. Half the size: the disc is all ground, and the glyph keeps the air an icon has.
-SHORTCUT_GLYPH_SCALE = 0.5
+# The launcher shortcuts: arrows on the 108 grid, each scaled about its own middle and moved to
+# the centre, to a little under half the 72 that show: the shape is all ground, and the glyph
+# keeps the air an icon has.
+SHORTCUT_GLYPH_SCALE = 0.75
 SHORTCUTS = {
     "ic_shortcut_expense.xml": (
         "an arrow down: money going out",
@@ -265,20 +269,33 @@ def app_mark():
     return HEADER.format(what=what) + vector(body)
 
 
-def shortcut(what, paths, middle):
-    disc = "M 24,24 m -24,0 a 24,24 0 1,1 48,0 a 24,24 0 1,1 -48,0"
+def shortcut_foreground(what, paths, middle):
     s = SHORTCUT_GLYPH_SCALE
     glyph = "".join(ink(d) for d in paths)
-    body = shaded(disc, (0.0, 0.0, 48.0, 48.0), LAGUNA[0], LAGUNA[2]) + (
+    body = (
         f'<group android:pivotX="{f(middle[0])}" android:pivotY="{f(middle[1])}" android:scaleX="{s:g}" '
-        f'android:scaleY="{s:g}" android:translateX="{f(24 - middle[0])}" android:translateY="{f(24 - middle[1])}">\n'
-        f"{glyph}</group>\n"
+        f'android:scaleY="{s:g}" android:translateX="{f(CENTRE - middle[0])}" '
+        f'android:translateY="{f(CENTRE - middle[1])}">\n{glyph}</group>\n'
     )
+    note = f"A launcher shortcut's glyph in white, the foreground of its adaptive icon:\n     {what}."
+    return HEADER.format(what=note) + vector(body, aapt=False)
+
+
+def shortcut(name):
+    """The adaptive icon: the launcher icon's ground, the glyph over it, and the glyph again as
+    the themed layer, which the system reads by its alpha."""
+    glyph = name.replace(".xml", "_foreground")
     note = (
-        f"A launcher shortcut's mark: {what}, in white on a disc of the launcher icon's\n"
-        "     ground, lit from the upper left as the ground is. Launchers draw shortcut icons as they are."
+        "A launcher shortcut's mark: the launcher icon's ground and a white glyph, as an adaptive\n"
+        "     icon, so the launcher gives it the shape it gives every icon."
     )
-    return HEADER.format(what=note) + vector(body, size=48, viewport=48)
+    return HEADER.format(what=note) + (
+        '<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
+        '    <background android:drawable="@drawable/ic_launcher_background" />\n'
+        f'    <foreground android:drawable="@drawable/{glyph}" />\n'
+        f'    <monochrome android:drawable="@drawable/{glyph}" />\n'
+        "</adaptive-icon>\n"
+    )
 
 
 def main():
@@ -289,7 +306,9 @@ def main():
         (RES / "ic_stat_saldo.xml", status_bar()),
         (RES / "ic_app_mark.xml", app_mark()),
     ]
-    outputs += [(RES / name, shortcut(*spec)) for name, spec in SHORTCUTS.items()]
+    for name, spec in SHORTCUTS.items():
+        outputs.append((RES / name.replace(".xml", "_foreground.xml"), shortcut_foreground(*spec)))
+        outputs.append((RES / name, shortcut(name)))
     for path, text in outputs:
         path.write_text(text, encoding="utf-8", newline="\n")
         print("wrote", path.relative_to(ROOT))

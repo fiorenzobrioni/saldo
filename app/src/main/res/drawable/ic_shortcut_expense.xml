@@ -1,22 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
-     A launcher shortcut's mark: an arrow down: money going out, in white on a disc of the launcher icon's
-     ground, lit from the upper left as the ground is. Launchers draw shortcut icons as they are. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="48dp"
-    android:height="48dp"
-    android:viewportWidth="48"
-    android:viewportHeight="48">
-<path android:pathData="M 24,24 m -24,0 a 24,24 0 1,1 48,0 a 24,24 0 1,1 -48,0">
-    <aapt:attr name="android:fillColor">
-        <gradient android:type="linear" android:startX="0.00" android:startY="0.00" android:endX="48.00" android:endY="48.00">
-            <item android:offset="0" android:color="#FF2AC3BB"/>
-            <item android:offset="1" android:color="#FF026F70"/>
-        </gradient>
-    </aapt:attr>
-</path>
-<group android:pivotX="54.00" android:pivotY="55.00" android:scaleX="0.5" android:scaleY="0.5" android:translateX="-30.00" android:translateY="-31.00">
-<path android:pathData="M54,78 L38,56 L50,56 L50,32 L58,32 L58,56 L70,56 Z" android:fillColor="#FFFFFFFF"/>
-</group>
-</vector>
+     A launcher shortcut's mark: the launcher icon's ground and a white glyph, as an adaptive
+     icon, so the launcher gives it the shape it gives every icon. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_shortcut_expense_foreground" />
+    <monochrome android:drawable="@drawable/ic_shortcut_expense_foreground" />
+</adaptive-icon>

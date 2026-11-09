@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
+     A launcher shortcut's glyph in white, the foreground of its adaptive icon:
+     two opposing arrows: money moving between accounts. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+<group android:pivotX="54.00" android:pivotY="55.00" android:scaleX="0.75" android:scaleY="0.75" android:translateX="0.00" android:translateY="-1.00">
+<path android:pathData="M34,42 L60,42 L60,34 L76,46 L60,58 L60,50 L34,50 Z" android:fillColor="#FFFFFFFF"/>
+<path android:pathData="M74,60 L48,60 L48,52 L32,64 L48,76 L48,68 L74,68 Z" android:fillColor="#FFFFFFFF"/>
+</group>
+</vector>
