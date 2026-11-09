@@ -197,10 +197,12 @@ The project documents are in Italian.
 
 ## The family
 
-Saldo is one of four focused apps with the same look and the same rules:
+Saldo is one of five focused apps with the same look and the same rules:
 [Chiaro](https://github.com/fiorenzobrioni/chiaro) (weather),
-[Passo](https://github.com/fiorenzobrioni/passo) (steps) and
-[Tempo](https://github.com/fiorenzobrioni/tempo) (clock and agenda).
+[Passo](https://github.com/fiorenzobrioni/passo) (steps),
+[Tempo](https://github.com/fiorenzobrioni/tempo) (clock and agenda) and
+[Tetto](https://github.com/fiorenzobrioni/tetto) (budget). Tetto keeps a budget and nothing
+else; Saldo keeps the whole of your finances. Each stands alone.
 
 ## License
 
