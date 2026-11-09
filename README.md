@@ -7,14 +7,14 @@
 An offline-first, privacy-first Android app for tracking personal expenses.
 Free, no account, no ads, no tracking, no link to your bank.
 
-![Platform](https://img.shields.io/badge/platform-Android-2E6B3E?labelColor=FCFAF6)
-![Release](https://img.shields.io/github/v/release/fiorenzobrioni/saldo?label=release&labelColor=FCFAF6&color=2E6B3E)
-![CI](https://img.shields.io/github/actions/workflow/status/fiorenzobrioni/saldo/ci.yml?branch=main&label=CI&labelColor=FCFAF6&color=2E6B3E)
+![Platform](https://img.shields.io/badge/platform-Android-026F70?labelColor=FCFAF6)
+![Release](https://img.shields.io/github/v/release/fiorenzobrioni/saldo?label=release&labelColor=FCFAF6&color=026F70)
+![CI](https://img.shields.io/github/actions/workflow/status/fiorenzobrioni/saldo/ci.yml?branch=main&label=CI&labelColor=FCFAF6&color=026F70)
 ![License](https://img.shields.io/badge/license-GPL--3.0-007DB6?labelColor=FCFAF6)
 ![minSdk](https://img.shields.io/badge/minSdk-33-70569C?labelColor=FCFAF6)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.3-F1A000?labelColor=FCFAF6)
 ![Compose](https://img.shields.io/badge/UI-Compose%20Material%203-007DB6?labelColor=FCFAF6)
-![Account](https://img.shields.io/badge/account-none%20needed-2E6B3E?labelColor=FCFAF6)
+![Account](https://img.shields.io/badge/account-none%20needed-026F70?labelColor=FCFAF6)
 
 [**⬇️ Download the latest release**](https://github.com/fiorenzobrioni/saldo/releases/latest)
 

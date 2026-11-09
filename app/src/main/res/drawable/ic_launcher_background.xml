@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
+     The badge's ground: the app's laguna teal, lit from the upper left. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+<path android:pathData="M 0,0 H 108 V 108 H 0 Z">
+    <aapt:attr name="android:fillColor">
+        <gradient android:type="linear" android:startX="18.00" android:startY="18.00" android:endX="90.00" android:endY="90.00">
+            <item android:offset="0" android:color="#FF2AC3BB"/>
+            <item android:offset="1" android:color="#FF026F70"/>
+        </gradient>
+    </aapt:attr>
+</path>
+</vector>
