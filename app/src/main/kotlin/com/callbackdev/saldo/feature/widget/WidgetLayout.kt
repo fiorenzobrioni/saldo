@@ -341,13 +341,13 @@ internal const val AppShortcutMarkRatio = 0.8f
 internal const val WashAlpha = 0.16f
 
 /**
- * The app mark, taken from the adaptive icon's *foreground* layer rather than
- * from `@mipmap/ic_launcher`.
+ * The app mark: the launcher icon in a round mask, drawn as one vector by
+ * `tools/draw_launcher_icon.py` (`ic_app_mark`), rather than `@mipmap/ic_launcher`.
  *
  * Two reasons, one of them a crash. `ic_launcher` is an `<adaptive-icon>`, and
  * `painterResource` loads vectors and rasters only, so the settings preview blew
- * up the moment the shortcut was switched on. And the adaptive icon carries its
- * own white background square, which is the opposite of the transparent mark
- * this button is meant to be.
+ * up the moment the shortcut was switched on. And its foreground layer alone is
+ * a white symbol, which vanishes on a light card: the mark brings its own ground,
+ * on a disc, as every mark of the app drawn inside it does.
  */
-internal val AppShortcutIcon = R.drawable.ic_launcher_foreground
+internal val AppShortcutIcon = R.drawable.ic_app_mark

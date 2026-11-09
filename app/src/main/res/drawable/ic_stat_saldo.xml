@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
-     Status-bar icon: the system renders only the alpha channel. The launcher icon's two
-     coins without the ring: at 24 dp the status bar shows the object. -->
+     Status-bar icon of every notification: the mark's wallet and card in one ink, inside 2
+     units of air on the 24-unit grid. White on transparent, as status-bar icons must be:
+     the system tints it. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+<group android:pivotX="54.00" android:pivotY="54.00" android:scaleX="0.355" android:scaleY="0.355" android:translateX="-42.71" android:translateY="-41.20">
 <group>
-    <clip-path android:pathData="M 0,0 H 24.00 V 24.00 H 0 Z M 6.80,14.40 a 7.80,7.80 0 1,0 15.60,0 a 7.80,7.80 0 1,0 -15.60,0 z"/>
-<path android:pathData="M 2.80,9.40 a 6.40,6.40 0 1,0 12.80,0 a 6.40,6.40 0 1,0 -12.80,0 z" android:fillColor="#FFFFFFFF"/>
+<clip-path android:pathData="M 0,0 H 108 V 108 H 0 Z M 72.50,37.60 L 35.50,37.60 A 10.90,10.90 0 0,0 24.60,48.50 L 24.60,69.50 A 10.90,10.90 0 0,0 35.50,80.40 L 72.50,80.40 A 10.90,10.90 0 0,0 83.40,69.50 L 83.40,48.50 A 10.90,10.90 0 0,0 72.50,37.60 Z"/>
+<group>
+<clip-path android:pathData="M 0,0 H 108 V 108 H 0 Z M 70.00,30.75 L 34.00,30.75 L 34.00,34.75 L 70.00,34.75 Z"/>
+<path android:pathData="M 65.00,26.50 L 39.00,26.50 A 4.00,4.00 0 0,0 35.00,30.50 L 35.00,48.00 A 4.00,4.00 0 0,0 39.00,52.00 L 65.00,52.00 A 4.00,4.00 0 0,0 69.00,48.00 L 69.00,30.50 A 4.00,4.00 0 0,0 65.00,26.50 Z" android:fillColor="#FFFFFFFF"/>
 </group>
-<path android:fillType="evenOdd" android:pathData="M 8.20,14.40 a 6.40,6.40 0 1,0 12.80,0 a 6.40,6.40 0 1,0 -12.80,0 z M 9.80,14.40 a 4.80,4.80 0 1,0 9.60,0 a 4.80,4.80 0 1,0 -9.60,0 z M 11.10,14.40 a 3.50,3.50 0 1,0 7.00,0 a 3.50,3.50 0 1,0 -7.00,0 z" android:fillColor="#FFFFFFFF"/>
+</group>
+<group>
+<clip-path android:pathData="M 0,0 H 108 V 108 H 0 Z M 77.00,48.60 L 65.00,48.60 A 10.40,10.40 0 0,0 54.60,59.00 L 54.60,59.00 A 10.40,10.40 0 0,0 65.00,69.40 L 77.00,69.40 A 10.40,10.40 0 0,0 87.40,59.00 L 87.40,59.00 A 10.40,10.40 0 0,0 77.00,48.60 Z"/>
+<path android:pathData="M 72.50,41.00 L 35.50,41.00 A 7.50,7.50 0 0,0 28.00,48.50 L 28.00,69.50 A 7.50,7.50 0 0,0 35.50,77.00 L 72.50,77.00 A 7.50,7.50 0 0,0 80.00,69.50 L 80.00,48.50 A 7.50,7.50 0 0,0 72.50,41.00 Z" android:fillColor="#FFFFFFFF"/>
+</group>
+<path android:pathData="M 77.00,52.00 L 65.00,52.00 A 7.00,7.00 0 0,0 58.00,59.00 L 58.00,59.00 A 7.00,7.00 0 0,0 65.00,66.00 L 77.00,66.00 A 7.00,7.00 0 0,0 84.00,59.00 L 84.00,59.00 A 7.00,7.00 0 0,0 77.00,52.00 Z M 63.90,59.00 a 3.10,3.10 0 1,0 6.20,0 a 3.10,3.10 0 1,0 -6.20,0 z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd"/>
+</group>
 </vector>

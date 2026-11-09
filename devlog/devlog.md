@@ -14,6 +14,28 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-11-09 - L'icona nella serie di famiglia: il portafoglio su Laguna
+
+**Fatto:** Fase 46, emendamento dell'ADR 53. Le icone di Chiaro, Passo, Tempo e Tetto sono state ridisegnate da zero come una serie (il fondo a tutto campo nel colore dell'app, il simbolo bianco con un solo accento ambra, la luce da in alto a sinistra, il simbolo entro i 56 dp); Saldo entra nella stessa serie. Le proposte sono state disegnate su una tavola: tre simboli (il portafoglio, la torta, lo scontrino) e tre tinte (Laguna, Lampone, Petrolio), accanto alle altre quattro icone, in grande, a 48 e 32 px, a tema e su una home chiara e una scura. Il committente ha scelto il portafoglio su Laguna.
+
+- `tools/draw_launcher_icon.py` è riscritto e scrive tre livelli invece di due: il fondo (`ic_launcher_background.xml`, il verde acqua `#2AC3BB` → `#026F70` dal chiaro in alto a sinistra allo scuro in basso a destra) prende il posto del colore `#F7F4EE`; il primo piano è un portafoglio bianco con la chiusura e una carta ambra che ne esce, con la banda in un ambra più scuro; la monocromatica ritaglia la banda e tiene le fasce del fondo fra la carta, il portafoglio e la chiusura.
+- `ic_stat_saldo` (barra di stato e notifiche) è lo stesso portafoglio in un colore, con le fasce e il bottone allargati per i 24 dp; l'accento delle notifiche passa a `#026F70`.
+- I widget: il pulsante «apri Saldo» e il segno della card da configurare usavano il primo piano dell'icona, che ora è un simbolo bianco e su una card chiara sparirebbe. Usano `ic_app_mark`, l'icona in una maschera rotonda scritta dallo script come un vettore solo.
+- Le tre scorciatoie del launcher (spesa, entrata, trasferimento) sono le stesse frecce bianche sul fondo dell'icona, al posto dei fondi rosso, verde e verde acqua, secondo la regola della serie (scelta del committente). Sono icone adattive scritte dallo script: la prima versione le disegnava come dischi, ma sotto una maschera non rotonda il launcher mette un disco su una piastra bianca (l'ha visto il committente sulle scorciatoie di Passo e Tempo, rifatte adattive lo stesso giorno). Tolti i tre colori `shortcut_*_background`.
+- README: i badge nel colore dell'app passano a `026F70`; `widgets.png` e `quick-entry.png` rigenerati (cambia solo il pulsante dell'app nella barra del widget).
+
+`versionName` 2.3.13, `versionCode` 203.
+
+**Decisioni:** il portafoglio dice il denaro nei suoi contenitori (un saldo per ogni conto, i contanti e le carte) e si distingue subito da Tetto, un tetto su una moneta su indaco: l'ambra qui è una carta, non una moneta. Laguna è il colore che l'app ha già dentro (il tema è seminato su `#00696D`); è la tinta più vicina a Passo (distanza Oklab fra i toni base 0,10, anche in deuteranopia e protanopia), poco sotto la coppia più vicina della serie, Chiaro e Tetto a 0,13. Il simbolo è centrato fra il suo riquadro (la chiusura lo porta 1,3 unità a destra) e il suo peso (il corpo lo porta 1,1 a sinistra). Il riquadro delle impostazioni rapide resta la freccia della spesa: è un'azione, non il segno dell'app.
+
+**Problemi:** nessuno.
+
+**Verifica:** gli XML scritti dallo script, confrontati pixel per pixel con il disegno approvato: lo 0,02% dei pixel differisce, tutto sui bordi; il simbolo arriva a 27,5 unità dal centro (il limite è 28). Disegnati anche dal renderer di Android (Robolectric, grafica nativa), coincidono con il disegno entro 8/255 su ogni pixel. `./gradlew assembleDebug testDebugUnitTest lint detekt`.
+
+**Prossimo:** la prova sul telefono (Fase 46): l'icona nella maschera del launcher e a tema, una notifica vera, le tre scorciatoie, il pulsante dell'app nei widget.
+
+---
+
 ## 2026-10-18 - Fusi orari e cambi d'ora: revisione e correzioni
 
 **Fatto:** revisione mirata di come l'app tratta fusi orari e ora legale, prima del ritorno all'ora solare (domenica 25 ottobre 2026: alle 03:00 gli orologi tornano alle 02:00, l'ora 02:00-03:00 esiste due volte). Corretti due difetti:

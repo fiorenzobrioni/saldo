@@ -38,7 +38,7 @@ import com.callbackdev.saldo.core.designsystem.visuals.CategoryVisuals
  */
 object CategoryIconBitmaps {
 
-    /** 108/72: the adaptive icon canvas over its safe zone. */
+    /** 108/72: the adaptive icon canvas over the part of it a launcher shows. */
     private const val SAFE_ZONE_SCALE = 1.5f
 
     /**
@@ -82,11 +82,11 @@ object CategoryIconBitmaps {
     /**
      * The app mark for the shortcut button, drawn past its own safe zone.
      *
-     * An adaptive icon's foreground keeps its artwork inside the inner 72 of a
-     * 108 canvas, so drawn at face value it lands at two thirds of the button
-     * and reads as a stray small thing beside two large ones. Rendering it at
-     * [SAFE_ZONE_SCALE] and letting the margin fall outside the bitmap gives
-     * back the mark at the size the button is actually offering.
+     * The mark is drawn on the adaptive icon's 108 canvas, its disc filling the
+     * inner 72 a launcher shows, so drawn at face value it lands at two thirds of
+     * the button and reads as a stray small thing beside two large ones.
+     * Rendering it at [SAFE_ZONE_SCALE] and letting the margin fall outside the
+     * bitmap gives back the disc at the size the button is actually offering.
      *
      * Drawn through the platform's own drawable rather than through the vector
      * walker above, which flattens everything to one colour: this artwork has

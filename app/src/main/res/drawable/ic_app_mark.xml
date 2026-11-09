@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
+     The launcher icon in a round mask, as one vector: the ground on a disc of the 72 that
+     show, the mark on it. The widgets draw it as a picture: their "open Saldo" button and
+     their setup card. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+<group>
+<clip-path android:pathData="M 18.00,54.00 a 36.00,36.00 0 1,0 72.00,0 a 36.00,36.00 0 1,0 -72.00,0 z"/>
+<path android:pathData="M 0,0 H 108 V 108 H 0 Z">
+    <aapt:attr name="android:fillColor">
+        <gradient android:type="linear" android:startX="18.00" android:startY="18.00" android:endX="90.00" android:endY="90.00">
+            <item android:offset="0" android:color="#FF2AC3BB"/>
+            <item android:offset="1" android:color="#FF026F70"/>
+        </gradient>
+    </aapt:attr>
+</path>
+</group>
+<group android:pivotX="54.00" android:pivotY="54.00" android:scaleX="0.85" android:scaleY="0.85" android:translateX="-0.40" android:translateY="0.50">
+<group>
+<clip-path android:pathData="M 0,0 H 108 V 108 H 0 Z M 72.50,38.60 L 35.50,38.60 A 9.90,9.90 0 0,0 25.60,48.50 L 25.60,69.50 A 9.90,9.90 0 0,0 35.50,79.40 L 72.50,79.40 A 9.90,9.90 0 0,0 82.40,69.50 L 82.40,48.50 A 9.90,9.90 0 0,0 72.50,38.60 Z"/>
+<path android:pathData="M 65.00,26.50 L 39.00,26.50 A 4.00,4.00 0 0,0 35.00,30.50 L 35.00,48.00 A 4.00,4.00 0 0,0 39.00,52.00 L 65.00,52.00 A 4.00,4.00 0 0,0 69.00,48.00 L 69.00,30.50 A 4.00,4.00 0 0,0 65.00,26.50 Z">
+    <aapt:attr name="android:fillColor">
+        <gradient android:type="linear" android:startX="35.00" android:startY="22.25" android:endX="69.00" android:endY="56.25">
+            <item android:offset="0" android:color="#FFFFD36A"/>
+            <item android:offset="1" android:color="#FFFDB528"/>
+        </gradient>
+    </aapt:attr>
+</path>
+<path android:pathData="M 69.00,31.00 L 35.00,31.00 L 35.00,34.50 L 69.00,34.50 Z" android:fillColor="#BFF28C17"/>
+</group>
+<group>
+<clip-path android:pathData="M 0,0 H 108 V 108 H 0 Z M 77.00,49.60 L 65.00,49.60 A 9.40,9.40 0 0,0 55.60,59.00 L 55.60,59.00 A 9.40,9.40 0 0,0 65.00,68.40 L 77.00,68.40 A 9.40,9.40 0 0,0 86.40,59.00 L 86.40,59.00 A 9.40,9.40 0 0,0 77.00,49.60 Z"/>
+<path android:pathData="M 72.50,41.00 L 35.50,41.00 A 7.50,7.50 0 0,0 28.00,48.50 L 28.00,69.50 A 7.50,7.50 0 0,0 35.50,77.00 L 72.50,77.00 A 7.50,7.50 0 0,0 80.00,69.50 L 80.00,48.50 A 7.50,7.50 0 0,0 72.50,41.00 Z">
+    <aapt:attr name="android:fillColor">
+        <gradient android:type="linear" android:startX="28.00" android:startY="23.75" android:endX="84.00" android:endY="79.75">
+            <item android:offset="0" android:color="#FFFFFFFF"/>
+            <item android:offset="1" android:color="#FFE3EAF4"/>
+        </gradient>
+    </aapt:attr>
+</path>
+</group>
+<path android:pathData="M 77.00,52.00 L 65.00,52.00 A 7.00,7.00 0 0,0 58.00,59.00 L 58.00,59.00 A 7.00,7.00 0 0,0 65.00,66.00 L 77.00,66.00 A 7.00,7.00 0 0,0 84.00,59.00 L 84.00,59.00 A 7.00,7.00 0 0,0 77.00,52.00 Z M 64.40,59.00 a 2.60,2.60 0 1,0 5.20,0 a 2.60,2.60 0 1,0 -5.20,0 z" android:fillType="evenOdd">
+    <aapt:attr name="android:fillColor">
+        <gradient android:type="linear" android:startX="28.00" android:startY="23.75" android:endX="84.00" android:endY="79.75">
+            <item android:offset="0" android:color="#FFFFFFFF"/>
+            <item android:offset="1" android:color="#FFE3EAF4"/>
+        </gradient>
+    </aapt:attr>
+</path>
+</group>
+</vector>

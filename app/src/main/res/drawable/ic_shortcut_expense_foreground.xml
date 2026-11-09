@@ -1,10 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
+     A launcher shortcut's glyph in white, the foreground of its adaptive icon:
+     an arrow down: money going out. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Downward arrow: money going out. -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M54,78 L38,56 L50,56 L50,32 L58,32 L58,56 L70,56 Z" />
+<group android:pivotX="54.00" android:pivotY="55.00" android:scaleX="0.75" android:scaleY="0.75" android:translateX="0.00" android:translateY="-1.00">
+<path android:pathData="M54,78 L38,56 L50,56 L50,32 L58,32 L58,56 L70,56 Z" android:fillColor="#FFFFFFFF"/>
+</group>
 </vector>

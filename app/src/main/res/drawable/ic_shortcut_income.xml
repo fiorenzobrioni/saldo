@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Written by tools/draw_launcher_icon.py: change the script and run it, never this file.
+     A launcher shortcut's mark: the launcher icon's ground and a white glyph, as an adaptive
+     icon, so the launcher gives it the shape it gives every icon. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_shortcut_income_foreground" />
+    <monochrome android:drawable="@drawable/ic_shortcut_income_foreground" />
+</adaptive-icon>

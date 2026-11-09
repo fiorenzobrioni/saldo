@@ -1,19 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- The badge's ground (ADR 53): a warm white. The foreground carries the rest. -->
-    <color name="ic_launcher_background">#F7F4EE</color>
-
-    <!-- The notifications' accent (ADR 52 and 53): the
-         small icon's disc and the app name in the header. The dark end of the icon's sea
-         green (the income half): the one colour a user has already seen the app wear
-         before opening it. -->
-    <color name="notification_accent">#0E7672</color>
-
-    <!-- Launcher shortcut icon backgrounds, drawn from the brand palette so the
-         adaptive icons stay on-brand and legible under any launcher mask. -->
-    <color name="shortcut_expense_background">#BA1A1A</color>
-    <color name="shortcut_income_background">#3E6837</color>
-    <color name="shortcut_transfer_background">#00696D</color>
+    <!-- The notifications' accent (ADR 52 and 53): the small icon's disc and the app name
+         in the header. The deep tone of the launcher icon's ground (tools/draw_launcher_icon.py):
+         the one colour a user has already seen the app wear before opening it. -->
+    <color name="notification_accent">#026F70</color>
 
     <!--
         The widget card and the static picker previews (ADR 52), and the one
