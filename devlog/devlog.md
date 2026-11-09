@@ -14,6 +14,22 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-11-09 - Verifica su dispositivo dell'icona nuova
+
+**Fatto:** il committente ha provato sul telefono la Fase 46 e l'ha trovata a posto ("Ho fatto tutti i test sul telefono ed è tutto ok"). Chiusa la verifica lasciata nella voce precedente:
+
+- [x] l'icona nella maschera del launcher e a tema, una notifica vera nella barra di stato, le tre scorciatoie adattive, il pulsante dell'app e la card da configurare nei widget.
+
+**Decisioni:** nessuna.
+
+**Problemi:** nessuno.
+
+**Verifica:** sul dispositivo del committente.
+
+**Prossimo:** nessun lavoro aperto sull'icona.
+
+---
+
 ## 2026-11-09 - L'icona nella serie di famiglia: il portafoglio su Laguna
 
 **Fatto:** Fase 46, emendamento dell'ADR 53. Le icone di Chiaro, Passo, Tempo e Tetto sono state ridisegnate da zero come una serie (il fondo a tutto campo nel colore dell'app, il simbolo bianco con un solo accento ambra, la luce da in alto a sinistra, il simbolo entro i 56 dp); Saldo entra nella stessa serie. Le proposte sono state disegnate su una tavola: tre simboli (il portafoglio, la torta, lo scontrino) e tre tinte (Laguna, Lampone, Petrolio), accanto alle altre quattro icone, in grande, a 48 e 32 px, a tema e su una home chiara e una scura. Il committente ha scelto il portafoglio su Laguna.

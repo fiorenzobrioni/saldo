@@ -1129,7 +1129,7 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 - [x] Non cambiano: il riquadro delle impostazioni rapide (`ic_tile_quick_add`, la freccia della spesa: un'azione, non il segno dell'app); la guida e l'onboarding, che non mostrano l'icona (ADR 55)
 - [x] README: i badge nel colore dell'app passano a `026F70`; `widgets.png` e `quick-entry.png` rigenerati, perché mostrano il pulsante dell'app nella barra del widget (cambia solo quel riquadro; `widget-settings.png` non lo mostra e resta uguale)
 - [x] Verifica: gli XML scritti dallo script, disegnati e confrontati pixel per pixel con il disegno approvato sulla tavola: lo 0,02% dei pixel differisce, tutto sui bordi; il simbolo arriva a 27,5 unità dal centro. Gli stessi XML disegnati anche dal renderer di Android (Robolectric, grafica nativa) coincidono con quelli del browser entro 8/255 su ogni pixel: icona, monocromatica, segno dei widget, barra di stato, scorciatoie
-- [ ] Verifica su device: l'icona nella maschera del telefono e a tema, una notifica vera nella barra di stato, le tre scorciatoie (pressione prolungata sull'icona), il pulsante dell'app e la card da configurare nei widget
+- [x] Verifica su device: l'icona nella maschera del telefono e a tema, una notifica vera nella barra di stato, le tre scorciatoie (pressione prolungata sull'icona), il pulsante dell'app e la card da configurare nei widget. Fatta dal committente il 9 novembre 2026, tutto a posto
 
 ---
 
