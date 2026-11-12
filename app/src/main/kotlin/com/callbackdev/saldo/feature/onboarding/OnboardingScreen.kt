@@ -23,7 +23,6 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.common.date.withLocaleDateCasing
@@ -103,6 +103,13 @@ fun OnboardingScreen(
     ) { onFinished() }
 
     val reduced = remember { animationsOff(context) }
+    // Granted already (a reinstall, or allowed from the system's page meanwhile): the last page
+    // says so, and its button ends the run instead of asking.
+    var notificationsGranted by remember { mutableStateOf(notificationsAllowed(context)) }
+    LifecycleResumeEffect(Unit) {
+        notificationsGranted = notificationsAllowed(context)
+        onPauseOrDispose { }
+    }
     BackHandler(enabled = uiState.page != OnboardingPage.WELCOME) {
         viewModel.back()
     }
@@ -170,7 +177,7 @@ fun OnboardingScreen(
                             onCloseKeypad = { keypadOpen = false },
                             where = where,
                         )
-                        OnboardingPage.NOTIFICATIONS -> NotificationsPage(where)
+                        OnboardingPage.NOTIFICATIONS -> NotificationsPage(where, notificationsGranted)
                     }
                 }
             }
@@ -181,17 +188,14 @@ fun OnboardingScreen(
             )
             OnboardingActions(
                 uiState = uiState,
+                notificationsGranted = notificationsGranted,
                 onNext = viewModel::next,
                 onConfirmCurrency = viewModel::confirmCurrency,
                 onCreateAccount = viewModel::createAccount,
                 onSkipAccount = viewModel::skipAccount,
                 onRestoreRequest = { restoreLauncher.launch(RESTORE_MIME_TYPES) },
                 onEnableNotifications = {
-                    val granted = ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.POST_NOTIFICATIONS,
-                    ) == PackageManager.PERMISSION_GRANTED
-                    if (granted) {
+                    if (notificationsAllowed(context)) {
                         onFinished()
                     } else {
                         notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -274,14 +278,22 @@ private fun pageTransition(from: OnboardingPage, to: OnboardingPage, reduced: Bo
 
 private const val REDUCED_FADE_MILLIS = 100
 
+private fun notificationsAllowed(context: Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED
+
 /** True when the user has turned system animations off (scale 0). */
 private fun animationsOff(context: Context): Boolean =
     Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 
-/** The bottom CTA block; buttons change with the page, the block stays anchored at the bottom. */
+/**
+ * The bottom CTA block; buttons change with the page, the block stays anchored at the bottom. It
+ * changes height without animating, as a page's words do: the page above re-centers at once.
+ */
 @Composable
 private fun OnboardingActions(
     uiState: OnboardingUiState,
+    notificationsGranted: Boolean,
     onNext: () -> Unit,
     onConfirmCurrency: () -> Unit,
     onCreateAccount: () -> Unit,
@@ -295,8 +307,7 @@ private fun OnboardingActions(
         modifier = modifier
             .widthIn(max = PAGE_MAX_WIDTH)
             .fillMaxWidth()
-            .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp)
-            .animateContentSize(),
+            .padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -330,7 +341,12 @@ private fun OnboardingActions(
                 )
             }
 
-            OnboardingPage.NOTIFICATIONS -> {
+            OnboardingPage.NOTIFICATIONS -> if (notificationsGranted) {
+                PrimaryCta(
+                    text = stringResource(R.string.onboarding_done),
+                    onClick = onSkipNotifications,
+                )
+            } else {
                 PrimaryCta(
                     text = stringResource(R.string.onboarding_notifications_cta),
                     onClick = onEnableNotifications,

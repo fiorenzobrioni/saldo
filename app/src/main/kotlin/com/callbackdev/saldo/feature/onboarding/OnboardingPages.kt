@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -30,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.designsystem.component.AmountTextField
+import com.callbackdev.saldo.core.designsystem.component.SaldoCard
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
 import java.util.Currency
 
@@ -87,12 +91,28 @@ private fun Promise(title: Int, body: Int) {
 }
 
 @Composable
-internal fun NotificationsPage(where: String) {
+internal fun NotificationsPage(where: String, granted: Boolean) {
     PageHeader(
         title = stringResource(R.string.onboarding_notifications_title),
         body = stringResource(R.string.onboarding_notifications_body),
         where = where,
     )
+    if (granted) {
+        Spacer(Modifier.height(24.dp))
+        Granted(stringResource(R.string.onboarding_notifications_granted))
+    }
+}
+
+/** What is already done, said once under the page's words: a tick and a line, in the accent. */
+@Composable
+private fun Granted(text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(Icons.Outlined.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Text(text, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+    }
 }
 
 @Composable
@@ -109,26 +129,33 @@ internal fun CurrencyPage(
     Spacer(Modifier.height(24.dp))
     val locale = LocalConfiguration.current.locales[0]
     // A plain column, not a lazy list: the page scrolls as a whole, as every page does, and
-    // the catalog is a few dozen rows.
-    Column(modifier = Modifier.fillMaxWidth().selectableGroup()) {
-        CurrencyCatalog.supportedCurrencies.forEach { currency ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectable(
-                        selected = currency == selected,
-                        role = Role.RadioButton,
-                        onClick = { onSelected(currency) },
+    // the catalog is a few dozen rows. On its own card, as every choice the first run asks for.
+    SaldoCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .selectableGroup()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            CurrencyCatalog.supportedCurrencies.forEach { currency ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = currency == selected,
+                            role = Role.RadioButton,
+                            onClick = { onSelected(currency) },
+                        )
+                        .padding(vertical = 10.dp),
+                ) {
+                    RadioButton(selected = currency == selected, onClick = null)
+                    Text(
+                        text = "${currency.currencyCode} - ${currency.getDisplayName(locale)}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(start = 8.dp),
                     )
-                    .padding(vertical = 10.dp),
-            ) {
-                RadioButton(selected = currency == selected, onClick = null)
-                Text(
-                    text = "${currency.currencyCode} - ${currency.getDisplayName(locale)}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
+                }
             }
         }
     }
@@ -149,29 +176,31 @@ internal fun AccountPage(
         where = where,
     )
     Spacer(Modifier.height(24.dp))
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        OutlinedTextField(
-            value = uiState.accountName,
-            onValueChange = onNameChanged,
-            label = { Text(stringResource(R.string.onboarding_account_name_label)) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-            // The name field brings the system IME up: the keypad steps aside.
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged { if (it.isFocused) onCloseKeypad() },
-        )
-        AmountTextField(
-            target = balanceTarget,
-            label = stringResource(R.string.onboarding_account_balance_label),
-            onActivate = onActivateBalance,
-            suffix = uiState.selectedCurrency.currencyCode,
-            supportingText = stringResource(R.string.onboarding_account_balance_hint),
-            showSignToggle = true,
-        )
+    SaldoCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            OutlinedTextField(
+                value = uiState.accountName,
+                onValueChange = onNameChanged,
+                label = { Text(stringResource(R.string.onboarding_account_name_label)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+                // The name field brings the system IME up: the keypad steps aside.
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { if (it.isFocused) onCloseKeypad() },
+            )
+            AmountTextField(
+                target = balanceTarget,
+                label = stringResource(R.string.onboarding_account_balance_label),
+                onActivate = onActivateBalance,
+                suffix = uiState.selectedCurrency.currencyCode,
+                supportingText = stringResource(R.string.onboarding_account_balance_hint),
+                showSignToggle = true,
+            )
+        }
     }
 }
 

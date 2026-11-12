@@ -14,6 +14,26 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-11-12 - L'onboarding rivisto con quelli della famiglia
+
+**Fatto:** richiesta del committente: rivedere gli onboarding di Tempo, Tetto e Saldo, controllare che i testi siano coerenti con lo stato delle app e corretti, e rendere omogenei grafica, layout, tipografia e animazioni prendendo quello di Passo come modello. La cornice era già quella di famiglia (ADR 55): pagina centrata sopra i pulsanti, gli stessi ruoli tipografici, scorrimento e dissolvenza di 300 ms, sola dissolvenza con le animazioni spente. Cambiato:
+
+- **Le notifiche dette tutte**: il testo della pagina citava abbonamenti, ricorrenti da confermare, scadenze e budget, ma l'app manda anche l'avviso dell'estratto conto della carta (canale «Estratti conto») e il promemoria del backup. Ora li nomina; «Solo cose utili, niente spam, mai» diventa «Nient'altro».
+- **Notifiche già consentite** (reinstallazione, o consentite dalle impostazioni di sistema nel frattempo): la pagina lo dice con la spunta nel colore d'accento, come Passo e Tempo per il loro permesso, e il pulsante diventa «Fatto» senza «Più tardi». Prima diceva «Attiva le notifiche» e il tocco chiudeva l'onboarding senza chiedere nulla.
+- **Le etichette dei pulsanti come Passo** (e come Tempo e Tetto): «Iniziamo» / «Get started», «Salta» per il conto (era «Lo faccio dopo»), «Più tardi» / «Later» per le notifiche (era «Magari dopo» / «Maybe later»). Questo aggiorna le etichette citate nell'ADR 55, senza cambiarne la decisione.
+- **«Passaggio 1 di 4»** al posto di «Passo 1 di 4» nel passaggio che TalkBack legge sul titolo: è la parola di Passo e di Tetto, e «Passo» è anche il nome di un'app sorella.
+- **I testi nel tono della famiglia**: via il «promesso» della valuta (e il trattino lungo della versione inglese), via il «noi» del conto («al resto pensiamo noi» diventa «da lì in avanti lo aggiornano i tuoi movimenti»), il trattino lungo di «All set — …» diventa «Done: …».
+- **La valuta e il conto su una card** (`SaldoCard`), come gli input dell'onboarding di Passo e di Tetto stanno sul loro fondo: la lista delle valute e i due campi del conto non stanno più nudi sulla pagina.
+- **Il blocco dei pulsanti non anima più la sua altezza** (`animateContentSize`): Passo non lo fa, e l'animazione non si spegneva con le animazioni di sistema disattivate.
+
+**Decisioni:** il resto dei testi è verificato contro il codice e resta: il cambio della valuta principale dalle Impostazioni, la sola rete per i tassi BCE con conti in valuta estera, il ripristino del backup.
+
+**Problemi:** nessuno.
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt`; le quattro pagine disegnate con un test Robolectric temporaneo (non committato) e guardate in chiaro, in scuro e in italiano. La pagina delle notifiche con il permesso già concesso non è stata disegnata (Robolectric lo nega): resta alla verifica sul dispositivo.
+
+**Prossimo:** verifica sul dispositivo: le quattro pagine in chiaro e scuro, la valuta e il conto sulla card, la pagina delle notifiche con il permesso già concesso e da concedere.
+
 ## 2026-11-09 - Verifica su dispositivo dell'icona nuova
 
 **Fatto:** il committente ha provato sul telefono la Fase 46 e l'ha trovata a posto ("Ho fatto tutti i test sul telefono ed è tutto ok"). Chiusa la verifica lasciata nella voce precedente:
