@@ -7,6 +7,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
 import com.callbackdev.saldo.R
@@ -118,3 +119,10 @@ fun fontFamilyOf(font: AppFont): FontFamily = familyFor(font)
  * never reads as an O. Apply to any style that renders money.
  */
 fun TextStyle.tabularNumbers(): TextStyle = copy(fontFeatureSettings = "tnum, zero")
+
+/**
+ * Any style, its lines balanced: a few lines of about one width, never a word alone on the last.
+ * For a short text that stands on its own, centred (a first run's title, sentence and promises);
+ * a long one reads better by the paragraph.
+ */
+fun TextStyle.balanced(): TextStyle = copy(lineBreak = LineBreak.Heading)

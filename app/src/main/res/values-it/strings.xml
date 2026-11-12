@@ -981,7 +981,7 @@
     <string name="onboarding_account_name_label">Nome del conto</string>
     <string name="onboarding_account_default_name">Conto corrente</string>
     <string name="onboarding_account_balance_label">Quanto c\'è oggi</string>
-    <string name="onboarding_account_balance_hint">Va benissimo anche zero</string>
+    <string name="onboarding_account_balance_hint">Anche zero va bene</string>
     <string name="onboarding_account_cta">Crea il mio conto</string>
     <string name="onboarding_account_skip">Salta</string>
     <string name="onboarding_account_restore">Ho già un backup di Saldo</string>

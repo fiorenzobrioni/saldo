@@ -967,7 +967,7 @@
     <string name="onboarding_account_name_label">Account name</string>
     <string name="onboarding_account_default_name">Checking account</string>
     <string name="onboarding_account_balance_label">What\'s in it today</string>
-    <string name="onboarding_account_balance_hint">Even zero is perfectly fine</string>
+    <string name="onboarding_account_balance_hint">Zero is fine too</string>
     <string name="onboarding_account_cta">Create my account</string>
     <string name="onboarding_account_skip">Skip</string>
     <string name="onboarding_account_restore">I already have a Saldo backup</string>

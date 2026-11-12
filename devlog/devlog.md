@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-11-12 - Le righe dell'onboarding bilanciate, nelle quattro app
+
+**Fatto:** richiesta del committente, dopo la revisione qui sotto: se una parola sola in fondo a una riga va corretta anche in Passo, si corregge in tutti e quattro i repository. I testi dell'onboarding sono brevi e centrati, e lì una parola sola sull'ultima riga si nota; Tetto li bilanciava già. `Type.kt` aggiunge `TextStyle.balanced()` (`LineBreak.Heading`: righe di larghezza simile, mai una parola sola sull'ultima), che prendono tutti i testi centrati dell'onboarding: il nome, la frase, i tre punti di forza, i titoli e i testi delle pagine. Il suggerimento sotto il saldo del conto diventa «Anche zero va bene» / «Zero is fine too» (era «Va benissimo anche zero» / «Even zero is perfectly fine»), nel tono delle altre pagine.
+
+**Decisioni:** solo l'onboarding. Il resto dell'app tiene i suoi a capo finché una revisione dedicata non lo guarda schermata per schermata.
+
+**Problemi:** nessuno.
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt`; le quattro pagine disegnate di nuovo con un test Robolectric temporaneo (non committato) e guardate in inglese e in italiano.
+
+**Prossimo:** la verifica sul dispositivo della voce qui sotto vale anche per questa.
+
+---
+
 ## 2026-11-12 - L'onboarding rivisto con quelli della famiglia
 
 **Fatto:** richiesta del committente: rivedere gli onboarding di Tempo, Tetto e Saldo, controllare che i testi siano coerenti con lo stato delle app e corretti, e rendere omogenei grafica, layout, tipografia e animazioni prendendo quello di Passo come modello. La cornice era già quella di famiglia (ADR 55): pagina centrata sopra i pulsanti, gli stessi ruoli tipografici, scorrimento e dissolvenza di 300 ms, sola dissolvenza con le animazioni spente. Cambiato:

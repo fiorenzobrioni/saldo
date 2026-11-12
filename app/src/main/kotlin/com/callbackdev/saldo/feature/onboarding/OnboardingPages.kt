@@ -34,6 +34,7 @@ import com.callbackdev.saldo.R
 import com.callbackdev.saldo.core.designsystem.component.AmountTarget
 import com.callbackdev.saldo.core.designsystem.component.AmountTextField
 import com.callbackdev.saldo.core.designsystem.component.SaldoCard
+import com.callbackdev.saldo.core.designsystem.theme.balanced
 import com.callbackdev.saldo.core.domain.model.CurrencyCatalog
 import java.util.Currency
 
@@ -49,14 +50,14 @@ import java.util.Currency
 internal fun WelcomePage(where: String) {
     Text(
         text = stringResource(R.string.onboarding_app_name),
-        style = MaterialTheme.typography.displaySmall,
+        style = MaterialTheme.typography.displaySmall.balanced(),
         textAlign = TextAlign.Center,
         modifier = Modifier.stepHeading(where),
     )
     Spacer(Modifier.height(8.dp))
     Text(
         text = stringResource(R.string.onboarding_welcome_tagline),
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.titleMedium.balanced(),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
     )
@@ -78,12 +79,12 @@ private fun Promise(title: Int, body: Int) {
     ) {
         Text(
             text = stringResource(title),
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMedium.balanced(),
             textAlign = TextAlign.Center,
         )
         Text(
             text = stringResource(body),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium.balanced(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
@@ -213,14 +214,14 @@ private fun PageHeader(
 ) {
     Text(
         text = title,
-        style = MaterialTheme.typography.headlineMedium,
+        style = MaterialTheme.typography.headlineMedium.balanced(),
         textAlign = TextAlign.Center,
         modifier = Modifier.stepHeading(where),
     )
     Spacer(Modifier.height(12.dp))
     Text(
         text = body,
-        style = MaterialTheme.typography.bodyLarge,
+        style = MaterialTheme.typography.bodyLarge.balanced(),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
     )
