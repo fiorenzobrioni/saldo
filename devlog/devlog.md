@@ -24,7 +24,7 @@ Formato suggerito per ogni voce:
 
 **Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt`; `ColorStripTest` nuovo, `WidgetPaletteTest` (le icone delle categorie sopra 3:1 sull'ocra), `QuickAddWidgetPrefsTest` e `WidgetPreviewColorsTest` sul default nuovo; `widget-settings.png`, `widgets.png` e `quick-entry.png` rigenerati e guardati.
 
-**Prossimo:** verifica su device: la striscia, una card ocra, una card mai configurata che passa al verde acqua, le anteprime nel picker.
+**Prossimo:** nessuno. Verifica su device fatta dal committente il 16 novembre 2026: la striscia, una card ocra, una card mai configurata passata al verde acqua, le anteprime nel picker, tutto a posto.
 
 ---
 

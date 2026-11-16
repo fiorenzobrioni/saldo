@@ -1140,7 +1140,7 @@ Voci della v2.0 che non hanno una fase propria (chiuse il 31 luglio 2026, alla p
 - [x] **Default verde acqua** al posto del blu (`QuickAddWidgetConfig`, `MonthWidgetConfig`, il colore di ripiego per un valore sconosciuto): vale per le card nuove e per quelle senza un colore salvato. Anteprime del picker e fondo iniziale della card (`widget_bg`) in verde acqua
 - [x] Test: `ColorStripTest` (ogni colore ha il suo campione, una riga a 384 dp, quattro sopra tre a 360 dp); `WidgetPaletteTest` copre l'ocra perché scorre tutti i colori; `QuickAddWidgetPrefsTest` e `WidgetPreviewColorsTest` sul default nuovo
 - [x] Guida nell'app, guida utente, `widget-settings.png`, `widgets.png` e `quick-entry.png` aggiornati (in `widgets.png` l'anello passa all'ocra, perché la griglia ora ha il verde acqua; `quick-entry.png` mostra gli stessi widget dietro il foglio)
-- [ ] Verifica su device: la striscia nelle impostazioni dei tre widget, una card ocra sulla home, una card mai configurata che passa al verde acqua con l'aggiornamento e le anteprime nel picker del launcher
+- [x] Verifica su device: la striscia nelle impostazioni dei tre widget, una card ocra sulla home, una card mai configurata che passa al verde acqua con l'aggiornamento e le anteprime nel picker del launcher. Fatta dal committente il 16 novembre 2026, tutto a posto
 
 ---
 
