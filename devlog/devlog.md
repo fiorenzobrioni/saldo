@@ -14,6 +14,20 @@ Formato suggerito per ogni voce:
 
 ---
 
+## 2026-11-16 - Il settimo colore dei widget e il verde acqua come default
+
+**Fatto:** richiesta del committente: le preferenze dei widget delle app sorelle hanno un colore in più, in Saldo mancava. Ripreso da Passo (commit `138aa05`) valore per valore: `WidgetCardColor.OCHRE` (`#5C4A0E`) dopo la terracotta, nome «Ocra» / «Ochre», per i tre widget. La striscia dei colori parte sotto i pallini di scelta invece che sotto le etichette, e dove i sette non stanno su una riga le righe sono bilanciate (`swatchesPerRow`: quattro sopra tre a 360 dp, una riga da 384 dp). Il campione singolo è estratto in `ColorSwatch`. Guida nell'app e guida utente dicono «sette colori». Poi, dal committente: il default della card passa dal blu al verde acqua (`0F5B5B`), anche per le card mai configurate; anteprime del picker e fondo iniziale della card in verde acqua. Emendamento all'ADR 52, Fase 47.
+
+**Decisioni:** Laguna non può fare da fondo: il suo tono più scuro, `026F70`, porta il bianco a circa 6:1 e l'inchiostro al 75% a circa 4:1, sotto i 7,8 e 5,2 della regola. Il verde acqua della palette è Laguna scurita fino a rispettarla, ed è il default scelto dal committente. «Mai configurata» vuol dire senza un colore salvato: le impostazioni scrivono tutta la configurazione al primo cambiamento, quindi una card le cui impostazioni sono state toccate tiene il blu salvato, come in Passo. Non serve una migrazione: basta il default nuovo.
+
+**Problemi:** nessuno.
+
+**Verifica:** `./gradlew assembleDebug testDebugUnitTest lint detekt`; `ColorStripTest` nuovo, `WidgetPaletteTest` (le icone delle categorie sopra 3:1 sull'ocra), `QuickAddWidgetPrefsTest` e `WidgetPreviewColorsTest` sul default nuovo; `widget-settings.png`, `widgets.png` e `quick-entry.png` rigenerati e guardati.
+
+**Prossimo:** verifica su device: la striscia, una card ocra, una card mai configurata che passa al verde acqua, le anteprime nel picker.
+
+---
+
 ## 2026-11-12 - Le righe dell'onboarding bilanciate, nelle quattro app
 
 **Fatto:** richiesta del committente, dopo la revisione qui sotto: se una parola sola in fondo a una riga va corretta anche in Passo, si corregge in tutti e quattro i repository. I testi dell'onboarding sono brevi e centrati, e lì una parola sola sull'ultima riga si nota; Tetto li bilanciava già. `Type.kt` aggiunge `TextStyle.balanced()` (`LineBreak.Heading`: righe di larghezza simile, mai una parola sola sull'ultima), che prendono tutti i testi centrati dell'onboarding: il nome, la frase, i tre punti di forza, i titoli e i testi delle pagine. Il suggerimento sotto il saldo del conto diventa «Anche zero va bene» / «Zero is fine too» (era «Va benissimo anche zero» / «Even zero is perfectly fine»), nel tono delle altre pagine.

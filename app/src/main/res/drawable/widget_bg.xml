@@ -5,7 +5,7 @@
     on stock Android 16), so the card matches the widgets beside it (13 Oct
     2026; it was a fixed 24dp).
 
-    The fill baked in here is the default card (the blue), and it is
+    The fill baked in here is the default card (the sea green), and it is
     load-bearing rather than decoration: this drawable is what the host inflates
     for initialLayout, before the first bind ever lands, so without it a freshly
     dropped widget flashes as a white box. At bind time it is re-tinted with the

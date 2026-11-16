@@ -10,7 +10,7 @@ import java.io.File
 /**
  * The picker previews and the un-bound widget bake the default card as a colour
  * resource, because a static layout cannot call Kotlin. This keeps the two
- * written copies of the default blue in step.
+ * written copies of the default sea green in step.
  */
 class WidgetPreviewColorsTest {
 
@@ -23,9 +23,9 @@ class WidgetPreviewColorsTest {
     }
 
     @Test
-    fun `the baked card is the Kotlin table's blue`() {
-        assertEquals(widgetCardContainer(WidgetCardColor.BLUE).toArgb(), resource("widget_preview_card"))
-        assertEquals(widgetCardContainer(WidgetCardColor.BLUE).toArgb(), resource("widget_preview_pill_ink"))
+    fun `the baked card is the Kotlin table's sea green`() {
+        assertEquals(widgetCardContainer(WidgetCardColor.TEAL).toArgb(), resource("widget_preview_card"))
+        assertEquals(widgetCardContainer(WidgetCardColor.TEAL).toArgb(), resource("widget_preview_pill_ink"))
     }
 
     @Test

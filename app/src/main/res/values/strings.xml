@@ -1266,6 +1266,7 @@
     <string name="widget_color_teal">Sea green</string>
     <string name="widget_color_plum">Violet</string>
     <string name="widget_color_clay">Terracotta</string>
+    <string name="widget_color_ochre">Ochre</string>
     <string name="widget_config_opacity">Background opacity</string>
     <string name="widget_opacity_full">Solid</string>
     <string name="widget_opacity_transparent">See-through</string>
@@ -1512,7 +1513,7 @@
     <string name="guide_quick_text_title">Writing it in one line</string>
     <string name="guide_quick_text_body">«12.50 pizza yesterday» becomes amount, description and date, and the category is suggested from what you wrote before. The text fills in and never saves by itself; when it is not sure, it stays quiet rather than guess.</string>
     <string name="guide_quick_widget_title">The widgets</string>
-    <string name="guide_quick_widget_body">Quick add is a grid of categories that, shrunk to one row, becomes Expense and Income. It shows no balances and does not redraw when you record a movement, so it costs nothing to whoever keeps it on the home screen. In words and The month read the month instead: what you can still spend, the next charge, the monthly budget\'s ring. They update when you record a movement and at midnight, and with the app lock on they show no figures. All of them sit on a card: light, dark, following the phone or one of six colours, at the opacity you choose.</string>
+    <string name="guide_quick_widget_body">Quick add is a grid of categories that, shrunk to one row, becomes Expense and Income. It shows no balances and does not redraw when you record a movement, so it costs nothing to whoever keeps it on the home screen. In words and The month read the month instead: what you can still spend, the next charge, the monthly budget\'s ring. They update when you record a movement and at midnight, and with the app lock on they show no figures. All of them sit on a card: light, dark, following the phone or one of seven colours, at the opacity you choose.</string>
 
     <string name="guide_notifications_title">Notifications</string>
     <string name="guide_notifications_p1" formatted="false">Saldo writes to you only about what you asked for or what concerns you: a recurring movement recorded or waiting for you, a budget at 80% or past its limit, the card\'s statement, a renewal coming, the backup reminder.</string>

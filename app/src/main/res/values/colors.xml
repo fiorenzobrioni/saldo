@@ -12,7 +12,7 @@
         restricted context and never runs a line of our code), so the values are
         baked, and baked here rather than across the layouts.
 
-        The card is the default one: widgetCardContainer(BLUE), flat, so the
+        The card is the default one: widgetCardContainer(TEAL), flat, so the
         picker shows the widget as it will be placed. It is also the fill the
         placed widget is inflated with before its first bind (widget_bg.xml).
         No values-night variant: a card colour is the same in both themes, and
@@ -21,15 +21,16 @@
 
         The inks are the white pair over a card colour (WidgetInk.OVER_COLOR):
         white, and white at 75% for the quiet one. The selected half of the type
-        selector is a white pill with the card's own blue as its ink.
+        selector is a white pill with the card's own colour as its ink. The card
+        is the default one, sea green (ADR 52, 16 Nov 2026).
     -->
-    <color name="widget_preview_card">#FF0F3B6B</color>
+    <color name="widget_preview_card">#FF0F5B5B</color>
     <color name="widget_preview_ink">#FFFFFFFF</color>
     <color name="widget_preview_ink_muted">#BFFFFFFF</color>
     <!-- The month ring's track: the quiet ink at a quarter, as the placed ring draws it. -->
     <color name="widget_preview_ring_track">#40FFFFFF</color>
     <color name="widget_preview_pill">#FFFFFFFF</color>
-    <color name="widget_preview_pill_ink">#FF0F3B6B</color>
+    <color name="widget_preview_pill_ink">#FF0F5B5B</color>
 
     <!-- The bar preview's two accents, as the placed bar draws them on a card
          colour: the dark theme's error red and income green, the set made to
@@ -41,12 +42,12 @@
         What a placed widget's tinted shapes are baked with, seen only in the raw
         initialLayout the host inflates before the first bind lands (see
         widget_tile_bg_wide.xml for why the value is cosmetic): white at a wash's
-        strength over the blue card, flattened, so that moment reads as a card
+        strength over the sea green card, flattened, so that moment reads as a card
         filling in. Opaque on purpose: SRC_ATOP multiplies the tint by the
         shape's own alpha, so a translucent value here would thin every tinted
         shape on the placed widget too.
     -->
-    <color name="widget_placeholder">#FF355A83</color>
+    <color name="widget_placeholder">#FF357575</color>
 
     <!--
         The grid preview's category accents: the first seven colours of the

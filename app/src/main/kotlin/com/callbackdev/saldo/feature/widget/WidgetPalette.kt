@@ -93,7 +93,7 @@ internal data class WidgetPalette(
 
     /**
      * A category's colour is the one its user picked, on every ground. On a
-     * card colour it is lifted towards white, keeping its hue: the six colours
+     * card colour it is lifted towards white, keeping its hue: the seven colours
      * are dark on purpose, and a category's mid-tone would sink into them (the
      * seed's indigo sits at 2.4:1 on the blue card, lifted at 4.9:1).
      */

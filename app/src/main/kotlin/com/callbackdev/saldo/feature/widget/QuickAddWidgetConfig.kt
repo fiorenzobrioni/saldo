@@ -46,12 +46,13 @@ data class QuickAddWidgetConfig(
      */
     val pinnedCategoryIds: List<Long> = emptyList(),
     /**
-     * What the card is painted on. The default is a solid blue card (ADR 52),
-     * so a widget nobody configures already wears it.
+     * What the card is painted on. The default is a solid card in the app's
+     * own colour, sea green (ADR 52, 16 Nov 2026), so a widget nobody
+     * configures already wears it.
      */
     val background: WidgetBackground = WidgetBackground.COLOR,
     /** Kept while another background is picked, so coming back finds it. */
-    val cardColor: WidgetCardColor = WidgetCardColor.BLUE,
+    val cardColor: WidgetCardColor = WidgetCardColor.TEAL,
     /** How solid the card is, 0 to 100 in steps of 5; the ink never thins. */
     val opacityPct: Int = FullOpacity,
     val buttons: WidgetActionButtons = WidgetActionButtons.BOTH,
@@ -214,7 +215,7 @@ object QuickAddWidgetPrefs {
             background = decodeBackground(background),
             cardColor = cardColor?.let { stored ->
                 WidgetCardColor.entries.firstOrNull { it.name == stored }
-            } ?: WidgetCardColor.BLUE,
+            } ?: QuickAddWidgetConfig().cardColor,
             opacityPct = (opacity ?: FullOpacity).coerceIn(0, FullOpacity),
             buttons = buttons?.let { stored ->
                 WidgetActionButtons.entries.firstOrNull { it.name == stored }

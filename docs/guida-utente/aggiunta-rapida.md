@@ -25,9 +25,9 @@ Due cose che il widget non fa, per scelta: non mostra saldi né totali, e non si
 
 ### L'aspetto
 
-Il widget è una card con gli angoli arrotondati e, di default, lo sfondo blu pieno con il testo bianco. Dalla configurazione del widget (pressione prolungata sul widget, poi l'icona delle impostazioni, a seconda del launcher) scegli:
+Il widget è una card con gli angoli arrotondati e, di default, lo sfondo verde acqua pieno con il testo bianco. Dalla configurazione del widget (pressione prolungata sul widget, poi l'icona delle impostazioni, a seconda del launcher) scegli:
 
-- lo **sfondo**: chiaro, scuro, come il telefono (segue il passaggio chiaro/scuro all'istante) o un colore fra sei (blu, blu chiaro, verde, verde acqua, viola, terracotta);
+- lo **sfondo**: chiaro, scuro, come il telefono (segue il passaggio chiaro/scuro all'istante) o un colore fra sette (blu, blu chiaro, verde, verde acqua, viola, terracotta, ocra);
 - l'**opacità** dello sfondo, a passi del 5%, da pieno a trasparente.
 
 Su uno sfondo colorato le icone delle categorie sono schiarite quanto basta per leggersi sul colore scuro, senza cambiare tinta. Sotto il 50% di opacità la card lascia vedere lo sfondo del telefono, e il colore del testo lo decide quello: scuro se Android dice che lo sfondo è chiaro, bianco altrimenti. Una card chiara o scura resta invece con il testo che le è proprio. Se cambi lo sfondo del telefono, un widget trasparente aggiorna il colore del testo al suo prossimo aggiornamento (quando cambi un conto, una categoria, il tema o le sue impostazioni).

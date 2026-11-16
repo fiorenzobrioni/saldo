@@ -15,9 +15,12 @@ import com.callbackdev.saldo.core.designsystem.theme.WidgetCardColor
  * placed, and its settings screen is an option rather than a toll gate.
  */
 data class MonthWidgetConfig(
-    /** The family's default: a solid blue card. */
+    /**
+     * The default: a solid card in the app's own colour, sea green (ADR 52,
+     * 16 Nov 2026). A widget whose settings were never written wears it too.
+     */
     val background: WidgetBackground = WidgetBackground.COLOR,
-    val cardColor: WidgetCardColor = WidgetCardColor.BLUE,
+    val cardColor: WidgetCardColor = WidgetCardColor.TEAL,
     val opacityPct: Int = FullOpacity,
     /**
      * The reader's own switch for the figures. Even when on, the app lock
