@@ -53,6 +53,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -492,7 +493,7 @@ internal val WidgetBackgroundChoices: List<Pair<WidgetBackground, Int>> = listOf
     WidgetBackground.COLOR to R.string.widget_bg_color,
 )
 
-/** The six, in their order. Every [WidgetCardColor] has its swatch. */
+/** The seven, in their order. Every [WidgetCardColor] has its swatch. */
 internal val WidgetCardColorChoices: List<Pair<WidgetCardColor, Int>> = listOf(
     WidgetCardColor.BLUE to R.string.widget_color_blue,
     WidgetCardColor.AZURE to R.string.widget_color_azure,
@@ -500,6 +501,7 @@ internal val WidgetCardColorChoices: List<Pair<WidgetCardColor, Int>> = listOf(
     WidgetCardColor.TEAL to R.string.widget_color_teal,
     WidgetCardColor.PLUM to R.string.widget_color_plum,
     WidgetCardColor.CLAY to R.string.widget_color_clay,
+    WidgetCardColor.OCHRE to R.string.widget_color_ochre,
 )
 
 /**
@@ -554,46 +556,20 @@ internal fun BackgroundChoices(
 
 @Composable
 private fun ColorSwatches(selected: WidgetCardColor, onPick: (WidgetCardColor) -> Unit) {
-    Column(modifier = Modifier.padding(start = 50.dp, end = 10.dp, bottom = 12.dp)) {
+    Column(modifier = Modifier.padding(start = 10.dp, end = 2.dp, bottom = 12.dp)) {
         // Each colour is a 48dp target around its 36dp disc (the chosen one's
         // included), side by side: the gaps between the discs are the targets'
-        // own. A narrow phone wraps the row rather than squeezing the last disc
-        // into an oval, which a fixed row of six did at 360dp.
-        FlowRow(modifier = Modifier.selectableGroup()) {
-            WidgetCardColorChoices.forEach { (color, label) ->
-                val chosen = color == selected
-                val name = stringResource(label)
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .selectable(selected = chosen, onClick = { onPick(color) }, role = Role.RadioButton)
-                        .semantics { contentDescription = name },
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .border(
-                                width = if (chosen) 2.dp else 0.dp,
-                                color = if (chosen) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                shape = CircleShape,
-                            )
-                            .padding(if (chosen) 4.dp else 0.dp)
-                            .clip(CircleShape)
-                            .background(widgetCardContainer(color)),
-                    ) {
-                        if (chosen) {
-                            // Every card colour is a dark ground under white ink.
-                            Icon(
-                                imageVector = Icons.Outlined.Check,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    }
+        // own. The strip starts under the radio buttons, so the first disc lines
+        // up with them and seven fit one row from a 384dp phone; where they do
+        // not (a 360dp phone, a larger display size), the rows are balanced,
+        // four over three, never one alone.
+        BoxWithConstraints {
+            FlowRow(
+                maxItemsInEachRow = swatchesPerRow(WidgetCardColorChoices.size, maxWidth),
+                modifier = Modifier.selectableGroup(),
+            ) {
+                WidgetCardColorChoices.forEach { (color, label) ->
+                    ColorSwatch(color, chosen = color == selected, name = stringResource(label)) { onPick(color) }
                 }
             }
         }
@@ -604,4 +580,55 @@ private fun ColorSwatches(selected: WidgetCardColor, onPick: (WidgetCardColor) -
             modifier = Modifier.padding(top = 6.dp),
         )
     }
+}
+
+/** One colour of the strip: a 48dp target around its 36dp disc, the chosen one ringed and ticked. */
+@Composable
+private fun ColorSwatch(color: WidgetCardColor, chosen: Boolean, name: String, onPick: () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(SwatchTarget)
+            .selectable(selected = chosen, onClick = onPick, role = Role.RadioButton)
+            .semantics { contentDescription = name },
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .border(
+                    width = if (chosen) 2.dp else 0.dp,
+                    color = if (chosen) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    shape = CircleShape,
+                )
+                .padding(if (chosen) 4.dp else 0.dp)
+                .clip(CircleShape)
+                .background(widgetCardContainer(color)),
+        ) {
+            if (chosen) {
+                // Every card colour is a dark ground under white ink.
+                Icon(
+                    imageVector = Icons.Outlined.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        }
+    }
+}
+
+/** A swatch's touch target: the 48dp a finger needs, never less to fit one more. */
+private val SwatchTarget = 48.dp
+
+/**
+ * How many swatches a row of the colour strip holds: all of them where they
+ * fit, and where they do not, as few rows as they need, balanced, so the strip
+ * never leaves one colour alone under the rest.
+ */
+internal fun swatchesPerRow(count: Int, width: Dp): Int {
+    val fits = (width / SwatchTarget).toInt().coerceIn(1, count.coerceAtLeast(1))
+    val rows = (count + fits - 1) / fits
+    return (count + rows - 1) / rows
 }

@@ -82,10 +82,10 @@ class WidgetPaletteTest {
 
     /**
      * The seed's mid-tone categories sink into a dark card; lifted towards white
-     * they keep their hue and clear 3:1, the floor for a graphic, on all six.
+     * they keep their hue and clear 3:1, the floor for a graphic, on all seven.
      */
     @Test
-    fun `category glyphs are lifted on a colour card and readable on all six`() {
+    fun `category glyphs are lifted on a colour card and readable on all seven`() {
         val seed = listOf(0x5C6BC0, 0x7E57C2, 0x66BB6A, 0xEF5350, 0x42A5F5, 0x26A69A, 0xEC407A, 0x8D6E63)
         WidgetCardColor.entries.forEach { color ->
             val palette = widgetPalette(dress, WidgetBackground.COLOR, color, 100, false)

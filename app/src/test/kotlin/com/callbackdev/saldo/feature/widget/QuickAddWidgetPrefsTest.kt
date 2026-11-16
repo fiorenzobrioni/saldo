@@ -124,12 +124,12 @@ class QuickAddWidgetPrefsTest {
         assertTrue(!QuickAddWidgetPrefs.read(preferences, id).usesCustomCategories)
     }
 
-    /** The default (ADR 52): a solid blue card. */
+    /** The default (ADR 52, 16 Nov 2026): a solid card in the app's sea green. */
     @Test
-    fun `an unconfigured widget wears the solid blue card`() {
+    fun `an unconfigured widget wears the solid sea green card`() {
         val config = QuickAddWidgetPrefs.read(mutablePreferencesOf(), id)
         assertEquals(WidgetBackground.COLOR, config.background)
-        assertEquals(WidgetCardColor.BLUE, config.cardColor)
+        assertEquals(WidgetCardColor.TEAL, config.cardColor)
         assertEquals(FullOpacity, config.opacityPct)
     }
 
@@ -141,7 +141,7 @@ class QuickAddWidgetPrefsTest {
         )
         val config = QuickAddWidgetPrefs.read(preferences, id)
         assertEquals(WidgetBackground.COLOR, config.background)
-        assertEquals(WidgetCardColor.BLUE, config.cardColor)
+        assertEquals(WidgetCardColor.TEAL, config.cardColor)
     }
 
     /**

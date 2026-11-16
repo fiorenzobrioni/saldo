@@ -363,13 +363,13 @@ class ReadmeScreenshots {
             return MonthWidgetRenderer.render(context, kind, month, config, palette, WidgetSize(HALF_WIDGET_DP, MONTH_HEIGHT_DP))
         }
         return HomeWidgets(
-            // The one-row form in another of the six colours, the grid on the
-            // default blue: the picture shows the choice as well as the widgets.
+            // The one-row form in another of the seven colours, the grid on the
+            // default sea green: the picture shows the choice as well as the widgets.
             bar = render(QuickAddWidgetConfig(cardColor = WidgetCardColor.PLUM), bar),
             barHeightDp = bar.height,
             grid = render(QuickAddWidgetConfig(), grid),
             gridHeightDp = grid.height,
-            ring = renderMonth(MonthWidgetKind.RING, WidgetCardColor.TEAL),
+            ring = renderMonth(MonthWidgetKind.RING, WidgetCardColor.OCHRE),
             words = renderMonth(MonthWidgetKind.WORDS, WidgetCardColor.BLUE),
             monthHeightDp = MONTH_HEIGHT_DP,
         )

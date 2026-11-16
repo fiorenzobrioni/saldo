@@ -36,4 +36,4 @@ Ogni widget ha anche l'interruttore "Gli importi", per nascondere le cifre senza
 
 ## Impostazioni
 
-Come per "Aggiunta rapida": in cima il widget vero alle misure che può avere, poi lo sfondo (chiaro, scuro, come il telefono o uno dei sei colori) con l'opacità, poi il contenuto ("Gli importi" e, per "In parole", "Il prossimo addebito"). Ogni scelta vale subito; "Ripristina questo widget" rimette quelle di partenza.
+Come per "Aggiunta rapida": in cima il widget vero alle misure che può avere, poi lo sfondo (chiaro, scuro, come il telefono o uno dei sette colori) con l'opacità, poi il contenuto ("Gli importi" e, per "In parole", "Il prossimo addebito"). Ogni scelta vale subito; "Ripristina questo widget" rimette quelle di partenza.
